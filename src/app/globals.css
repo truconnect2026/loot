@@ -1,0 +1,46 @@
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600&family=JetBrains+Mono:wght@500;700&display=swap");
+
+:root {
+  /* Backgrounds */
+  --bg-page: #120e18;
+  --bg-surface: #17122A;
+  --bg-recessed: #120e18;
+
+  /* Borders */
+  --border-default: #2A2240;
+  --border-subtle: #1E1835;
+  --border-dim: #3D2E55;
+
+  /* Text */
+  --text-primary: #C8C0D8;
+  --text-muted: #5A4E70;
+  --text-dim: #3D2E55;
+
+  /* Accents */
+  --accent-mint: #5CE0B8;
+  --accent-camel: #D4A574;
+  --accent-red: #E8636B;
+  --accent-blue: #7B8FFF;
+
+  /* Accent surfaces (8% opacity fills) */
+  --accent-mint-surface: #5CE0B814;
+  --accent-mint-border: #5CE0B840;
+  --accent-camel-surface: #D4A57414;
+  --accent-camel-border: #D4A57440;
+  --accent-red-surface: #E8636B14;
+  --accent-red-border: #E8636B40;
+
+  /* Specific */
+  --profit-glow: 0 0 20px #5CE0B815;
+  --press-bg: #1F1835;
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-outfit), sans-serif;
+  font-feature-settings: "tnum";
+}

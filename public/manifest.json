@@ -1,0 +1,10 @@
+{
+  "name": "LOOT",
+  "short_name": "LOOT",
+  "description": "Reseller arbitrage PWA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#120e18",
+  "theme_color": "#5CE0B8",
+  "icons": []
+}
