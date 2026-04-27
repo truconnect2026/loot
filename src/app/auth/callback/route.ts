@@ -4,12 +4,21 @@ import { cookies } from "next/headers";
 
 /**
  * OAuth / magic-link callback.
- * Exchanges the auth code for a session, then redirects to /app.
+ * Supabase redirects here with ?code=... after successful auth.
+ * We exchange the code for a session and redirect to /app.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const code = searchParams.get("code");
-  const redirectUrl = request.nextUrl.clone();
+  const code = request.nextUrl.searchParams.get("code");
+  const error = request.nextUrl.searchParams.get("error");
+  const errorDescription = request.nextUrl.searchParams.get("error_description");
+  const origin = request.nextUrl.origin;
+
+  // Supabase returned an error (e.g. "requested path is invalid")
+  if (error) {
+    const loginUrl = new URL("/", origin);
+    loginUrl.searchParams.set("error", errorDescription || error);
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -30,16 +39,17 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      redirectUrl.pathname = "/app";
-      redirectUrl.searchParams.delete("code");
-      return NextResponse.redirect(redirectUrl);
+    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    if (!exchangeError) {
+      return NextResponse.redirect(new URL("/app", origin));
     }
+
+    // Exchange failed — redirect to login with error
+    const loginUrl = new URL("/", origin);
+    loginUrl.searchParams.set("error", exchangeError.message);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // Auth failed — send back to login
-  redirectUrl.pathname = "/";
-  redirectUrl.searchParams.delete("code");
-  return NextResponse.redirect(redirectUrl);
+  // No code and no error — just go to login
+  return NextResponse.redirect(new URL("/", origin));
 }
