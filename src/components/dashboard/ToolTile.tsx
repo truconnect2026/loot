@@ -1,6 +1,6 @@
 "use client";
 
-import TilePressable from "@/components/shared/TilePressable";
+import { useState } from "react";
 
 interface ToolTileProps {
   name: string;
@@ -26,47 +26,58 @@ function ChevronRight() {
 }
 
 export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
+  const [pressed, setPressed] = useState(false);
+
   return (
-    <TilePressable onTap={onTap}>
-      <style>{`
-        .tool-tile-surface {
-          transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4);
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onTap}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onTap();
         }
-        .tool-tile-surface:hover {
-          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.08), 0 12px 40px -4px rgba(0,0,0,0.5);
-        }
-      `}</style>
+      }}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        height: 56,
+        // Quieter than feed cards — tools are secondary.
+        backgroundColor: pressed
+          ? "rgba(255,255,255,0.05)"
+          : "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.04)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+        borderRadius: 12,
+        display: "flex",
+        alignItems: "center",
+        paddingLeft: 12,
+        paddingRight: 12,
+        cursor: "pointer",
+        userSelect: "none",
+        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      <div style={{ flexShrink: 0, display: "flex" }}>{icon}</div>
       <div
-        className="tool-tile-surface"
         style={{
-          height: 60,
-          backgroundColor: "var(--bg-surface)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 12,
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: 12,
-          paddingRight: 12,
+          flex: 1,
+          textAlign: "center",
+          fontFamily: "var(--font-outfit), sans-serif",
+          fontWeight: 600,
+          fontSize: 12,
+          color: "var(--text-primary)",
         }}
       >
-        <div style={{ flexShrink: 0, display: "flex" }}>{icon}</div>
-        <div
-          style={{
-            flex: 1,
-            textAlign: "center",
-            fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 600,
-            fontSize: 12,
-            color: "var(--text-primary)",
-          }}
-        >
-          {name}
-        </div>
-        <div style={{ flexShrink: 0, display: "flex" }}>
-          <ChevronRight />
-        </div>
+        {name}
       </div>
-    </TilePressable>
+      <div style={{ flexShrink: 0, display: "flex" }}>
+        <ChevronRight />
+      </div>
+    </div>
   );
 }

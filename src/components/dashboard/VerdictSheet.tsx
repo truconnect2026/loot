@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
 
 export interface VerdictData {
@@ -82,6 +83,70 @@ const cellLabel: React.CSSProperties = {
   letterSpacing: "0.08em",
   marginBottom: 4,
 };
+
+function ListingCta() {
+  const [pressed, setPressed] = useState(false);
+
+  // Resting: lit accent inset + soft outer accent halo. Press: full glow envelope.
+  const restShadow =
+    "inset 0 1px 0 0 rgba(92,224,184,0.20), 0 0 16px -4px rgba(92,224,184,0.30)";
+  const pressShadow =
+    "0 0 0 1px rgba(92,224,184,0.20), 0 0 24px -4px rgba(92,224,184,0.35), 0 0 60px -8px rgba(92,224,184,0.15)";
+
+  return (
+    <button
+      onClick={() => console.log("Generate FB Listing")}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        marginTop: 16,
+        width: "100%",
+        background:
+          "linear-gradient(180deg, rgba(92,224,184,0.12) 0%, rgba(92,224,184,0.06) 100%)",
+        border: "1px solid rgba(92,224,184,0.15)",
+        boxShadow: pressed ? pressShadow : restShadow,
+        borderRadius: 12,
+        padding: 14,
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        cursor: "pointer",
+        transform: pressed ? "scale(0.97)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      {/* Top-edge shine — light catching the leading edge */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: 12,
+          right: 12,
+          height: 1,
+          background:
+            "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+      <LightningIcon />
+      <span
+        style={{
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontWeight: 700,
+          fontSize: 13,
+          color: "var(--accent-mint)",
+        }}
+      >
+        GENERATE FB LISTING
+      </span>
+    </button>
+  );
+}
 
 export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps) {
   if (!data) return null;
@@ -251,52 +316,8 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           </div>
         </div>
 
-        {/* CTA — hero button with top-edge shine */}
-        <button
-          onClick={() => console.log("Generate FB Listing")}
-          style={{
-            marginTop: 16,
-            width: "100%",
-            backgroundColor: "var(--accent-mint-surface)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            boxShadow:
-              "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
-            borderRadius: 12,
-            padding: 14,
-            position: "relative",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            cursor: "pointer",
-          }}
-        >
-          {/* Top-edge shine — light catching the button's leading edge */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: -1,
-              left: 12,
-              right: 12,
-              height: 1,
-              background:
-                "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
-              pointerEvents: "none",
-            }}
-          />
-          <LightningIcon />
-          <span
-            style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontWeight: 700,
-              fontSize: 12,
-              color: "var(--accent-mint)",
-            }}
-          >
-            GENERATE FB LISTING
-          </span>
-        </button>
+        {/* CTA — hero button with top-edge shine + glow on press */}
+        <ListingCta />
       </div>
     </BottomSheet>
   );

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface ScanOverlayProps {
   open: boolean;
   mode: "barcode" | "vision";
@@ -8,9 +10,38 @@ interface ScanOverlayProps {
 }
 
 const ACCENT = {
-  barcode: "var(--accent-mint)",
-  vision: "var(--accent-camel)",
+  barcode: { hex: "#5CE0B8", rgb: "92,224,184" },
+  vision: { hex: "#D4A574", rgb: "212,165,116" },
 };
+
+function CancelButton({ onCancel }: { onCancel: () => void }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <button
+      onClick={onCancel}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      style={{
+        marginTop: 24,
+        fontFamily: "var(--font-jetbrains-mono), monospace",
+        fontWeight: 500,
+        fontSize: 11,
+        color: "rgba(255,255,255,0.4)",
+        backgroundColor: "transparent",
+        border: hovered
+          ? "1px solid rgba(255,255,255,0.15)"
+          : "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 8,
+        padding: "9px 22px",
+        cursor: "pointer",
+        transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      CANCEL
+    </button>
+  );
+}
 
 export default function ScanOverlay({
   open,
@@ -20,7 +51,7 @@ export default function ScanOverlay({
 }: ScanOverlayProps) {
   if (!open) return null;
 
-  const accent = ACCENT[mode];
+  const { hex: accent, rgb: accentRgb } = ACCENT[mode];
 
   return (
     <>
@@ -30,16 +61,16 @@ export default function ScanOverlay({
           50% { top: 88%; }
         }
         @keyframes pulseRing0 {
-          0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.4; }
-          100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.15; }
+          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
         @keyframes pulseRing1 {
-          0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.3; }
-          100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.08; }
+          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
         @keyframes pulseRing2 {
-          0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.2; }
-          100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.04; }
+          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
       `}</style>
 
@@ -47,8 +78,11 @@ export default function ScanOverlay({
         style={{
           position: "fixed",
           inset: 0,
-          backgroundColor: "rgba(18, 14, 24, 0.95)",
-          zIndex: 30,
+          // Heavy dim + blur over the whole app — mesh stays faintly visible.
+          backgroundColor: "rgba(10, 8, 14, 0.95)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          zIndex: 50,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -58,34 +92,32 @@ export default function ScanOverlay({
         {/* Scanner frame */}
         <div
           style={{
-            width: 200,
-            height: 200,
-            border: `1.5px solid color-mix(in srgb, ${accent} 30%, transparent)`,
+            width: 220,
+            height: 220,
+            border: `1.5px solid rgba(${accentRgb}, 0.40)`,
             borderRadius: 16,
             position: "relative",
             overflow: "hidden",
+            // Faint accent halo around the viewfinder.
+            boxShadow: `0 0 40px -8px rgba(${accentRgb}, 0.15)`,
           }}
         >
-          {/* Corner brackets */}
-          {/* Top-left */}
-          <div style={{ position: "absolute", top: -1, left: -1, width: 28, height: 28, borderTop: `3px solid ${accent}`, borderLeft: `3px solid ${accent}`, borderRadius: "4px 0 0 0" }} />
-          {/* Top-right */}
-          <div style={{ position: "absolute", top: -1, right: -1, width: 28, height: 28, borderTop: `3px solid ${accent}`, borderRight: `3px solid ${accent}`, borderRadius: "0 4px 0 0" }} />
-          {/* Bottom-left */}
-          <div style={{ position: "absolute", bottom: -1, left: -1, width: 28, height: 28, borderBottom: `3px solid ${accent}`, borderLeft: `3px solid ${accent}`, borderRadius: "0 0 0 4px" }} />
-          {/* Bottom-right */}
-          <div style={{ position: "absolute", bottom: -1, right: -1, width: 28, height: 28, borderBottom: `3px solid ${accent}`, borderRight: `3px solid ${accent}`, borderRadius: "0 0 4px 0" }} />
+          {/* Corner brackets — thinner, more premium */}
+          <div style={{ position: "absolute", top: -1, left: -1, width: 32, height: 32, borderTop: `2px solid ${accent}`, borderLeft: `2px solid ${accent}`, borderRadius: "4px 0 0 0" }} />
+          <div style={{ position: "absolute", top: -1, right: -1, width: 32, height: 32, borderTop: `2px solid ${accent}`, borderRight: `2px solid ${accent}`, borderRadius: "0 4px 0 0" }} />
+          <div style={{ position: "absolute", bottom: -1, left: -1, width: 32, height: 32, borderBottom: `2px solid ${accent}`, borderLeft: `2px solid ${accent}`, borderRadius: "0 0 0 4px" }} />
+          <div style={{ position: "absolute", bottom: -1, right: -1, width: 32, height: 32, borderBottom: `2px solid ${accent}`, borderRight: `2px solid ${accent}`, borderRadius: "0 0 4px 0" }} />
 
-          {/* Scan line */}
+          {/* Scan line — thin glowing thread */}
           <div
             style={{
               position: "absolute",
               left: "10%",
               right: "10%",
-              height: 2,
+              height: 1,
               background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-              boxShadow: `0 0 20px ${accent}`,
-              animation: "scanLine 1.5s ease-in-out infinite",
+              boxShadow: `0 0 12px ${accent}`,
+              animation: "scanLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
             }}
           />
 
@@ -101,7 +133,7 @@ export default function ScanOverlay({
                 height: 80,
                 borderRadius: "50%",
                 border: `1px solid ${accent}`,
-                animation: `pulseRing${i} 2s cubic-bezier(0.16, 1, 0.3, 1) infinite`,
+                animation: `pulseRing${i} 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite`,
                 animationDelay: `${i * 0.4}s`,
               }}
             />
@@ -124,10 +156,10 @@ export default function ScanOverlay({
         <div
           style={{
             marginTop: 16,
-            width: 180,
+            width: 200,
             height: 3,
-            backgroundColor: "var(--border-default)",
-            borderRadius: 2,
+            backgroundColor: "rgba(255,255,255,0.06)",
+            borderRadius: 9999,
             overflow: "hidden",
           }}
         >
@@ -136,29 +168,14 @@ export default function ScanOverlay({
               width: `${progress}%`,
               height: "100%",
               backgroundColor: accent,
-              borderRadius: 2,
+              boxShadow: `0 0 8px rgba(${accentRgb}, 0.4)`,
+              borderRadius: 9999,
               transition: "width 150ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           />
         </div>
 
-        {/* Cancel button */}
-        <button
-          onClick={onCancel}
-          style={{
-            marginTop: 24,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
-            fontSize: 10,
-            color: "var(--text-muted)",
-            backgroundColor: "transparent",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 8,
-            padding: "9px 22px",
-            cursor: "pointer",
-          }}
-        >
-          CANCEL
-        </button>
+        <CancelButton onCancel={onCancel} />
       </div>
     </>
   );

@@ -23,9 +23,9 @@ interface Particle {
   color: string;
 }
 
-const PARTICLE_COUNT = 28;
+const PARTICLE_COUNT = 35;
 const COLORS = ["#5CE0B8", "#8AF0D4"];
-const GRAVITY = 0.12;
+const GRAVITY = 0.10;
 const OPACITY_FADE = 0.004;
 const MAX_FRAMES = 180;
 
@@ -37,7 +37,7 @@ function createParticles(width: number, height: number): Particle[] {
       y: Math.random() * height * 0.3, // start in top 30%
       vx: Math.random() * 2 - 1, // -1 to 1
       vy: -(Math.random() * 2 + 1), // initial upward burst
-      radius: 4 + Math.random() * 6, // 4-10px
+      radius: 3 + Math.random() * 5, // 3-8px
       rotation: Math.random() * Math.PI * 2,
       rotationSpeed: (Math.random() - 0.5) * 0.1,
       opacity: 1,
@@ -99,9 +99,25 @@ export default function CoinRain({ active }: CoinRainProps) {
         ctx!.save();
         ctx!.translate(p.x, p.y);
         ctx!.rotate(p.rotation);
-        ctx!.globalAlpha = p.opacity;
+
+        // Soft halo — same color, larger radius, lower alpha. Drawn first so
+        // the coin body sits crisply on top.
+        ctx!.globalAlpha = p.opacity * 0.3;
+        ctx!.beginPath();
+        ctx!.ellipse(
+          0,
+          0,
+          p.radius + 4,
+          (p.radius + 4) * 0.65,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx!.fillStyle = p.color;
+        ctx!.fill();
 
         // Coin body — squished ellipse for perspective
+        ctx!.globalAlpha = p.opacity;
         ctx!.beginPath();
         ctx!.ellipse(0, 0, p.radius, p.radius * 0.65, 0, 0, Math.PI * 2);
         ctx!.fillStyle = p.color;

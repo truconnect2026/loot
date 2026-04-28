@@ -1,6 +1,6 @@
 "use client";
 
-import TilePressable from "@/components/shared/TilePressable";
+import { useState } from "react";
 
 interface FeedCardProps {
   name: string;
@@ -60,9 +60,12 @@ const ICONS = {
 };
 
 const ACCENT_COLORS = {
-  mint: "var(--accent-mint)",
-  camel: "var(--accent-camel)",
+  mint: { hex: "#5CE0B8", rgb: "92,224,184" },
+  camel: { hex: "#D4A574", rgb: "212,165,116" },
 };
+
+const REST_SHADOW =
+  "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)";
 
 export default function FeedCard({
   name,
@@ -73,44 +76,77 @@ export default function FeedCard({
   isRecent = false,
   onTap,
 }: FeedCardProps) {
+  const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
   const IconComponent = ICONS[icon];
-  const accentColor = ACCENT_COLORS[accent];
-  const barOpacity = isRecent ? 1 : 0.5;
+  const accentInfo = ACCENT_COLORS[accent];
+  const accentHex = accentInfo.hex;
+  const accentRgb = accentInfo.rgb;
+  const barOpacity = isRecent ? 1 : 0.4;
+
+  // Press: faint accent halo around the card.
+  const pressShadow = `0 0 0 1px rgba(${accentRgb},0.10), 0 0 16px -4px rgba(${accentRgb},0.20)`;
+  const hoverShadow =
+    "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 12px 40px -4px rgba(0,0,0,0.5)";
+
+  const shadow = pressed ? pressShadow : hovered ? hoverShadow : REST_SHADOW;
 
   return (
-    <TilePressable onTap={onTap}>
+    <>
       <style>{`
-        .feed-card-surface {
-          transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4);
-        }
-        .feed-card-surface:hover {
-          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.08), 0 12px 40px -4px rgba(0,0,0,0.5);
+        @keyframes feedSonar {
+          from { transform: scale(1); opacity: 0.5; }
+          to { transform: scale(2.5); opacity: 0; }
         }
       `}</style>
       <div
-        className="feed-card-surface"
+        role="button"
+        tabIndex={0}
+        onClick={onTap}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onTap();
+          }
+        }}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => {
+          setPressed(false);
+          setHovered(false);
+        }}
+        onPointerEnter={() => setHovered(true)}
         style={{
-          height: 100,
-          backgroundColor: "var(--bg-surface)",
+          height: 110,
+          // Faint glass tint — ambient color from the mesh background reads through.
+          backgroundColor: "rgba(255,255,255,0.03)",
+          backdropFilter: "blur(12px) saturate(150%)",
+          WebkitBackdropFilter: "blur(12px) saturate(150%)",
           border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "4px 14px 14px 14px",
+          borderRadius: "4px 16px 16px 16px",
+          boxShadow: shadow,
           position: "relative",
           overflow: "hidden",
           padding: 14,
           display: "flex",
           flexDirection: "column",
+          cursor: "pointer",
+          userSelect: "none",
+          transform: pressed ? "scale(0.98)" : "scale(1)",
+          transition:
+            "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        {/* Left accent bar */}
+        {/* Left accent bar — pill, 8px breathing room top and bottom */}
         <div
           style={{
             position: "absolute",
             left: 0,
-            top: 10,
-            bottom: 10,
+            top: 8,
+            bottom: 8,
             width: 3,
-            backgroundColor: accentColor,
+            backgroundColor: accentHex,
             borderRadius: 2,
             opacity: barOpacity,
           }}
@@ -118,7 +154,7 @@ export default function FeedCard({
 
         {/* Icon */}
         <div style={{ marginBottom: 6 }}>
-          <IconComponent color={accentColor} />
+          <IconComponent color={accentHex} />
         </div>
 
         {/* Title */}
@@ -146,7 +182,7 @@ export default function FeedCard({
           {subtitle}
         </div>
 
-        {/* Badge with sonar ping — bottom right */}
+        {/* Badge with sonar ring — bottom right */}
         <div
           style={{
             position: "absolute",
@@ -157,38 +193,42 @@ export default function FeedCard({
             gap: 6,
           }}
         >
-          <div style={{ position: "relative", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              position: "relative",
+              width: 16,
+              height: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Sonar ring — sits behind the dot */}
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: 8,
+                height: 8,
+                marginTop: -4,
+                marginLeft: -4,
+                borderRadius: "50%",
+                border: `1.5px solid ${accentHex}`,
+                animation:
+                  "feedSonar 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+                pointerEvents: "none",
+              }}
+            />
             {/* Center dot */}
             <div
               style={{
                 width: 4,
                 height: 4,
                 borderRadius: "50%",
-                backgroundColor: accentColor,
+                backgroundColor: accentHex,
                 position: "relative",
                 zIndex: 1,
-              }}
-            />
-            {/* Sonar ring */}
-            <style>{`
-              @keyframes sonarPing {
-                0% {
-                  transform: scale(1);
-                  opacity: 0.6;
-                }
-                100% {
-                  transform: scale(2.5);
-                  opacity: 0;
-                }
-              }
-            `}</style>
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50%",
-                border: `1px solid ${accentColor}`,
-                animation: "sonarPing 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
               }}
             />
           </div>
@@ -196,13 +236,13 @@ export default function FeedCard({
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 9,
-              color: accentColor,
+              color: accentHex,
             }}
           >
             {count}
           </span>
         </div>
       </div>
-    </TilePressable>
+    </>
   );
 }

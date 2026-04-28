@@ -100,15 +100,15 @@ export default function BottomSheet({
         }
       `}</style>
 
-      {/* Backdrop */}
+      {/* Backdrop — heavy blur + saturate so the mesh stays faintly visible */}
       <div
         style={{
           position: "fixed",
           inset: 0,
           zIndex: 40,
-          backgroundColor: "rgba(18, 14, 24, 0.85)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          backgroundColor: "rgba(10, 8, 14, 0.85)",
+          backdropFilter: "blur(20px) saturate(150%)",
+          WebkitBackdropFilter: "blur(20px) saturate(150%)",
           animation: open
             ? "bsBackdropIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
             : "bsBackdropOut 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
@@ -117,7 +117,7 @@ export default function BottomSheet({
         onClick={onClose}
       />
 
-      {/* Sheet */}
+      {/* Sheet — lit-from-above panel sliding up from below */}
       <div
         ref={sheetRef}
         onTouchStart={handleTouchStart}
@@ -131,7 +131,12 @@ export default function BottomSheet({
           zIndex: 41,
           backgroundColor: "var(--bg-surface)",
           borderTop: `2px solid ${borderColor}`,
-          borderRadius: "20px 20px 0 0",
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          // Inset highlight on the top edge + outer shadow ABOVE the sheet
+          // (negative Y offset because the sheet rises from the bottom).
+          boxShadow:
+            "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 -8px 40px -4px rgba(0,0,0,0.5)",
           animation: open
             ? "bsSlideUp 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
             : "bsSlideDown 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
@@ -140,26 +145,45 @@ export default function BottomSheet({
           overflowY: "auto",
         }}
       >
+        {/* Lit-from-above gradient wash — top 40% of the sheet only */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "40%",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%)",
+            pointerEvents: "none",
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+          }}
+        />
+
         {/* Drag handle */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
-            paddingTop: 8,
+            paddingTop: 10,
             paddingBottom: 4,
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <div
             style={{
-              width: 36,
+              width: 40,
               height: 4,
-              backgroundColor: "var(--border-default)",
-              borderRadius: 2,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              borderRadius: 9999,
             }}
           />
         </div>
 
-        {children}
+        <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
       </div>
     </>
   );

@@ -11,10 +11,12 @@ interface StatsBarProps {
 
 const labelStyle: React.CSSProperties = {
   fontFamily: "var(--font-jetbrains-mono), monospace",
-  fontSize: 7,
+  fontWeight: 500,
+  fontSize: 8,
   color: "var(--text-muted)",
-  letterSpacing: "0.10em",
+  letterSpacing: "0.12em",
   lineHeight: 1,
+  textTransform: "uppercase",
 };
 
 export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) {
@@ -22,13 +24,13 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
     <div
       style={{
         marginTop: 16,
-        backgroundColor: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 10,
+        // Recessed into the page — same color as page bg, with trough shadow.
+        backgroundColor: "#120e18",
+        border: "1px solid rgba(255,255,255,0.04)",
+        borderRadius: 12,
         height: 44,
         display: "flex",
-        boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+        boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
       }}
     >
       {/* SCANS */}
@@ -74,7 +76,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         />
       </div>
 
-      {/* PROFIT — hero number */}
+      {/* PROFIT — glowing LED readout */}
       <div style={{ flex: 1, textAlign: "center", paddingTop: 10, paddingBottom: 10 }}>
         <div style={labelStyle}>PROFIT</div>
         <AnimNum
@@ -83,9 +85,9 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
           style={{
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 300,
-            fontSize: 18,
+            fontSize: 20,
             color: "var(--accent-mint)",
-            textShadow: "var(--profit-glow)",
+            textShadow: "0 0 24px rgba(92,224,184,0.12)",
           }}
         />
       </div>

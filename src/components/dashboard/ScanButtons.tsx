@@ -1,6 +1,6 @@
 "use client";
 
-import TilePressable from "@/components/shared/TilePressable";
+import { useState } from "react";
 
 interface ScanButtonsProps {
   onScanUpc: () => void;
@@ -11,11 +11,11 @@ interface ScanButtonsProps {
 function BarcodeIcon() {
   return (
     <svg
-      width={26}
-      height={26}
+      width={28}
+      height={28}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-mint)"
+      stroke="#5CE0B8"
       strokeWidth={1.5}
       strokeLinecap="round"
     >
@@ -34,11 +34,11 @@ function BarcodeIcon() {
 function CameraIcon() {
   return (
     <svg
-      width={26}
-      height={26}
+      width={28}
+      height={28}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-camel)"
+      stroke="#D4A574"
       strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -53,28 +53,88 @@ function CameraIcon() {
 const hairlineEdgeBleed: React.CSSProperties = {
   marginLeft: -18,
   marginRight: -18,
-  height: 0.5,
-  backgroundColor: "var(--border-default)",
+  height: 1,
+  backgroundColor: "rgba(255,255,255,0.04)",
 };
 
-// Bright highlight line that sits across the top edge of a hero button —
-// gives the surface that "light caught on a glass edge" feel. Used on the
-// scan buttons and the verdict-sheet CTA only.
-function TopEdgeShine() {
+interface HeroButtonProps {
+  variant: "mint" | "camel";
+  icon: React.ReactNode;
+  label: string;
+  onTap: () => void;
+}
+
+function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
+  const [pressed, setPressed] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  const accent = variant === "mint" ? "92,224,184" : "212,165,116";
+  const accentColor = variant === "mint" ? "#5CE0B8" : "#D4A574";
+
+  // Resting state: lit accent inset highlight + faint outer drop.
+  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 1px 2px rgba(0,0,0,0.3)`;
+  // Hover: full glow envelope (the named glow-mint / glow-camel token).
+  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25)`;
+
   return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: "absolute",
-        top: -1,
-        left: 12,
-        right: 12,
-        height: 1,
-        background:
-          "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
-        pointerEvents: "none",
+    <button
+      type="button"
+      onClick={onTap}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => {
+        setPressed(false);
+        setHovered(false);
       }}
-    />
+      onPointerEnter={() => setHovered(true)}
+      style={{
+        flex: 1,
+        height: 72,
+        borderRadius: 16,
+        // Top-to-bottom accent gradient — bright at the top, fading down.
+        background: `linear-gradient(180deg, rgba(${accent},0.08) 0%, rgba(${accent},0.03) 100%)`,
+        border: `1px solid rgba(${accent},0.12)`,
+        boxShadow: hovered ? hoverShadow : restShadow,
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        cursor: "pointer",
+        padding: 0,
+        transform: pressed ? "scale(0.97)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      {/* Top-edge shine — light catching the leading edge of the panel */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: 12,
+          right: 12,
+          height: 1,
+          background:
+            "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+      {icon}
+      <span
+        style={{
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: "0.12em",
+          color: accentColor,
+        }}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -90,89 +150,31 @@ export default function ScanButtons({
 
       <div
         style={{
-          marginTop: 16,
+          marginTop: 20,
           display: "flex",
           gap: 8,
+          width: "100%",
         }}
       >
-        {/* SCAN UPC */}
-        <TilePressable onTap={onScanUpc} className="">
-          <div
-            style={{
-              flex: 1,
-              height: 64,
-              borderRadius: 14,
-              backgroundColor: "var(--accent-mint-surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              boxShadow:
-                "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 7,
-              transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-          >
-            <TopEdgeShine />
-            <BarcodeIcon />
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontWeight: 700,
-                fontSize: 10,
-                letterSpacing: "0.08em",
-                color: "var(--accent-mint)",
-              }}
-            >
-              SCAN UPC
-            </span>
-          </div>
-        </TilePressable>
-
-        {/* AI VISION */}
-        <TilePressable onTap={onAiVision} className="">
-          <div
-            style={{
-              flex: 1,
-              height: 64,
-              borderRadius: 14,
-              backgroundColor: "var(--accent-camel-surface)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              boxShadow:
-                "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 7,
-              transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-          >
-            <TopEdgeShine />
-            <CameraIcon />
-            <span
-              style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontWeight: 700,
-                fontSize: 10,
-                letterSpacing: "0.08em",
-                color: "var(--accent-camel)",
-              }}
-            >
-              AI VISION
-            </span>
-          </div>
-        </TilePressable>
+        <HeroButton
+          variant="mint"
+          icon={<BarcodeIcon />}
+          label="SCAN UPC"
+          onTap={onScanUpc}
+        />
+        <HeroButton
+          variant="camel"
+          icon={<CameraIcon />}
+          label="AI VISION"
+          onTap={onAiVision}
+        />
       </div>
 
       {/* New user hint */}
       {!hasScanned && (
         <div
           style={{
-            marginTop: 10,
+            marginTop: 12,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
             color: "var(--text-dim)",
@@ -184,7 +186,7 @@ export default function ScanButtons({
       )}
 
       {/* Bottom hairline — full-bleed channel framing the scan zone */}
-      <div style={{ ...hairlineEdgeBleed, marginTop: 16 }} />
+      <div style={{ ...hairlineEdgeBleed, marginTop: 20 }} />
     </>
   );
 }
