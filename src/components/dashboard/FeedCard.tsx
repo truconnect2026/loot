@@ -119,10 +119,9 @@ export default function FeedCard({
         onPointerEnter={() => setHovered(true)}
         style={{
           height: 110,
-          // Lit-from-above gradient does the work backdrop-filter can't reliably
-          // do over dark surfaces on mobile Safari.
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%), rgba(255,255,255,0.05)",
+          // Accent-tinted lit-from-above gradient — mint cards skew cool,
+          // camel cards skew warm so the 2×2 grid is instantly scannable.
+          background: `linear-gradient(180deg, rgba(${accentRgb},0.06) 0%, rgba(255,255,255,0.02) 100%), rgba(255,255,255,0.05)`,
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "4px 16px 16px 16px",
           boxShadow: shadow,

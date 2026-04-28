@@ -88,7 +88,10 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
       }}
       onPointerEnter={() => setHovered(true)}
       style={{
-        flex: 1,
+        // Hard-pin to half the row minus half the gap so both buttons are
+        // pixel-identical even when their label widths differ.
+        flex: "none",
+        width: "calc(50% - 4px)",
         height: 80,
         borderRadius: 16,
         // Top-to-bottom accent gradient — bright at the top, fading down.

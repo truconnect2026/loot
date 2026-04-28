@@ -60,17 +60,9 @@ export default function ScanOverlay({
           0%, 100% { top: 5%; }
           50% { top: 88%; }
         }
-        @keyframes pulseRing0 {
-          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.15; }
-          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-        }
-        @keyframes pulseRing1 {
-          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.08; }
-          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-        }
-        @keyframes pulseRing2 {
-          0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.04; }
-          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        @keyframes pulseRing {
+          0%   { transform: translate(-50%, -50%) scale(0.9);  opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(1.5);  opacity: 0; }
         }
       `}</style>
 
@@ -121,8 +113,8 @@ export default function ScanOverlay({
             }}
           />
 
-          {/* 3 pulse rings */}
-          {[0, 1, 2].map((i) => (
+          {/* 3 pulse rings — descending starting opacity, staggered launch */}
+          {[0.30, 0.20, 0.12].map((startAlpha, i) => (
             <div
               key={i}
               style={{
@@ -132,8 +124,8 @@ export default function ScanOverlay({
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                border: `1px solid ${accent}`,
-                animation: `pulseRing${i} 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite`,
+                border: `1px solid rgba(${accentRgb}, ${startAlpha})`,
+                animation: "pulseRing 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
                 animationDelay: `${i * 0.4}s`,
               }}
             />
