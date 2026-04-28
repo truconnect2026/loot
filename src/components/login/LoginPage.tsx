@@ -216,14 +216,20 @@ export default function LoginPage() {
   return (
     <>
       <DotGridBackground variant="login" />
+      <style>{`
+        @keyframes loot-logo-breathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.04); }
+        }
+      `}</style>
 
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
           minHeight: "100vh",
+          paddingTop: "28vh",
           position: "relative",
           zIndex: 1,
         }}
@@ -241,17 +247,42 @@ export default function LoginPage() {
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 10,
               marginBottom: 64,
+              position: "relative",
             }}
           >
-            <CoinMark size={32} />
+            {/* Light source — soft mint glow radiating from behind logo */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                width: 320,
+                height: 160,
+                background:
+                  "radial-gradient(ellipse, rgba(92,224,184,0.08) 0%, transparent 70%)",
+                filter: "blur(40px)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                animation: "loot-logo-breathe 4s ease-in-out infinite",
+              }}
+            >
+              <CoinMark size={32} />
+            </div>
             <span
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
                 fontSize: 44,
-                color: "#5CE0B8",
+                color: "#4AEDC4",
                 letterSpacing: "0.08em",
                 lineHeight: 1,
               }}
@@ -260,9 +291,9 @@ export default function LoginPage() {
             </span>
             <div
               style={{
-                width: 48,
+                width: 64,
                 height: 1,
-                backgroundColor: "rgba(92,224,184,0.20)",
+                backgroundColor: "rgba(92,224,184,0.25)",
                 flexShrink: 0,
                 alignSelf: "center",
               }}
