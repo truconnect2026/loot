@@ -36,7 +36,7 @@ export default function ProfileCard({
       style={{
         marginTop: 16,
         backgroundColor: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: "4px 14px 14px 14px",
         padding: 20,
       }}

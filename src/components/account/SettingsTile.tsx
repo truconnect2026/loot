@@ -11,7 +11,7 @@ interface SettingsTileProps {
 
 export default function SettingsTile({
   height = 52,
-  borderColor = "var(--border-default)",
+  borderColor = "var(--border-subtle)",
   onClick,
   children,
 }: SettingsTileProps) {

@@ -150,7 +150,7 @@ export default function ScanOverlay({
             fontSize: 11,
             color: "var(--text-muted)",
             backgroundColor: "transparent",
-            border: "1px solid var(--border-default)",
+            border: "1px solid var(--border-subtle)",
             borderRadius: 10,
             padding: "8px 24px",
             cursor: "pointer",

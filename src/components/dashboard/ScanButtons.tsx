@@ -61,7 +61,7 @@ export default function ScanButtons({
         style={{
           marginTop: 16,
           height: 0.5,
-          backgroundColor: "var(--border-default)",
+          backgroundColor: "var(--border-subtle)",
         }}
       />
 
@@ -163,7 +163,7 @@ export default function ScanButtons({
         style={{
           marginTop: 16,
           height: 0.5,
-          backgroundColor: "var(--border-default)",
+          backgroundColor: "var(--border-subtle)",
         }}
       />
     </>

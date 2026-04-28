@@ -118,7 +118,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             style={{
               height: 44,
               backgroundColor: "var(--bg-surface)",
-              border: "1px solid var(--border-default)",
+              border: "1px solid var(--border-subtle)",
               borderRadius: 12,
               display: "flex",
               alignItems: "center",
@@ -197,7 +197,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             onClick={startAdding}
             style={{
               height: 44,
-              border: "1px dashed var(--border-default)",
+              border: "1px dashed var(--border-subtle)",
               borderRadius: 12,
               display: "flex",
               alignItems: "center",

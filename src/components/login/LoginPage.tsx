@@ -155,7 +155,7 @@ export default function LoginPage() {
                 width: "100%",
                 height: 52,
                 backgroundColor: "var(--bg-surface)",
-                border: "1px solid var(--border-default)",
+                border: "1px solid var(--border-faint)",
                 borderRadius: 14,
                 display: "flex",
                 alignItems: "center",
@@ -213,7 +213,7 @@ export default function LoginPage() {
               style={{
                 flex: 1,
                 height: 1,
-                backgroundColor: "var(--border-default)",
+                backgroundColor: "var(--border-subtle)",
               }}
             />
             <span
@@ -232,7 +232,7 @@ export default function LoginPage() {
               style={{
                 flex: 1,
                 height: 1,
-                backgroundColor: "var(--border-default)",
+                backgroundColor: "var(--border-subtle)",
               }}
             />
           </div>
@@ -270,7 +270,7 @@ export default function LoginPage() {
                   minWidth: 0,
                   height: 50,
                   backgroundColor: "var(--bg-surface)",
-                  border: "1px solid var(--border-default)",
+                  border: "1px solid var(--border-faint)",
                   borderRight: "none",
                   borderRadius: "14px 0 0 14px",
                   paddingLeft: 16,
@@ -285,7 +285,7 @@ export default function LoginPage() {
                   e.currentTarget.style.borderColor = "var(--accent-mint-border)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-default)";
+                  e.currentTarget.style.borderColor = "var(--border-faint)";
                 }}
               />
               <button

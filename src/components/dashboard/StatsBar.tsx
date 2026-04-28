@@ -23,7 +23,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
       style={{
         marginTop: 16,
         backgroundColor: "var(--bg-surface)",
-        border: "1px solid var(--border-default)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: 10,
         height: 44,
         display: "flex",
