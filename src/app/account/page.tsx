@@ -72,7 +72,7 @@ function DownloadIcon({ opacity }: { opacity: number }) {
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ opacity, transition: "opacity 200ms" }}
+      style={{ opacity, transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
@@ -301,7 +301,7 @@ export default function AccountPage() {
             padding: 4,
             display: "flex",
             color: backPressed ? "var(--text-primary)" : "var(--text-muted)",
-            transition: "color 80ms",
+            transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           <ChevronLeft />
@@ -345,6 +345,7 @@ export default function AccountPage() {
                 backgroundColor: "var(--bg-recessed)",
                 borderRadius: 8,
                 padding: "6px 12px",
+                boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
               }}
             >
               <span

@@ -32,15 +32,46 @@ export default function ProfileCard({
   onCancel,
 }: ProfileCardProps) {
   return (
-    <div
-      style={{
-        marginTop: 16,
-        backgroundColor: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: "4px 14px 14px 14px",
-        padding: 20,
-      }}
-    >
+    <>
+      <style>{`
+        .profile-card-surface {
+          position: relative;
+        }
+        /* Gradient border via mask-composite — bright at top-left, mint kicker
+           at bottom-right. Sits above the card without affecting layout. */
+        .profile-card-surface::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(
+            135deg,
+            rgba(255,255,255,0.15) 0%,
+            rgba(255,255,255,0.04) 40%,
+            transparent 60%,
+            rgba(92,224,184,0.20) 100%
+          );
+          -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
+      `}</style>
+      <div
+        className="profile-card-surface"
+        style={{
+          marginTop: 16,
+          backgroundColor: "var(--bg-surface)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: "4px 14px 14px 14px",
+          boxShadow:
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+          padding: 20,
+        }}
+      >
       {/* Profile row */}
       <div
         style={{
@@ -186,6 +217,7 @@ export default function ProfileCard({
               backgroundColor: "var(--bg-recessed)",
               borderRadius: 8,
               padding: 10,
+              boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
           >
             <div style={cellLabel}>RENEWS</div>
@@ -206,6 +238,7 @@ export default function ProfileCard({
               backgroundColor: "var(--bg-recessed)",
               borderRadius: 8,
               padding: 10,
+              boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
           >
             <div style={cellLabel}>SCANS</div>
@@ -237,6 +270,7 @@ export default function ProfileCard({
           cancel anytime
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

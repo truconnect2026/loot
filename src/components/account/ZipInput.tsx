@@ -50,7 +50,8 @@ export default function ZipInput({ value, onChange }: ZipInputProps) {
           border: editing
             ? "1px solid var(--accent-mint-border)"
             : "1px solid transparent",
-          transition: "border-color 200ms",
+          boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+          transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         {editing ? (

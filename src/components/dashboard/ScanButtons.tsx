@@ -57,6 +57,27 @@ const hairlineEdgeBleed: React.CSSProperties = {
   backgroundColor: "var(--border-default)",
 };
 
+// Bright highlight line that sits across the top edge of a hero button —
+// gives the surface that "light caught on a glass edge" feel. Used on the
+// scan buttons and the verdict-sheet CTA only.
+function TopEdgeShine() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        top: -1,
+        left: 12,
+        right: 12,
+        height: 1,
+        background:
+          "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 export default function ScanButtons({
   onScanUpc,
   onAiVision,
@@ -82,15 +103,19 @@ export default function ScanButtons({
               height: 64,
               borderRadius: 14,
               backgroundColor: "var(--accent-mint-surface)",
-              border: "1px solid #5CE0B826",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow:
+                "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+              position: "relative",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: 7,
-              transition: "transform 100ms ease-out",
+              transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
+            <TopEdgeShine />
             <BarcodeIcon />
             <span
               style={{
@@ -114,15 +139,19 @@ export default function ScanButtons({
               height: 64,
               borderRadius: 14,
               backgroundColor: "var(--accent-camel-surface)",
-              border: "1px solid #D4A57426",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow:
+                "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+              position: "relative",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: 7,
-              transition: "transform 100ms ease-out",
+              transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
+            <TopEdgeShine />
             <CameraIcon />
             <span
               style={{

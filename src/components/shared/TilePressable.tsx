@@ -23,14 +23,17 @@ export default function TilePressable({
 
   const pressDown = useCallback(() => {
     if (!ref.current) return;
-    ref.current.style.transition = "transform 80ms ease-out, background-color 80ms ease-out";
+    ref.current.style.transition =
+      "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)";
     ref.current.style.transform = "translateY(1px)";
     ref.current.style.backgroundColor = "var(--press-bg)";
   }, []);
 
   const pressUp = useCallback(() => {
     if (!ref.current) return;
-    ref.current.style.transition = "transform 150ms ease-out, background-color 150ms ease-out";
+    // Spring curve overshoots slightly so the release feels physical.
+    ref.current.style.transition =
+      "transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms cubic-bezier(0.16, 1, 0.3, 1)";
     ref.current.style.transform = "translateY(0)";
     ref.current.style.backgroundColor = "";
   }, []);

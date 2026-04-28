@@ -64,6 +64,7 @@ const recessedCell: React.CSSProperties = {
   borderRadius: 10,
   padding: 12,
   textAlign: "center",
+  boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
 };
 
 const smallRecessedCell: React.CSSProperties = {
@@ -71,6 +72,7 @@ const smallRecessedCell: React.CSSProperties = {
   borderRadius: 8,
   padding: 10,
   textAlign: "center",
+  boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
 };
 
 const cellLabel: React.CSSProperties = {
@@ -249,16 +251,19 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           </div>
         </div>
 
-        {/* CTA */}
+        {/* CTA — hero button with top-edge shine */}
         <button
           onClick={() => console.log("Generate FB Listing")}
           style={{
             marginTop: 16,
             width: "100%",
             backgroundColor: "var(--accent-mint-surface)",
-            border: "1px solid var(--accent-mint-border)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            boxShadow:
+              "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
             borderRadius: 12,
             padding: 14,
+            position: "relative",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -266,6 +271,20 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             cursor: "pointer",
           }}
         >
+          {/* Top-edge shine — light catching the button's leading edge */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: -1,
+              left: 12,
+              right: 12,
+              height: 1,
+              background:
+                "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
+              pointerEvents: "none",
+            }}
+          />
           <LightningIcon />
           <span
             style={{

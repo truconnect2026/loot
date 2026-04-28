@@ -14,7 +14,7 @@ import { usePathname } from "next/navigation";
  * Page transition wrapper — slides pages left/right on navigation.
  * Forward: outgoing translateX(0→-100%), incoming translateX(100%→0)
  * Back: outgoing translateX(0→100%), incoming translateX(-100%→0)
- * Duration 250ms ease-out. Direction tracked via pathname depth.
+ * Duration 250ms out-expo. Direction tracked via pathname depth.
  */
 
 type Direction = "forward" | "back";
@@ -81,7 +81,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
             style={{
               position: "absolute",
               inset: 0,
-              transition: "transform 250ms ease-out",
+              transition: "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)",
               transform: outgoingTransform,
             }}
           >
@@ -94,7 +94,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
           style={
             isMoving
               ? {
-                  transition: "transform 250ms ease-out",
+                  transition: "transform 250ms cubic-bezier(0.16, 1, 0.3, 1)",
                   transform: incomingTransform,
                   // Start offscreen — use animation instead for initial position
                 }
@@ -104,7 +104,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
           {isMoving ? (
             <div
               style={{
-                animation: `ptSlideIn 250ms ease-out forwards`,
+                animation: `ptSlideIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards`,
               }}
             >
               <style>{`

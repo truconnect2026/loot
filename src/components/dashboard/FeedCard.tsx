@@ -79,11 +79,21 @@ export default function FeedCard({
 
   return (
     <TilePressable onTap={onTap}>
+      <style>{`
+        .feed-card-surface {
+          transition: box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4);
+        }
+        .feed-card-surface:hover {
+          box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.08), 0 12px 40px -4px rgba(0,0,0,0.5);
+        }
+      `}</style>
       <div
+        className="feed-card-surface"
         style={{
           height: 100,
           backgroundColor: "var(--bg-surface)",
-          border: "1px solid var(--border-default)",
+          border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: "4px 14px 14px 14px",
           position: "relative",
           overflow: "hidden",
@@ -178,7 +188,7 @@ export default function FeedCard({
                 inset: 0,
                 borderRadius: "50%",
                 border: `1px solid ${accentColor}`,
-                animation: "sonarPing 2.5s ease-out infinite",
+                animation: "sonarPing 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
               }}
             />
           </div>

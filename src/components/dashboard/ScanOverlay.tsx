@@ -101,7 +101,7 @@ export default function ScanOverlay({
                 height: 80,
                 borderRadius: "50%",
                 border: `1px solid ${accent}`,
-                animation: `pulseRing${i} 2s ease-out infinite`,
+                animation: `pulseRing${i} 2s cubic-bezier(0.16, 1, 0.3, 1) infinite`,
                 animationDelay: `${i * 0.4}s`,
               }}
             />
@@ -137,7 +137,7 @@ export default function ScanOverlay({
               height: "100%",
               backgroundColor: accent,
               borderRadius: 2,
-              transition: "width 200ms ease-out",
+              transition: "width 150ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           />
         </div>

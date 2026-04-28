@@ -96,7 +96,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <DotGridBackground />
+      <DotGridBackground variant="login" />
 
       <div
         style={{
@@ -155,7 +155,9 @@ export default function LoginPage() {
                 width: "100%",
                 height: 52,
                 backgroundColor: "var(--bg-surface)",
-                border: "1px solid var(--border-faint)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                boxShadow:
+                  "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
                 borderRadius: 14,
                 display: "flex",
                 alignItems: "center",
@@ -175,7 +177,7 @@ export default function LoginPage() {
                   fontWeight: 500,
                   fontSize: 15,
                   color: "var(--text-primary)",
-                  transition: "opacity 200ms",
+                  transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
                   opacity: googleLoading ? 0 : 1,
                 }}
               >
@@ -191,7 +193,7 @@ export default function LoginPage() {
                   fontWeight: 500,
                   fontSize: 15,
                   color: "var(--text-muted)",
-                  transition: "opacity 200ms",
+                  transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
                   opacity: googleLoading ? 1 : 0,
                 }}
               >
@@ -270,8 +272,10 @@ export default function LoginPage() {
                   minWidth: 0,
                   height: 50,
                   backgroundColor: "var(--bg-surface)",
-                  border: "1px solid var(--border-faint)",
+                  border: "1px solid rgba(255,255,255,0.06)",
                   borderRight: "none",
+                  boxShadow:
+                    "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
                   borderRadius: "14px 0 0 14px",
                   paddingLeft: 16,
                   paddingRight: 16,
@@ -279,13 +283,13 @@ export default function LoginPage() {
                   fontSize: 14,
                   color: "var(--text-primary)",
                   outline: "none",
-                  transition: "border-color 200ms",
+                  transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "var(--accent-mint-border)";
+                  e.currentTarget.style.borderColor = "rgba(92, 224, 184, 0.25)";
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-faint)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
                 }}
               />
               <button

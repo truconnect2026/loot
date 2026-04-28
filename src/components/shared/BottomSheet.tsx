@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, type ReactNode } from "react";
 
 /**
  * Slide-up panel with backdrop blur, drag handle, swipe-to-dismiss.
- * Spring animation via cubic-bezier(0.34, 1.4, 0.64, 1).
+ * Spring animation via cubic-bezier(0.32, 0.72, 0, 1) — the iOS drawer curve.
  */
 
 interface BottomSheetProps {
@@ -48,7 +48,7 @@ export default function BottomSheet({
     isDragging.current = false;
     if (sheetRef.current) {
       sheetRef.current.style.transition =
-        "transform 400ms cubic-bezier(0.34, 1.4, 0.64, 1)";
+        "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
     }
     if (currentTranslateY.current > 100) {
       onClose();
@@ -63,7 +63,7 @@ export default function BottomSheet({
     if (open && sheetRef.current) {
       sheetRef.current.style.transform = "translateY(0)";
       sheetRef.current.style.transition =
-        "transform 400ms cubic-bezier(0.34, 1.4, 0.64, 1)";
+        "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
     }
   }, [open]);
 
@@ -110,8 +110,8 @@ export default function BottomSheet({
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           animation: open
-            ? "bsBackdropIn 300ms ease-out forwards"
-            : "bsBackdropOut 300ms ease-out forwards",
+            ? "bsBackdropIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            : "bsBackdropOut 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
           pointerEvents: open ? "auto" : "none",
         }}
         onClick={onClose}
@@ -133,8 +133,8 @@ export default function BottomSheet({
           borderTop: `2px solid ${borderColor}`,
           borderRadius: "20px 20px 0 0",
           animation: open
-            ? "bsSlideUp 400ms cubic-bezier(0.34, 1.4, 0.64, 1) forwards"
-            : "bsSlideDown 300ms ease-out forwards",
+            ? "bsSlideUp 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
+            : "bsSlideDown 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
           pointerEvents: open ? "auto" : "none",
           maxHeight: "85vh",
           overflowY: "auto",

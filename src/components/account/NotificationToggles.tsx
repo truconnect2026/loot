@@ -29,7 +29,7 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
         position: "relative",
         cursor: "pointer",
         transition:
-          "background-color 200ms cubic-bezier(0.34, 1.4, 0.64, 1), border-color 200ms cubic-bezier(0.34, 1.4, 0.64, 1)",
+          "background-color 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         flexShrink: 0,
       }}
     >
@@ -45,7 +45,7 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
           top: thumbOffset,
           left: on ? trackW - thumbSize - thumbOffset - 2 : thumbOffset,
           transition:
-            "left 200ms cubic-bezier(0.34, 1.4, 0.64, 1), background-color 200ms",
+            "left 250ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       />
     </div>
@@ -83,7 +83,9 @@ export default function NotificationToggles({
     <div
       style={{
         backgroundColor: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow:
+          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
         borderRadius: "4px 14px 14px 14px",
         overflow: "hidden",
       }}
@@ -129,7 +131,7 @@ export default function NotificationToggles({
                 alignItems: "center",
                 paddingLeft: 16,
                 height: 36,
-                animation: `ntFadeIn 200ms ease-out ${i * 50}ms both`,
+                animation: `ntFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 50}ms both`,
               }}
             >
               <span
