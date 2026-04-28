@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
@@ -10,7 +10,9 @@ import ScanButtons from "@/components/dashboard/ScanButtons";
 import FeedCard from "@/components/dashboard/FeedCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
-import VerdictSheet, { type VerdictData } from "@/components/dashboard/VerdictSheet";
+import VerdictSheet from "@/components/dashboard/VerdictSheet";
+import { createClient } from "@/lib/supabase";
+import type { ScanResponse } from "@/app/api/scan/route";
 
 // ── Tool icons (16px, stroke) ──
 
@@ -91,23 +93,6 @@ function RecycleIcon() {
   );
 }
 
-// ── Mock data ──
-
-const MOCK_STATS = { scans: 47, buys: 12, spent: 284, profit: 631 };
-
-const MOCK_VERDICT: VerdictData = {
-  method: "barcode",
-  name: "KitchenAid Artisan 5qt Stand Mixer",
-  verdict: "BUY",
-  cost: 35,
-  sell: 189,
-  profit: 154,
-  roi: 440,
-  platform: "FB Local",
-  fee: 0,
-  comps: 8,
-};
-
 const FEED_CARDS = [
   { name: "Deals Near You", subtitle: "FB + Craigslist flips", icon: "map-pin" as const, accent: "mint" as const, count: 14 },
   { name: "Penny Drops", subtitle: "weekly Dollar General list", icon: "tag" as const, accent: "camel" as const, count: 23 },
@@ -115,84 +100,116 @@ const FEED_CARDS = [
   { name: "Store Clearance", subtitle: "markdowns below resale", icon: "shopping-bag" as const, accent: "camel" as const, count: 31 },
 ];
 
-const TOOLS = [
+interface Tool {
+  name: string;
+  icon: React.ReactNode;
+  href?: string;
+}
+
+const TOOLS: Tool[] = [
   { name: "Shelf Scanner", icon: <ShelfIcon /> },
   { name: "Price Check", icon: <DollarIcon /> },
   { name: "Yard Sale Map", icon: <MapIcon /> },
   { name: "Estate Sales", icon: <HomeIcon /> },
-  { name: "Haul Log", icon: <ClipboardIcon /> },
+  { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
   { name: "Fake Checker", icon: <ShieldIcon /> },
   { name: "Liquidation Analyzer", icon: <PackageIcon /> },
   { name: "Scrap Finder", icon: <RecycleIcon /> },
 ];
 
+interface Stats {
+  scans: number;
+  buys: number;
+  spent: number;
+  profit: number;
+}
+
+interface ScanRow {
+  cost: number | null;
+  profit: number | null;
+  verdict: string | null;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
+  const supabase = createClient();
 
   // Scan overlay state
   const [scanOpen, setScanOpen] = useState(false);
   const [scanMode, setScanMode] = useState<"barcode" | "vision">("barcode");
-  const [scanProgress, setScanProgress] = useState(0);
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
-  const [verdictData, setVerdictData] = useState<VerdictData | null>(null);
+  const [verdictData, setVerdictData] = useState<ScanResponse | null>(null);
 
   // CoinRain state
   const [coinRainActive, setCoinRainActive] = useState(false);
 
-  const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const scanTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Real stats from Supabase
+  const [stats, setStats] = useState<Stats>({ scans: 0, buys: 0, spent: 0, profit: 0 });
+  const [hasUser, setHasUser] = useState(false);
 
-  // Cleanup on unmount
+  const refreshStats = useCallback(async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+    setHasUser(true);
+
+    const { data, error } = await supabase
+      .from("scans")
+      .select("cost, profit, verdict")
+      .eq("user_id", userData.user.id);
+    if (error || !data) return;
+
+    const rows = data as ScanRow[];
+    const buys = rows.filter((r) => r.verdict === "BUY");
+    setStats({
+      scans: rows.length,
+      buys: buys.length,
+      spent: Math.round(buys.reduce((sum, r) => sum + (Number(r.cost) || 0), 0)),
+      profit: Math.round(buys.reduce((sum, r) => sum + (Number(r.profit) || 0), 0)),
+    });
+  }, [supabase]);
+
   useEffect(() => {
-    return () => {
-      if (progressInterval.current) clearInterval(progressInterval.current);
-      if (scanTimeout.current) clearTimeout(scanTimeout.current);
-    };
-  }, []);
+    refreshStats();
+  }, [refreshStats]);
 
   const startScan = useCallback((mode: "barcode" | "vision") => {
     setScanMode(mode);
-    setScanProgress(0);
     setScanOpen(true);
+  }, []);
 
-    // Simulate progress
-    let p = 0;
-    progressInterval.current = setInterval(() => {
-      p += Math.random() * 15 + 5;
-      if (p >= 100) p = 100;
-      setScanProgress(p);
-      if (p >= 100 && progressInterval.current) {
-        clearInterval(progressInterval.current);
-      }
-    }, 200);
-
-    // After ~2s, close overlay and show verdict
-    scanTimeout.current = setTimeout(() => {
-      if (progressInterval.current) clearInterval(progressInterval.current);
+  const handleScanResult = useCallback(
+    (result: ScanResponse) => {
       setScanOpen(false);
-      setScanProgress(0);
-
-      const data = { ...MOCK_VERDICT, method: mode } as VerdictData;
-      setVerdictData(data);
+      setVerdictData(result);
       setVerdictOpen(true);
 
-      // BUY verdict triggers CoinRain
-      if (data.verdict === "BUY") {
+      if (result.verdict === "BUY") {
         setCoinRainActive(false);
-        // Small delay to ensure rising edge
         requestAnimationFrame(() => setCoinRainActive(true));
       }
-    }, 2000);
-  }, []);
+
+      // Pull fresh totals — the scan row was just inserted server-side.
+      refreshStats();
+    },
+    [refreshStats]
+  );
 
   const cancelScan = useCallback(() => {
-    if (progressInterval.current) clearInterval(progressInterval.current);
-    if (scanTimeout.current) clearTimeout(scanTimeout.current);
     setScanOpen(false);
-    setScanProgress(0);
   }, []);
+
+  const handleToolTap = useCallback(
+    (tool: Tool) => {
+      if (tool.href) {
+        router.push(tool.href);
+      } else {
+        console.log(`Tool: ${tool.name}`);
+      }
+    },
+    [router]
+  );
 
   return (
     <>
@@ -282,17 +299,17 @@ export default function DashboardPage() {
 
         {/* ── Stats Bar ── */}
         <StatsBar
-          scans={MOCK_STATS.scans}
-          buys={MOCK_STATS.buys}
-          spent={MOCK_STATS.spent}
-          profit={MOCK_STATS.profit}
+          scans={stats.scans}
+          buys={stats.buys}
+          spent={stats.spent}
+          profit={stats.profit}
         />
 
         {/* ── Scan Buttons ── */}
         <ScanButtons
           onScanUpc={() => startScan("barcode")}
           onAiVision={() => startScan("vision")}
-          hasScanned={MOCK_STATS.scans > 0}
+          hasScanned={hasUser ? stats.scans > 0 : true}
         />
 
         {/* ── Feed Grid ── */}
@@ -367,14 +384,13 @@ export default function DashboardPage() {
                 key={tool.name}
                 style={{
                   animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                  // Tools start cascading after the feeds finish (4 × 60ms = 240ms).
                   animationDelay: `${240 + i * 40}ms`,
                 }}
               >
                 <ToolTile
                   name={tool.name}
                   icon={tool.icon}
-                  onTap={() => console.log(`Tool: ${tool.name}`)}
+                  onTap={() => handleToolTap(tool)}
                 />
               </div>
             ))}
@@ -389,7 +405,7 @@ export default function DashboardPage() {
       <ScanOverlay
         open={scanOpen}
         mode={scanMode}
-        progress={scanProgress}
+        onResult={handleScanResult}
         onCancel={cancelScan}
       />
 

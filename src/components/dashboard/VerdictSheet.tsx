@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
+import type { ScanResponse } from "@/app/api/scan/route";
+import type { ListingResponse } from "@/app/api/listing/route";
 
-export interface VerdictData {
-  method: "barcode" | "vision";
-  name: string;
-  verdict: "BUY" | "PASS" | "MAYBE";
-  cost: number;
-  sell: number;
-  profit: number;
-  roi: number;
-  platform: string;
-  fee: number;
-  comps: number;
-}
+// Kept as an alias so existing imports keep working.
+export type VerdictData = ScanResponse;
 
 interface VerdictSheetProps {
   open: boolean;
@@ -84,8 +76,16 @@ const cellLabel: React.CSSProperties = {
   marginBottom: 4,
 };
 
-function ListingCta() {
+interface ListingCtaProps {
+  data: VerdictData;
+}
+
+function ListingCta({ data }: ListingCtaProps) {
   const [pressed, setPressed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [listing, setListing] = useState<ListingResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Resting: lit accent inset + soft outer accent halo. Press: full glow envelope.
   const restShadow =
@@ -93,9 +93,143 @@ function ListingCta() {
   const pressShadow =
     "0 0 0 1px rgba(92,224,184,0.20), 0 0 24px -4px rgba(92,224,184,0.35), 0 0 60px -8px rgba(92,224,184,0.15)";
 
+  async function handleGenerate() {
+    if (loading || listing) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemName: data.name,
+          sellPrice: data.sell,
+          reasoning: data.reasoning,
+        }),
+      });
+      const json = (await res.json()) as ListingResponse | { error: string };
+      if (!res.ok || "error" in json) {
+        setError("error" in json ? json.error : `Failed (${res.status})`);
+      } else {
+        setListing(json);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!listing) return;
+    const text = `${listing.title}\n\n${listing.description}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard can fail in non-secure contexts — fall back to selection.
+    }
+  }
+
+  if (listing) {
+    // Inline panel — title + description + copy button.
+    return (
+      <div
+        style={{
+          marginTop: 16,
+          backgroundColor: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow:
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
+          borderRadius: 12,
+          padding: 14,
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 9,
+            letterSpacing: "0.10em",
+            color: "var(--text-muted)",
+            marginBottom: 6,
+          }}
+        >
+          FB MARKETPLACE LISTING
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 600,
+            fontSize: 14,
+            color: "var(--text-primary)",
+            marginBottom: 6,
+          }}
+        >
+          {listing.title}
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 400,
+            fontSize: 12,
+            color: "var(--text-muted)",
+            whiteSpace: "pre-wrap",
+            lineHeight: 1.45,
+            marginBottom: 12,
+          }}
+        >
+          {listing.description}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 11,
+              color: "var(--accent-mint)",
+            }}
+          >
+            ${listing.suggestedPrice.toFixed(2)}
+          </span>
+          <button
+            onClick={handleCopy}
+            style={{
+              height: 34,
+              padding: "0 14px",
+              borderRadius: 8,
+              backgroundColor: copied
+                ? "rgba(92,224,184,0.10)"
+                : "rgba(255,255,255,0.04)",
+              border: copied
+                ? "1px solid rgba(92,224,184,0.25)"
+                : "1px solid rgba(255,255,255,0.08)",
+              color: copied ? "var(--accent-mint)" : "var(--text-primary)",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontWeight: 700,
+              fontSize: 10,
+              letterSpacing: "0.10em",
+              cursor: "pointer",
+              transition: "all 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            {copied ? "COPIED" : "COPY"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <button
-      onClick={() => console.log("Generate FB Listing")}
+      onClick={handleGenerate}
+      disabled={loading}
       onPointerDown={() => setPressed(true)}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
@@ -164,8 +298,24 @@ function ListingCta() {
           zIndex: 1,
         }}
       >
-        GENERATE FB LISTING
+        {loading ? "GENERATING..." : "GENERATE FB LISTING"}
       </span>
+      {error && (
+        <span
+          style={{
+            position: "absolute",
+            bottom: -22,
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 10,
+            color: "var(--accent-red)",
+          }}
+        >
+          {error}
+        </span>
+      )}
     </button>
   );
 }
@@ -339,7 +489,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
         </div>
 
         {/* CTA — hero button with top-edge shine + glow on press */}
-        <ListingCta />
+        <ListingCta data={data} />
       </div>
     </BottomSheet>
   );
