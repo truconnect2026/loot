@@ -117,8 +117,9 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             key={`${kw}-${i}`}
             style={{
               height: 44,
-              backgroundColor: "var(--bg-surface)",
-              border: "1px solid var(--border-subtle)",
+              backgroundColor: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.04)",
+              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
               borderRadius: 12,
               display: "flex",
               alignItems: "center",
@@ -197,7 +198,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             onClick={startAdding}
             style={{
               height: 44,
-              border: "1px dashed var(--border-subtle)",
+              border: "1px dashed rgba(255,255,255,0.06)",
               borderRadius: 12,
               display: "flex",
               alignItems: "center",

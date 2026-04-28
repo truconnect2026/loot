@@ -448,7 +448,7 @@ export default function AccountPage() {
         <div style={{ marginTop: 24 }}>
           <SettingsTile
             height={52}
-            borderColor="rgba(232, 99, 107, 0.15)"
+            variant="danger"
             onClick={handleSignOut}
           >
             <span

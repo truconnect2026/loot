@@ -37,6 +37,12 @@ export default function ProfileCard({
         .profile-card-surface {
           position: relative;
         }
+        .profile-card-cancel {
+          color: rgba(232, 99, 107, 0.6);
+        }
+        .profile-card-cancel:hover {
+          color: rgba(232, 99, 107, 0.9);
+        }
         /* Gradient border via mask-composite — bright at top-left, mint kicker
            at bottom-right. Sits above the card without affecting layout. */
         .profile-card-surface::before {
@@ -64,11 +70,13 @@ export default function ProfileCard({
         className="profile-card-surface"
         style={{
           marginTop: 16,
-          backgroundColor: "var(--bg-surface)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          // Glass tint — gradient border is the rim, no solid border underneath.
+          backgroundColor: "rgba(255,255,255,0.03)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
           borderRadius: "4px 14px 14px 14px",
           boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
           padding: 20,
         }}
       >
@@ -178,15 +186,16 @@ export default function ProfileCard({
 
       {/* Subscription */}
       <div>
-        {/* Price */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+        {/* Price — Outfit thin reads as luxury at 28px */}
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontWeight: 700,
-              fontSize: 24,
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 300,
+              fontSize: 28,
               color: "var(--text-primary)",
               fontFeatureSettings: '"tnum"',
+              lineHeight: 1,
             }}
           >
             {price}
@@ -195,7 +204,7 @@ export default function ProfileCard({
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 400,
-              fontSize: 12,
+              fontSize: 13,
               color: "var(--text-muted)",
             }}
           >
@@ -254,17 +263,18 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* Cancel */}
+        {/* Cancel — desaturated red, brightens slightly on hover */}
         <div
           onClick={onCancel}
+          className="profile-card-cancel"
           style={{
             marginTop: 10,
             textAlign: "center",
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 400,
             fontSize: 12,
-            color: "var(--accent-red)",
             cursor: "pointer",
+            transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           cancel anytime

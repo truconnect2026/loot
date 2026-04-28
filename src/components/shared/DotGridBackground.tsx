@@ -14,7 +14,53 @@ interface DotGridBackgroundProps {
 export default function DotGridBackground({
   variant = "default",
 }: DotGridBackgroundProps) {
-  const isLogin = variant === "login";
+  if (variant === "login") {
+    // Login gets a brighter ambient wash — mint at top-center, periwinkle at
+    // bottom-right — so the auth screen reads as a "vault" moment.
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          overflow: "hidden",
+          pointerEvents: "none",
+          backgroundColor: "#120e18",
+        }}
+      >
+        {/* Mint — top-center, large, brighter */}
+        <div
+          style={{
+            position: "absolute",
+            top: -200,
+            left: "50%",
+            marginLeft: -300,
+            width: 600,
+            height: 600,
+            borderRadius: "50%",
+            backgroundColor: "#5CE0B8",
+            opacity: 0.07,
+            filter: "blur(120px)",
+          }}
+        />
+        {/* Periwinkle — bottom-right */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: -120,
+            right: -120,
+            width: 450,
+            height: 450,
+            borderRadius: "50%",
+            backgroundColor: "#7B8FFF",
+            opacity: 0.05,
+            filter: "blur(120px)",
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -28,21 +74,21 @@ export default function DotGridBackground({
         backgroundColor: "#120e18",
       }}
     >
-      {/* Blob 1 — mint, top-left */}
+      {/* Mint — top-left */}
       <div
         style={{
           position: "absolute",
           top: -160,
           left: -80,
-          width: isLogin ? 600 : 500,
-          height: isLogin ? 600 : 500,
+          width: 500,
+          height: 500,
           borderRadius: "50%",
           backgroundColor: "#5CE0B8",
-          opacity: isLogin ? 0.06 : 0.04,
+          opacity: 0.04,
           filter: "blur(120px)",
         }}
       />
-      {/* Blob 2 — periwinkle, mid-right */}
+      {/* Periwinkle — mid-right */}
       <div
         style={{
           position: "absolute",
@@ -56,7 +102,7 @@ export default function DotGridBackground({
           filter: "blur(120px)",
         }}
       />
-      {/* Blob 3 — camel, bottom-center */}
+      {/* Camel — bottom-center */}
       <div
         style={{
           position: "absolute",

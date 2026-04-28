@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import CoinMark from "@/components/shared/CoinMark";
 import DotGridBackground from "@/components/shared/DotGridBackground";
-import TilePressable from "@/components/shared/TilePressable";
 
 // Google "G" logo — official colors
 function GoogleIcon() {
@@ -30,15 +29,14 @@ function GoogleIcon() {
   );
 }
 
-// Arrow-right icon for send button
 function ArrowIcon() {
   return (
     <svg
-      width={18}
-      height={18}
+      width={20}
+      height={20}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-mint)"
+      stroke="#5CE0B8"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -49,21 +47,136 @@ function ArrowIcon() {
   );
 }
 
-// Checkmark icon for sent state
-function CheckIcon() {
+interface GoogleButtonProps {
+  onTap: () => void;
+  loading: boolean;
+}
+
+function GoogleButton({ onTap, loading }: GoogleButtonProps) {
+  const [pressed, setPressed] = useState(false);
+
   return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--accent-mint)"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <button
+      type="button"
+      onClick={onTap}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        width: "100%",
+        height: 54,
+        backgroundColor: pressed
+          ? "rgba(255,255,255,0.06)"
+          : "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow:
+          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
+        borderRadius: 16,
+        display: "flex",
+        alignItems: "center",
+        position: "relative",
+        cursor: "pointer",
+        padding: 0,
+        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
     >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
+      <div style={{ paddingLeft: 16, flexShrink: 0, display: "flex" }}>
+        <GoogleIcon />
+      </div>
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "var(--font-outfit), sans-serif",
+          fontWeight: 500,
+          fontSize: 15,
+          color: "rgba(255,255,255,0.85)",
+          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          opacity: loading ? 0 : 1,
+        }}
+      >
+        Continue with Google
+      </span>
+      <span
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          textAlign: "center",
+          fontFamily: "var(--font-outfit), sans-serif",
+          fontWeight: 500,
+          fontSize: 15,
+          color: "rgba(255,255,255,0.5)",
+          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          opacity: loading ? 1 : 0,
+        }}
+      >
+        Connecting...
+      </span>
+    </button>
+  );
+}
+
+interface SendButtonProps {
+  onTap: () => void;
+  disabled: boolean;
+}
+
+function SendButton({ onTap, disabled }: SendButtonProps) {
+  const [pressed, setPressed] = useState(false);
+
+  const restShadow =
+    "inset 0 1px 0 0 rgba(92,224,184,0.18), 0 1px 2px rgba(0,0,0,0.3)";
+  const pressShadow =
+    "0 0 0 1px rgba(92,224,184,0.20), 0 0 24px -4px rgba(92,224,184,0.35)";
+
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      disabled={disabled}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        width: 54,
+        height: 52,
+        flexShrink: 0,
+        backgroundColor: "rgba(92,224,184,0.08)",
+        border: "1px solid rgba(92,224,184,0.15)",
+        boxShadow: pressed ? pressShadow : restShadow,
+        borderRadius: "0 16px 16px 0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        padding: 0,
+        position: "relative",
+        transform: pressed ? "scale(0.95)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      {/* Top-edge shine */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: -1,
+          left: 8,
+          right: 8,
+          height: 1,
+          background:
+            "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
+          pointerEvents: "none",
+        }}
+      />
+      <ArrowIcon />
+    </button>
   );
 }
 
@@ -73,6 +186,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleGoogle() {
@@ -94,6 +208,11 @@ export default function LoginPage() {
     if (!error) setEmailSent(true);
   }
 
+  // Sunken email input — trough shadow, focus blooms a faint mint glow.
+  const inputBaseShadow = "inset 0 1px 2px 0 rgba(0,0,0,0.4)";
+  const inputFocusShadow =
+    "inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 16px -4px rgba(92,224,184,0.15)";
+
   return (
     <>
       <DotGridBackground variant="login" />
@@ -109,210 +228,152 @@ export default function LoginPage() {
           zIndex: 1,
         }}
       >
-        <div style={{ width: "100%", maxWidth: 300, paddingLeft: 32, paddingRight: 32 }}>
-          {/* ── 1. Logo group ── */}
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 340,
+            paddingLeft: 24,
+            paddingRight: 24,
+          }}
+        >
+          {/* ── Logo ── */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              marginBottom: 56,
+              gap: 10,
+              marginBottom: 64,
             }}
           >
-            <CoinMark size={28} />
+            <CoinMark size={32} />
             <span
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 40,
-                color: "var(--accent-mint)",
-                letterSpacing: "0.06em",
+                fontSize: 44,
+                color: "#5CE0B8",
+                letterSpacing: "0.08em",
                 lineHeight: 1,
               }}
             >
               LOOT
             </span>
-            {/* Design line — 40px, 0.15 opacity */}
             <div
               style={{
-                width: 40,
+                width: 48,
                 height: 1,
-                backgroundColor: "var(--accent-mint)",
-                opacity: 0.15,
+                backgroundColor: "rgba(92,224,184,0.20)",
                 flexShrink: 0,
                 alignSelf: "center",
               }}
             />
           </div>
 
-          {/* ── 2. Google button ── */}
-          <TilePressable
-            onTap={handleGoogle}
-            className=""
-          >
-            <div
-              style={{
-                width: "100%",
-                height: 52,
-                backgroundColor: "var(--bg-surface)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                boxShadow:
-                  "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
-                borderRadius: 14,
-                display: "flex",
-                alignItems: "center",
-                position: "relative",
-              }}
-            >
-              <div style={{ paddingLeft: 16, flexShrink: 0, display: "flex" }}>
-                <GoogleIcon />
-              </div>
-              <span
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  textAlign: "center",
-                  fontFamily: "var(--font-outfit), sans-serif",
-                  fontWeight: 500,
-                  fontSize: 15,
-                  color: "var(--text-primary)",
-                  transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-                  opacity: googleLoading ? 0 : 1,
-                }}
-              >
-                Continue with Google
-              </span>
-              <span
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  textAlign: "center",
-                  fontFamily: "var(--font-outfit), sans-serif",
-                  fontWeight: 500,
-                  fontSize: 15,
-                  color: "var(--text-muted)",
-                  transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-                  opacity: googleLoading ? 1 : 0,
-                }}
-              >
-                Connecting...
-              </span>
-            </div>
-          </TilePressable>
-
-          {/* ── 3. Divider ── */}
+          {/* ── Auth glass card ── */}
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              marginTop: 20,
-              marginBottom: 20,
+              backgroundColor: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.04)",
+              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+              borderRadius: 24,
+              padding: 24,
             }}
           >
-            <div
-              style={{
-                flex: 1,
-                height: 1,
-                backgroundColor: "var(--border-subtle)",
-              }}
-            />
-            <span
-              style={{
-                paddingLeft: 12,
-                paddingRight: 12,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontSize: 10,
-                color: "var(--text-dim)",
-                backgroundColor: "var(--bg-page)",
-              }}
-            >
-              or
-            </span>
-            <div
-              style={{
-                flex: 1,
-                height: 1,
-                backgroundColor: "var(--border-subtle)",
-              }}
-            />
-          </div>
+            <GoogleButton onTap={handleGoogle} loading={googleLoading} />
 
-          {/* ── 4. Email row ── */}
-          {emailSent ? (
+            {/* ── Divider ── */}
             <div
               style={{
-                textAlign: "center",
-                fontFamily: "var(--font-outfit), sans-serif",
-                fontWeight: 500,
-                fontSize: 14,
-                color: "var(--accent-mint)",
-                height: 50,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                marginTop: 24,
+                marginBottom: 24,
               }}
             >
-              check your email
-            </div>
-          ) : (
-            <div style={{ display: "flex" }}>
-              <input
-                ref={inputRef}
-                type="email"
-                placeholder="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleEmail();
-                }}
+              <div
                 style={{
                   flex: 1,
-                  minWidth: 0,
-                  height: 50,
-                  backgroundColor: "var(--bg-surface)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  borderRight: "none",
-                  boxShadow:
-                    "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
-                  borderRadius: "14px 0 0 14px",
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  fontFamily: "var(--font-outfit), sans-serif",
-                  fontSize: 14,
-                  color: "var(--text-primary)",
-                  outline: "none",
-                  transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(92, 224, 184, 0.25)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                  height: 1,
+                  backgroundColor: "rgba(255,255,255,0.04)",
                 }}
               />
-              <button
-                onClick={handleEmail}
-                disabled={emailLoading}
+              <span
                 style={{
-                  width: 50,
-                  height: 50,
-                  flexShrink: 0,
-                  backgroundColor: "rgba(92, 224, 184, 0.06)",
-                  border: "1px solid rgba(92, 224, 184, 0.12)",
-                  borderRadius: "0 14px 14px 0",
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.15)",
+                }}
+              >
+                or
+              </span>
+              <div
+                style={{
+                  flex: 1,
+                  height: 1,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                }}
+              />
+            </div>
+
+            {/* ── Email row ── */}
+            {emailSent ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  color: "var(--accent-mint)",
+                  height: 52,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  cursor: "pointer",
-                  padding: 0,
                 }}
               >
-                <ArrowIcon />
-              </button>
-            </div>
-          )}
+                check your email
+              </div>
+            ) : (
+              <div style={{ display: "flex" }}>
+                <input
+                  ref={inputRef}
+                  type="email"
+                  placeholder="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleEmail();
+                  }}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: 52,
+                    backgroundColor: "rgba(0,0,0,0.3)",
+                    border: emailFocused
+                      ? "1px solid rgba(92,224,184,0.25)"
+                      : "1px solid rgba(255,255,255,0.06)",
+                    borderRight: "none",
+                    boxShadow: emailFocused
+                      ? inputFocusShadow
+                      : inputBaseShadow,
+                    borderRadius: "16px 0 0 16px",
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                    fontFamily: "var(--font-outfit), sans-serif",
+                    fontSize: 14,
+                    color: "var(--text-primary)",
+                    outline: "none",
+                    transition:
+                      "border-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+                  }}
+                />
+                <SendButton onTap={handleEmail} disabled={emailLoading} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>

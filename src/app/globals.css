@@ -47,3 +47,14 @@ body {
   font-family: var(--font-outfit), sans-serif;
   font-feature-settings: "tnum";
 }
+
+/* Tabular figures everywhere — numbers must not shift width during AnimNum
+   counters or live data updates. font-feature-settings inherits, but some
+   form controls reset, so target inputs explicitly. */
+input, textarea, button {
+  font-feature-settings: "tnum";
+}
+
+input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}

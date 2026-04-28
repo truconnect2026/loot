@@ -13,39 +13,41 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
   const thumbSize = isSmall ? 12 : 16;
   const thumbOffset = 2;
 
+  // Track: dark trough when off, glowing mint wash when on.
+  const trackBg = on ? "rgba(92,224,184,0.20)" : "rgba(255,255,255,0.06)";
+  const trackShadow = on
+    ? "0 0 12px -2px rgba(92,224,184,0.40)"
+    : "inset 0 1px 2px 0 rgba(0,0,0,0.4)";
+
   return (
     <div
       onClick={onToggle}
       style={{
         width: trackW,
         height: trackH,
-        borderRadius: 10,
-        backgroundColor: on
-          ? "rgba(92, 224, 184, 0.15)"
-          : "var(--bg-recessed)",
-        border: `1px solid ${
-          on ? "rgba(92, 224, 184, 0.25)" : "var(--border-default)"
-        }`,
+        borderRadius: 9999,
+        backgroundColor: trackBg,
+        boxShadow: trackShadow,
         position: "relative",
         cursor: "pointer",
         transition:
-          "background-color 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "background-color 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1)",
         flexShrink: 0,
       }}
     >
+      {/* Thumb — solid white pill with subtle inner shadow for 3D */}
       <div
         style={{
           width: thumbSize,
           height: thumbSize,
           borderRadius: "50%",
-          backgroundColor: on
-            ? "var(--accent-mint)"
-            : "var(--border-default)",
+          backgroundColor: "#FFFFFF",
+          boxShadow:
+            "0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(0,0,0,0.1)",
           position: "absolute",
           top: thumbOffset,
-          left: on ? trackW - thumbSize - thumbOffset - 2 : thumbOffset,
-          transition:
-            "left 250ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          left: on ? trackW - thumbSize - thumbOffset : thumbOffset,
+          transition: "left 200ms cubic-bezier(0.32, 0.72, 0, 1)",
         }}
       />
     </div>
@@ -82,10 +84,9 @@ export default function NotificationToggles({
   return (
     <div
       style={{
-        backgroundColor: "var(--bg-surface)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.4)",
+        backgroundColor: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.04)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
         borderRadius: "4px 14px 14px 14px",
         overflow: "hidden",
       }}

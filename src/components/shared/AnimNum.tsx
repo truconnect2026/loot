@@ -16,7 +16,9 @@ interface AnimNumProps {
 }
 
 function useAnimatedNumber(target: number, duration: number): number {
-  const [display, setDisplay] = useState(target);
+  // Always start at 0 so the first render rolls up to `target`. Subsequent
+  // updates animate from the current display via `fromRef` below.
+  const [display, setDisplay] = useState(0);
   const startRef = useRef(0);
   const fromRef = useRef(0);
   const rafRef = useRef<number>(0);
