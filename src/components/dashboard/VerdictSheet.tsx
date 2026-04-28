@@ -133,13 +133,35 @@ function ListingCta() {
           pointerEvents: "none",
         }}
       />
-      <LightningIcon />
+      {/* Soft radial halo behind the lightning icon */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          width: 40,
+          height: 40,
+          top: "50%",
+          // The icon sits left of center next to the label; nudge halo slightly
+          // left of the absolute centerline so it tracks the icon.
+          left: "calc(50% - 70px)",
+          marginTop: -20,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle, rgba(92,224,184,0.18), transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+      <span style={{ position: "relative", zIndex: 1, display: "flex" }}>
+        <LightningIcon />
+      </span>
       <span
         style={{
           fontFamily: "var(--font-jetbrains-mono), monospace",
           fontWeight: 700,
           fontSize: 13,
           color: "var(--accent-mint)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         GENERATE FB LISTING

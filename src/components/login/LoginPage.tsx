@@ -66,9 +66,9 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
         width: "100%",
         height: 54,
         backgroundColor: pressed
-          ? "rgba(255,255,255,0.06)"
-          : "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
+          ? "rgba(255,255,255,0.09)"
+          : "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.10)",
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
         borderRadius: 16,
@@ -272,9 +272,12 @@ export default function LoginPage() {
           {/* ── Auth glass card ── */}
           <div
             style={{
-              backgroundColor: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.04)",
-              boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+              backgroundColor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              backdropFilter: "blur(20px) saturate(150%)",
+              WebkitBackdropFilter: "blur(20px) saturate(150%)",
+              boxShadow:
+                "inset 0 1px 0 0 rgba(255,255,255,0.04), 0 8px 32px -8px rgba(0,0,0,0.5)",
               borderRadius: 24,
               padding: 24,
             }}

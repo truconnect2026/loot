@@ -19,6 +19,28 @@ const labelStyle: React.CSSProperties = {
   textTransform: "uppercase",
 };
 
+const cellStyle: React.CSSProperties = {
+  flex: 1,
+  textAlign: "center",
+  paddingTop: 10,
+  paddingBottom: 10,
+};
+
+// Thin divider between cells — breaks the bar into readable segments.
+function Divider() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 1,
+        height: 20,
+        backgroundColor: "rgba(255,255,255,0.04)",
+        alignSelf: "center",
+      }}
+    />
+  );
+}
+
 export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) {
   return (
     <div
@@ -34,7 +56,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
       }}
     >
       {/* SCANS */}
-      <div style={{ flex: 1, textAlign: "center", paddingTop: 10, paddingBottom: 10 }}>
+      <div style={cellStyle}>
         <div style={labelStyle}>SCANS</div>
         <AnimNum
           value={scans}
@@ -47,8 +69,10 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         />
       </div>
 
+      <Divider />
+
       {/* BUYS */}
-      <div style={{ flex: 1, textAlign: "center", paddingTop: 10, paddingBottom: 10 }}>
+      <div style={cellStyle}>
         <div style={labelStyle}>BUYS</div>
         <AnimNum
           value={buys}
@@ -61,8 +85,10 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         />
       </div>
 
+      <Divider />
+
       {/* SPENT */}
-      <div style={{ flex: 1, textAlign: "center", paddingTop: 10, paddingBottom: 10 }}>
+      <div style={cellStyle}>
         <div style={labelStyle}>SPENT</div>
         <AnimNum
           value={spent}
@@ -76,8 +102,10 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         />
       </div>
 
+      <Divider />
+
       {/* PROFIT — glowing LED readout */}
-      <div style={{ flex: 1, textAlign: "center", paddingTop: 10, paddingBottom: 10 }}>
+      <div style={cellStyle}>
         <div style={labelStyle}>PROFIT</div>
         <AnimNum
           value={profit}
@@ -85,9 +113,9 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
           style={{
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 300,
-            fontSize: 20,
+            fontSize: 22,
             color: "var(--accent-mint)",
-            textShadow: "0 0 24px rgba(92,224,184,0.12)",
+            textShadow: "0 0 24px rgba(92,224,184,0.20)",
           }}
         />
       </div>

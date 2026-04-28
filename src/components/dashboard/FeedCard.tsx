@@ -119,11 +119,11 @@ export default function FeedCard({
         onPointerEnter={() => setHovered(true)}
         style={{
           height: 110,
-          // Faint glass tint — ambient color from the mesh background reads through.
-          backgroundColor: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(12px) saturate(150%)",
-          WebkitBackdropFilter: "blur(12px) saturate(150%)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          // Lit-from-above gradient does the work backdrop-filter can't reliably
+          // do over dark surfaces on mobile Safari.
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%), rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "4px 16px 16px 16px",
           boxShadow: shadow,
           position: "relative",
@@ -145,7 +145,7 @@ export default function FeedCard({
             left: 0,
             top: 8,
             bottom: 8,
-            width: 3,
+            width: 4,
             backgroundColor: accentHex,
             borderRadius: 2,
             opacity: barOpacity,

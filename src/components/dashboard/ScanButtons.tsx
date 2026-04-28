@@ -89,11 +89,11 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
       onPointerEnter={() => setHovered(true)}
       style={{
         flex: 1,
-        height: 72,
+        height: 80,
         borderRadius: 16,
         // Top-to-bottom accent gradient — bright at the top, fading down.
-        background: `linear-gradient(180deg, rgba(${accent},0.08) 0%, rgba(${accent},0.03) 100%)`,
-        border: `1px solid rgba(${accent},0.12)`,
+        background: `linear-gradient(180deg, rgba(${accent},0.12) 0%, rgba(${accent},0.05) 100%)`,
+        border: `1px solid rgba(${accent},0.18)`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
         display: "flex",
@@ -122,7 +122,24 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
           pointerEvents: "none",
         }}
       />
-      {icon}
+      {/* Soft radial halo behind the icon */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          width: 48,
+          height: 48,
+          // Centered on the icon: icon sits above the label so this aligns
+          // with the icon row rather than the geometric center.
+          top: 12,
+          left: "50%",
+          marginLeft: -24,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(${accent},0.12), transparent 70%)`,
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{ position: "relative", zIndex: 1 }}>{icon}</div>
       <span
         style={{
           fontFamily: "var(--font-jetbrains-mono), monospace",
@@ -130,6 +147,8 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
           fontSize: 11,
           letterSpacing: "0.12em",
           color: accentColor,
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {label}

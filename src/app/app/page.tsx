@@ -196,6 +196,12 @@ export default function DashboardPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <DotGridBackground />
       <CoinRain active={coinRainActive} />
 
@@ -298,17 +304,24 @@ export default function DashboardPage() {
             gap: 8,
           }}
         >
-          {FEED_CARDS.map((card) => (
-            <FeedCard
+          {FEED_CARDS.map((card, i) => (
+            <div
               key={card.name}
-              name={card.name}
-              subtitle={card.subtitle}
-              icon={card.icon}
-              accent={card.accent}
-              count={card.count}
-              isRecent={card.name === "Deals Near You"}
-              onTap={() => console.log(`Feed: ${card.name}`)}
-            />
+              style={{
+                animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
+                animationDelay: `${i * 60}ms`,
+              }}
+            >
+              <FeedCard
+                name={card.name}
+                subtitle={card.subtitle}
+                icon={card.icon}
+                accent={card.accent}
+                count={card.count}
+                isRecent={card.name === "Deals Near You"}
+                onTap={() => console.log(`Feed: ${card.name}`)}
+              />
+            </div>
           ))}
         </div>
 
@@ -349,13 +362,21 @@ export default function DashboardPage() {
               gap: 8,
             }}
           >
-            {TOOLS.map((tool) => (
-              <ToolTile
+            {TOOLS.map((tool, i) => (
+              <div
                 key={tool.name}
-                name={tool.name}
-                icon={tool.icon}
-                onTap={() => console.log(`Tool: ${tool.name}`)}
-              />
+                style={{
+                  animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
+                  // Tools start cascading after the feeds finish (4 × 60ms = 240ms).
+                  animationDelay: `${240 + i * 40}ms`,
+                }}
+              >
+                <ToolTile
+                  name={tool.name}
+                  icon={tool.icon}
+                  onTap={() => console.log(`Tool: ${tool.name}`)}
+                />
+              </div>
             ))}
           </div>
         </div>
