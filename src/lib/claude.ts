@@ -1,8 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 
-import type { EbayComp } from "./ebay";
-
 let client: Anthropic | null = null;
 
 function getClient(): Anthropic {
@@ -18,46 +16,45 @@ const HAIKU = "claude-haiku-4-5-20251001";
 const SONNET = "claude-sonnet-4-6";
 
 export type Verdict = "BUY" | "PASS" | "MAYBE";
+export type Confidence = "high" | "medium" | "low";
 
 export interface VerdictResult {
   verdict: Verdict;
   sellPrice: number;
   profit: number;
-  platform: "FB Local" | "FB Shipped";
-  fee: number;
+  platform: "FB Local";
+  fee: 0;
   reasoning: string;
-  listingTitle: string;
-  listingDescription: string;
+  confidence: Confidence;
 }
 
-const VERDICT_SYSTEM = `You are a reselling arbitrage expert. Given an item and its eBay sold comps, determine if it's worth buying to resell on Facebook Marketplace.
+const VERDICT_SYSTEM = `You are an expert reseller specializing in Facebook Marketplace flipping. Given an item name and purchase cost, estimate its realistic resale value on Facebook Marketplace sold locally (no shipping, no fees).
 
-Respond with ONLY valid JSON in this exact shape:
+Consider: what this item actually sells for locally (not retail price), realistic condition for a thrift store or yard sale find, how quickly it would sell, and your confidence level.
+
+Respond ONLY with valid JSON, no markdown, no backticks, no explanation outside the JSON:
 {
-  "verdict": "BUY" | "PASS" | "MAYBE",
-  "sell_price": number,
+  "verdict": "BUY" or "PASS" or "MAYBE",
+  "sellPrice": number,
   "profit": number,
-  "platform": "FB Local" | "FB Shipped",
-  "fee": number,
-  "reasoning": "string",
-  "listing_title": "string",
-  "listing_description": "string"
+  "platform": "FB Local",
+  "fee": 0,
+  "reasoning": "one sentence why",
+  "confidence": "high" or "medium" or "low"
 }
 
-FB Local = 0% fee. FB Shipped = 10% fee. Default to FB Local for items under 5lb and bulky items locally.
-BUY = profit margin > $15 or > 100% ROI.
-MAYBE = profit $5-15.
-PASS = profit < $5 or no reliable comps.`;
+BUY = profit above 15 dollars or ROI above 100 percent.
+MAYBE = profit 5 to 15 dollars.
+PASS = profit below 5 dollars or item is unlikely to sell locally.`;
 
 interface RawVerdictJson {
   verdict?: string;
-  sell_price?: number;
+  sellPrice?: number;
   profit?: number;
   platform?: string;
   fee?: number;
   reasoning?: string;
-  listing_title?: string;
-  listing_description?: string;
+  confidence?: string;
 }
 
 function extractText(message: Anthropic.Messages.Message): string {
@@ -82,52 +79,40 @@ function parseJsonObject<T>(raw: string): T {
 export async function getVerdict(args: {
   itemName: string;
   cost: number;
-  comps: EbayComp[];
-  brand?: string;
-  category?: string;
+  imageDescription?: string;
 }): Promise<VerdictResult> {
-  const compsSummary = args.comps.length
-    ? args.comps
-        .slice(0, 10)
-        .map(
-          (c) =>
-            `- $${c.price.toFixed(2)} ${c.condition ?? "unknown"} — ${c.title}`
-        )
-        .join("\n")
-    : "(no comps found)";
-
   const prompt = `Item: ${args.itemName}
-${args.brand ? `Brand: ${args.brand}\n` : ""}${args.category ? `Category: ${args.category}\n` : ""}Cost: $${args.cost.toFixed(2)}
-
-Recent eBay sold/active comps:
-${compsSummary}
+Cost: $${args.cost.toFixed(2)}${args.imageDescription ? `\nVisual notes: ${args.imageDescription}` : ""}
 
 Return the verdict JSON.`;
 
   const message = await getClient().messages.create({
     model: HAIKU,
-    max_tokens: 1024,
+    max_tokens: 512,
     system: VERDICT_SYSTEM,
     messages: [{ role: "user", content: prompt }],
   });
 
   const raw = parseJsonObject<RawVerdictJson>(extractText(message));
 
-  const platform = raw.platform === "FB Shipped" ? "FB Shipped" : "FB Local";
-  const verdict =
+  const verdict: Verdict =
     raw.verdict === "BUY" || raw.verdict === "PASS" || raw.verdict === "MAYBE"
       ? raw.verdict
       : "PASS";
 
+  const confidence: Confidence =
+    raw.confidence === "high" || raw.confidence === "medium" || raw.confidence === "low"
+      ? raw.confidence
+      : "medium";
+
   return {
     verdict,
-    sellPrice: Number(raw.sell_price ?? 0),
+    sellPrice: Number(raw.sellPrice ?? 0),
     profit: Number(raw.profit ?? 0),
-    platform,
-    fee: Number(raw.fee ?? 0),
+    platform: "FB Local",
+    fee: 0,
     reasoning: String(raw.reasoning ?? ""),
-    listingTitle: String(raw.listing_title ?? args.itemName),
-    listingDescription: String(raw.listing_description ?? ""),
+    confidence,
   };
 }
 

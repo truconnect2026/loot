@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { lookupUpc } from "@/lib/upc";
-import { searchSoldComps, medianPrice } from "@/lib/ebay";
 import { getVerdict, identifyFromImage } from "@/lib/claude";
 
 interface ScanRequestBody {
@@ -22,11 +21,9 @@ export interface ScanResponse {
   verdict: "BUY" | "PASS" | "MAYBE";
   platform: string;
   fee: number;
-  comps: number;
+  confidence: "high" | "medium" | "low";
   roi: number;
   reasoning: string;
-  listingTitle: string;
-  listingDescription: string;
   imageUrl: string | null;
 }
 
@@ -49,9 +46,8 @@ export async function POST(
   try {
     let itemName: string;
     let upc: string | null = null;
-    let brand: string | undefined;
-    let category: string | undefined;
     let imageUrl: string | null = null;
+    let imageDescription: string | undefined;
 
     if (body.type === "barcode") {
       if (!body.upc) {
@@ -59,45 +55,56 @@ export async function POST(
       }
       upc = body.upc.trim();
 
-      const product = await lookupUpc(upc);
-      if (!product) {
+      let product;
+      try {
+        product = await lookupUpc(upc);
+      } catch {
         return NextResponse.json(
-          { error: `No product found for UPC ${upc}` },
+          {
+            error:
+              "Could not identify this UPC. Try AI Vision instead.",
+          },
           { status: 404 }
         );
       }
-      itemName = product.title;
-      brand = product.brand;
-      category = product.category;
+      if (!product || !product.title) {
+        return NextResponse.json(
+          {
+            error:
+              "Could not identify this UPC. Try AI Vision instead.",
+          },
+          { status: 404 }
+        );
+      }
+      itemName = product.brand
+        ? `${product.brand} ${product.title}`
+        : product.title;
       imageUrl = product.imageUrl ?? null;
     } else if (body.type === "vision") {
       if (!body.image) {
         return NextResponse.json({ error: "Missing image" }, { status: 400 });
       }
       const identified = await identifyFromImage(body.image);
-      itemName = identified.name;
-      brand = identified.brand ?? undefined;
-      category = identified.category ?? undefined;
+      itemName = identified.brand
+        ? `${identified.brand} ${identified.name}`
+        : identified.name;
+      imageDescription = identified.category ?? undefined;
     } else {
       return NextResponse.json({ error: "Invalid scan type" }, { status: 400 });
     }
 
-    // eBay sold comps for the identified item.
-    const query = brand ? `${brand} ${itemName}` : itemName;
-    const comps = await searchSoldComps(query, 10);
-    const median = medianPrice(comps);
-
-    // Claude verdict.
+    // Claude Haiku does the entire pricing + verdict on its own — no comps API.
     const verdict = await getVerdict({
       itemName,
       cost,
-      comps,
-      brand,
-      category,
+      imageDescription,
     });
 
-    const sellPrice = verdict.sellPrice || median || 0;
-    const profit = verdict.profit || sellPrice - verdict.fee - cost;
+    const sellPrice = verdict.sellPrice;
+    const profit =
+      typeof verdict.profit === "number"
+        ? verdict.profit
+        : sellPrice - verdict.fee - cost;
     const roi = cost > 0 ? Math.round((profit / cost) * 100) : 0;
 
     // Persist the scan if the user is authenticated. Anonymous users still
@@ -117,7 +124,7 @@ export async function POST(
           verdict: verdict.verdict,
           platform: verdict.platform,
           fee: verdict.fee,
-          comps_data: comps,
+          comps_data: { confidence: verdict.confidence, reasoning: verdict.reasoning },
           image_url: imageUrl,
         });
       }
@@ -136,11 +143,9 @@ export async function POST(
       verdict: verdict.verdict,
       platform: verdict.platform,
       fee: verdict.fee,
-      comps: comps.length,
+      confidence: verdict.confidence,
       roi,
       reasoning: verdict.reasoning,
-      listingTitle: verdict.listingTitle,
-      listingDescription: verdict.listingDescription,
       imageUrl,
     };
 

@@ -474,16 +474,21 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             </div>
           </div>
           <div style={smallRecessedCell}>
-            <div style={cellLabel}>COMPS</div>
+            <div style={cellLabel}>CONFIDENCE</div>
             <div
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
-                color: "var(--accent-mint)",
-                fontFeatureSettings: '"tnum"',
+                color:
+                  data.confidence === "high"
+                    ? "var(--accent-mint)"
+                    : data.confidence === "low"
+                      ? "var(--accent-red)"
+                      : "var(--accent-camel)",
+                textTransform: "uppercase",
               }}
             >
-              {data.comps}
+              {data.confidence}
             </div>
           </div>
         </div>
