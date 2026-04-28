@@ -37,6 +37,10 @@
   --press-bg: #1F1835;
 }
 
+html {
+  background: var(--bg-page);
+}
+
 body {
   background: var(--bg-page);
   color: var(--text-primary);

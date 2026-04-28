@@ -49,6 +49,14 @@ function CameraIcon() {
   );
 }
 
+// Hairlines bleed past the page's 18px horizontal padding to the screen edge.
+const hairlineEdgeBleed: React.CSSProperties = {
+  marginLeft: -18,
+  marginRight: -18,
+  height: 0.5,
+  backgroundColor: "var(--border-default)",
+};
+
 export default function ScanButtons({
   onScanUpc,
   onAiVision,
@@ -56,14 +64,8 @@ export default function ScanButtons({
 }: ScanButtonsProps) {
   return (
     <>
-      {/* Top hairline */}
-      <div
-        style={{
-          marginTop: 16,
-          height: 0.5,
-          backgroundColor: "var(--border-subtle)",
-        }}
-      />
+      {/* Top hairline — full-bleed channel framing the scan zone */}
+      <div style={{ ...hairlineEdgeBleed, marginTop: 16 }} />
 
       <div
         style={{
@@ -73,17 +75,14 @@ export default function ScanButtons({
         }}
       >
         {/* SCAN UPC */}
-        <TilePressable
-          onTap={onScanUpc}
-          className=""
-        >
+        <TilePressable onTap={onScanUpc} className="">
           <div
             style={{
               flex: 1,
               height: 64,
               borderRadius: 14,
               backgroundColor: "var(--accent-mint-surface)",
-              border: "1px solid var(--accent-mint-border)",
+              border: "1px solid #5CE0B826",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -108,17 +107,14 @@ export default function ScanButtons({
         </TilePressable>
 
         {/* AI VISION */}
-        <TilePressable
-          onTap={onAiVision}
-          className=""
-        >
+        <TilePressable onTap={onAiVision} className="">
           <div
             style={{
               flex: 1,
               height: 64,
               borderRadius: 14,
               backgroundColor: "var(--accent-camel-surface)",
-              border: "1px solid var(--accent-camel-border)",
+              border: "1px solid #D4A57426",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -158,14 +154,8 @@ export default function ScanButtons({
         </div>
       )}
 
-      {/* Bottom hairline */}
-      <div
-        style={{
-          marginTop: 16,
-          height: 0.5,
-          backgroundColor: "var(--border-subtle)",
-        }}
-      />
+      {/* Bottom hairline — full-bleed channel framing the scan zone */}
+      <div style={{ ...hairlineEdgeBleed, marginTop: 16 }} />
     </>
   );
 }

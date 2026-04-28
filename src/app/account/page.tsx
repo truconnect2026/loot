@@ -1,15 +1,29 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import DotGridBackground from "@/components/shared/DotGridBackground";
+import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import ProfileCard from "@/components/account/ProfileCard";
 import SettingsTile from "@/components/account/SettingsTile";
 import ZipInput from "@/components/account/ZipInput";
 import RadiusSheet from "@/components/account/RadiusSheet";
 import BoloList from "@/components/account/BoloList";
 import NotificationToggles from "@/components/account/NotificationToggles";
+
+function deriveInitials(name: string | null, email: string): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    if (parts.length === 1 && parts[0]) {
+      return parts[0][0].toUpperCase();
+    }
+  }
+  return (email[0] || "?").toUpperCase();
+}
 
 // ── Icons ──
 
@@ -86,10 +100,18 @@ function DoorIcon() {
   );
 }
 
-// ── Mock data ──
+// ── Mock data (BOLO + notifications stay mock until those tables wire up) ──
 const MOCK_KEYWORDS = ["Nintendo", "KitchenAid", "Pyrex", "Le Creuset", "Dyson", "Vitamix"];
 
 type View = "main" | "bolo";
+
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string;
+  initials: string;
+  zipCode: string;
+}
 
 export default function AccountPage() {
   const router = useRouter();
@@ -98,8 +120,11 @@ export default function AccountPage() {
   // View state
   const [view, setView] = useState<View>("main");
 
-  // Settings state (mock)
-  const [zip, setZip] = useState("90210");
+  // Authenticated user + profile
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Settings state
   const [radius, setRadius] = useState(15);
   const [keywords, setKeywords] = useState(MOCK_KEYWORDS);
   const [radiusSheetOpen, setRadiusSheetOpen] = useState(false);
@@ -117,6 +142,70 @@ export default function AccountPage() {
   // Back arrow state
   const [backPressed, setBackPressed] = useState(false);
 
+  // Load auth user + profiles row on mount, creating the profile if missing.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const rawName =
+        (typeof meta.full_name === "string" && meta.full_name) ||
+        (typeof meta.name === "string" && meta.name) ||
+        null;
+      const email = user.email ?? "";
+
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("id, zip_code, search_radius_miles")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      let zipCode = profileRow?.zip_code ?? "";
+
+      if (!profileRow) {
+        // First visit — create the row so subsequent updates are simple updates.
+        await supabase.from("profiles").insert({ id: user.id });
+        zipCode = "";
+      }
+
+      if (!cancelled) {
+        setProfile({
+          id: user.id,
+          name: rawName,
+          email,
+          initials: deriveInitials(rawName, email),
+          zipCode,
+        });
+        setRadius(profileRow?.search_radius_miles ?? 15);
+        setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
+  const updateZip = useCallback(
+    async (next: string) => {
+      if (!profile) return;
+      setProfile({ ...profile, zipCode: next });
+      await supabase
+        .from("profiles")
+        .update({ zip_code: next })
+        .eq("id", profile.id);
+    },
+    [profile, supabase]
+  );
+
   const handleExport = useCallback(() => {
     setExporting(true);
     // Simulated export
@@ -131,6 +220,27 @@ export default function AccountPage() {
     await supabase.auth.signOut();
     router.push("/");
   }, [supabase, router]);
+
+  // Loading state — show the branded spinner until session + profile are ready.
+  if (loading || !profile) {
+    return (
+      <>
+        <DotGridBackground />
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1,
+          }}
+        >
+          <CoinMarkSpinner />
+        </div>
+      </>
+    );
+  }
 
   // BOLO list view
   if (view === "bolo") {
@@ -199,9 +309,9 @@ export default function AccountPage() {
 
         {/* Profile Card */}
         <ProfileCard
-          name="Jane Doe"
-          email="jane@example.com"
-          initials="JD"
+          name={profile.name ?? profile.email.split("@")[0]}
+          email={profile.email}
+          initials={profile.initials}
           isPro={true}
           price="$9.99"
           period="/mo"
@@ -214,8 +324,8 @@ export default function AccountPage() {
 
         {/* Group 1: Location settings (6px gap) */}
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-          {/* Zip code */}
-          <ZipInput value={zip} onChange={setZip} />
+          {/* Zip code — persists to profiles.zip_code */}
+          <ZipInput value={profile.zipCode} onChange={updateZip} />
 
           {/* Search radius */}
           <SettingsTile onClick={() => setRadiusSheetOpen(true)}>

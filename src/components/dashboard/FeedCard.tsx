@@ -107,7 +107,7 @@ export default function FeedCard({
         />
 
         {/* Icon */}
-        <div style={{ marginBottom: 4 }}>
+        <div style={{ marginBottom: 6 }}>
           <IconComponent color={accentColor} />
         </div>
 
@@ -140,8 +140,8 @@ export default function FeedCard({
         <div
           style={{
             position: "absolute",
-            bottom: 12,
-            right: 12,
+            bottom: 14,
+            right: 14,
             display: "flex",
             alignItems: "center",
             gap: 6,
@@ -163,11 +163,11 @@ export default function FeedCard({
             <style>{`
               @keyframes sonarPing {
                 0% {
-                  transform: scale(0.85);
+                  transform: scale(1);
                   opacity: 0.6;
                 }
                 100% {
-                  transform: scale(1.4);
+                  transform: scale(2.5);
                   opacity: 0;
                 }
               }

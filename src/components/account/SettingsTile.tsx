@@ -22,7 +22,7 @@ export default function SettingsTile({
         height,
         backgroundColor: "var(--bg-surface)",
         border: `1px solid ${borderColor}`,
-        borderRadius: 14,
+        borderRadius: "4px 14px 14px 14px",
         display: "flex",
         alignItems: "center",
         paddingLeft: 16,

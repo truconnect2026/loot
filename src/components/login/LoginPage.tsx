@@ -119,7 +119,7 @@ export default function LoginPage() {
               marginBottom: 56,
             }}
           >
-            <CoinMark size={24} />
+            <CoinMark size={28} />
             <span
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
@@ -295,8 +295,8 @@ export default function LoginPage() {
                   width: 50,
                   height: 50,
                   flexShrink: 0,
-                  backgroundColor: "var(--accent-mint-surface)",
-                  border: "1px solid var(--accent-mint-border)",
+                  backgroundColor: "rgba(92, 224, 184, 0.06)",
+                  border: "1px solid rgba(92, 224, 184, 0.12)",
                   borderRadius: "0 14px 14px 0",
                   display: "flex",
                   alignItems: "center",

@@ -25,8 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={`${outfit.variable} ${jetbrainsMono.variable}`}
+      style={{ backgroundColor: "#120e18" }}
+    >
+      <body style={{ backgroundColor: "#120e18" }}>{children}</body>
     </html>
   );
 }

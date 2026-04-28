@@ -311,16 +311,18 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Tool Grid ── */}
-        <div style={{ marginTop: 16 }}>
-          {/* "MORE TOOLS" label with lines */}
+        <div style={{ marginTop: 24 }}>
+          {/* "MORE TOOLS" label with full-bleed hairlines on each side */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               marginBottom: 12,
+              marginLeft: -18,
+              marginRight: -18,
             }}
           >
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "var(--border-subtle)" }} />
+            <div style={{ flex: 1, height: 0.5, backgroundColor: "var(--border-default)" }} />
             <span
               style={{
                 paddingLeft: 12,
@@ -334,7 +336,7 @@ export default function DashboardPage() {
             >
               MORE TOOLS
             </span>
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "var(--border-subtle)" }} />
+            <div style={{ flex: 1, height: 0.5, backgroundColor: "var(--border-default)" }} />
           </div>
 
           {/* 2-col grid */}

@@ -84,7 +84,7 @@ export default function NotificationToggles({
       style={{
         backgroundColor: "var(--bg-surface)",
         border: "1px solid var(--border-subtle)",
-        borderRadius: 14,
+        borderRadius: "4px 14px 14px 14px",
         overflow: "hidden",
       }}
     >

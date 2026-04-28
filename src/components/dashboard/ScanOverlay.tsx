@@ -84,6 +84,7 @@ export default function ScanOverlay({
               right: "10%",
               height: 2,
               background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+              boxShadow: `0 0 20px ${accent}`,
               animation: "scanLine 1.5s ease-in-out infinite",
             }}
           />
@@ -116,7 +117,7 @@ export default function ScanOverlay({
             color: "var(--text-muted)",
           }}
         >
-          {mode === "barcode" ? "scanning barcode..." : "analyzing with AI..."}
+          {mode === "barcode" ? "SCANNING UPC..." : "AI IDENTIFYING..."}
         </div>
 
         {/* Progress bar */}
@@ -125,7 +126,7 @@ export default function ScanOverlay({
             marginTop: 16,
             width: 180,
             height: 3,
-            backgroundColor: "var(--bg-recessed)",
+            backgroundColor: "var(--border-default)",
             borderRadius: 2,
             overflow: "hidden",
           }}
@@ -147,12 +148,12 @@ export default function ScanOverlay({
           style={{
             marginTop: 24,
             fontFamily: "var(--font-jetbrains-mono), monospace",
-            fontSize: 11,
+            fontSize: 10,
             color: "var(--text-muted)",
             backgroundColor: "transparent",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 10,
-            padding: "8px 24px",
+            border: "1px solid var(--border-dim)",
+            borderRadius: 8,
+            padding: "9px 22px",
             cursor: "pointer",
           }}
         >

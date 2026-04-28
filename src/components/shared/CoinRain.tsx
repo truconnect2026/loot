@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 /**
  * Canvas particle system — 28 coin ellipses with gravity, drift, rotation, fade.
- * Triggers when `active` flips to true. Self-cleans after ~180 frames (~1.5s).
+ * Triggers when `active` flips to true. Self-cleans after ~180 frames (~3s @ 60fps).
  */
 
 interface CoinRainProps {
@@ -100,11 +100,28 @@ export default function CoinRain({ active }: CoinRainProps) {
         ctx!.translate(p.x, p.y);
         ctx!.rotate(p.rotation);
         ctx!.globalAlpha = p.opacity;
+
+        // Coin body — squished ellipse for perspective
         ctx!.beginPath();
-        // Ellipse for coin shape
-        ctx!.ellipse(0, 0, p.radius, p.radius * 0.6, 0, 0, Math.PI * 2);
+        ctx!.ellipse(0, 0, p.radius, p.radius * 0.65, 0, 0, Math.PI * 2);
         ctx!.fillStyle = p.color;
         ctx!.fill();
+
+        // Highlight ellipse — small white at 30% offset slightly for 3D feel
+        ctx!.globalAlpha = p.opacity * 0.3;
+        ctx!.beginPath();
+        ctx!.ellipse(
+          -p.radius * 0.3,
+          -p.radius * 0.2,
+          p.radius * 0.4,
+          p.radius * 0.2,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx!.fillStyle = "#FFFFFF";
+        ctx!.fill();
+
         ctx!.restore();
       }
 

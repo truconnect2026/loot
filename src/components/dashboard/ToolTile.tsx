@@ -32,7 +32,7 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
         style={{
           height: 60,
           backgroundColor: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
+          border: "1px solid var(--border-faint)",
           borderRadius: 12,
           display: "flex",
           alignItems: "center",

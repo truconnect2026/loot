@@ -106,7 +106,7 @@ export default function BottomSheet({
           position: "fixed",
           inset: 0,
           zIndex: 40,
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          backgroundColor: "rgba(18, 14, 24, 0.85)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           animation: open
