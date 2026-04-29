@@ -149,9 +149,15 @@ interface SendButtonProps {
   onTap: () => void;
   disabled: boolean;
   errored: boolean;
+  launching?: boolean;
 }
 
-function SendButton({ onTap, disabled, errored }: SendButtonProps) {
+function SendButton({
+  onTap,
+  disabled,
+  errored,
+  launching = false,
+}: SendButtonProps) {
   const [pressed, setPressed] = useState(false);
 
   const restShadow =
@@ -203,7 +209,19 @@ function SendButton({ onTap, disabled, errored }: SendButtonProps) {
           pointerEvents: "none",
         }}
       />
-      <PaperPlaneIcon />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          transform: launching
+            ? "translate(3px, -3px)"
+            : "translate(0, 0)",
+          transition: "transform 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <PaperPlaneIcon />
+      </div>
     </button>
   );
 }
@@ -223,6 +241,8 @@ export default function LoginPage() {
   const [shakeKey, setShakeKey] = useState(0);
   const [sendError, setSendError] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [launching, setLaunching] = useState(false);
+  const [cardPressed, setCardPressed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Surface OAuth errors returned via ?error=... on the callback redirect.
@@ -253,6 +273,8 @@ export default function LoginPage() {
       flashEmailError();
       return;
     }
+    setLaunching(true);
+    setTimeout(() => setLaunching(false), 200);
     setSendError(false);
     setEmailLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
@@ -270,7 +292,7 @@ export default function LoginPage() {
   // Sunken email input — trough shadow, focus blooms a faint mint glow.
   const inputBaseShadow = "inset 0 1px 2px 0 rgba(0,0,0,0.4)";
   const inputFocusShadow =
-    "inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 16px -4px rgba(92,224,184,0.15)";
+    "inset 0 1px 2px rgba(0,0,0,0.4), 0 0 0 3px rgba(92,224,184,0.06), 0 0 24px -4px rgba(92,224,184,0.10)";
 
   return (
     <>
@@ -309,10 +331,6 @@ export default function LoginPage() {
         @keyframes loot-input-pulse {
           0%, 100% { border-color: rgba(255,255,255,0.06); }
           50% { border-color: rgba(255,255,255,0.10); }
-        }
-        @keyframes loginProofFade {
-          from { opacity: 0; }
-          to   { opacity: 1; }
         }
         .loot-email-input::placeholder {
           color: rgba(255,255,255,0.25);
@@ -438,6 +456,9 @@ export default function LoginPage() {
 
           {/* ── Auth glass card ── */}
           <div
+            onPointerDown={() => setCardPressed(true)}
+            onPointerUp={() => setCardPressed(false)}
+            onPointerLeave={() => setCardPressed(false)}
             style={{
               backgroundColor: "rgba(255,255,255,0.05)",
               backgroundImage:
@@ -453,8 +474,29 @@ export default function LoginPage() {
               transform: "translateY(20px)",
               animation:
                 "loginCardEntry 500ms cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards, loginCardColorResponse 15s ease-in-out 800ms infinite",
+              position: "relative",
             }}
           >
+            {/* Touch-response inset highlight — brightens 0.10 → 0.16 on press */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                backgroundColor: cardPressed
+                  ? "rgba(255,255,255,0.16)"
+                  : "rgba(255,255,255,0.10)",
+                transition: cardPressed
+                  ? "background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)"
+                  : "background-color 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+                pointerEvents: "none",
+              }}
+            />
             <GoogleButton onTap={handleGoogle} loading={googleLoading} />
 
             {/* ── Divider ── */}
@@ -594,12 +636,13 @@ export default function LoginPage() {
                   onTap={handleEmail}
                   disabled={emailLoading}
                   errored={emailError}
+                  launching={launching}
                 />
               </div>
             )}
           </div>
 
-          {/* ── Social proof — barely-visible whisper, fades in after card ── */}
+          {/* ── Social proof — letter-spacing settles in after card ── */}
           <div
             style={{
               marginTop: 40,
@@ -609,7 +652,7 @@ export default function LoginPage() {
               color: "rgba(255,255,255,0.20)",
               opacity: 0,
               animation:
-                "loginProofFade 400ms cubic-bezier(0.16, 1, 0.3, 1) 700ms forwards",
+                "socialProofIn 800ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both",
             }}
           >
             joining 100+ early flippers
