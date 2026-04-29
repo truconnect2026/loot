@@ -215,6 +215,28 @@ export default function LoginPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes loot-card-glow {
+          0%, 100% { background-color: rgba(255,255,255,0.05); }
+          50% { background-color: rgba(92,224,184,0.03); }
+        }
+        @keyframes loot-card-enter {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes loot-logo-enter {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .loot-auth-card {
+          animation:
+            loot-card-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both,
+            loot-card-glow 15s ease-in-out infinite;
+        }
+        .loot-auth-logo {
+          animation: loot-logo-enter 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+      `}</style>
       <DotGridBackground variant="login" />
       <style>{`
         @keyframes loot-logo-breathe {
@@ -244,6 +266,7 @@ export default function LoginPage() {
         >
           {/* ── Logo ── */}
           <div
+            className="loot-auth-logo"
             style={{
               display: "flex",
               alignItems: "center",
@@ -302,14 +325,17 @@ export default function LoginPage() {
 
           {/* ── Auth glass card ── */}
           <div
+            className="loot-auth-card"
             style={{
-              backgroundColor: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              backgroundColor: "rgba(255,255,255,0.05)",
+              backgroundImage:
+                "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)",
+              border: "1px solid rgba(255,255,255,0.09)",
               backdropFilter: "blur(20px) saturate(150%)",
               WebkitBackdropFilter: "blur(20px) saturate(150%)",
               boxShadow:
-                "inset 0 1px 0 0 rgba(255,255,255,0.04), 0 8px 32px -8px rgba(0,0,0,0.5)",
-              borderRadius: 24,
+                "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 2px 4px rgba(0,0,0,0.3), 0 12px 24px -4px rgba(0,0,0,0.4), 0 32px 64px -8px rgba(0,0,0,0.3)",
+              borderRadius: 16,
               padding: 24,
             }}
           >
