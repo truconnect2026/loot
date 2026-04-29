@@ -8,7 +8,7 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
 // Google "G" logo — official colors
 function GoogleIcon() {
   return (
-    <svg width={18} height={18} viewBox="0 0 48 48">
+    <svg width={22} height={22} viewBox="0 0 48 48">
       <path
         fill="#EA4335"
         d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -29,20 +29,20 @@ function GoogleIcon() {
   );
 }
 
-function ArrowIcon() {
+function PaperPlaneIcon() {
   return (
     <svg
-      width={20}
-      height={20}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="#5CE0B8"
-      strokeWidth={2}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <line x1={5} y1={12} x2={19} y2={12} />
-      <polyline points="12 5 19 12 12 19" />
+      <line x1={22} y1={2} x2={11} y2={13} />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   );
 }
@@ -66,37 +66,58 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
         width: "100%",
         height: 54,
         backgroundColor: pressed
-          ? "rgba(255,255,255,0.09)"
-          : "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
+          ? "rgba(255,255,255,0.12)"
+          : "rgba(255,255,255,0.08)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: pressed
+          ? "0 0 0 1px rgba(255,255,255,0.15), inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
         borderRadius: 16,
         display: "flex",
         alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
         position: "relative",
+        overflow: "hidden",
         cursor: "pointer",
         padding: 0,
-        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <div style={{ paddingLeft: 16, flexShrink: 0, display: "flex" }}>
-        <GoogleIcon />
-      </div>
-      <span
+      {/* Shimmer band — travels left→right over 4s, then pauses 8s */}
+      <div
+        aria-hidden="true"
         style={{
           position: "absolute",
+          top: 0,
+          bottom: 0,
           left: 0,
-          right: 0,
-          textAlign: "center",
+          width: 60,
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
+          animation: "loot-google-shimmer 12s linear infinite",
+          pointerEvents: "none",
+        }}
+      />
+      <span
+        style={{
+          display: "flex",
+          opacity: loading ? 0 : 1,
+          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <GoogleIcon />
+      </span>
+      <span
+        style={{
           fontFamily: "var(--font-outfit), sans-serif",
           fontWeight: 500,
           fontSize: 15,
           color: "rgba(255,255,255,0.85)",
-          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
           opacity: loading ? 0 : 1,
+          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         Continue with Google
@@ -113,6 +134,7 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
           color: "rgba(255,255,255,0.5)",
           transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
           opacity: loading ? 1 : 0,
+          pointerEvents: "none",
         }}
       >
         Connecting...
@@ -146,8 +168,9 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         width: 54,
         height: 52,
         flexShrink: 0,
-        backgroundColor: "rgba(92,224,184,0.08)",
-        border: "1px solid rgba(92,224,184,0.15)",
+        backgroundColor: "rgba(92,224,184,0.10)",
+        border: "1px solid rgba(92,224,184,0.18)",
+        borderLeft: "none",
         boxShadow: pressed ? pressShadow : restShadow,
         borderRadius: "0 16px 16px 0",
         display: "flex",
@@ -175,7 +198,7 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
           pointerEvents: "none",
         }}
       />
-      <ArrowIcon />
+      <PaperPlaneIcon />
     </button>
   );
 }
@@ -242,7 +265,23 @@ export default function LoginPage() {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.04); }
         }
+        @keyframes loot-google-shimmer {
+          0% { transform: translateX(-100%); }
+          33.333% { transform: translateX(calc(340px + 200%)); }
+          100% { transform: translateX(calc(340px + 200%)); }
+        }
+        @keyframes loot-input-pulse {
+          0%, 100% { border-color: rgba(255,255,255,0.06); }
+          50% { border-color: rgba(255,255,255,0.10); }
+        }
+        .loot-email-input::placeholder {
+          color: rgba(255,255,255,0.25);
+        }
+        .loot-email-input::-webkit-input-placeholder {
+          color: rgba(255,255,255,0.25);
+        }
       `}</style>
+
       <DotGridBackground variant="login" />
 
       <div
@@ -355,7 +394,7 @@ export default function LoginPage() {
                 style={{
                   flex: 1,
                   height: 1,
-                  backgroundColor: "rgba(255,255,255,0.04)",
+                  backgroundColor: "rgba(255,255,255,0.025)",
                 }}
               />
               <span
@@ -373,7 +412,7 @@ export default function LoginPage() {
                 style={{
                   flex: 1,
                   height: 1,
-                  backgroundColor: "rgba(255,255,255,0.04)",
+                  backgroundColor: "rgba(255,255,255,0.025)",
                 }}
               />
             </div>
@@ -400,7 +439,8 @@ export default function LoginPage() {
                 <input
                   ref={inputRef}
                   type="email"
-                  placeholder="email"
+                  className="loot-email-input"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setEmailFocused(true)}
@@ -427,6 +467,9 @@ export default function LoginPage() {
                     fontSize: 14,
                     color: "var(--text-primary)",
                     outline: "none",
+                    animation: emailFocused
+                      ? "none"
+                      : "loot-input-pulse 3s ease-in-out infinite",
                     transition:
                       "border-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
