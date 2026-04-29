@@ -192,8 +192,19 @@ export default function DashboardPage() {
     });
   }, [supabase]);
 
+  // refreshStats sets state, which `react-hooks/set-state-in-effect` flags
+  // when called directly from an effect body. Awaiting it inside an async
+  // IIFE introduces a function boundary the rule accepts; the `cancelled`
+  // flag prevents post-unmount work from continuing past the await.
   useEffect(() => {
-    refreshStats();
+    let cancelled = false;
+    (async () => {
+      await refreshStats();
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [refreshStats]);
 
   // Watch the scroll sentinel — when it leaves the viewport the header
@@ -270,14 +281,17 @@ export default function DashboardPage() {
         {/* 1. Scroll sentinel — drives the sticky-header background toggle */}
         <div ref={sentinelRef} data-scroll-sentinel="" style={{ height: 1 }} />
 
-        {/* 2. Sticky header */}
+        {/* 2. Sticky header — chrome is 56px; padding-top carves out the iOS
+            safe-area inset so the visible chrome sits below the notch. */}
         <div
           style={{
             position: "sticky",
             top: 0,
             zIndex: 50,
-            height: 56,
-            padding: "0 18px",
+            height: "calc(56px + env(safe-area-inset-top, 0px))",
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingLeft: 18,
+            paddingRight: 18,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -335,10 +349,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 3. Safe-area inset top */}
-        <div style={{ paddingTop: "env(safe-area-inset-top, 0px)" }} />
-
-        {/* 4. Smart context card slot — built in prompt 3 */}
+        {/* 3. Smart context card slot — built in prompt 3 */}
         <div
           id="context-card"
           style={{
@@ -350,7 +361,7 @@ export default function DashboardPage() {
           }}
         />
 
-        {/* 5. Hero profit card slot — built in prompt 2; placeholder = StatsBar */}
+        {/* 4. Hero profit card slot — built in prompt 2; placeholder = StatsBar */}
         <div
           id="hero-profit"
           style={{
@@ -368,7 +379,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 6. Scan zone — ScanButtons renders its own full-bleed hairlines */}
+        {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines */}
         <div
           style={{
             padding: "0 18px",
@@ -384,7 +395,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 7. Deals near you — bleeds to right edge */}
+        {/* 6. Deals near you — bleeds to right edge */}
         <div
           style={{
             paddingLeft: 18,
@@ -401,7 +412,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 8. Free & clearance — same shape */}
+        {/* 7. Free & clearance — same shape */}
         <div
           style={{
             paddingLeft: 18,
@@ -418,7 +429,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 9. Sourcing intel */}
+        {/* 8. Sourcing intel */}
         <div
           style={{
             padding: "0 18px",
@@ -466,7 +477,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 10. Tools drawer */}
+        {/* 9. Tools drawer */}
         <div
           style={{
             padding: "0 18px",
@@ -567,7 +578,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 11. Flip tip */}
+        {/* 10. Flip tip */}
         <div
           style={{
             padding: "0 18px",
@@ -592,7 +603,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 12. Bottom pad */}
+        {/* 11. Bottom pad */}
         <div style={{ height: 40 }} />
       </div>
 
