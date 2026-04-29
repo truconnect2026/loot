@@ -215,6 +215,12 @@ export default function LoginPage() {
 
   return (
     <>
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <DotGridBackground variant="login" />
 
       <div
@@ -376,6 +382,22 @@ export default function LoginPage() {
                 <SendButton onTap={handleEmail} disabled={emailLoading} />
               </div>
             )}
+          </div>
+
+          {/* ── Tagline ── */}
+          <div
+            style={{
+              marginTop: 32,
+              textAlign: "center",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "rgba(255, 255, 255, 0.20)",
+              letterSpacing: "0.10em",
+              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              animationDelay: "700ms",
+            }}
+          >
+            profit hides in plain sight. now you don&apos;t miss it.
           </div>
         </div>
       </div>
