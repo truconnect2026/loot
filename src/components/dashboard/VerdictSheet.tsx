@@ -388,7 +388,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 22,
+                fontSize: 26,
                 color: "var(--text-primary)",
                 fontFeatureSettings: '"tnum"',
               }}
@@ -402,7 +402,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 22,
+                fontSize: 26,
                 color: "var(--accent-mint)",
                 fontFeatureSettings: '"tnum"',
               }}
@@ -416,9 +416,16 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 22,
+                fontSize: 26,
                 color: colors.text,
                 fontFeatureSettings: '"tnum"',
+                // Glow on BUY (mint) and PASS (faint red); MAYBE stays neutral.
+                textShadow:
+                  data.verdict === "BUY"
+                    ? "0 0 24px rgba(92,224,184,0.15)"
+                    : data.verdict === "PASS"
+                      ? "0 0 24px rgba(232,99,107,0.10)"
+                      : "none",
               }}
             >
               ${data.profit}
@@ -491,6 +498,41 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               {data.confidence}
             </div>
           </div>
+        </div>
+
+        {/* Platform pills — display-only for now; tapping will recompute fees later */}
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            marginTop: 12,
+            justifyContent: "center",
+          }}
+        >
+          {(["FB Local", "FB Shipped", "Amazon"] as const).map((p) => {
+            const active = data.platform === p;
+            return (
+              <span
+                key={p}
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.08em",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  backgroundColor: active
+                    ? "rgba(92,224,184,0.10)"
+                    : "transparent",
+                  border: active
+                    ? "1px solid rgba(92,224,184,0.15)"
+                    : "1px solid rgba(255,255,255,0.06)",
+                  color: active ? "#5CE0B8" : "#5A4E70",
+                }}
+              >
+                {p}
+              </span>
+            );
+          })}
         </div>
 
         {/* CTA — hero button with top-edge shine + glow on press */}

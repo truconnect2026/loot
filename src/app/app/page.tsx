@@ -1,18 +1,34 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
-import StatsBar from "@/components/dashboard/StatsBar";
+import HeroProfit from "@/components/dashboard/HeroProfit";
+import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
-import FeedCard from "@/components/dashboard/FeedCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
+import DealCarousel from "@/components/dashboard/DealCarousel";
+import type { DealItem } from "@/components/dashboard/DealCard";
+import SourcingCards from "@/components/dashboard/SourcingCards";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
+
+// Light haptic helper — Android Chrome only, silent no-op everywhere else.
+function haptic(pattern: number | number[] = 10) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(pattern);
+  }
+}
 
 // ── Tool icons (16px, stroke) ──
 
@@ -36,25 +52,6 @@ function DollarIcon() {
   );
 }
 
-function MapIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-      <line x1={8} y1={2} x2={8} y2={18} />
-      <line x1={16} y1={6} x2={16} y2={22} />
-    </svg>
-  );
-}
-
-function HomeIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
 function ClipboardIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -64,10 +61,21 @@ function ClipboardIcon() {
   );
 }
 
-function ShieldIcon() {
+// Authenticate — checkmark inside a circle. Replaces the old shield Fake Checker.
+function CheckCircleIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <circle cx={12} cy={12} r={10} />
+      <polyline points="8 12.5 11 15.5 16 9" />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   );
 }
@@ -93,41 +101,148 @@ function RecycleIcon() {
   );
 }
 
-const FEED_CARDS = [
-  { name: "Deals Near You", subtitle: "FB + Craigslist flips", icon: "map-pin" as const, accent: "mint" as const, count: 14 },
-  { name: "Penny Drops", subtitle: "weekly Dollar General list", icon: "tag" as const, accent: "camel" as const, count: 23 },
-  { name: "Free Finds", subtitle: "free stuff worth reselling", icon: "gift" as const, accent: "mint" as const, count: 7 },
-  { name: "Store Clearance", subtitle: "markdowns below resale", icon: "shopping-bag" as const, accent: "camel" as const, count: 31 },
-];
-
 interface Tool {
   name: string;
   icon: React.ReactNode;
   href?: string;
 }
 
-const TOOLS: Tool[] = [
+const PRIMARY_TOOLS: Tool[] = [
   { name: "Shelf Scanner", icon: <ShelfIcon /> },
   { name: "Price Check", icon: <DollarIcon /> },
-  { name: "Yard Sale Map", icon: <MapIcon /> },
-  { name: "Estate Sales", icon: <HomeIcon /> },
   { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
-  { name: "Fake Checker", icon: <ShieldIcon /> },
+  { name: "Authenticate", icon: <CheckCircleIcon /> },
+];
+
+const EXTRA_TOOLS: Tool[] = [
+  { name: "Estate Sales", icon: <HomeIcon /> },
   { name: "Liquidation Analyzer", icon: <PackageIcon /> },
   { name: "Scrap Finder", icon: <RecycleIcon /> },
 ];
 
-interface Stats {
-  scans: number;
-  buys: number;
-  spent: number;
-  profit: number;
-}
+// Mock deal data — realistic thrift / clearance finds. Replaced with real
+// Supabase rows once /api/feeds/* is wired.
+const MOCK_DEALS_NEAR_YOU: DealItem[] = [
+  {
+    id: "d1",
+    title: "Vintage Griswold cast iron skillet, no.8",
+    listedPrice: 18,
+    estimatedValue: 95,
+    profit: 77,
+    distance: "1.4 mi",
+    timeAgo: "4m ago",
+    source: "FB Marketplace",
+    isFree: false,
+  },
+  {
+    id: "d2",
+    title: "KitchenAid pasta roller attachment",
+    listedPrice: 25,
+    estimatedValue: 110,
+    profit: 85,
+    distance: "3.2 mi",
+    timeAgo: "12m ago",
+    source: "Craigslist",
+    isFree: false,
+  },
+  {
+    id: "d3",
+    title: "Pyrex 4-piece spring blossom set",
+    listedPrice: 12,
+    estimatedValue: 60,
+    profit: 48,
+    distance: "0.9 mi",
+    timeAgo: "21m ago",
+    source: "FB Marketplace",
+    isFree: false,
+  },
+  {
+    id: "d4",
+    title: "Milwaukee M18 5Ah battery (used)",
+    listedPrice: 30,
+    estimatedValue: 95,
+    profit: 65,
+    distance: "5.1 mi",
+    timeAgo: "32m ago",
+    source: "Craigslist",
+    isFree: false,
+  },
+  {
+    id: "d5",
+    title: "Le Creuset 4qt dutch oven, cherry",
+    listedPrice: 60,
+    estimatedValue: 220,
+    profit: 160,
+    distance: "2.8 mi",
+    timeAgo: "44m ago",
+    source: "FB Marketplace",
+    isFree: false,
+  },
+  {
+    id: "d6",
+    title: "Patagonia retro pile fleece, men's L",
+    listedPrice: 15,
+    estimatedValue: 85,
+    profit: 70,
+    distance: "4.0 mi",
+    timeAgo: "58m ago",
+    source: "FB Marketplace",
+    isFree: false,
+  },
+];
+
+const MOCK_FREE_AND_CLEARANCE: DealItem[] = [
+  {
+    id: "f1",
+    title: "Free riding lawnmower, runs but needs blade",
+    listedPrice: 0,
+    estimatedValue: 350,
+    profit: 350,
+    distance: "6.3 mi",
+    timeAgo: "8m ago",
+    source: "Free",
+    isFree: true,
+  },
+  {
+    id: "f2",
+    title: "Target KitchenAid stand mixer 70% off clearance",
+    listedPrice: 90,
+    estimatedValue: 220,
+    profit: 130,
+    distance: "1.1 mi",
+    timeAgo: "16m ago",
+    source: "Target",
+    isFree: false,
+  },
+  {
+    id: "f3",
+    title: "Free leather sectional, neutral, very clean",
+    listedPrice: 0,
+    estimatedValue: 280,
+    profit: 280,
+    distance: "3.7 mi",
+    timeAgo: "26m ago",
+    source: "Free",
+    isFree: true,
+  },
+  {
+    id: "f4",
+    title: "CVS clearance 75% off — beauty endcap",
+    listedPrice: 18,
+    estimatedValue: 90,
+    profit: 72,
+    distance: "0.6 mi",
+    timeAgo: "39m ago",
+    source: "CVS",
+    isFree: false,
+  },
+];
 
 interface ScanRow {
   cost: number | null;
   profit: number | null;
   verdict: string | null;
+  created_at: string | null;
 }
 
 export default function DashboardPage() {
@@ -145,36 +260,145 @@ export default function DashboardPage() {
   // CoinRain state
   const [coinRainActive, setCoinRainActive] = useState(false);
 
-  // Real stats from Supabase
-  const [stats, setStats] = useState<Stats>({ scans: 0, buys: 0, spent: 0, profit: 0 });
-  const [hasUser, setHasUser] = useState(false);
+  // Real stats from Supabase + loading state for skeletons
+  const [todayScans, setTodayScans] = useState(0);
+  const [todayBuys, setTodayBuys] = useState(0);
+  const [todaySpent, setTodaySpent] = useState(0);
+  const [todayProfit, setTodayProfit] = useState(0);
+  const [yesterdayProfit, setYesterdayProfit] = useState(0);
+  const [weekProfit, setWeekProfit] = useState(0);
+  const [monthProfit, setMonthProfit] = useState(0);
+  const [allTimeProfit, setAllTimeProfit] = useState(0);
+  const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Last scan preview strip
+  const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
+
+  // Header solidifies once the scroll sentinel leaves the viewport.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Tools drawer expansion
+  const [showAllTools, setShowAllTools] = useState(false);
+
+  // Time/day for context card + sourcing cards. Read on the client only so
+  // the SSR pass renders a stable null and the day-of-week never mismatches.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(new Date());
+  }, []);
+  const dayOfWeek = now ? now.getDay() : 0;
+  const hour = now ? now.getHours() : 0;
+
+  // Carousel scroll target — context card "View deals" jumps here.
+  const dealsCarouselRef = useRef<HTMLDivElement>(null);
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
-    setHasUser(true);
+    if (!userData.user) {
+      setStatsLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("scans")
-      .select("cost, profit, verdict")
+      .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) return;
+    if (error || !data) {
+      setStatsLoading(false);
+      return;
+    }
 
     const rows = data as ScanRow[];
-    const buys = rows.filter((r) => r.verdict === "BUY");
-    setStats({
-      scans: rows.length,
-      buys: buys.length,
-      spent: Math.round(buys.reduce((sum, r) => sum + (Number(r.cost) || 0), 0)),
-      profit: Math.round(buys.reduce((sum, r) => sum + (Number(r.profit) || 0), 0)),
-    });
+
+    // Day buckets — local time. Today / yesterday / this week / this month.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    const yesterdayMs = todayMs - 86_400_000;
+    const weekStartMs = todayMs - 6 * 86_400_000;
+    const monthStartMs = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    ).getTime();
+
+    let todayCount = 0;
+    let todayBuyCount = 0;
+    let todaySpentSum = 0;
+    let todayProfitSum = 0;
+    let yesterdayProfitSum = 0;
+    let weekProfitSum = 0;
+    let monthProfitSum = 0;
+    let allTimeProfitSum = 0;
+
+    // 7-day daily profit bucket — index 0 is 6 days ago, index 6 is today.
+    const daily = [0, 0, 0, 0, 0, 0, 0];
+
+    for (const row of rows) {
+      const ts = row.created_at ? new Date(row.created_at).getTime() : 0;
+      const profit = Number(row.profit) || 0;
+      const cost = Number(row.cost) || 0;
+      const isBuy = row.verdict === "BUY";
+
+      if (ts >= todayMs) {
+        todayCount++;
+        if (isBuy) {
+          todayBuyCount++;
+          todaySpentSum += cost;
+          todayProfitSum += profit;
+        }
+      } else if (ts >= yesterdayMs && isBuy) {
+        yesterdayProfitSum += profit;
+      }
+
+      if (ts >= weekStartMs && isBuy) weekProfitSum += profit;
+      if (ts >= monthStartMs && isBuy) monthProfitSum += profit;
+      if (isBuy) allTimeProfitSum += profit;
+
+      if (ts >= weekStartMs && isBuy) {
+        const dayIdx = Math.min(
+          6,
+          Math.max(0, Math.floor((ts - weekStartMs) / 86_400_000))
+        );
+        daily[dayIdx] += profit;
+      }
+    }
+
+    setTodayScans(todayCount);
+    setTodayBuys(todayBuyCount);
+    setTodaySpent(Math.round(todaySpentSum));
+    setTodayProfit(Math.round(todayProfitSum));
+    setYesterdayProfit(Math.round(yesterdayProfitSum));
+    setWeekProfit(Math.round(weekProfitSum));
+    setMonthProfit(Math.round(monthProfitSum));
+    setAllTimeProfit(Math.round(allTimeProfitSum));
+    setProfitHistory(daily.map((v) => Math.round(v)));
+    setStatsLoading(false);
   }, [supabase]);
 
   useEffect(() => {
+    // refreshStats fans out into ~10 setState calls; the rule flags this but
+    // it's load-once data sync, not render-driven cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshStats();
   }, [refreshStats]);
 
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => setScrolled(!entries[0].isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   const startScan = useCallback((mode: "barcode" | "vision") => {
+    haptic();
     setScanMode(mode);
     setScanOpen(true);
   }, []);
@@ -183,9 +407,11 @@ export default function DashboardPage() {
     (result: ScanResponse) => {
       setScanOpen(false);
       setVerdictData(result);
+      setLastScan(result);
       setVerdictOpen(true);
 
       if (result.verdict === "BUY") {
+        haptic([50, 30, 50]);
         setCoinRainActive(false);
         requestAnimationFrame(() => setCoinRainActive(true));
       }
@@ -202,6 +428,7 @@ export default function DashboardPage() {
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
+      haptic();
       if (tool.href) {
         router.push(tool.href);
       } else {
@@ -211,6 +438,32 @@ export default function DashboardPage() {
     [router]
   );
 
+  const handleDealTap = useCallback((deal: DealItem) => {
+    haptic();
+    console.log(`Deal: ${deal.title}`);
+  }, []);
+
+  const handleViewDeals = useCallback(() => {
+    dealsCarouselRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
+  const verdictColorDot = useMemo(() => {
+    if (!lastScan) return "transparent";
+    if (lastScan.verdict === "BUY") return "#5CE0B8";
+    if (lastScan.verdict === "PASS") return "#E8636B";
+    return "#D4A574";
+  }, [lastScan]);
+
+  const reopenLastScan = useCallback(() => {
+    if (!lastScan) return;
+    haptic();
+    setVerdictData(lastScan);
+    setVerdictOpen(true);
+  }, [lastScan]);
+
   return (
     <>
       <style>{`
@@ -218,6 +471,12 @@ export default function DashboardPage() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .carousel-row::-webkit-scrollbar { display: none; height: 0; width: 0; }
+        .carousel-row { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
       <DotGridBackground />
       <CoinRain active={coinRainActive} />
@@ -226,47 +485,58 @@ export default function DashboardPage() {
         style={{
           maxWidth: 480,
           margin: "0 auto",
-          padding: "0 18px",
           position: "relative",
           zIndex: 1,
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        {/* ── Header ── */}
+        {/* 1. Scroll sentinel */}
         <div
+          ref={sentinelRef}
+          data-scroll-sentinel=""
+          style={{ height: 1, width: "100%" }}
+          aria-hidden="true"
+        />
+
+        {/* 2 + 3. Sticky header — safe-area-aware, transparent → solid on scroll */}
+        <header
           style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            height: "calc(56px + env(safe-area-inset-top, 0px))",
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingLeft: 18,
+            paddingRight: 18,
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            paddingTop: 16,
+            justifyContent: "space-between",
+            backgroundColor: scrolled ? "rgba(18,14,24,0.95)" : "transparent",
+            backdropFilter: scrolled ? "blur(12px)" : "none",
+            WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
+            boxShadow: scrolled
+              ? "0 1px 0 rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.2)"
+              : "none",
+            transition:
+              "background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          {/* Left: logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <CoinMark size={20} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CoinMark size={22} />
             <span
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 20,
-                color: "var(--accent-mint)",
+                fontSize: 22,
+                color: "#5CE0B8",
                 letterSpacing: "0.06em",
                 lineHeight: 1,
               }}
             >
               LOOT
             </span>
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                backgroundColor: "var(--accent-mint)",
-                opacity: 0.15,
-                flexShrink: 0,
-              }}
-            />
           </div>
 
-          {/* Right: avatar */}
           <button
             onClick={() => router.push("/account")}
             style={{
@@ -295,56 +565,227 @@ export default function DashboardPage() {
               JD
             </span>
           </button>
-        </div>
+        </header>
 
-        {/* ── Stats Bar ── */}
-        <StatsBar
-          scans={stats.scans}
-          buys={stats.buys}
-          spent={stats.spent}
-          profit={stats.profit}
-        />
-
-        {/* ── Scan Buttons ── */}
-        <ScanButtons
-          onScanUpc={() => startScan("barcode")}
-          onAiVision={() => startScan("vision")}
-          hasScanned={hasUser ? stats.scans > 0 : true}
-        />
-
-        {/* ── Feed Grid ── */}
+        {/* 4. Smart context card — only renders if a condition matches */}
         <div
+          id="context-card"
           style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            marginTop: 12,
+            paddingLeft: 18,
+            paddingRight: 18,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "0ms",
           }}
         >
-          {FEED_CARDS.map((card, i) => (
-            <div
-              key={card.name}
-              style={{
-                animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                animationDelay: `${i * 60}ms`,
-              }}
-            >
-              <FeedCard
-                name={card.name}
-                subtitle={card.subtitle}
-                icon={card.icon}
-                accent={card.accent}
-                count={card.count}
-                isRecent={card.name === "Deals Near You"}
-                onTap={() => console.log(`Feed: ${card.name}`)}
-              />
-            </div>
-          ))}
+          {now && (
+            <ContextCard
+              todayScans={todayScans}
+              unsoldOldItems={0}
+              hotDealsCount={MOCK_DEALS_NEAR_YOU.length}
+              userZip={null}
+              dayOfWeek={dayOfWeek}
+              hour={hour}
+              onViewDeals={handleViewDeals}
+            />
+          )}
         </div>
 
-        {/* ── Tool Grid ── */}
-        <div style={{ marginTop: 24 }}>
-          {/* "MORE TOOLS" label with full-bleed hairlines on each side */}
+        {/* 5. Hero profit card */}
+        <div
+          id="hero-profit"
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 16,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "60ms",
+          }}
+        >
+          <HeroProfit
+            todayProfit={todayProfit}
+            yesterdayProfit={yesterdayProfit}
+            weekProfit={weekProfit}
+            monthProfit={monthProfit}
+            allTimeProfit={allTimeProfit}
+            todayScans={todayScans}
+            todayBuys={todayBuys}
+            todaySpent={todaySpent}
+            dailyProfitHistory={profitHistory}
+            loading={statsLoading}
+          />
+        </div>
+
+        {/* 6. Scan zone */}
+        <div
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 20,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "120ms",
+          }}
+        >
+          <ScanButtons
+            onScanUpc={() => startScan("barcode")}
+            onAiVision={() => startScan("vision")}
+            todayScans={todayScans}
+          />
+
+          {/* Last-scan preview strip — appears once there's a recent result */}
+          {lastScan && (
+            <button
+              type="button"
+              onClick={reopenLastScan}
+              style={{
+                width: "100%",
+                height: 48,
+                marginTop: 8,
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                color: "inherit",
+                textAlign: "left",
+                animation:
+                  "fadeInUp 300ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+              onPointerDown={(e) => {
+                e.currentTarget.style.backgroundColor =
+                  "rgba(255,255,255,0.03)";
+              }}
+              onPointerUp={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+              onPointerLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  backgroundColor: verdictColorDot,
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-outfit), sans-serif",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    color: "#C8C0D8",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {lastScan.name}
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 9,
+                    color: "#5A4E70",
+                    marginTop: 2,
+                  }}
+                >
+                  +${lastScan.profit} profit · just now
+                </div>
+              </div>
+              <span style={{ color: "#3D2E55", flexShrink: 0 }}>→</span>
+            </button>
+          )}
+        </div>
+
+        {/* 7. Deals Near You carousel */}
+        <section
+          ref={dealsCarouselRef}
+          style={{
+            paddingLeft: 18,
+            marginTop: 24,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "180ms",
+          }}
+        >
+          <DealCarousel
+            label="DEALS NEAR YOU"
+            deals={MOCK_DEALS_NEAR_YOU}
+            onDealTap={handleDealTap}
+            emptyMessage="No deals nearby right now."
+          />
+        </section>
+
+        {/* 8. Free & Clearance carousel */}
+        <section
+          style={{
+            paddingLeft: 18,
+            marginTop: 20,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "240ms",
+          }}
+        >
+          <DealCarousel
+            label="FREE & CLEARANCE"
+            deals={MOCK_FREE_AND_CLEARANCE}
+            onDealTap={handleDealTap}
+            emptyMessage="Nothing free or marked down nearby."
+          />
+        </section>
+
+        {/* 9. Sourcing intel — day-of-week aware */}
+        <section
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 24,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "300ms",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 9,
+              color: "#3D2E55",
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              marginBottom: 12,
+            }}
+          >
+            SOURCING
+          </div>
+          <SourcingCards
+            dayOfWeek={dayOfWeek}
+            pennyItemCount={48}
+            yardSaleTodayCount={dayOfWeek === 6 ? 6 : 0}
+            onPennyTap={() => console.log("Penny Drops")}
+            onYardSaleTap={() => console.log("Yard Sales")}
+          />
+        </section>
+
+        {/* 10. Tools drawer */}
+        <section
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 24,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "360ms",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -354,24 +795,36 @@ export default function DashboardPage() {
               marginRight: -18,
             }}
           >
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.04)" }} />
+            <div
+              style={{
+                flex: 1,
+                height: 0.5,
+                backgroundColor: "rgba(255,255,255,0.04)",
+              }}
+            />
             <span
               style={{
                 paddingLeft: 12,
                 paddingRight: 12,
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 9,
-                color: "var(--text-dim)",
+                color: "#3D2E55",
                 letterSpacing: "0.10em",
                 whiteSpace: "nowrap",
+                textTransform: "uppercase",
               }}
             >
               MORE TOOLS
             </span>
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.04)" }} />
+            <div
+              style={{
+                flex: 1,
+                height: 0.5,
+                backgroundColor: "rgba(255,255,255,0.04)",
+              }}
+            />
           </div>
 
-          {/* 2-col grid */}
           <div
             style={{
               display: "grid",
@@ -379,29 +832,124 @@ export default function DashboardPage() {
               gap: 8,
             }}
           >
-            {TOOLS.map((tool, i) => (
-              <div
+            {PRIMARY_TOOLS.map((tool) => (
+              <ToolTile
                 key={tool.name}
-                style={{
-                  animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                  animationDelay: `${240 + i * 40}ms`,
-                }}
-              >
-                <ToolTile
-                  name={tool.name}
-                  icon={tool.icon}
-                  onTap={() => handleToolTap(tool)}
-                />
-              </div>
+                name={tool.name}
+                icon={tool.icon}
+                onTap={() => handleToolTap(tool)}
+              />
             ))}
           </div>
-        </div>
 
-        {/* Bottom padding */}
+          <div
+            style={{
+              maxHeight: showAllTools ? 200 : 0,
+              overflow: "hidden",
+              transition:
+                "max-height 250ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                marginTop: 8,
+              }}
+            >
+              {EXTRA_TOOLS.map((tool, i) => (
+                <div
+                  key={tool.name}
+                  style={{
+                    opacity: 0,
+                    animation: showAllTools
+                      ? `fadeInUp 300ms cubic-bezier(0.16, 1, 0.3, 1) both`
+                      : "none",
+                    animationDelay: showAllTools ? `${i * 50}ms` : "0ms",
+                  }}
+                >
+                  <ToolTile
+                    name={tool.name}
+                    icon={tool.icon}
+                    onTap={() => handleToolTap(tool)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowAllTools((v) => !v)}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: 10,
+              marginTop: 4,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "#5A4E70",
+              letterSpacing: "0.10em",
+              textAlign: "center",
+              transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+            onPointerEnter={(e) => {
+              e.currentTarget.style.color = "#C8C0D8";
+            }}
+            onPointerLeave={(e) => {
+              e.currentTarget.style.color = "#5A4E70";
+            }}
+          >
+            {showAllTools ? "SHOW LESS" : "SHOW ALL TOOLS"}
+          </button>
+        </section>
+
+        {/* 11. Flip tip — hairline above + centered tip */}
+        <section
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 32,
+            marginBottom: 40,
+            opacity: 0,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "420ms",
+          }}
+        >
+          <div
+            style={{
+              height: 0.5,
+              backgroundColor: "rgba(255,255,255,0.03)",
+              marginLeft: -18,
+              marginRight: -18,
+              marginBottom: 16,
+            }}
+          />
+          <p
+            style={{
+              maxWidth: 280,
+              margin: "0 auto",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 9,
+              lineHeight: 1.7,
+              color: "rgba(255,255,255,0.12)",
+              textAlign: "center",
+            }}
+          >
+            griswold cast iron marked &lsquo;erie pa&rsquo; is worth 5-10× more
+            than unmarked. carry a magnet — sterling silver won&rsquo;t stick.
+          </p>
+        </section>
+
+        {/* 12. Bottom pad */}
         <div style={{ paddingBottom: 40 }} />
       </div>
 
-      {/* ── Overlays ── */}
+      {/* Overlays */}
       <ScanOverlay
         open={scanOpen}
         mode={scanMode}
