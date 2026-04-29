@@ -16,7 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "LOOT",
-  description: "Reseller arbitrage PWA",
+  description: "Scan. Identify. Profit.",
+  icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
 // Film-grain SVG overlay — fractal noise desaturated to grayscale.
@@ -44,7 +45,7 @@ export default function RootLayout({
             inset: 0,
             zIndex: 100,
             pointerEvents: "none",
-            opacity: 0.035,
+            opacity: 0.045,
             mixBlendMode: "overlay",
             backgroundImage: NOISE_SVG,
           }}

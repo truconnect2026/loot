@@ -8,10 +8,15 @@
  * `variant="login"` — a living environment: five overlapping blobs on offset
  * loops (large mint + periwinkle slow, three small accents faster), a canvas
  * of 18 ember-like particles drifting upward, a cinematic vignette, and a
- * subtle ground gradient (#120e18 → #16121e).
+ * subtle ground gradient (#120e18 → #16121e). Mint hue and overall opacity
+ * shift by hour: morning adds a 6th gold blob; evening cools mint to teal;
+ * night dims everything 30%.
+ *
+ * Honors `prefers-reduced-motion`: drops blob CSS drift animations and paints
+ * the particle canvas once instead of running the requestAnimationFrame loop.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DotGridBackgroundProps {
   variant?: "default" | "login";
@@ -21,6 +26,17 @@ export default function DotGridBackground({
   variant = "default",
 }: DotGridBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [hour, setHour] = useState<number | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    setHour(new Date().getHours());
+    if (typeof window !== "undefined" && window.matchMedia) {
+      setReducedMotion(
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (variant !== "login") return;
@@ -56,6 +72,26 @@ export default function DotGridBackground({
 
     const particles = Array.from({ length: 18 }, () => makeParticle(true));
 
+    // Reduced-motion: paint particles once, no RAF loop.
+    const drawStatic = () => {
+      const w = viewW();
+      const h = viewH();
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(92, 224, 184, ${p.opacity})`;
+        ctx.fill();
+      }
+    };
+
+    if (reducedMotion) {
+      drawStatic();
+      return () => {
+        window.removeEventListener("resize", resize);
+      };
+    }
+
     let raf = 0;
     let time = 0;
     const draw = () => {
@@ -90,9 +126,32 @@ export default function DotGridBackground({
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, [variant]);
+  }, [variant, reducedMotion]);
 
   if (variant === "login") {
+    // Time-of-day tinting — afternoon defaults used during SSR before hour resolves.
+    let largeMintColor = "#5CE0B8";
+    let largeMintOpacity = 0.12;
+    let largePeriOpacity = 0.08;
+    let showMorningGold = false;
+    let dim = 1;
+
+    if (hour !== null) {
+      if (hour >= 6 && hour < 12) {
+        // Morning — mint slightly brighter, add small gold near top.
+        largeMintOpacity = 0.13;
+        showMorningGold = true;
+      } else if (hour >= 18 && hour < 24) {
+        // Evening — cooler teal mint, periwinkle warmer.
+        largeMintColor = "#4AB8D4";
+        largeMintOpacity = 0.1;
+        largePeriOpacity = 0.09;
+      } else if (hour >= 0 && hour < 6) {
+        // Night — quiet, all blobs dimmed 30%.
+        dim = 0.7;
+      }
+    }
+
     return (
       <>
         <style>{`
@@ -154,10 +213,12 @@ export default function DotGridBackground({
               width: 600,
               height: 600,
               borderRadius: "50%",
-              backgroundColor: "#5CE0B8",
-              opacity: 0.12,
+              backgroundColor: largeMintColor,
+              opacity: largeMintOpacity * dim,
               filter: "blur(120px)",
-              animation: "loginBlobLargeA 22s ease-in-out infinite",
+              animation: reducedMotion
+                ? undefined
+                : "loginBlobLargeA 22s ease-in-out infinite",
             }}
           />
           {/* Periwinkle — bottom-right */}
@@ -170,9 +231,11 @@ export default function DotGridBackground({
               height: 450,
               borderRadius: "50%",
               backgroundColor: "#7B8FFF",
-              opacity: 0.08,
+              opacity: largePeriOpacity * dim,
               filter: "blur(120px)",
-              animation: "loginBlobLargeB 25s ease-in-out infinite",
+              animation: reducedMotion
+                ? undefined
+                : "loginBlobLargeB 25s ease-in-out infinite",
             }}
           />
           {/* Small mint — bottom-left */}
@@ -185,9 +248,11 @@ export default function DotGridBackground({
               height: 150,
               borderRadius: "50%",
               backgroundColor: "#5CE0B8",
-              opacity: 0.1,
+              opacity: 0.1 * dim,
               filter: "blur(80px)",
-              animation: "loginBlobSmallA 10s ease-in-out infinite",
+              animation: reducedMotion
+                ? undefined
+                : "loginBlobSmallA 10s ease-in-out infinite",
             }}
           />
           {/* Small warm gold — center-right */}
@@ -200,9 +265,11 @@ export default function DotGridBackground({
               height: 120,
               borderRadius: "50%",
               backgroundColor: "#D4A574",
-              opacity: 0.06,
+              opacity: 0.06 * dim,
               filter: "blur(70px)",
-              animation: "loginBlobSmallB 8s ease-in-out infinite",
+              animation: reducedMotion
+                ? undefined
+                : "loginBlobSmallB 8s ease-in-out infinite",
             }}
           />
           {/* Small periwinkle — top-right */}
@@ -215,11 +282,29 @@ export default function DotGridBackground({
               height: 100,
               borderRadius: "50%",
               backgroundColor: "#7B8FFF",
-              opacity: 0.07,
+              opacity: 0.07 * dim,
               filter: "blur(60px)",
-              animation: "loginBlobSmallC 12s ease-in-out infinite",
+              animation: reducedMotion
+                ? undefined
+                : "loginBlobSmallC 12s ease-in-out infinite",
             }}
           />
+          {/* Morning-only gold — small, near top */}
+          {showMorningGold && (
+            <div
+              style={{
+                position: "absolute",
+                top: 60,
+                left: "20%",
+                width: 100,
+                height: 100,
+                borderRadius: "50%",
+                backgroundColor: "#D4A574",
+                opacity: 0.05,
+                filter: "blur(60px)",
+              }}
+            />
+          )}
           {/* Ambient particle canvas — above blobs, below vignette */}
           <canvas
             ref={canvasRef}
@@ -294,7 +379,9 @@ export default function DotGridBackground({
             backgroundColor: "#5CE0B8",
             opacity: 0.07,
             filter: "blur(120px)",
-            animation: "blobDriftA 22s ease-in-out infinite",
+            animation: reducedMotion
+              ? undefined
+              : "blobDriftA 22s ease-in-out infinite",
           }}
         />
         {/* Periwinkle — mid-right */}
@@ -309,7 +396,9 @@ export default function DotGridBackground({
             backgroundColor: "#7B8FFF",
             opacity: 0.05,
             filter: "blur(120px)",
-            animation: "blobDriftB 25s ease-in-out infinite",
+            animation: reducedMotion
+              ? undefined
+              : "blobDriftB 25s ease-in-out infinite",
           }}
         />
         {/* Camel — bottom-center */}
@@ -324,7 +413,9 @@ export default function DotGridBackground({
             backgroundColor: "#D4A574",
             opacity: 0.05,
             filter: "blur(120px)",
-            animation: "blobDriftC 20s ease-in-out infinite",
+            animation: reducedMotion
+              ? undefined
+              : "blobDriftC 20s ease-in-out infinite",
           }}
         />
       </div>

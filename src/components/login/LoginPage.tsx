@@ -310,6 +310,10 @@ export default function LoginPage() {
           0%, 100% { border-color: rgba(255,255,255,0.06); }
           50% { border-color: rgba(255,255,255,0.10); }
         }
+        @keyframes loginProofFade {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
         .loot-email-input::placeholder {
           color: rgba(255,255,255,0.25);
         }
@@ -560,6 +564,21 @@ export default function LoginPage() {
                 />
               </div>
             )}
+          </div>
+
+          {/* ── Social proof — barely-visible whisper, fades in 600ms after card ── */}
+          <div
+            style={{
+              marginTop: 40,
+              textAlign: "center",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "rgba(255,255,255,0.20)",
+              animation:
+                "loginProofFade 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms both",
+            }}
+          >
+            joining 100+ early flippers
           </div>
 
           {/* ── OAuth error (below card) ── */}
