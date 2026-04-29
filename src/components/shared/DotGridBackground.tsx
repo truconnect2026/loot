@@ -61,14 +61,25 @@ export default function DotGridBackground({
     const viewW = () => window.innerWidth;
     const viewH = () => window.innerHeight;
 
-    const makeParticle = (randomY = true) => ({
-      x: Math.random() * viewW(),
-      y: randomY ? Math.random() * viewH() : viewH() + 2,
-      speed: 0.2 + Math.random() * 0.3,
-      wobbleSpeed: 0.5 + Math.random() * 1.5,
-      wobblePhase: Math.random() * Math.PI * 2,
-      opacity: 0.1 + Math.random() * 0.15,
-    });
+    // Size-based parallax: small particles (1–2px) drift fast (0.4–0.6 px/frame);
+    // large particles (2.5–3.5px) drift slow (0.15–0.3 px/frame).
+    const makeParticle = (randomY = true) => {
+      const radius = 1 + Math.random() * 2.5;
+      const sizeT = Math.min(1, Math.max(0, (radius - 1) / 2.5));
+      const speed = 0.55 - 0.35 * sizeT + (Math.random() - 0.5) * 0.06;
+      return {
+        x: Math.random() * viewW(),
+        y: randomY ? Math.random() * viewH() : viewH() + 2,
+        speed,
+        radius,
+        wobbleSpeed: 0.5 + Math.random() * 1.5,
+        wobblePhase: Math.random() * Math.PI * 2,
+        opacity: 0.1 + Math.random() * 0.15,
+        flashCountdown: 200 + Math.floor(Math.random() * 400),
+        flashState: "idle" as "idle" | "rising" | "holding" | "fading",
+        flashFrame: 0,
+      };
+    };
 
     const particles = Array.from({ length: 18 }, () => makeParticle(true));
 
@@ -79,7 +90,7 @@ export default function DotGridBackground({
       ctx.clearRect(0, 0, w, h);
       for (const p of particles) {
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(92, 224, 184, ${p.opacity})`;
         ctx.fill();
       }
@@ -92,10 +103,21 @@ export default function DotGridBackground({
       };
     }
 
+    // Firefly flash: 10f rise → 10f hold @ 0.6 → 40f fade. Only one particle
+    // at a time — others wait until current flash + 60-frame buffer clears.
+    const FLASH_PEAK = 0.6;
+    const FLASH_RISE = 10;
+    const FLASH_HOLD = 10;
+    const FLASH_FADE = 40;
+    const FLASH_GAP = 60;
+    let frame = 0;
+    let nextFlashAllowed = 0;
+
     let raf = 0;
     let time = 0;
     const draw = () => {
       time += 0.016;
+      frame++;
       const w = viewW();
       const h = viewH();
       ctx.clearRect(0, 0, w, h);
@@ -108,14 +130,52 @@ export default function DotGridBackground({
           p.x = fresh.x;
           p.y = fresh.y;
           p.speed = fresh.speed;
+          p.radius = fresh.radius;
           p.wobbleSpeed = fresh.wobbleSpeed;
           p.wobblePhase = fresh.wobblePhase;
           p.opacity = fresh.opacity;
+          p.flashCountdown = fresh.flashCountdown;
+          p.flashState = "idle";
+          p.flashFrame = 0;
+        }
+
+        let alpha = p.opacity;
+        if (p.flashState === "idle") {
+          p.flashCountdown--;
+          if (p.flashCountdown <= 0 && frame >= nextFlashAllowed) {
+            p.flashState = "rising";
+            p.flashFrame = 0;
+            nextFlashAllowed =
+              frame + FLASH_RISE + FLASH_HOLD + FLASH_FADE + FLASH_GAP;
+          }
+        } else if (p.flashState === "rising") {
+          p.flashFrame++;
+          alpha =
+            p.opacity + (FLASH_PEAK - p.opacity) * (p.flashFrame / FLASH_RISE);
+          if (p.flashFrame >= FLASH_RISE) {
+            p.flashState = "holding";
+            p.flashFrame = 0;
+          }
+        } else if (p.flashState === "holding") {
+          p.flashFrame++;
+          alpha = FLASH_PEAK;
+          if (p.flashFrame >= FLASH_HOLD) {
+            p.flashState = "fading";
+            p.flashFrame = 0;
+          }
+        } else {
+          p.flashFrame++;
+          alpha =
+            FLASH_PEAK + (p.opacity - FLASH_PEAK) * (p.flashFrame / FLASH_FADE);
+          if (p.flashFrame >= FLASH_FADE) {
+            p.flashState = "idle";
+            p.flashCountdown = 200 + Math.floor(Math.random() * 400);
+          }
         }
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(92, 224, 184, ${p.opacity})`;
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(92, 224, 184, ${alpha})`;
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);

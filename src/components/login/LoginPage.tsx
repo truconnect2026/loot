@@ -280,7 +280,7 @@ export default function LoginPage() {
           to { opacity: 1; }
         }
         @keyframes loginCardEntry {
-          from { opacity: 0; transform: translateY(8px); }
+          from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes loginCardColorResponse {
@@ -324,6 +324,19 @@ export default function LoginPage() {
 
       <DotGridBackground variant="login" />
 
+      {/* Atmospheric depth — clear center, fogged edges. Pushes blobs underwater. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1,
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, rgba(18,14,24,0.5) 60%, rgba(18,14,24,0.85) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
       <div
         style={{
           display: "flex",
@@ -335,7 +348,7 @@ export default function LoginPage() {
             "max(28vh, calc(env(safe-area-inset-top) + 60px))",
           paddingBottom: 24,
           position: "relative",
-          zIndex: 1,
+          zIndex: 2,
         }}
       >
         <div
@@ -355,22 +368,40 @@ export default function LoginPage() {
               gap: 10,
               marginBottom: 64,
               position: "relative",
-              animation: "loginLogoEntry 200ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              opacity: 0,
+              animation: "loginLogoEntry 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
             }}
           >
-            {/* Light source — soft mint glow radiating from behind logo */}
+            {/* Light source — soft mint glow radiating from behind logo,
+                shifted 30px down to spill toward the card below */}
             <div
               aria-hidden="true"
               style={{
                 position: "absolute",
                 left: "50%",
                 top: "50%",
-                transform: "translate(-50%, -50%)",
+                transform: "translate(-50%, calc(-50% + 30px))",
                 width: 320,
                 height: 160,
                 background:
                   "radial-gradient(ellipse, rgba(92,224,184,0.08) 0%, transparent 70%)",
                 filter: "blur(40px)",
+                pointerEvents: "none",
+              }}
+            />
+            {/* Inner concentrated core — bright mint behind LOOT text */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, calc(-50% + 30px))",
+                width: 200,
+                height: 100,
+                background:
+                  "radial-gradient(ellipse, rgba(92,224,184,0.14) 0%, transparent 55%)",
+                filter: "blur(25px)",
                 pointerEvents: "none",
               }}
             />
@@ -418,8 +449,10 @@ export default function LoginPage() {
                 "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 2px 6px -1px rgba(0,0,0,0.25), 0 16px 48px -8px rgba(0,0,0,0.55)",
               borderRadius: 16,
               padding: 24,
+              opacity: 0,
+              transform: "translateY(20px)",
               animation:
-                "loginCardEntry 500ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both, loginCardColorResponse 15s ease-in-out 800ms infinite",
+                "loginCardEntry 500ms cubic-bezier(0.16, 1, 0.3, 1) 300ms forwards, loginCardColorResponse 15s ease-in-out 800ms infinite",
             }}
           >
             <GoogleButton onTap={handleGoogle} loading={googleLoading} />
@@ -566,7 +599,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* ── Social proof — barely-visible whisper, fades in 600ms after card ── */}
+          {/* ── Social proof — barely-visible whisper, fades in after card ── */}
           <div
             style={{
               marginTop: 40,
@@ -574,8 +607,9 @@ export default function LoginPage() {
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 10,
               color: "rgba(255,255,255,0.20)",
+              opacity: 0,
               animation:
-                "loginProofFade 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms both",
+                "loginProofFade 400ms cubic-bezier(0.16, 1, 0.3, 1) 700ms forwards",
             }}
           >
             joining 100+ early flippers
