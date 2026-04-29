@@ -32,17 +32,17 @@ function GoogleIcon() {
 function ArrowIcon() {
   return (
     <svg
-      width={20}
-      height={20}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="#5CE0B8"
-      strokeWidth={2}
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <line x1={5} y1={12} x2={19} y2={12} />
-      <polyline points="12 5 19 12 12 19" />
+      <path d="M22 2L11 13" />
+      <path d="M22 2L15 22L11 13L2 9L22 2" />
     </svg>
   );
 }
@@ -334,7 +334,7 @@ export default function LoginPage() {
                 <input
                   ref={inputRef}
                   type="email"
-                  placeholder="email"
+                  placeholder="Email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onFocus={() => setEmailFocused(true)}
