@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import StatsBar from "@/components/dashboard/StatsBar";
 import ScanButtons from "@/components/dashboard/ScanButtons";
+// Kept for the upcoming carousel-card refactor — its glass styling will be
+// reused once the deal/clearance feeds are wired up.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import FeedCard from "@/components/dashboard/FeedCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
@@ -32,16 +35,6 @@ function DollarIcon() {
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <line x1={12} y1={1} x2={12} y2={23} />
       <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-    </svg>
-  );
-}
-
-function MapIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-      <line x1={8} y1={2} x2={8} y2={18} />
-      <line x1={16} y1={6} x2={16} y2={22} />
     </svg>
   );
 }
@@ -93,26 +86,21 @@ function RecycleIcon() {
   );
 }
 
-const FEED_CARDS = [
-  { name: "Deals Near You", subtitle: "FB + Craigslist flips", icon: "map-pin" as const, accent: "mint" as const, count: 14 },
-  { name: "Penny Drops", subtitle: "weekly Dollar General list", icon: "tag" as const, accent: "camel" as const, count: 23 },
-  { name: "Free Finds", subtitle: "free stuff worth reselling", icon: "gift" as const, accent: "mint" as const, count: 7 },
-  { name: "Store Clearance", subtitle: "markdowns below resale", icon: "shopping-bag" as const, accent: "camel" as const, count: 31 },
-];
-
 interface Tool {
   name: string;
   icon: React.ReactNode;
   href?: string;
 }
 
-const TOOLS: Tool[] = [
+const TOP_TOOLS: Tool[] = [
   { name: "Shelf Scanner", icon: <ShelfIcon /> },
   { name: "Price Check", icon: <DollarIcon /> },
-  { name: "Yard Sale Map", icon: <MapIcon /> },
-  { name: "Estate Sales", icon: <HomeIcon /> },
   { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
-  { name: "Fake Checker", icon: <ShieldIcon /> },
+  { name: "Authenticate", icon: <ShieldIcon /> },
+];
+
+const EXTRA_TOOLS: Tool[] = [
+  { name: "Estate Sales", icon: <HomeIcon /> },
   { name: "Liquidation Analyzer", icon: <PackageIcon /> },
   { name: "Scrap Finder", icon: <RecycleIcon /> },
 ];
@@ -129,6 +117,33 @@ interface ScanRow {
   profit: number | null;
   verdict: string | null;
 }
+
+const SECTION_LABEL: React.CSSProperties = {
+  fontFamily: "var(--font-jetbrains-mono), monospace",
+  fontSize: 9,
+  color: "#3D2E55",
+  letterSpacing: "0.10em",
+  marginBottom: 12,
+};
+
+const CAROUSEL_SCROLL: React.CSSProperties = {
+  display: "flex",
+  overflowX: "auto",
+  scrollSnapType: "x mandatory",
+  gap: 10,
+  paddingRight: 18,
+  WebkitOverflowScrolling: "touch",
+};
+
+const CAROUSEL_CARD: React.CSSProperties = {
+  width: 280,
+  flexShrink: 0,
+  height: 140,
+  backgroundColor: "rgba(255,255,255,0.03)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  borderRadius: 16,
+  scrollSnapAlign: "start",
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -148,6 +163,13 @@ export default function DashboardPage() {
   // Real stats from Supabase
   const [stats, setStats] = useState<Stats>({ scans: 0, buys: 0, spent: 0, profit: 0 });
   const [hasUser, setHasUser] = useState(false);
+
+  // Scroll-position state for the sticky header
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Tools drawer state
+  const [showAllTools, setShowAllTools] = useState(false);
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -173,6 +195,19 @@ export default function DashboardPage() {
   useEffect(() => {
     refreshStats();
   }, [refreshStats]);
+
+  // Watch the scroll sentinel — when it leaves the viewport the header
+  // gains a solid background and hairline.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const startScan = useCallback((mode: "barcode" | "vision") => {
     setScanMode(mode);
@@ -218,6 +253,8 @@ export default function DashboardPage() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        .loot-carousel::-webkit-scrollbar { display: none; }
+        .loot-carousel { scrollbar-width: none; }
       `}</style>
       <DotGridBackground />
       <CoinRain active={coinRainActive} />
@@ -226,47 +263,48 @@ export default function DashboardPage() {
         style={{
           maxWidth: 480,
           margin: "0 auto",
-          padding: "0 18px",
           position: "relative",
           zIndex: 1,
         }}
       >
-        {/* ── Header ── */}
+        {/* 1. Scroll sentinel — drives the sticky-header background toggle */}
+        <div ref={sentinelRef} data-scroll-sentinel="" style={{ height: 1 }} />
+
+        {/* 2. Sticky header */}
         <div
           style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            height: 56,
+            padding: "0 18px",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            paddingTop: 16,
+            justifyContent: "space-between",
+            backgroundColor: scrolled ? "rgba(18,14,24,0.95)" : "transparent",
+            backdropFilter: scrolled ? "blur(12px)" : "none",
+            WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
+            boxShadow: scrolled ? "0 1px 0 rgba(255,255,255,0.04)" : "none",
+            transition:
+              "background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          {/* Left: logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <CoinMark size={20} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CoinMark size={22} />
             <span
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 20,
-                color: "var(--accent-mint)",
+                fontSize: 22,
+                color: "#5CE0B8",
                 letterSpacing: "0.06em",
                 lineHeight: 1,
               }}
             >
               LOOT
             </span>
-            <div
-              style={{
-                width: 40,
-                height: 1,
-                backgroundColor: "var(--accent-mint)",
-                opacity: 0.15,
-                flexShrink: 0,
-              }}
-            />
           </div>
 
-          {/* Right: avatar */}
           <button
             onClick={() => router.push("/account")}
             style={{
@@ -297,54 +335,147 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* ── Stats Bar ── */}
-        <StatsBar
-          scans={stats.scans}
-          buys={stats.buys}
-          spent={stats.spent}
-          profit={stats.profit}
-        />
+        {/* 3. Safe-area inset top */}
+        <div style={{ paddingTop: "env(safe-area-inset-top, 0px)" }} />
 
-        {/* ── Scan Buttons ── */}
-        <ScanButtons
-          onScanUpc={() => startScan("barcode")}
-          onAiVision={() => startScan("vision")}
-          hasScanned={hasUser ? stats.scans > 0 : true}
-        />
-
-        {/* ── Feed Grid ── */}
+        {/* 4. Smart context card slot — built in prompt 3 */}
         <div
+          id="context-card"
           style={{
+            minHeight: 0,
+            marginTop: 12,
+            padding: "0 18px",
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "0ms",
+          }}
+        />
+
+        {/* 5. Hero profit card slot — built in prompt 2; placeholder = StatsBar */}
+        <div
+          id="hero-profit"
+          style={{
+            padding: "0 18px",
             marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "60ms",
           }}
         >
-          {FEED_CARDS.map((card, i) => (
-            <div
-              key={card.name}
-              style={{
-                animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                animationDelay: `${i * 60}ms`,
-              }}
-            >
-              <FeedCard
-                name={card.name}
-                subtitle={card.subtitle}
-                icon={card.icon}
-                accent={card.accent}
-                count={card.count}
-                isRecent={card.name === "Deals Near You"}
-                onTap={() => console.log(`Feed: ${card.name}`)}
-              />
-            </div>
-          ))}
+          <StatsBar
+            scans={stats.scans}
+            buys={stats.buys}
+            spent={stats.spent}
+            profit={stats.profit}
+          />
         </div>
 
-        {/* ── Tool Grid ── */}
-        <div style={{ marginTop: 24 }}>
-          {/* "MORE TOOLS" label with full-bleed hairlines on each side */}
+        {/* 6. Scan zone — ScanButtons renders its own full-bleed hairlines */}
+        <div
+          style={{
+            padding: "0 18px",
+            marginTop: 20,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "120ms",
+          }}
+        >
+          <ScanButtons
+            onScanUpc={() => startScan("barcode")}
+            onAiVision={() => startScan("vision")}
+            hasScanned={hasUser ? stats.scans > 0 : true}
+          />
+        </div>
+
+        {/* 7. Deals near you — bleeds to right edge */}
+        <div
+          style={{
+            paddingLeft: 18,
+            marginTop: 24,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "180ms",
+          }}
+        >
+          <div style={SECTION_LABEL}>DEALS NEAR YOU</div>
+          <div className="loot-carousel" style={CAROUSEL_SCROLL}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} style={CAROUSEL_CARD} />
+            ))}
+          </div>
+        </div>
+
+        {/* 8. Free & clearance — same shape */}
+        <div
+          style={{
+            paddingLeft: 18,
+            marginTop: 20,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "240ms",
+          }}
+        >
+          <div style={SECTION_LABEL}>FREE &amp; CLEARANCE</div>
+          <div className="loot-carousel" style={CAROUSEL_SCROLL}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} style={CAROUSEL_CARD} />
+            ))}
+          </div>
+        </div>
+
+        {/* 9. Sourcing intel */}
+        <div
+          style={{
+            padding: "0 18px",
+            marginTop: 24,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "300ms",
+          }}
+        >
+          <div style={SECTION_LABEL}>SOURCING</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div
+              style={{
+                flex: 1,
+                height: 90,
+                backgroundColor: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 16,
+                padding: 12,
+                display: "flex",
+                alignItems: "flex-end",
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontSize: 13,
+                color: "var(--text-primary)",
+              }}
+            >
+              Penny Drops
+            </div>
+            <div
+              style={{
+                flex: 1,
+                height: 90,
+                backgroundColor: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 16,
+                padding: 12,
+                display: "flex",
+                alignItems: "flex-end",
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontSize: 13,
+                color: "var(--text-primary)",
+              }}
+            >
+              Yard Sale Map
+            </div>
+          </div>
+        </div>
+
+        {/* 10. Tools drawer */}
+        <div
+          style={{
+            padding: "0 18px",
+            marginTop: 24,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "360ms",
+          }}
+        >
+          {/* "MORE TOOLS" label with full-bleed hairlines */}
           <div
             style={{
               display: "flex",
@@ -371,7 +502,7 @@ export default function DashboardPage() {
             <div style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.04)" }} />
           </div>
 
-          {/* 2-col grid */}
+          {/* Top 4 tools */}
           <div
             style={{
               display: "grid",
@@ -379,26 +510,90 @@ export default function DashboardPage() {
               gap: 8,
             }}
           >
-            {TOOLS.map((tool, i) => (
-              <div
+            {TOP_TOOLS.map((tool) => (
+              <ToolTile
                 key={tool.name}
-                style={{
-                  animation: `fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both`,
-                  animationDelay: `${240 + i * 40}ms`,
-                }}
-              >
+                name={tool.name}
+                icon={tool.icon}
+                onTap={() => handleToolTap(tool)}
+              />
+            ))}
+          </div>
+
+          {/* Hidden extras — animated max-height reveal */}
+          <div
+            style={{
+              overflow: "hidden",
+              maxHeight: showAllTools ? 400 : 0,
+              transition: "max-height 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 8,
+                marginTop: 8,
+              }}
+            >
+              {EXTRA_TOOLS.map((tool) => (
                 <ToolTile
+                  key={tool.name}
                   name={tool.name}
                   icon={tool.icon}
                   onTap={() => handleToolTap(tool)}
                 />
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Show all toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAllTools((v) => !v)}
+            style={{
+              width: "100%",
+              padding: 12,
+              background: "transparent",
+              border: "none",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "#5A4E70",
+              cursor: "pointer",
+              textAlign: "center",
+            }}
+          >
+            {showAllTools ? "Show fewer tools" : "Show all tools"}
+          </button>
+        </div>
+
+        {/* 11. Flip tip */}
+        <div
+          style={{
+            padding: "0 18px",
+            marginTop: 32,
+            marginBottom: 40,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "420ms",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 280,
+              margin: "0 auto",
+              textAlign: "center",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 9,
+              color: "rgba(255,255,255,0.12)",
+              lineHeight: 1.6,
+            }}
+          >
+            griswold cast iron marked &apos;erie pa&apos; is worth 5-10× more than unmarked. carry a magnet — sterling silver won&apos;t stick.
           </div>
         </div>
 
-        {/* Bottom padding */}
-        <div style={{ paddingBottom: 40 }} />
+        {/* 12. Bottom pad */}
+        <div style={{ height: 40 }} />
       </div>
 
       {/* ── Overlays ── */}
