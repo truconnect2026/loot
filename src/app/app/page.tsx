@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
-import StatsBar from "@/components/dashboard/StatsBar";
+import HeroProfit from "@/components/dashboard/HeroProfit";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 // Kept for the upcoming carousel-card refactor — its glass styling will be
 // reused once the deal/clearance feeds are wired up.
@@ -361,7 +361,7 @@ export default function DashboardPage() {
           }}
         />
 
-        {/* 4. Hero profit card slot — built in prompt 2; placeholder = StatsBar */}
+        {/* 4. Hero profit card — mock data for now; real Supabase wiring later */}
         <div
           id="hero-profit"
           style={{
@@ -371,11 +371,16 @@ export default function DashboardPage() {
             animationDelay: "60ms",
           }}
         >
-          <StatsBar
-            scans={stats.scans}
-            buys={stats.buys}
-            spent={stats.spent}
-            profit={stats.profit}
+          <HeroProfit
+            todayProfit={0}
+            yesterdayProfit={0}
+            weekProfit={0}
+            monthProfit={0}
+            allTimeProfit={0}
+            todayScans={0}
+            todayBuys={0}
+            todaySpent={0}
+            dailyProfitHistory={[0, 0, 0, 0, 0, 0, 0]}
           />
         </div>
 
