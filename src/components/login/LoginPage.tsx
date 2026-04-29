@@ -161,20 +161,6 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Top-edge shine */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: 8,
-          right: 8,
-          height: 1,
-          background:
-            "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
-          pointerEvents: "none",
-        }}
-      />
       <ArrowIcon />
     </button>
   );
