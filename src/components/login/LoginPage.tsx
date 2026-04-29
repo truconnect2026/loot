@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 import CoinMark from "@/components/shared/CoinMark";
 import DotGridBackground from "@/components/shared/DotGridBackground";
@@ -68,7 +68,9 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
         backgroundColor: pressed
           ? "rgba(255,255,255,0.12)"
           : "rgba(255,255,255,0.08)",
-        border: "1px solid rgba(255,255,255,0.12)",
+        border: loading
+          ? "1px solid rgba(92,224,184,0.15)"
+          : "1px solid rgba(255,255,255,0.12)",
         boxShadow: pressed
           ? "0 0 0 1px rgba(255,255,255,0.15), inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)"
           : "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
@@ -83,10 +85,10 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
         padding: 0,
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Shimmer band — travels left→right over 4s, then pauses 8s */}
+      {/* Shimmer band — speeds up to 1.5s while connecting */}
       <div
         aria-hidden="true"
         style={{
@@ -97,7 +99,7 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
           width: 60,
           background:
             "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
-          animation: "loot-google-shimmer 12s linear infinite",
+          animation: `loot-google-shimmer ${loading ? "1.5s" : "4s"} linear infinite`,
           pointerEvents: "none",
         }}
       />
@@ -146,9 +148,10 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
 interface SendButtonProps {
   onTap: () => void;
   disabled: boolean;
+  errored: boolean;
 }
 
-function SendButton({ onTap, disabled }: SendButtonProps) {
+function SendButton({ onTap, disabled, errored }: SendButtonProps) {
   const [pressed, setPressed] = useState(false);
 
   const restShadow =
@@ -169,7 +172,9 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         height: 52,
         flexShrink: 0,
         backgroundColor: "rgba(92,224,184,0.10)",
-        border: "1px solid rgba(92,224,184,0.18)",
+        border: errored
+          ? "1px solid rgba(232,99,107,0.5)"
+          : "1px solid rgba(92,224,184,0.18)",
         borderLeft: "none",
         boxShadow: pressed ? pressShadow : restShadow,
         borderRadius: "0 16px 16px 0",
@@ -181,7 +186,7 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         position: "relative",
         transform: pressed ? "scale(0.95)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 600ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       {/* Top-edge shine */}
@@ -203,6 +208,10 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
   );
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 export default function LoginPage() {
   const supabase = createClient();
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -210,7 +219,19 @@ export default function LoginPage() {
   const [emailSent, setEmailSent] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [sendError, setSendError] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Surface OAuth errors returned via ?error=... on the callback redirect.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const desc = url.searchParams.get("error_description");
+    const err = url.searchParams.get("error");
+    if (desc || err) setOauthError(desc || err);
+  }, []);
 
   async function handleGoogle() {
     setGoogleLoading(true);
@@ -220,15 +241,30 @@ export default function LoginPage() {
     });
   }
 
+  function flashEmailError() {
+    setEmailError(true);
+    setShakeKey((k) => k + 1);
+    setTimeout(() => setEmailError(false), 1000);
+  }
+
   async function handleEmail() {
-    if (!email || emailLoading) return;
+    if (emailLoading) return;
+    if (!isValidEmail(email)) {
+      flashEmailError();
+      return;
+    }
+    setSendError(false);
     setEmailLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setEmailLoading(false);
-    if (!error) setEmailSent(true);
+    if (error) {
+      setSendError(true);
+      return;
+    }
+    setEmailSent(true);
   }
 
   // Sunken email input — trough shadow, focus blooms a faint mint glow.
@@ -289,8 +325,11 @@ export default function LoginPage() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          minHeight: "100vh",
-          paddingTop: "28vh",
+          minHeight: "100dvh",
+          overflowY: "auto",
+          paddingTop:
+            "max(28vh, calc(env(safe-area-inset-top) + 60px))",
+          paddingBottom: 24,
           position: "relative",
           zIndex: 1,
         }}
@@ -434,8 +473,46 @@ export default function LoginPage() {
               >
                 check your email
               </div>
+            ) : sendError ? (
+              <button
+                type="button"
+                onClick={handleEmail}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  textAlign: "center",
+                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontWeight: 500,
+                  fontSize: 14,
+                  color: "rgba(232,99,107,0.7)",
+                  height: 52,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                couldn&apos;t send link — try again
+              </button>
             ) : (
-              <div style={{ display: "flex" }}>
+              <div
+                key={shakeKey}
+                style={{
+                  display: "flex",
+                  animation:
+                    shakeKey > 0
+                      ? "loot-shake 300ms cubic-bezier(0.36, 0, 0.36, 1)"
+                      : undefined,
+                }}
+              >
+                <style>{`
+                  @keyframes loot-shake {
+                    0%   { transform: translateX(0); }
+                    20%  { transform: translateX(-4px); }
+                    50%  { transform: translateX(4px); }
+                    80%  { transform: translateX(-2px); }
+                    100% { transform: translateX(0); }
+                  }
+                `}</style>
                 <input
                   ref={inputRef}
                   type="email"
@@ -453,7 +530,9 @@ export default function LoginPage() {
                     minWidth: 0,
                     height: 52,
                     backgroundColor: "rgba(0,0,0,0.3)",
-                    border: emailFocused
+                    border: emailError
+                      ? "1px solid rgba(232,99,107,0.5)"
+                      : emailFocused
                       ? "1px solid rgba(92,224,184,0.25)"
                       : "1px solid rgba(255,255,255,0.06)",
                     borderRight: "none",
@@ -471,13 +550,40 @@ export default function LoginPage() {
                       ? "none"
                       : "loot-input-pulse 3s ease-in-out infinite",
                     transition:
-                      "border-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+                      "border-color 600ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
                 />
-                <SendButton onTap={handleEmail} disabled={emailLoading} />
+                <SendButton
+                  onTap={handleEmail}
+                  disabled={emailLoading}
+                  errored={emailError}
+                />
               </div>
             )}
           </div>
+
+          {/* ── OAuth error (below card) ── */}
+          {oauthError && (
+            <div
+              style={{
+                marginTop: 16,
+                textAlign: "center",
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontSize: 12,
+                color: "rgba(232,99,107,0.7)",
+                animation:
+                  "loot-fade-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+            >
+              {oauthError}
+              <style>{`
+                @keyframes loot-fade-in {
+                  from { opacity: 0; transform: translateY(4px); }
+                  to   { opacity: 1; transform: translateY(0); }
+                }
+              `}</style>
+            </div>
+          )}
         </div>
       </div>
     </>
