@@ -893,7 +893,6 @@ export default function DashboardPage() {
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 10,
               color: "#5A4E70",
-              letterSpacing: "0.10em",
               textAlign: "center",
               transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
@@ -904,7 +903,7 @@ export default function DashboardPage() {
               e.currentTarget.style.color = "#5A4E70";
             }}
           >
-            {showAllTools ? "SHOW LESS" : "SHOW ALL TOOLS"}
+            {showAllTools ? "Show less" : "Show all tools"}
           </button>
         </section>
 
