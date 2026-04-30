@@ -203,7 +203,7 @@ const MOCK_FREE_AND_CLEARANCE: DealItem[] = [
     profit: 350,
     distance: "6.3 mi",
     timeAgo: "8m ago",
-    source: "Free",
+    source: "Craigslist",
     isFree: true,
   },
   {
@@ -225,7 +225,7 @@ const MOCK_FREE_AND_CLEARANCE: DealItem[] = [
     profit: 280,
     distance: "3.7 mi",
     timeAgo: "26m ago",
-    source: "Free",
+    source: "Nextdoor",
     isFree: true,
   },
   {
@@ -779,7 +779,6 @@ export default function DashboardPage() {
             SOURCING
           </div>
           <SourcingCards
-            dayOfWeek={dayOfWeek}
             pennyItemCount={48}
             yardSaleTodayCount={dayOfWeek === 6 ? 6 : 0}
             onPennyTap={() => console.log("Penny Drops")}

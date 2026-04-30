@@ -10,7 +10,12 @@ export interface DealItem {
   profit: number;
   distance: string;
   timeAgo: string;
-  source: "FB Marketplace" | "Craigslist" | "Free" | "Target" | "CVS";
+  source:
+    | "FB Marketplace"
+    | "Craigslist"
+    | "Nextdoor"
+    | "Target"
+    | "CVS";
   isFree: boolean;
   imageUrl?: string;
 }
@@ -20,10 +25,12 @@ interface DealCardProps {
   onTap: (deal: DealItem) => void;
 }
 
-function sourceTag(source: DealItem["source"], isFree: boolean): string {
-  if (isFree) return "FREE";
+// Tag text is the platform abbreviation. isFree only changes the price row
+// and pill background — never the tag text itself.
+function sourceTag(source: DealItem["source"]): string {
   if (source === "FB Marketplace") return "FB";
   if (source === "Craigslist") return "CL";
+  if (source === "Nextdoor") return "ND";
   if (source === "Target") return "TGT";
   if (source === "CVS") return "CVS";
   return source;
@@ -35,6 +42,18 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
   const isFree = deal.isFree;
   const topAlpha = isFree ? 0.08 : 0.05;
   const sourcePillBg = isFree ? "rgba(92,224,184,0.20)" : "rgba(92,224,184,0.10)";
+
+  // Profit-tier visuals — > $100 gets the brighter "this is real money" pop.
+  const isBigProfit = deal.profit > 100;
+  const profitBg = isBigProfit
+    ? "rgba(92,224,184,0.20)"
+    : "rgba(92,224,184,0.15)";
+  const profitBorder = isBigProfit
+    ? "rgba(92,224,184,0.30)"
+    : "rgba(92,224,184,0.20)";
+  const profitGlow = isBigProfit
+    ? "0 0 16px -2px rgba(92,224,184,0.35)"
+    : "0 0 12px -2px rgba(92,224,184,0.25)";
 
   return (
     <div
@@ -74,9 +93,24 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      {/* Lit-from-above wash — same trick as the hero card. Makes each tile
+          read as a glass panel under overhead light, not a flat rectangle. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "inherit",
+          pointerEvents: "none",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 50%)",
+        }}
+      />
+
       {/* Top row: source pill + time ago */}
       <div
         style={{
+          position: "relative",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -94,7 +128,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             letterSpacing: "0.06em",
           }}
         >
-          {sourceTag(deal.source, isFree)}
+          {sourceTag(deal.source)}
         </span>
         <span
           style={{
@@ -110,6 +144,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
       {/* Item title — clamp to 2 lines */}
       <div
         style={{
+          position: "relative",
           marginTop: 10,
           fontFamily: "var(--font-outfit), sans-serif",
           fontWeight: 600,
@@ -125,10 +160,13 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.title}
       </div>
 
-      {/* Price row — pinned to bottom by margin-top auto */}
+      {/* Price row — pinned to bottom by margin-top auto. Bottom margin
+          reserves space for the distance + profit badge row beneath. */}
       <div
         style={{
+          position: "relative",
           marginTop: "auto",
+          marginBottom: 24,
           display: "flex",
           alignItems: "baseline",
           gap: 12,
@@ -139,7 +177,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
-              fontSize: 12,
+              fontSize: 14,
               color: "#5CE0B8",
               letterSpacing: "0.08em",
             }}
@@ -163,7 +201,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           style={{
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 11,
-            color: "#3D2E55",
+            color: "#5A4E70",
           }}
         >
           →
@@ -172,7 +210,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           style={{
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: 15,
             color: "#5CE0B8",
             fontFeatureSettings: '"tnum"',
           }}
@@ -185,33 +223,33 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
       <div
         style={{
           position: "absolute",
-          bottom: 14,
+          bottom: 12,
           left: 14,
           fontFamily: "var(--font-jetbrains-mono), monospace",
           fontSize: 9,
           color: "#5A4E70",
-          // Sit just below the price row.
-          transform: "translateY(22px)",
         }}
       >
         {deal.distance}
       </div>
 
-      {/* Profit badge — bottom-right */}
+      {/* Profit badge — bottom-right. The single most emotional element on
+          the card. Bigger profit = brighter pop. */}
       <div
         style={{
           position: "absolute",
-          bottom: 14,
+          bottom: 12,
           right: 14,
-          backgroundColor: "rgba(92,224,184,0.12)",
-          border: "1px solid rgba(92,224,184,0.20)",
+          backgroundColor: profitBg,
+          border: `1px solid ${profitBorder}`,
           borderRadius: 6,
-          padding: "3px 8px",
+          padding: "4px 10px",
           fontFamily: "var(--font-jetbrains-mono), monospace",
           fontWeight: 700,
-          fontSize: 11,
+          fontSize: 12,
           color: "#5CE0B8",
           fontFeatureSettings: '"tnum"',
+          boxShadow: profitGlow,
         }}
       >
         +${deal.profit}

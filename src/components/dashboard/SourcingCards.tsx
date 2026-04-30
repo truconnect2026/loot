@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 interface SourcingCardsProps {
-  dayOfWeek: number;
   pennyItemCount: number;
   yardSaleTodayCount: number;
   onPennyTap: () => void;
@@ -52,8 +51,8 @@ interface CardProps {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
-  subtitleHighlighted: boolean;
-  badge: string;
+  count: string;
+  countHex: string;
   onTap: () => void;
 }
 
@@ -62,14 +61,18 @@ function Card({
   icon,
   title,
   subtitle,
-  subtitleHighlighted,
-  badge,
+  count,
+  countHex,
   onTap,
 }: CardProps) {
   const [pressed, setPressed] = useState(false);
+
+  // Warm accent tint per variant — the whole card glows in its accent so
+  // these read as "live sourcing intel," distinct from the cold tool tiles.
   const accentRgb = variant === "mint" ? "92,224,184" : "212,165,116";
-  const badgeColor = variant === "mint" ? "#5CE0B8" : "#D4A574";
-  const subtitleColor = subtitleHighlighted ? badgeColor : "#5A4E70";
+  const background = `linear-gradient(180deg, rgba(${accentRgb},0.07) 0%, rgba(255,255,255,0.01) 100%)`;
+  const border = `1px solid rgba(${accentRgb},0.10)`;
+  const restShadow = `inset 0 1px 0 0 rgba(${accentRgb},0.08), 0 2px 8px rgba(0,0,0,0.15)`;
 
   return (
     <div
@@ -87,94 +90,85 @@ function Card({
       onPointerLeave={() => setPressed(false)}
       style={{
         flex: 1,
-        height: 90,
-        background: `linear-gradient(180deg, rgba(${accentRgb},0.04) 0%, rgba(255,255,255,0.02) 100%), rgba(255,255,255,0.03)`,
-        border: "1px solid rgba(255,255,255,0.06)",
+        height: 100,
+        background,
+        border,
         borderRadius: 14,
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)",
+        boxShadow: restShadow,
         padding: 14,
         position: "relative",
         cursor: "pointer",
         userSelect: "none",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
         transform: pressed ? "scale(0.98)" : "scale(1)",
         backgroundColor: pressed ? "rgba(255,255,255,0.04)" : undefined,
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        {icon}
-      </div>
+      <div style={{ display: "flex", alignItems: "center" }}>{icon}</div>
       <div
         style={{
-          marginTop: 6,
           fontFamily: "var(--font-outfit), sans-serif",
           fontWeight: 600,
-          fontSize: 13,
+          fontSize: 14,
           color: "#C8C0D8",
+          lineHeight: 1.1,
         }}
       >
         {title}
       </div>
       <div
         style={{
-          marginTop: 2,
           fontFamily: "var(--font-jetbrains-mono), monospace",
           fontSize: 9,
-          color: subtitleColor,
+          color: "#5A4E70",
+          lineHeight: 1.2,
         }}
       >
         {subtitle}
       </div>
       <div
         style={{
-          position: "absolute",
-          bottom: 10,
-          right: 12,
+          marginTop: "auto",
           fontFamily: "var(--font-jetbrains-mono), monospace",
-          fontSize: 9,
-          color: badgeColor,
+          fontSize: 10,
+          color: countHex,
           fontFeatureSettings: '"tnum"',
         }}
       >
-        {badge}
+        {count}
       </div>
     </div>
   );
 }
 
 export default function SourcingCards({
-  dayOfWeek,
   pennyItemCount,
   yardSaleTodayCount,
   onPennyTap,
   onYardSaleTap,
 }: SourcingCardsProps) {
-  const isTuesday = dayOfWeek === 2;
-  const isSaturday = dayOfWeek === 6;
-
   return (
     <div style={{ display: "flex", gap: 8 }}>
       <Card
         variant="camel"
         icon={<TagIcon />}
         title="Penny Drops"
-        subtitle={isTuesday ? "NEW THIS WEEK" : "updated Tuesdays"}
-        subtitleHighlighted={isTuesday}
-        badge={`${pennyItemCount}`}
+        subtitle="updated Tuesdays"
+        count={`${pennyItemCount} items this week`}
+        countHex="#D4A574"
         onTap={onPennyTap}
       />
       <Card
         variant="mint"
         icon={<MapIcon />}
         title="Yard Sales"
-        subtitle={
-          isSaturday
-            ? `${yardSaleTodayCount} sales near you today`
-            : "updates Saturdays"
-        }
-        subtitleHighlighted={isSaturday}
-        badge={`${yardSaleTodayCount}`}
+        subtitle="updates Saturdays"
+        count={`${yardSaleTodayCount} sales near you`}
+        countHex="#5CE0B8"
         onTap={onYardSaleTap}
       />
     </div>
