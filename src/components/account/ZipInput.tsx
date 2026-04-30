@@ -61,7 +61,7 @@ export default function ZipInput({
         data-cell-flash=""
         style={{
           backgroundColor: "var(--bg-recessed)",
-          borderRadius: 8,
+          borderRadius: "3px 8px 8px 8px",
           padding: "6px 12px",
           border: editing
             ? "1px solid var(--accent-mint-border)"

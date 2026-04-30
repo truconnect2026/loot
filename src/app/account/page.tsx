@@ -482,25 +482,40 @@ export default function AccountPage() {
           </span>
         </div>
 
-        {/* Profile Card */}
-        <ProfileCard
-          name={profile.name ?? profile.email.split("@")[0]}
-          email={profile.email}
-          initials={profile.initials}
-          isPro={true}
-          price="$9.99"
-          period="/mo"
-          renewsDate="May 27"
-          scansLabel="unlimited"
-          onCancel={() => console.log("Open Stripe portal")}
-        />
+        {/* Profile Card — vaultReveal cascade, the page's arrival motion */}
+        <div
+          style={{
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 0ms forwards",
+          }}
+        >
+          <ProfileCard
+            name={profile.name ?? profile.email.split("@")[0]}
+            email={profile.email}
+            initials={profile.initials}
+            isPro={true}
+            price="$9.99"
+            period="/mo"
+            renewsDate="May 27"
+            scansLabel="unlimited"
+            onCancel={() => console.log("Open Stripe portal")}
+          />
+        </div>
 
         {/* ── Settings ── */}
         {/* Spacing rhythm creates implicit groups without section headers:
             6/6 within Location, 18 between groups, 28 before Sign out. */}
 
         {/* Zip code — persists to profiles.zip_code */}
-        <div style={{ marginTop: 16 }}>
+        <div
+          style={{
+            marginTop: 16,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 50ms forwards",
+          }}
+        >
           <ZipInput
             value={profile.zipCode}
             onChange={updateZip}
@@ -510,7 +525,14 @@ export default function AccountPage() {
         </div>
 
         {/* Search radius */}
-        <div style={{ marginTop: 6 }}>
+        <div
+          style={{
+            marginTop: 6,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 90ms forwards",
+          }}
+        >
           <SettingsTile
             onClick={() => setRadiusSheetOpen(true)}
             icon={<RadarIcon />}
@@ -531,7 +553,7 @@ export default function AccountPage() {
               data-cell-flash=""
               style={{
                 backgroundColor: "var(--bg-recessed)",
-                borderRadius: 8,
+                borderRadius: "3px 8px 8px 8px",
                 padding: "6px 12px",
                 boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
                 marginRight: 6,
@@ -555,7 +577,14 @@ export default function AccountPage() {
         </div>
 
         {/* BOLO keywords */}
-        <div style={{ marginTop: 6 }}>
+        <div
+          style={{
+            marginTop: 6,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 130ms forwards",
+          }}
+        >
           <SettingsTile
             onClick={() => setView("bolo")}
             icon={<CrosshairsIcon />}
@@ -587,7 +616,14 @@ export default function AccountPage() {
         </div>
 
         {/* Notifications group break (18px) */}
-        <div style={{ marginTop: 18 }}>
+        <div
+          style={{
+            marginTop: 18,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 180ms forwards",
+          }}
+        >
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={() => setNotifEnabled((v) => !v)}
@@ -603,7 +639,14 @@ export default function AccountPage() {
         </div>
 
         {/* Export group break (18px) */}
-        <div style={{ marginTop: 18 }}>
+        <div
+          style={{
+            marginTop: 18,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 220ms forwards",
+          }}
+        >
           <SettingsTile
             height={60}
             onClick={handleExport}
@@ -639,7 +682,14 @@ export default function AccountPage() {
         {/* Sign out group break (28px) — bigger gap because export is utility,
             sign out is destructive. Door icon moves to the LEFT; right side
             stays empty so the red label carries the weight. */}
-        <div style={{ marginTop: 28 }}>
+        <div
+          style={{
+            marginTop: 28,
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 260ms forwards",
+          }}
+        >
           <SettingsTile
             height={52}
             variant="danger"
@@ -661,8 +711,8 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Bottom padding */}
-        <div style={{ paddingBottom: 40 }} />
+        {/* Bottom padding — generous gap so Sign out never looks cropped */}
+        <div style={{ paddingBottom: 48 }} />
       </div>
     </>
   );

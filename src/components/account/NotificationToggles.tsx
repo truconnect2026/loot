@@ -115,7 +115,7 @@ export default function NotificationToggles({
         backgroundColor: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.04)",
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-        borderRadius: "4px 14px 14px 14px",
+        borderRadius: "4px 16px 16px 16px",
         overflow: "hidden",
       }}
     >

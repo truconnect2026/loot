@@ -87,7 +87,7 @@ export default function SettingsTile({
           boxShadow: isDanger
             ? undefined
             : "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-          borderRadius: "4px 14px 14px 14px",
+          borderRadius: "4px 16px 16px 16px",
           display: "flex",
           alignItems: "center",
           // 12px horizontal padding per spec; the icon + dot sit in this space.

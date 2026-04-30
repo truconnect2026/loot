@@ -57,7 +57,7 @@ export default function ProfileCard({
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "4px 14px 14px 14px",
+          borderRadius: "4px 16px 16px 16px",
           // Foreground-plane shadow — lifts the profile card above the
           // settings tiles below.
           boxShadow:
@@ -79,7 +79,7 @@ export default function ProfileCard({
             height: 2,
             background: "linear-gradient(to right, #5CE0B8 0%, #D4A574 100%)",
             borderTopLeftRadius: 4,
-            borderTopRightRadius: 14,
+            borderTopRightRadius: 16,
             pointerEvents: "none",
           }}
         />
@@ -256,7 +256,7 @@ export default function ProfileCard({
             style={{
               flex: 1,
               backgroundColor: "var(--bg-recessed)",
-              borderRadius: 8,
+              borderRadius: "3px 8px 8px 8px",
               padding: "8px 10px",
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
@@ -277,7 +277,7 @@ export default function ProfileCard({
             style={{
               flex: 1,
               backgroundColor: "var(--bg-recessed)",
-              borderRadius: 8,
+              borderRadius: "3px 8px 8px 8px",
               padding: "8px 10px",
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
