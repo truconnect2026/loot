@@ -14,8 +14,21 @@ import type { Deal } from "@/components/dashboard/DealCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
+import DealCarousel from "@/components/dashboard/DealCarousel";
+import type { DealItem } from "@/components/dashboard/DealCard";
+import SourcingCards from "@/components/dashboard/SourcingCards";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
+
+// Light haptic helper — Android Chrome only, iOS silently fails. Defaults to
+// a 10ms tick when no pattern is passed.
+function haptic(ms?: number | number[]) {
+  try {
+    navigator?.vibrate?.(ms ?? 10);
+  } catch {
+    /* iOS silently fails, that's fine */
+  }
+}
 
 // ── Tool icons (16px, stroke) ──
 
@@ -57,10 +70,21 @@ function ClipboardIcon() {
   );
 }
 
-function ShieldIcon() {
+// Authenticate — checkmark inside a circle. Replaces the old shield Fake Checker.
+function CheckCircleIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <circle cx={12} cy={12} r={10} />
+      <polyline points="8 12.5 11 15.5 16 9" />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   );
 }
@@ -344,6 +368,7 @@ interface ScanRow {
   cost: number | null;
   profit: number | null;
   verdict: string | null;
+  created_at: string | null;
 }
 
 const SECTION_LABEL: React.CSSProperties = {
@@ -369,9 +394,48 @@ export default function DashboardPage() {
   // CoinRain state
   const [coinRainActive, setCoinRainActive] = useState(false);
 
-  // Real stats from Supabase
-  const [stats, setStats] = useState<Stats>({ scans: 0, buys: 0, spent: 0, profit: 0 });
-  const [hasUser, setHasUser] = useState(false);
+  // Real stats from Supabase + loading state for skeletons
+  const [todayScans, setTodayScans] = useState(0);
+  const [todayBuys, setTodayBuys] = useState(0);
+  const [todaySpent, setTodaySpent] = useState(0);
+  const [todayProfit, setTodayProfit] = useState(0);
+  const [yesterdayProfit, setYesterdayProfit] = useState(0);
+  const [weekProfit, setWeekProfit] = useState(0);
+  const [monthProfit, setMonthProfit] = useState(0);
+  const [allTimeProfit, setAllTimeProfit] = useState(0);
+  // Lifetime scan count drives the first-time-user branch — a user with zero
+  // rows ever gets the simplified onboarding view.
+  const [lifetimeScans, setLifetimeScans] = useState(0);
+  const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Last scan preview strip
+  const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
+
+  // Header solidifies once the scroll sentinel leaves the viewport.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Tools drawer expansion
+  const [showAllTools, setShowAllTools] = useState(false);
+
+  // Press feedback for header avatar + show-all-tools toggle. Inlined here
+  // because each is a one-off button — no need for a wrapper component.
+  const [avatarPressed, setAvatarPressed] = useState(false);
+  const [showAllPressed, setShowAllPressed] = useState(false);
+
+  // Time/day for context card + sourcing cards. Read on the client only so
+  // the SSR pass renders a stable null and the day-of-week never mismatches.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNow(new Date());
+  }, []);
+  const dayOfWeek = now ? now.getDay() : 0;
+  const hour = now ? now.getHours() : 0;
+
+  // Carousel scroll target — context card "View deals" jumps here.
+  const dealsCarouselRef = useRef<HTMLDivElement>(null);
 
   // Scroll-position state for the sticky header
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -392,23 +456,87 @@ export default function DashboardPage() {
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
-    setHasUser(true);
+    if (!userData.user) {
+      setStatsLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("scans")
-      .select("cost, profit, verdict")
+      .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) return;
+    if (error || !data) {
+      setStatsLoading(false);
+      return;
+    }
 
     const rows = data as ScanRow[];
-    const buys = rows.filter((r) => r.verdict === "BUY");
-    setStats({
-      scans: rows.length,
-      buys: buys.length,
-      spent: Math.round(buys.reduce((sum, r) => sum + (Number(r.cost) || 0), 0)),
-      profit: Math.round(buys.reduce((sum, r) => sum + (Number(r.profit) || 0), 0)),
-    });
+
+    // Day buckets — local time. Today / yesterday / this week / this month.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
+    const yesterdayMs = todayMs - 86_400_000;
+    const weekStartMs = todayMs - 6 * 86_400_000;
+    const monthStartMs = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    ).getTime();
+
+    let todayCount = 0;
+    let todayBuyCount = 0;
+    let todaySpentSum = 0;
+    let todayProfitSum = 0;
+    let yesterdayProfitSum = 0;
+    let weekProfitSum = 0;
+    let monthProfitSum = 0;
+    let allTimeProfitSum = 0;
+
+    // 7-day daily profit bucket — index 0 is 6 days ago, index 6 is today.
+    const daily = [0, 0, 0, 0, 0, 0, 0];
+
+    for (const row of rows) {
+      const ts = row.created_at ? new Date(row.created_at).getTime() : 0;
+      const profit = Number(row.profit) || 0;
+      const cost = Number(row.cost) || 0;
+      const isBuy = row.verdict === "BUY";
+
+      if (ts >= todayMs) {
+        todayCount++;
+        if (isBuy) {
+          todayBuyCount++;
+          todaySpentSum += cost;
+          todayProfitSum += profit;
+        }
+      } else if (ts >= yesterdayMs && isBuy) {
+        yesterdayProfitSum += profit;
+      }
+
+      if (ts >= weekStartMs && isBuy) weekProfitSum += profit;
+      if (ts >= monthStartMs && isBuy) monthProfitSum += profit;
+      if (isBuy) allTimeProfitSum += profit;
+
+      if (ts >= weekStartMs && isBuy) {
+        const dayIdx = Math.min(
+          6,
+          Math.max(0, Math.floor((ts - weekStartMs) / 86_400_000))
+        );
+        daily[dayIdx] += profit;
+      }
+    }
+
+    setTodayScans(todayCount);
+    setTodayBuys(todayBuyCount);
+    setTodaySpent(Math.round(todaySpentSum));
+    setTodayProfit(Math.round(todayProfitSum));
+    setYesterdayProfit(Math.round(yesterdayProfitSum));
+    setWeekProfit(Math.round(weekProfitSum));
+    setMonthProfit(Math.round(monthProfitSum));
+    setAllTimeProfit(Math.round(allTimeProfitSum));
+    setLifetimeScans(rows.length);
+    setProfitHistory(daily.map((v) => Math.round(v)));
+    setStatsLoading(false);
   }, [supabase]);
 
   // refreshStats sets state, which `react-hooks/set-state-in-effect` flags
@@ -463,7 +591,19 @@ export default function DashboardPage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [refreshStats]);
 
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => setScrolled(!entries[0].isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
   const startScan = useCallback((mode: "barcode" | "vision") => {
+    haptic();
     setScanMode(mode);
     setScanOpen(true);
   }, []);
@@ -472,9 +612,11 @@ export default function DashboardPage() {
     (result: ScanResponse) => {
       setScanOpen(false);
       setVerdictData(result);
+      setLastScan(result);
       setVerdictOpen(true);
 
       if (result.verdict === "BUY") {
+        haptic([50, 30, 50]);
         setCoinRainActive(false);
         requestAnimationFrame(() => setCoinRainActive(true));
       }
@@ -491,6 +633,7 @@ export default function DashboardPage() {
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
+      haptic();
       if (tool.href) {
         router.push(tool.href);
       } else {
@@ -530,6 +673,19 @@ export default function DashboardPage() {
         .loot-carousel { scrollbar-width: none; }
       `}</style>
       <DotGridBackground />
+      {/* Fog layer — subtle vignette above the blobs, below content. Centers
+          the eye on the dashboard core; edges fade to the page bg. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 30%, transparent 0%, rgba(18,14,24,0.4) 60%, rgba(18,14,24,0.7) 100%)",
+        }}
+      />
       <CoinRain active={coinRainActive} />
 
       <div
@@ -546,6 +702,14 @@ export default function DashboardPage() {
         {/* 2. Sticky header — chrome is 56px; padding-top carves out the iOS
             safe-area inset so the visible chrome sits below the notch. */}
         <div
+          ref={sentinelRef}
+          data-scroll-sentinel=""
+          style={{ height: 1, width: "100%" }}
+          aria-hidden="true"
+        />
+
+        {/* 2 + 3. Sticky header — safe-area-aware, transparent → solid on scroll */}
+        <header
           style={{
             position: "sticky",
             top: 0,
@@ -587,11 +751,16 @@ export default function DashboardPage() {
 
           <button
             onClick={() => router.push("/account")}
+            onPointerDown={() => setAvatarPressed(true)}
+            onPointerUp={() => setAvatarPressed(false)}
+            onPointerLeave={() => setAvatarPressed(false)}
             style={{
               width: 32,
               height: 32,
               borderRadius: "50%",
-              backgroundColor: "rgba(255,255,255,0.03)",
+              backgroundColor: avatarPressed
+                ? "rgba(255,255,255,0.06)"
+                : "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.06)",
               boxShadow:
                 "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
@@ -600,6 +769,9 @@ export default function DashboardPage() {
               justifyContent: "center",
               cursor: "pointer",
               padding: 0,
+              transform: avatarPressed ? "scale(0.95)" : "scale(1)",
+              transition:
+                "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             <span
@@ -613,7 +785,7 @@ export default function DashboardPage() {
               JD
             </span>
           </button>
-        </div>
+        </header>
 
         {/* 3. Smart context card — priority-driven daily nudge */}
         <div
@@ -848,21 +1020,34 @@ export default function DashboardPage() {
               marginRight: -18,
             }}
           >
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.04)" }} />
+            <div
+              style={{
+                flex: 1,
+                height: 0.5,
+                backgroundColor: "rgba(255,255,255,0.04)",
+              }}
+            />
             <span
               style={{
                 paddingLeft: 12,
                 paddingRight: 12,
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 9,
-                color: "var(--text-dim)",
+                color: "#3D2E55",
                 letterSpacing: "0.10em",
                 whiteSpace: "nowrap",
+                textTransform: "uppercase",
               }}
             >
               MORE TOOLS
             </span>
-            <div style={{ flex: 1, height: 0.5, backgroundColor: "rgba(255,255,255,0.04)" }} />
+            <div
+              style={{
+                flex: 1,
+                height: 0.5,
+                backgroundColor: "rgba(255,255,255,0.04)",
+              }}
+            />
           </div>
 
           {/* Top 4 tools */}
@@ -960,7 +1145,7 @@ export default function DashboardPage() {
         <div style={{ height: 40 }} />
       </div>
 
-      {/* ── Overlays ── */}
+      {/* Overlays */}
       <ScanOverlay
         open={scanOpen}
         mode={scanMode}

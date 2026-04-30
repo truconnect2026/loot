@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import {
   captureFrame,
   openCameraStream,
@@ -23,11 +24,77 @@ const ACCENT = {
   vision: { hex: "#D4A574", rgb: "212,165,116" },
 };
 
+// Light haptic — Android Chrome only, silent no-op everywhere else.
+function haptic(pattern: number | number[] = 10) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(pattern);
+  }
+}
+
+const FRAME_W = 280;
+const FRAME_H = 210; // 4:3 — most items people scan are wider than tall.
+
 type Phase =
   | { kind: "framing" }
   | { kind: "captured"; payload: { type: "barcode"; upc: string } | { type: "vision"; image: string } }
   | { kind: "submitting"; progress: number }
   | { kind: "error"; message: string };
+
+function CornerBracket({
+  corner,
+  color,
+}: {
+  corner: "tl" | "tr" | "bl" | "br";
+  color: string;
+}) {
+  // L-shape from two 28px arms, 2px stroke, 4px inset from each frame edge.
+  const ARM = 28;
+  const STROKE = 2;
+  const INSET = 4;
+  const horizontal: React.CSSProperties = {
+    position: "absolute",
+    width: ARM,
+    height: STROKE,
+    backgroundColor: color,
+  };
+  const vertical: React.CSSProperties = {
+    position: "absolute",
+    width: STROKE,
+    height: ARM,
+    backgroundColor: color,
+  };
+
+  switch (corner) {
+    case "tl":
+      return (
+        <>
+          <div style={{ ...horizontal, top: INSET, left: INSET }} />
+          <div style={{ ...vertical, top: INSET, left: INSET }} />
+        </>
+      );
+    case "tr":
+      return (
+        <>
+          <div style={{ ...horizontal, top: INSET, right: INSET }} />
+          <div style={{ ...vertical, top: INSET, right: INSET }} />
+        </>
+      );
+    case "bl":
+      return (
+        <>
+          <div style={{ ...horizontal, bottom: INSET, left: INSET }} />
+          <div style={{ ...vertical, bottom: INSET, left: INSET }} />
+        </>
+      );
+    case "br":
+      return (
+        <>
+          <div style={{ ...horizontal, bottom: INSET, right: INSET }} />
+          <div style={{ ...vertical, bottom: INSET, right: INSET }} />
+        </>
+      );
+  }
+}
 
 function CancelButton({ onCancel, label = "CANCEL" }: { onCancel: () => void; label?: string }) {
   const [hovered, setHovered] = useState(false);
@@ -66,6 +133,28 @@ export default function ScanOverlay({
 }: ScanOverlayProps) {
   const [phase, setPhase] = useState<Phase>({ kind: "framing" });
   const [costInput, setCostInput] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
+  // Surfaces non-terminal errors directly under the scanner frame so the
+  // user always sees what went wrong, even if the phase machine keeps going
+  // (e.g. transient barcode-decode glitches). Distinct from `phase: error`,
+  // which is the full-screen terminal failure.
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  // Session counter — increments on each successful verdict during this open
+  // session. We currently close the overlay after a result, so this is 0 in
+  // practice; left in place for future rapid-fire mode.
+  const [sessionCount] = useState(0);
+
+  const flagError = (stage: string, err: unknown) => {
+    const message =
+      err instanceof Error
+        ? err.message
+        : typeof err === "string"
+          ? err
+          : `${stage} failed`;
+    console.error(`[ScanOverlay] ${stage}:`, err);
+    setInlineError(message);
+    return message;
+  };
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -74,12 +163,16 @@ export default function ScanOverlay({
 
   const accent = ACCENT[mode];
 
-  // Reset on every open: camera lifecycle is tied to the overlay being mounted+open.
   useEffect(() => {
     if (!open) return;
 
+    // Reset the state machine each time the overlay opens or the mode flips.
+    /* eslint-disable react-hooks/set-state-in-effect */
     setPhase({ kind: "framing" });
     setCostInput("");
+    setCameraReady(false);
+    setInlineError(null);
+    /* eslint-enable react-hooks/set-state-in-effect */
     let cancelled = false;
 
     (async () => {
@@ -94,29 +187,31 @@ export default function ScanOverlay({
         if (!video) return;
         video.srcObject = stream;
         await video.play();
+        if (!cancelled) setCameraReady(true);
 
         if (mode === "barcode") {
           scannerRef.current = await startBarcodeScanner(
             video,
             (upc) => {
-              // Stop camera + scanner immediately so we don't keep decoding.
+              // Confirm the decode physically — feels native on Android,
+              // silent everywhere else.
+              haptic();
               scannerRef.current?.stop();
               stopStream(streamRef.current);
               streamRef.current = null;
+              setInlineError(null);
               setPhase({
                 kind: "captured",
                 payload: { type: "barcode", upc },
               });
             },
-            (err) => console.warn("Scanner warning:", err)
+            // Per-decode error from the barcode lib. These were previously
+            // console.warn-only and invisible to the user; surface them now.
+            (err) => flagError("barcode-decode", err)
           );
         }
-        // Vision mode: camera stays live until the user taps Capture.
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Camera access failed";
+        const message = flagError("camera-init", err);
         setPhase({ kind: "error", message });
       }
     })();
@@ -134,20 +229,24 @@ export default function ScanOverlay({
 
   const handleCapture = () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      flagError("capture", "video element not ready");
+      return;
+    }
     try {
       const image = captureFrame(video);
+      // Confirm the shutter physically.
+      haptic();
       stopStream(streamRef.current);
       streamRef.current = null;
+      setInlineError(null);
       setPhase({
         kind: "captured",
         payload: { type: "vision", image },
       });
     } catch (err) {
-      setPhase({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Capture failed",
-      });
+      const message = flagError("capture", err);
+      setPhase({ kind: "error", message });
     }
   };
 
@@ -155,10 +254,9 @@ export default function ScanOverlay({
     if (phase.kind !== "captured") return;
     const cost = Number(costInput) || 0;
 
+    setInlineError(null);
     setPhase({ kind: "submitting", progress: 0 });
 
-    // Smooth progress while the API does its thing — UPC + eBay + Claude
-    // typically lands in 4-8s; cap at 90% so completion lands the bar.
     progressTimer.current = setInterval(() => {
       setPhase((p) => {
         if (p.kind !== "submitting") return p;
@@ -180,7 +278,12 @@ export default function ScanOverlay({
       });
       const data = (await res.json()) as ScanResponse | { error: string };
       if (!res.ok || "error" in data) {
-        const message = "error" in data ? data.error : `Scan failed (${res.status})`;
+        const apiMessage =
+          "error" in data ? data.error : `Scan failed (${res.status})`;
+        const message = flagError(
+          `api-error[${res.status}]`,
+          apiMessage
+        );
         setPhase({ kind: "error", message });
         if (progressTimer.current) clearInterval(progressTimer.current);
         progressTimer.current = null;
@@ -193,10 +296,8 @@ export default function ScanOverlay({
     } catch (err) {
       if (progressTimer.current) clearInterval(progressTimer.current);
       progressTimer.current = null;
-      setPhase({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Network error",
-      });
+      const message = flagError("network", err);
+      setPhase({ kind: "error", message });
     }
   };
 
@@ -220,8 +321,8 @@ export default function ScanOverlay({
           position: "fixed",
           inset: 0,
           backgroundColor: "rgba(10, 8, 14, 0.95)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
           zIndex: 50,
           display: "flex",
           flexDirection: "column",
@@ -229,20 +330,50 @@ export default function ScanOverlay({
           justifyContent: "center",
         }}
       >
-        {/* Scanner frame */}
+        {/* Session counter — top-left */}
         <div
           style={{
-            width: 220,
-            height: 220,
+            position: "absolute",
+            top: 16,
+            left: 16,
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.3)",
+            letterSpacing: "0.06em",
+          }}
+        >
+          {sessionCount} {sessionCount === 1 ? "scan" : "scans"}
+        </div>
+
+        {/* Scanner frame — 4:3 landscape */}
+        <div
+          style={{
+            width: FRAME_W,
+            height: FRAME_H,
             border: `1.5px solid rgba(${accent.rgb}, 0.40)`,
             borderRadius: 16,
             position: "relative",
             overflow: "hidden",
-            boxShadow: `0 0 40px -8px rgba(${accent.rgb}, 0.15)`,
+            // Soft frame glow — the viewfinder looks like it's projecting light.
+            boxShadow: `0 0 30px -5px rgba(${accent.rgb}, 0.12)`,
             backgroundColor: "#000",
           }}
         >
-          {/* Camera feed — only relevant during framing */}
+          {/* Camera loading state — Saturn spinner until stream resolves */}
+          {!cameraReady && phase.kind === "framing" && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <CoinMarkSpinner />
+            </div>
+          )}
+
           <video
             ref={videoRef}
             playsInline
@@ -252,14 +383,16 @@ export default function ScanOverlay({
               height: "100%",
               objectFit: "cover",
               display: phase.kind === "framing" ? "block" : "none",
+              opacity: cameraReady ? 1 : 0,
+              transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           />
 
-          {/* Corner brackets */}
-          <div style={{ position: "absolute", top: -1, left: -1, width: 32, height: 32, borderTop: `2px solid ${accent.hex}`, borderLeft: `2px solid ${accent.hex}`, borderRadius: "4px 0 0 0" }} />
-          <div style={{ position: "absolute", top: -1, right: -1, width: 32, height: 32, borderTop: `2px solid ${accent.hex}`, borderRight: `2px solid ${accent.hex}`, borderRadius: "0 4px 0 0" }} />
-          <div style={{ position: "absolute", bottom: -1, left: -1, width: 32, height: 32, borderBottom: `2px solid ${accent.hex}`, borderLeft: `2px solid ${accent.hex}`, borderRadius: "0 0 0 4px" }} />
-          <div style={{ position: "absolute", bottom: -1, right: -1, width: 32, height: 32, borderBottom: `2px solid ${accent.hex}`, borderRight: `2px solid ${accent.hex}`, borderRadius: "0 0 4px 0" }} />
+          {/* Corner brackets — L-shape, 28px arms, 4px inset */}
+          <CornerBracket corner="tl" color={accent.hex} />
+          <CornerBracket corner="tr" color={accent.hex} />
+          <CornerBracket corner="bl" color={accent.hex} />
+          <CornerBracket corner="br" color={accent.hex} />
 
           {phase.kind === "framing" && (
             <>
@@ -270,8 +403,10 @@ export default function ScanOverlay({
                   right: "10%",
                   height: 1,
                   background: `linear-gradient(90deg, transparent, ${accent.hex}, transparent)`,
-                  boxShadow: `0 0 12px ${accent.hex}`,
-                  animation: "scanLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+                  // Long glow trail — laser, not a bar.
+                  boxShadow: `0 0 16px rgba(${accent.rgb}, 0.3), 0 0 4px rgba(${accent.rgb}, 0.6)`,
+                  animation:
+                    "scanLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
                 }}
               />
               {[0.30, 0.20, 0.12].map((startAlpha, i) => (
@@ -285,7 +420,8 @@ export default function ScanOverlay({
                     height: 80,
                     borderRadius: "50%",
                     border: `1px solid rgba(${accent.rgb}, ${startAlpha})`,
-                    animation: "pulseRing 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
+                    animation:
+                      "pulseRing 2.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
                     animationDelay: `${i * 0.4}s`,
                   }}
                 />
@@ -294,7 +430,7 @@ export default function ScanOverlay({
           )}
 
           {phase.kind === "captured" && phase.payload.type === "vision" && (
-            // Show the captured shot while the user fills in cost.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={phase.payload.image}
               alt="Captured"
@@ -302,6 +438,26 @@ export default function ScanOverlay({
             />
           )}
         </div>
+
+        {/* Inline error banner — surfaces the latest failure directly under
+            the frame so transient errors (camera/decode/api/network) are
+            never silent. Sits above any phase-specific UI. */}
+        {inlineError && phase.kind !== "error" && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 16,
+              maxWidth: 280,
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontSize: 13,
+              color: "rgba(232,99,107,0.9)",
+              textAlign: "center",
+              lineHeight: 1.4,
+            }}
+          >
+            {inlineError}
+          </div>
+        )}
 
         {/* Phase-specific UI below the frame */}
         {phase.kind === "framing" && mode === "barcode" && (
@@ -334,6 +490,7 @@ export default function ScanOverlay({
             </div>
             <button
               onClick={handleCapture}
+              disabled={!cameraReady}
               style={{
                 marginTop: 16,
                 width: 200,
@@ -347,7 +504,8 @@ export default function ScanOverlay({
                 fontWeight: 700,
                 fontSize: 12,
                 letterSpacing: "0.12em",
-                cursor: "pointer",
+                cursor: cameraReady ? "pointer" : "not-allowed",
+                opacity: cameraReady ? 1 : 0.5,
               }}
             >
               CAPTURE

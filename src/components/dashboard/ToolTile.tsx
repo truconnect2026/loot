@@ -15,7 +15,7 @@ function ChevronRight() {
       height={14}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--text-dim)"
+      stroke="#2A2240"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -44,12 +44,13 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
       onPointerLeave={() => setPressed(false)}
       style={{
         height: 56,
-        // Quieter than feed cards — tools are secondary.
+        // Background plane — recessed into the page so the eye reads
+        // scan-buttons → cards → tools as a clear z-axis.
         backgroundColor: pressed
-          ? "rgba(255,255,255,0.05)"
-          : "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.04)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+          ? "rgba(255,255,255,0.04)"
+          : "rgba(255,255,255,0.015)",
+        border: "1px solid rgba(255,255,255,0.03)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.02)",
         borderRadius: 12,
         display: "flex",
         alignItems: "center",

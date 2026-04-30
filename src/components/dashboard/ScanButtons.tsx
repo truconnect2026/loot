@@ -5,7 +5,10 @@ import { useState } from "react";
 interface ScanButtonsProps {
   onScanUpc: () => void;
   onAiVision: () => void;
-  hasScanned: boolean;
+  /** Today's scan count — used for both the gentle hint and the per-button counter. */
+  todayScans: number;
+  /** First-time-user mode: SCAN UPC border breathes a quiet "tap me" pulse. */
+  pulsePrimary?: boolean;
 }
 
 function BarcodeIcon() {
@@ -49,7 +52,6 @@ function CameraIcon() {
   );
 }
 
-// Hairlines bleed past the page's 18px horizontal padding to the screen edge.
 const hairlineEdgeBleed: React.CSSProperties = {
   marginLeft: -18,
   marginRight: -18,
@@ -61,20 +63,39 @@ interface HeroButtonProps {
   variant: "mint" | "camel";
   icon: React.ReactNode;
   label: string;
+  subtitle: string;
+  todayScans: number;
   onTap: () => void;
+  /** Run the slow border pulse — only used by the primary button in new-user mode. */
+  pulse?: boolean;
 }
 
-function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
+function HeroButton({
+  variant,
+  icon,
+  label,
+  subtitle,
+  todayScans,
+  onTap,
+  pulse,
+}: HeroButtonProps) {
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const accent = variant === "mint" ? "92,224,184" : "212,165,116";
   const accentColor = variant === "mint" ? "#5CE0B8" : "#D4A574";
+  // Mint (SCAN UPC, primary) sits a touch brighter than camel (AI VISION).
+  // The brighter top stop is what makes the scan zone the foreground plane.
+  const topAlpha = variant === "mint" ? 0.15 : 0.12;
 
-  // Resting state: lit accent inset highlight + faint outer drop.
-  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 1px 2px rgba(0,0,0,0.3)`;
-  // Hover: full glow envelope (the named glow-mint / glow-camel token).
-  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25)`;
+  // Foreground-plane shadow — the scan buttons should feel like they're
+  // floating above the rest of the dashboard.
+  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 2px 4px rgba(0,0,0,0.2), 0 8px 20px -4px rgba(0,0,0,0.3)`;
+  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25), 0 8px 20px -4px rgba(0,0,0,0.3)`;
+
+  // Counter is dim when zero, accent-tinted at 0.5 alpha once it's been used.
+  const counterColor =
+    todayScans > 0 ? `rgba(${accent},0.5)` : "rgba(255,255,255,0.25)";
 
   return (
     <button
@@ -98,8 +119,7 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
         boxSizing: "border-box",
         height: 80,
         borderRadius: 16,
-        // Top-to-bottom accent gradient — bright at the top, fading down.
-        background: `linear-gradient(180deg, rgba(${accent},0.12) 0%, rgba(${accent},0.05) 100%)`,
+        background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.05) 100%)`,
         border: `1px solid rgba(${accent},0.18)`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
@@ -107,15 +127,34 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
+        gap: 4,
         cursor: "pointer",
         padding: 0,
+        minWidth: 0,
+        // First-scan nudge — the keyframe overrides border-color while running.
+        animation: pulse ? "scanUpcPulse 2s ease-in-out infinite" : undefined,
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Top-edge shine — light catching the leading edge of the panel */}
+      {/* Today's scan count — top-right corner */}
+      <span
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 10,
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontSize: 9,
+          fontWeight: 500,
+          color: counterColor,
+          fontFeatureSettings: '"tnum"',
+        }}
+      >
+        {todayScans}
+      </span>
+
+      {/* Top-edge shine */}
       <div
         aria-hidden="true"
         style={{
@@ -136,9 +175,7 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
           position: "absolute",
           width: 48,
           height: 48,
-          // Centered on the icon: icon sits above the label so this aligns
-          // with the icon row rather than the geometric center.
-          top: 12,
+          top: 14,
           left: "50%",
           marginLeft: -24,
           borderRadius: "50%",
@@ -160,6 +197,18 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
       >
         {label}
       </span>
+      <span
+        style={{
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontSize: 8,
+          color: `rgba(${accent},0.4)`,
+          letterSpacing: "0.04em",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {subtitle}
+      </span>
     </button>
   );
 }
@@ -167,8 +216,11 @@ function HeroButton({ variant, icon, label, onTap }: HeroButtonProps) {
 export default function ScanButtons({
   onScanUpc,
   onAiVision,
-  hasScanned,
+  todayScans,
+  pulsePrimary,
 }: ScanButtonsProps) {
+  const showHint = todayScans === 0;
+
   return (
     <>
       {/* Top hairline — full-bleed channel framing the scan zone */}
@@ -176,8 +228,11 @@ export default function ScanButtons({
 
       <div
         style={{
+          // CSS grid: 1fr 1fr columns are mathematically equal regardless of
+          // content. Definitive fix — content size cannot affect column width.
           marginTop: 20,
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
           gap: 8,
           width: "100%",
         }}
@@ -186,24 +241,29 @@ export default function ScanButtons({
           variant="mint"
           icon={<BarcodeIcon />}
           label="SCAN UPC"
+          subtitle="point at any barcode"
+          todayScans={todayScans}
           onTap={onScanUpc}
+          pulse={pulsePrimary}
         />
         <HeroButton
           variant="camel"
           icon={<CameraIcon />}
           label="AI VISION"
+          subtitle="snap a photo of anything"
+          todayScans={todayScans}
           onTap={onAiVision}
         />
       </div>
 
-      {/* New user hint */}
-      {!hasScanned && (
+      {/* New-user hint — only while today's scans is still 0 */}
+      {showHint && (
         <div
           style={{
             marginTop: 12,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
-            color: "var(--text-dim)",
+            color: "rgba(255,255,255,0.10)",
             textAlign: "center",
           }}
         >
