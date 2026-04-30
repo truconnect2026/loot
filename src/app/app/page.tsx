@@ -659,11 +659,14 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines */}
+        {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
+            overflow:hidden clips those bleeds at the section box, which
+            matches the page wrapper / viewport edge. */}
         <div
           style={{
             padding: "0 18px",
             marginTop: 20,
+            overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",
           }}
@@ -675,11 +678,13 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 6. Deals near you */}
+        {/* 6. Deals near you — overflow:hidden clamps the carousel block
+            so its inner scroll-container can't push the page sideways */}
         <div
           id="deals-near-you"
           style={{
             marginTop: 24,
+            overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "180ms",
           }}
@@ -695,6 +700,7 @@ export default function DashboardPage() {
         <div
           style={{
             marginTop: 20,
+            overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "240ms",
           }}
@@ -821,11 +827,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 9. Tools drawer */}
+        {/* 9. Tools drawer — overflow:hidden clips the MORE TOOLS hairline
+            bleeds at the section edge */}
         <div
           style={{
             padding: "0 18px",
             marginTop: 24,
+            overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "360ms",
           }}

@@ -121,7 +121,9 @@ const VISION_SYSTEM = `You are an expert at identifying retail and thrift items 
   "name": "the most specific product name you can give (brand + model + size if visible)",
   "brand": "brand if visible, else null",
   "category": "broad category (e.g. \\"kitchen\\", \\"electronics\\", \\"clothing\\")"
-}`;
+}
+
+Return a SHORT, clean product name under 40 characters. Example: "Jumex Pineapple-Coconut Nectar" not "Jumex Jumex Pineapple-Coconut Nectar from Concentrate 15.5 fl oz (460 mL) can". Drop redundant brand repetitions, size/weight details, and UPC info.`;
 
 export interface VisionIdentifyResult {
   name: string;

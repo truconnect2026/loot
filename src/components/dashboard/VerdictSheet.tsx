@@ -8,6 +8,11 @@ import type { ListingResponse } from "@/app/api/listing/route";
 // Kept as an alias so existing imports keep working.
 export type VerdictData = ScanResponse;
 
+// Whole numbers render as "$35"; fractional values keep two decimals.
+function fmt(n: number): string {
+  return n % 1 === 0 ? `$${n}` : `$${n.toFixed(2)}`;
+}
+
 interface VerdictSheetProps {
   open: boolean;
   onClose: () => void;
@@ -196,7 +201,7 @@ function ListingCta({ data }: ListingCtaProps) {
               color: "var(--accent-mint)",
             }}
           >
-            ${listing.suggestedPrice.toFixed(2)}
+            {fmt(listing.suggestedPrice)}
           </span>
           <button
             onClick={handleCopy}
@@ -327,7 +332,15 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
 
   return (
     <BottomSheet open={open} onClose={onClose} borderColor={colors.borderSolid}>
-      <div style={{ padding: "12px 20px 28px" }}>
+      <div
+        style={{
+          padding: "12px 20px 28px",
+          width: "100%",
+          maxWidth: "100%",
+          boxSizing: "border-box",
+          overflow: "hidden",
+        }}
+      >
         {/* Method label */}
         <div
           style={{
@@ -341,7 +354,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           {data.method === "barcode" ? "UPC SCAN" : "AI VISION"}
         </div>
 
-        {/* Item name */}
+        {/* Item name — wraps freely; word-break catches super-long tokens */}
         <div
           style={{
             fontFamily: "var(--font-outfit), sans-serif",
@@ -350,6 +363,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             color: "var(--text-primary)",
             textAlign: "center",
             marginTop: 4,
+            wordBreak: "break-word",
           }}
         >
           {data.name}
@@ -373,16 +387,19 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           </div>
         </div>
 
-        {/* 3-col price grid */}
+        {/* 3-col price grid — flex with min-width:0 so the cells can shrink
+            below their content width instead of forcing the row past 100% */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
+            display: "flex",
             gap: 8,
             marginTop: 16,
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
           }}
         >
-          <div style={recessedCell}>
+          <div style={{ ...recessedCell, flex: 1, minWidth: 0 }}>
             <div style={cellLabel}>COST</div>
             <div
               style={{
@@ -393,10 +410,10 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              ${data.cost}
+              {fmt(data.cost)}
             </div>
           </div>
-          <div style={recessedCell}>
+          <div style={{ ...recessedCell, flex: 1, minWidth: 0 }}>
             <div style={cellLabel}>SELL</div>
             <div
               style={{
@@ -407,10 +424,10 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              ${data.sell}
+              {fmt(data.sell)}
             </div>
           </div>
-          <div style={recessedCell}>
+          <div style={{ ...recessedCell, flex: 1, minWidth: 0 }}>
             <div style={cellLabel}>PROFIT</div>
             <div
               style={{
@@ -421,7 +438,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              ${data.profit}
+              {fmt(data.profit)}
             </div>
           </div>
         </div>
@@ -430,9 +447,12 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
             gap: 8,
             marginTop: 8,
+            width: "100%",
+            maxWidth: "100%",
+            boxSizing: "border-box",
           }}
         >
           <div style={smallRecessedCell}>
@@ -470,7 +490,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              ${data.fee}
+              {fmt(data.fee)}
             </div>
           </div>
           <div style={smallRecessedCell}>

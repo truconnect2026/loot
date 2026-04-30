@@ -37,6 +37,12 @@
   --press-bg: #1F1835;
 }
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
 html {
   background: var(--bg-page);
 }
