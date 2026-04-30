@@ -134,10 +134,27 @@ export default function ScanOverlay({
   const [phase, setPhase] = useState<Phase>({ kind: "framing" });
   const [costInput, setCostInput] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
+  // Surfaces non-terminal errors directly under the scanner frame so the
+  // user always sees what went wrong, even if the phase machine keeps going
+  // (e.g. transient barcode-decode glitches). Distinct from `phase: error`,
+  // which is the full-screen terminal failure.
+  const [inlineError, setInlineError] = useState<string | null>(null);
   // Session counter — increments on each successful verdict during this open
   // session. We currently close the overlay after a result, so this is 0 in
   // practice; left in place for future rapid-fire mode.
   const [sessionCount] = useState(0);
+
+  const flagError = (stage: string, err: unknown) => {
+    const message =
+      err instanceof Error
+        ? err.message
+        : typeof err === "string"
+          ? err
+          : `${stage} failed`;
+    console.error(`[ScanOverlay] ${stage}:`, err);
+    setInlineError(message);
+    return message;
+  };
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -154,6 +171,7 @@ export default function ScanOverlay({
     setPhase({ kind: "framing" });
     setCostInput("");
     setCameraReady(false);
+    setInlineError(null);
     /* eslint-enable react-hooks/set-state-in-effect */
     let cancelled = false;
 
@@ -181,17 +199,19 @@ export default function ScanOverlay({
               scannerRef.current?.stop();
               stopStream(streamRef.current);
               streamRef.current = null;
+              setInlineError(null);
               setPhase({
                 kind: "captured",
                 payload: { type: "barcode", upc },
               });
             },
-            (err) => console.warn("Scanner warning:", err)
+            // Per-decode error from the barcode lib. These were previously
+            // console.warn-only and invisible to the user; surface them now.
+            (err) => flagError("barcode-decode", err)
           );
         }
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Camera access failed";
+        const message = flagError("camera-init", err);
         setPhase({ kind: "error", message });
       }
     })();
@@ -209,22 +229,24 @@ export default function ScanOverlay({
 
   const handleCapture = () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) {
+      flagError("capture", "video element not ready");
+      return;
+    }
     try {
       const image = captureFrame(video);
       // Confirm the shutter physically.
       haptic();
       stopStream(streamRef.current);
       streamRef.current = null;
+      setInlineError(null);
       setPhase({
         kind: "captured",
         payload: { type: "vision", image },
       });
     } catch (err) {
-      setPhase({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Capture failed",
-      });
+      const message = flagError("capture", err);
+      setPhase({ kind: "error", message });
     }
   };
 
@@ -232,6 +254,7 @@ export default function ScanOverlay({
     if (phase.kind !== "captured") return;
     const cost = Number(costInput) || 0;
 
+    setInlineError(null);
     setPhase({ kind: "submitting", progress: 0 });
 
     progressTimer.current = setInterval(() => {
@@ -255,7 +278,12 @@ export default function ScanOverlay({
       });
       const data = (await res.json()) as ScanResponse | { error: string };
       if (!res.ok || "error" in data) {
-        const message = "error" in data ? data.error : `Scan failed (${res.status})`;
+        const apiMessage =
+          "error" in data ? data.error : `Scan failed (${res.status})`;
+        const message = flagError(
+          `api-error[${res.status}]`,
+          apiMessage
+        );
         setPhase({ kind: "error", message });
         if (progressTimer.current) clearInterval(progressTimer.current);
         progressTimer.current = null;
@@ -268,10 +296,8 @@ export default function ScanOverlay({
     } catch (err) {
       if (progressTimer.current) clearInterval(progressTimer.current);
       progressTimer.current = null;
-      setPhase({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Network error",
-      });
+      const message = flagError("network", err);
+      setPhase({ kind: "error", message });
     }
   };
 
@@ -412,6 +438,26 @@ export default function ScanOverlay({
             />
           )}
         </div>
+
+        {/* Inline error banner — surfaces the latest failure directly under
+            the frame so transient errors (camera/decode/api/network) are
+            never silent. Sits above any phase-specific UI. */}
+        {inlineError && phase.kind !== "error" && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 16,
+              maxWidth: 280,
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontSize: 13,
+              color: "rgba(232,99,107,0.9)",
+              textAlign: "center",
+              lineHeight: 1.4,
+            }}
+          >
+            {inlineError}
+          </div>
+        )}
 
         {/* Phase-specific UI below the frame */}
         {phase.kind === "framing" && mode === "barcode" && (
