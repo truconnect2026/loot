@@ -1,12 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface ToggleProps {
   on: boolean;
   onToggle: () => void;
   size?: "normal" | "small";
+  /** Stop the click from bubbling so a wrapping row handler doesn't double-toggle. */
+  stopBubble?: boolean;
 }
 
-function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
+function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
   const isSmall = size === "small";
   const trackW = isSmall ? 28 : 36;
   const trackH = isSmall ? 16 : 20;
@@ -21,7 +25,10 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
 
   return (
     <div
-      onClick={onToggle}
+      onClick={(e) => {
+        if (stopBubble) e.stopPropagation();
+        onToggle();
+      }}
       style={{
         width: trackW,
         height: trackH,
@@ -63,6 +70,9 @@ interface NotificationTogglesProps {
   onToggleBolo: () => void;
   pennies: boolean;
   onTogglePennies: () => void;
+  /** Optional left-edge accent dot color + icon, matching the other tiles. */
+  icon?: ReactNode;
+  accentColor?: string;
 }
 
 export default function NotificationToggles({
@@ -74,6 +84,8 @@ export default function NotificationToggles({
   onToggleBolo,
   pennies,
   onTogglePennies,
+  icon,
+  accentColor,
 }: NotificationTogglesProps) {
   const subs = [
     { label: "Deal alerts", on: deals, toggle: onToggleDeals },
@@ -81,9 +93,15 @@ export default function NotificationToggles({
     { label: "Penny drops", on: pennies, toggle: onTogglePennies },
   ];
 
+  // Sub-toggle area max-height for the smooth collapse. 36 + 1 (height) +
+  // hairline gap baked into each row, times three rows; using 160 as a safe
+  // ceiling so the transition runs smoothly without measuring.
+  const SUB_MAX = 160;
+
   return (
     <div
       style={{
+        position: "relative",
         backgroundColor: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.04)",
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
@@ -91,16 +109,52 @@ export default function NotificationToggles({
         overflow: "hidden",
       }}
     >
+      {/* Left-edge accent dot — same signature as other tiles */}
+      {accentColor && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: -2,
+            top: 26,
+            width: 4,
+            height: 4,
+            borderRadius: "50%",
+            backgroundColor: accentColor,
+            opacity: 0.4,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
       {/* Main toggle row */}
       <div
         style={{
           height: 52,
           display: "flex",
           alignItems: "center",
-          paddingLeft: 16,
-          paddingRight: 16,
+          paddingLeft: 12,
+          paddingRight: 12,
         }}
       >
+        {icon && (
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 16,
+              height: 16,
+              marginRight: 10,
+              color: accentColor,
+              opacity: 0.6,
+              flexShrink: 0,
+            }}
+          >
+            {icon}
+          </span>
+        )}
         <span
           style={{
             flex: 1,
@@ -115,49 +169,55 @@ export default function NotificationToggles({
         <Toggle on={enabled} onToggle={onToggleEnabled} />
       </div>
 
-      {/* Sub-toggles — fade in when enabled */}
-      {enabled && (
-        <div
-          style={{
-            paddingLeft: 16,
-            paddingRight: 16,
-            paddingBottom: 12,
-          }}
-        >
-          {subs.map((sub, i) => (
-            <div
-              key={sub.label}
+      {/* Sub-toggles — collapse smoothly when the main toggle goes off.
+          Slightly darker bg + hairline divider on top + 24px indentation
+          create the "nested inside the parent" hierarchy. */}
+      <div
+        style={{
+          maxHeight: enabled ? SUB_MAX : 0,
+          opacity: enabled ? 1 : 0,
+          overflow: "hidden",
+          backgroundColor: "rgba(0,0,0,0.15)",
+          borderTop: enabled
+            ? "1px solid #1E1835"
+            : "1px solid transparent",
+          transition:
+            "max-height 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {subs.map((sub) => (
+          <div
+            key={sub.label}
+            onClick={sub.toggle}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: 24,
+              paddingRight: 12,
+              height: 36,
+              cursor: "pointer",
+            }}
+          >
+            <span
               style={{
-                display: "flex",
-                alignItems: "center",
-                paddingLeft: 16,
-                height: 36,
-                animation: `ntFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 50}ms both`,
+                flex: 1,
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontWeight: 400,
+                fontSize: 12,
+                color: "var(--text-muted)",
               }}
             >
-              <span
-                style={{
-                  flex: 1,
-                  fontFamily: "var(--font-outfit), sans-serif",
-                  fontWeight: 400,
-                  fontSize: 12,
-                  color: "var(--text-muted)",
-                }}
-              >
-                {sub.label}
-              </span>
-              <Toggle on={sub.on} onToggle={sub.toggle} size="small" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <style>{`
-        @keyframes ntFadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+              {sub.label}
+            </span>
+            <Toggle
+              on={sub.on}
+              onToggle={sub.toggle}
+              size="small"
+              stopBubble
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

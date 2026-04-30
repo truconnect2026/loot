@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import SettingsTile from "./SettingsTile";
 
 interface ZipInputProps {
   value: string;
   onChange: (val: string) => void;
+  icon?: ReactNode;
+  accentColor?: string;
 }
 
-export default function ZipInput({ value, onChange }: ZipInputProps) {
+export default function ZipInput({
+  value,
+  onChange,
+  icon,
+  accentColor,
+}: ZipInputProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,8 +36,16 @@ export default function ZipInput({ value, onChange }: ZipInputProps) {
     }
   }
 
+  // Empty state shows "Add zip" in mint to signal interactivity, replacing
+  // the previous neutral em-dash that read as "no value, no action."
+  const isEmpty = !value;
+
   return (
-    <SettingsTile onClick={!editing ? () => setEditing(true) : undefined}>
+    <SettingsTile
+      icon={icon}
+      accentColor={accentColor}
+      onClick={!editing ? () => setEditing(true) : undefined}
+    >
       <span
         style={{
           flex: 1,
@@ -80,6 +95,17 @@ export default function ZipInput({ value, onChange }: ZipInputProps) {
               fontFeatureSettings: '"tnum"',
             }}
           />
+        ) : isEmpty ? (
+          <span
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 500,
+              fontSize: 12,
+              color: "#5CE0B8",
+            }}
+          >
+            Add zip
+          </span>
         ) : (
           <span
             style={{
@@ -90,7 +116,7 @@ export default function ZipInput({ value, onChange }: ZipInputProps) {
               fontFeatureSettings: '"tnum"',
             }}
           >
-            {value || "—"}
+            {value}
           </span>
         )}
       </div>

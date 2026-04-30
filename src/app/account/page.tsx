@@ -26,6 +26,8 @@ function deriveInitials(name: string | null, email: string): string {
 }
 
 // ── Icons ──
+// Tile icons use stroke="currentColor" so the tile chassis can tint them
+// via `color` + `opacity` from the accentColor prop.
 
 function ChevronLeft() {
   return (
@@ -61,18 +63,97 @@ function ChevronRight() {
   );
 }
 
-function DownloadIcon({ opacity }: { opacity: number }) {
+function MapPinIcon() {
   return (
     <svg
       width={16}
       height={16}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-mint)"
-      strokeWidth={2}
+      stroke="currentColor"
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{ opacity, transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+      <circle cx={12} cy={10} r={3} />
+    </svg>
+  );
+}
+
+function RadarIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx={12} cy={12} r={10} />
+      <circle cx={12} cy={12} r={6} />
+      <circle cx={12} cy={12} r={2} />
+    </svg>
+  );
+}
+
+function CrosshairsIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx={12} cy={12} r={9} />
+      <line x1={12} y1={1} x2={12} y2={6} />
+      <line x1={12} y1={18} x2={12} y2={23} />
+      <line x1={1} y1={12} x2={6} y2={12} />
+      <line x1={18} y1={12} x2={23} y2={12} />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
+}
+
+function DownloadArrowIcon({ opacity = 1 }: { opacity?: number }) {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        opacity,
+        transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
     >
       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
@@ -88,8 +169,8 @@ function DoorIcon() {
       height={16}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-red)"
-      strokeWidth={2}
+      stroke="currentColor"
+      strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -99,6 +180,14 @@ function DoorIcon() {
     </svg>
   );
 }
+
+// Tile accent colors — driving both the left dot and the icon tint.
+const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
+const ACCENT_RADIUS = "#D4A574"; // camel — distance
+const ACCENT_BOLO = "#5CE0B8"; // mint — keyword scope
+const ACCENT_NOTIF = "#B4A0D4"; // lavender — alerts
+const ACCENT_EXPORT = "#8A8A9A"; // neutral — utility
+const ACCENT_SIGNOUT = "#E8636B"; // coral — destructive
 
 // ── Mock data (BOLO + notifications stay mock until those tables wire up) ──
 const MOCK_KEYWORDS = ["Nintendo", "KitchenAid", "Pyrex", "Le Creuset", "Dyson", "Vitamix"];
@@ -358,14 +447,26 @@ export default function AccountPage() {
         />
 
         {/* ── Settings ── */}
+        {/* Spacing rhythm creates implicit groups without section headers:
+            6/6 within Location, 18 between groups, 28 before Sign out. */}
 
-        {/* Group 1: Location settings (6px gap) */}
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
-          {/* Zip code — persists to profiles.zip_code */}
-          <ZipInput value={profile.zipCode} onChange={updateZip} />
+        {/* Zip code — persists to profiles.zip_code */}
+        <div style={{ marginTop: 16 }}>
+          <ZipInput
+            value={profile.zipCode}
+            onChange={updateZip}
+            icon={<MapPinIcon />}
+            accentColor={ACCENT_ZIP}
+          />
+        </div>
 
-          {/* Search radius */}
-          <SettingsTile onClick={() => setRadiusSheetOpen(true)}>
+        {/* Search radius */}
+        <div style={{ marginTop: 6 }}>
+          <SettingsTile
+            onClick={() => setRadiusSheetOpen(true)}
+            icon={<RadarIcon />}
+            accentColor={ACCENT_RADIUS}
+          >
             <span
               style={{
                 flex: 1,
@@ -383,6 +484,7 @@ export default function AccountPage() {
                 borderRadius: 8,
                 padding: "6px 12px",
                 boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+                marginRight: 4,
               }}
             >
               <span
@@ -397,10 +499,17 @@ export default function AccountPage() {
                 {radius} mi
               </span>
             </div>
+            <ChevronRight />
           </SettingsTile>
+        </div>
 
-          {/* BOLO keywords */}
-          <SettingsTile onClick={() => setView("bolo")}>
+        {/* BOLO keywords */}
+        <div style={{ marginTop: 6 }}>
+          <SettingsTile
+            onClick={() => setView("bolo")}
+            icon={<CrosshairsIcon />}
+            accentColor={ACCENT_BOLO}
+          >
             <span
               style={{
                 flex: 1,
@@ -417,7 +526,7 @@ export default function AccountPage() {
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
                 color: "var(--text-muted)",
-                marginRight: 4,
+                marginRight: 6,
               }}
             >
               {keywords.length} keywords
@@ -426,8 +535,8 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 2: Notifications (mt-4) */}
-        <div style={{ marginTop: 16 }}>
+        {/* Notifications group break (18px) */}
+        <div style={{ marginTop: 18 }}>
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={() => setNotifEnabled((v) => !v)}
@@ -437,12 +546,19 @@ export default function AccountPage() {
             onToggleBolo={() => setNotifBolo((v) => !v)}
             pennies={notifPennies}
             onTogglePennies={() => setNotifPennies((v) => !v)}
+            icon={<BellIcon />}
+            accentColor={ACCENT_NOTIF}
           />
         </div>
 
-        {/* Group 3: Export (mt-4) */}
-        <div style={{ marginTop: 16 }}>
-          <SettingsTile height={60} onClick={handleExport}>
+        {/* Export group break (18px) */}
+        <div style={{ marginTop: 18 }}>
+          <SettingsTile
+            height={60}
+            onClick={handleExport}
+            icon={<DownloadArrowIcon />}
+            accentColor={ACCENT_EXPORT}
+          >
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -476,17 +592,21 @@ export default function AccountPage() {
                 exported
               </span>
             ) : (
-              <DownloadIcon opacity={exporting ? 0.3 : 1} />
+              <DownloadArrowIcon opacity={exporting ? 0.3 : 1} />
             )}
           </SettingsTile>
         </div>
 
-        {/* Group 4: Sign out (mt-6) */}
-        <div style={{ marginTop: 24 }}>
+        {/* Sign out group break (28px) — bigger gap because export is utility,
+            sign out is destructive. Door icon moves to the LEFT; right side
+            stays empty so the red label carries the weight. */}
+        <div style={{ marginTop: 28 }}>
           <SettingsTile
             height={52}
             variant="danger"
             onClick={handleSignOut}
+            icon={<DoorIcon />}
+            accentColor={ACCENT_SIGNOUT}
           >
             <span
               style={{
@@ -499,7 +619,6 @@ export default function AccountPage() {
             >
               Sign out
             </span>
-            <DoorIcon />
           </SettingsTile>
         </div>
 
