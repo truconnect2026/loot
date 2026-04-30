@@ -2,6 +2,15 @@
 
 import type { ReactNode } from "react";
 
+// Light haptic — Android Chrome only, silent everywhere else.
+function haptic() {
+  try {
+    navigator?.vibrate?.(10);
+  } catch {
+    /* iOS silently fails */
+  }
+}
+
 interface ToggleProps {
   on: boolean;
   onToggle: () => void;
@@ -12,37 +21,38 @@ interface ToggleProps {
 
 function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
   const isSmall = size === "small";
-  const trackW = isSmall ? 28 : 36;
-  const trackH = isSmall ? 16 : 20;
-  const thumbSize = isSmall ? 12 : 16;
+  // Branded sizing: 44×24 main, 36×20 sub. Border-radius 12 for the slab
+  // capsule shape (not 9999/full pill — the slight squareness is the brand).
+  const trackW = isSmall ? 36 : 44;
+  const trackH = isSmall ? 20 : 24;
+  const thumbSize = isSmall ? 16 : 20;
   const thumbOffset = 2;
+  const radius = isSmall ? 10 : 12;
 
-  // Track: dark trough when off, glowing mint wash when on.
-  const trackBg = on ? "rgba(92,224,184,0.20)" : "rgba(255,255,255,0.06)";
-  const trackShadow = on
-    ? "0 0 12px -2px rgba(92,224,184,0.40)"
-    : "inset 0 1px 2px 0 rgba(0,0,0,0.4)";
+  // Solid mint when on, recessed dark when off — the brightest brand moment
+  // on this page.
+  const trackBg = on ? "#5CE0B8" : "#2A2240";
 
   return (
     <div
       onClick={(e) => {
         if (stopBubble) e.stopPropagation();
+        haptic();
         onToggle();
       }}
       style={{
         width: trackW,
         height: trackH,
-        borderRadius: 9999,
+        borderRadius: radius,
         backgroundColor: trackBg,
-        boxShadow: trackShadow,
         position: "relative",
         cursor: "pointer",
-        transition:
-          "background-color 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+        transition: "background-color 150ms ease",
         flexShrink: 0,
       }}
     >
-      {/* Thumb — solid white pill with subtle inner shadow for 3D */}
+      {/* Thumb — solid white pill with subtle inner shadow for 3D. Slides
+          on a slight overshoot/bounce so the toggle feels physical. */}
       <div
         style={{
           width: thumbSize,
@@ -54,7 +64,7 @@ function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
           position: "absolute",
           top: thumbOffset,
           left: on ? trackW - thumbSize - thumbOffset : thumbOffset,
-          transition: "left 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+          transition: "left 200ms cubic-bezier(0.34, 1.2, 0.64, 1)",
         }}
       />
     </div>

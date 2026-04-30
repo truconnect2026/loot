@@ -181,6 +181,54 @@ function DoorIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5CE0B8"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ExportRightIcon({
+  state,
+}: {
+  state: "idle" | "loading" | "done";
+}) {
+  if (state === "loading") {
+    return (
+      <span style={{ display: "inline-flex" }}>
+        <CoinMarkSpinner />
+      </span>
+    );
+  }
+  if (state === "done") return <CheckIcon />;
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5A4E70"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1={12} y1={15} x2={12} y2={3} />
+    </svg>
+  );
+}
+
 // Tile accent colors — driving both the left dot and the icon tint.
 const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
@@ -224,9 +272,10 @@ export default function AccountPage() {
   const [notifBolo, setNotifBolo] = useState(true);
   const [notifPennies, setNotifPennies] = useState(true);
 
-  // Export state
-  const [exporting, setExporting] = useState(false);
-  const [exported, setExported] = useState(false);
+  // Export 3-state machine: idle → loading → done → idle.
+  const [exportState, setExportState] = useState<
+    "idle" | "loading" | "done"
+  >("idle");
 
   // Back arrow state
   const [backPressed, setBackPressed] = useState(false);
@@ -296,14 +345,14 @@ export default function AccountPage() {
   );
 
   const handleExport = useCallback(() => {
-    setExporting(true);
-    // Simulated export
-    setTimeout(() => {
-      setExporting(false);
-      setExported(true);
-      setTimeout(() => setExported(false), 2000);
-    }, 800);
-  }, []);
+    if (exportState !== "idle") return;
+    setExportState("loading");
+    // Simulated export — real /api/export wiring will replace the timeout.
+    window.setTimeout(() => {
+      setExportState("done");
+      window.setTimeout(() => setExportState("idle"), 1500);
+    }, 1500);
+  }, [exportState]);
 
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -479,19 +528,21 @@ export default function AccountPage() {
               Search radius
             </span>
             <div
+              data-cell-flash=""
               style={{
                 backgroundColor: "var(--bg-recessed)",
                 borderRadius: 8,
                 padding: "6px 12px",
                 boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-                marginRight: 4,
+                marginRight: 6,
+                transition: "background-color 120ms ease-out",
               }}
             >
               <span
                 style={{
                   fontFamily: "var(--font-jetbrains-mono), monospace",
                   fontWeight: 700,
-                  fontSize: 14,
+                  fontSize: 13,
                   color: "var(--text-primary)",
                   fontFeatureSettings: '"tnum"',
                 }}
@@ -581,19 +632,7 @@ export default function AccountPage() {
                 CSV for taxes
               </div>
             </div>
-            {exported ? (
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
-                  fontSize: 10,
-                  color: "var(--accent-mint)",
-                }}
-              >
-                exported
-              </span>
-            ) : (
-              <DownloadArrowIcon opacity={exporting ? 0.3 : 1} />
-            )}
+            <ExportRightIcon state={exportState} />
           </SettingsTile>
         </div>
 

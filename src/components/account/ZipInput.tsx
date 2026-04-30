@@ -58,6 +58,7 @@ export default function ZipInput({
         Zip code
       </span>
       <div
+        data-cell-flash=""
         style={{
           backgroundColor: "var(--bg-recessed)",
           borderRadius: 8,
@@ -66,7 +67,8 @@ export default function ZipInput({
             ? "1px solid var(--accent-mint-border)"
             : "1px solid transparent",
           boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-          transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          transition:
+            "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 120ms ease-out",
         }}
       >
         {editing ? (
@@ -88,7 +90,7 @@ export default function ZipInput({
               outline: "none",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               color: "var(--accent-mint)",
               textAlign: "center",
               padding: 0,
@@ -111,7 +113,7 @@ export default function ZipInput({
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               color: "var(--accent-mint)",
               fontFeatureSettings: '"tnum"',
             }}
