@@ -79,9 +79,14 @@ function HeroButton({
 
   const accent = variant === "mint" ? "92,224,184" : "212,165,116";
   const accentColor = variant === "mint" ? "#5CE0B8" : "#D4A574";
+  // Mint (SCAN UPC, primary) sits a touch brighter than camel (AI VISION).
+  // The brighter top stop is what makes the scan zone the foreground plane.
+  const topAlpha = variant === "mint" ? 0.15 : 0.12;
 
-  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 1px 2px rgba(0,0,0,0.3)`;
-  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25)`;
+  // Foreground-plane shadow — the scan buttons should feel like they're
+  // floating above the rest of the dashboard.
+  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 2px 4px rgba(0,0,0,0.2), 0 8px 20px -4px rgba(0,0,0,0.3)`;
+  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25), 0 8px 20px -4px rgba(0,0,0,0.3)`;
 
   // Counter is dim when zero, accent-tinted at 0.5 alpha once it's been used.
   const counterColor =
@@ -99,13 +104,11 @@ function HeroButton({
       }}
       onPointerEnter={() => setHovered(true)}
       style={{
-        // Hard-pin to half the row minus half the gap. NEVER use flex-1 here —
-        // labels of different widths drift visibly when flex sizes them.
-        flex: "none",
-        width: "calc(50% - 4px)",
+        // The grid parent forces 1fr columns — width/flex on this child would
+        // only fight that. Let grid drive the column math.
         height: 88,
         borderRadius: 16,
-        background: `linear-gradient(180deg, rgba(${accent},0.12) 0%, rgba(${accent},0.05) 100%)`,
+        background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.05) 100%)`,
         border: `1px solid rgba(${accent},0.18)`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
@@ -116,6 +119,7 @@ function HeroButton({
         gap: 4,
         cursor: "pointer",
         padding: 0,
+        minWidth: 0,
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -210,8 +214,11 @@ export default function ScanButtons({
 
       <div
         style={{
+          // CSS grid: 1fr 1fr columns are mathematically equal regardless of
+          // content. Definitive fix — content size cannot affect column width.
           marginTop: 20,
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
           gap: 8,
           width: "100%",
         }}

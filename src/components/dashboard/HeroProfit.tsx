@@ -192,6 +192,16 @@ export default function HeroProfit(props: HeroProfitProps) {
   const isZero = profit === 0;
   const isNegative = profit < 0;
 
+  // Empty state = no profit data anywhere yet. Shrink the card to a status
+  // bar so a fresh user doesn't see a giant empty hero. The card earns its
+  // full size when real data arrives.
+  const isEmpty =
+    !props.loading &&
+    props.todayProfit === 0 &&
+    props.weekProfit === 0 &&
+    props.monthProfit === 0 &&
+    props.allTimeProfit === 0;
+
   const profitColor = isNegative
     ? "#E8636B"
     : isZero
@@ -205,6 +215,16 @@ export default function HeroProfit(props: HeroProfitProps) {
 
   const delta = deltaFor(period, props);
 
+  // Empty-state sizing knobs — smaller padding, smaller number, smaller
+  // stats. The pills disappear so the row that survives is just label + $0.
+  const cardPadding = isEmpty ? 12 : 20;
+  const numberFontSize = isEmpty ? 28 : 44;
+  const dollarFontSize = isEmpty ? 18 : 24;
+  const numberSlotHeight = isEmpty ? 32 : 44;
+  const labelText = isEmpty ? "PROFIT" : PERIOD_LABEL[period];
+  const statsMarginTop = isEmpty ? 8 : 12;
+  const statsFontSize = isEmpty ? 9 : 10;
+
   return (
     <div
       style={{
@@ -216,7 +236,7 @@ export default function HeroProfit(props: HeroProfitProps) {
         borderRadius: 20,
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-        padding: 20,
+        padding: cardPadding,
       }}
     >
       {/* Two-line period header — label on its own line, pills on the next.
@@ -232,19 +252,30 @@ export default function HeroProfit(props: HeroProfitProps) {
           textAlign: "left",
         }}
       >
-        {PERIOD_LABEL[period]}
+        {labelText}
       </div>
-      <div style={{ display: "flex", gap: 4, marginTop: 4, justifyContent: "flex-start" }}>
-        <Pill label="Today" active={period === "today"} onTap={() => setPeriod("today")} />
-        <Pill label="Week" active={period === "week"} onTap={() => setPeriod("week")} />
-        <Pill label="Month" active={period === "month"} onTap={() => setPeriod("month")} />
-        <Pill label="All" active={period === "all"} onTap={() => setPeriod("all")} />
-      </div>
+      {!isEmpty && (
+        <div style={{ display: "flex", gap: 4, marginTop: 4, justifyContent: "flex-start" }}>
+          <Pill label="Today" active={period === "today"} onTap={() => setPeriod("today")} />
+          <Pill label="Week" active={period === "week"} onTap={() => setPeriod("week")} />
+          <Pill label="Month" active={period === "month"} onTap={() => setPeriod("month")} />
+          <Pill label="All" active={period === "all"} onTap={() => setPeriod("all")} />
+        </div>
+      )}
 
-      {/* Hero number sits 16px below the pills. Crossfade from shimmer to
-          real content once stats land — both layers occupy the same slot so
-          the layout doesn't jump. */}
-      <div style={{ position: "relative", marginTop: 16, height: 44 }}>
+      {/* Hero number row. In normal state it crossfades shimmer → real number.
+          In empty state it sits inline next to a one-line nudge so the whole
+          row reads as a compact status bar. */}
+      <div
+        style={{
+          position: "relative",
+          marginTop: isEmpty ? 6 : 16,
+          height: numberSlotHeight,
+          display: "flex",
+          alignItems: "baseline",
+          gap: 12,
+        }}
+      >
         <div
           aria-hidden={!props.loading}
           style={{
@@ -279,21 +310,33 @@ export default function HeroProfit(props: HeroProfitProps) {
             transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          <span style={{ fontSize: 24 }}>$</span>
+          <span style={{ fontSize: dollarFontSize }}>$</span>
           <AnimNum
             value={profit}
             style={{
-              fontSize: 44,
+              fontSize: numberFontSize,
               fontWeight: 300,
               color: profitColor,
               fontFeatureSettings: '"tnum"',
             }}
           />
         </div>
+        {isEmpty && (
+          <span
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "#5A4E70",
+              lineHeight: 1.3,
+            }}
+          >
+            scan your first item to start tracking
+          </span>
+        )}
       </div>
 
-      {/* Delta chip */}
-      {delta && (
+      {/* Delta chip — only when we actually have a comparison */}
+      {!isEmpty && delta && (
         <div style={{ marginTop: 6 }}>
           <span
             style={{
@@ -314,29 +357,41 @@ export default function HeroProfit(props: HeroProfitProps) {
         </div>
       )}
 
-      {/* Sparkline */}
-      <div style={{ marginTop: 12 }}>
-        <Sparkline values={props.dailyProfitHistory} />
-      </div>
+      {/* Sparkline — drop in empty state. A flat line takes vertical space
+          without telling the user anything. */}
+      {!isEmpty && (
+        <div style={{ marginTop: 12 }}>
+          <Sparkline values={props.dailyProfitHistory} />
+        </div>
+      )}
 
       {/* Today's secondary stats */}
       <div
         style={{
-          marginTop: 12,
+          marginTop: statsMarginTop,
           display: "flex",
           alignItems: "center",
           gap: 12,
         }}
       >
-        <SecondaryStat label="Scans" value={`${props.todayScans}`} />
+        <SecondaryStat
+          label="Scans"
+          value={`${props.todayScans}`}
+          fontSize={statsFontSize}
+        />
         <Divider />
         <SecondaryStat
           label="Buys"
           value={`${props.todayBuys}`}
           valueColor="#5CE0B8"
+          fontSize={statsFontSize}
         />
         <Divider />
-        <SecondaryStat label="Spent" value={`$${props.todaySpent}`} />
+        <SecondaryStat
+          label="Spent"
+          value={`$${props.todaySpent}`}
+          fontSize={statsFontSize}
+        />
       </div>
     </div>
   );
@@ -359,16 +414,18 @@ function SecondaryStat({
   label,
   value,
   valueColor = "#C8C0D8",
+  fontSize = 10,
 }: {
   label: string;
   value: string;
   valueColor?: string;
+  fontSize?: number;
 }) {
   return (
     <div
       style={{
         fontFamily: "var(--font-jetbrains-mono), monospace",
-        fontSize: 10,
+        fontSize,
         display: "flex",
         gap: 4,
       }}
