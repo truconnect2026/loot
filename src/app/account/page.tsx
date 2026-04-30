@@ -63,15 +63,18 @@ function ChevronRight() {
   );
 }
 
+// All identity icons share the same shape weight: 18px, strokeWidth 1.75.
+// Tint comes from the SettingsTile chassis (color: accentColor, opacity 0.6).
+
 function MapPinIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -84,12 +87,12 @@ function MapPinIcon() {
 function RadarIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -103,12 +106,12 @@ function RadarIcon() {
 function CrosshairsIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -124,12 +127,12 @@ function CrosshairsIcon() {
 function BellIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -139,21 +142,17 @@ function BellIcon() {
   );
 }
 
-function DownloadArrowIcon({ opacity = 1 }: { opacity?: number }) {
+function DownloadArrowIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={{
-        opacity,
-        transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
     >
       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
       <polyline points="7 10 12 15 17 10" />
@@ -165,12 +164,12 @@ function DownloadArrowIcon({ opacity = 1 }: { opacity?: number }) {
 function DoorIcon() {
   return (
     <svg
-      width={16}
-      height={16}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.5}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -181,11 +180,32 @@ function DoorIcon() {
   );
 }
 
+// Right-side mini download icon for the Export tile — visually distinct from
+// the left identity icon: 14px, much dimmer (#3D2E55), no fill change.
+function MiniDownloadIcon() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#3D2E55"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1={12} y1={15} x2={12} y2={3} />
+    </svg>
+  );
+}
+
 function CheckIcon() {
   return (
     <svg
-      width={18}
-      height={18}
+      width={16}
+      height={16}
       viewBox="0 0 24 24"
       fill="none"
       stroke="#5CE0B8"
@@ -211,22 +231,9 @@ function ExportRightIcon({
     );
   }
   if (state === "done") return <CheckIcon />;
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#5A4E70"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1={12} y1={15} x2={12} y2={3} />
-    </svg>
-  );
+  // Idle: the small dim 14px arrow that reads as "tap to act" without
+  // duplicating the 18px identity icon on the left.
+  return <MiniDownloadIcon />;
 }
 
 // Tile accent colors — driving both the left dot and the icon tint.

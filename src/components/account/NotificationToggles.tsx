@@ -119,19 +119,19 @@ export default function NotificationToggles({
         overflow: "hidden",
       }}
     >
-      {/* Left-edge accent dot — same signature as other tiles */}
+      {/* Left-edge accent dot — same signature as other tiles, 5px / 55%. */}
       {accentColor && (
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            left: -2,
-            top: 26,
-            width: 4,
-            height: 4,
+            left: -2.5,
+            top: 26 - 2.5,
+            width: 5,
+            height: 5,
             borderRadius: "50%",
             backgroundColor: accentColor,
-            opacity: 0.4,
+            opacity: 0.55,
             pointerEvents: "none",
           }}
         />
@@ -154,8 +154,8 @@ export default function NotificationToggles({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 16,
-              height: 16,
+              width: 18,
+              height: 18,
               marginRight: 10,
               color: accentColor,
               opacity: 0.6,
@@ -180,32 +180,36 @@ export default function NotificationToggles({
       </div>
 
       {/* Sub-toggles — collapse smoothly when the main toggle goes off.
-          Slightly darker bg + hairline divider on top + 24px indentation
-          create the "nested inside the parent" hierarchy. */}
+          Sunken page-bg + barely-visible hairlines + indented to align with
+          the parent's "Push" label create the "nested inside the parent"
+          hierarchy. paddingLeft 40 = parent paddingLeft (12) + icon width
+          (18) + icon margin-right (10), so labels stack at the same x. */}
       <div
         style={{
           maxHeight: enabled ? SUB_MAX : 0,
           opacity: enabled ? 1 : 0,
           overflow: "hidden",
-          backgroundColor: "rgba(0,0,0,0.15)",
+          backgroundColor: "#120e18",
           borderTop: enabled
-            ? "1px solid #1E1835"
+            ? "1px solid #1A1530"
             : "1px solid transparent",
           transition:
             "max-height 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        {subs.map((sub) => (
+        {subs.map((sub, i) => (
           <div
             key={sub.label}
             onClick={sub.toggle}
             style={{
               display: "flex",
               alignItems: "center",
-              paddingLeft: 24,
+              paddingLeft: 40,
               paddingRight: 12,
               height: 36,
               cursor: "pointer",
+              borderTop:
+                i === 0 ? "none" : "1px solid #1A1530",
             }}
           >
             <span

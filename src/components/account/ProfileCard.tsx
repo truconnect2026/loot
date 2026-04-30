@@ -62,7 +62,7 @@ export default function ProfileCard({
           // settings tiles below.
           boxShadow:
             "0 4px 24px -4px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.2)",
-          padding: 20,
+          padding: "20px 20px 16px 20px",
           overflow: "hidden",
         }}
       >
@@ -101,7 +101,7 @@ export default function ProfileCard({
             borderRadius: "50%",
             border: "1px solid rgba(90, 78, 112, 0.3)",
             outline: "1.5px solid #5CE0B8",
-            outlineOffset: "2.5px",
+            outlineOffset: "4px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -297,11 +297,12 @@ export default function ProfileCard({
         </div>
 
         {/* Cancel anytime — legal reassurance, not a CTA. Muted plum, left-
-            aligned, smallest text on the card. */}
+            aligned, smallest text on the card. Tighter top margin so the
+            billing block reads as one compact group. */}
         <div
           onClick={onCancel}
           style={{
-            marginTop: 10,
+            marginTop: 4,
             textAlign: "left",
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 500,

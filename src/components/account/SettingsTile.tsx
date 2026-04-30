@@ -100,20 +100,21 @@ export default function SettingsTile({
         }}
       >
         {/* Left-edge accent dot — color-coded signature, half outside the
-            tile so it reads as a marker on the rim. */}
+            tile so it reads as a marker on the rim. 5px / 55% opacity per
+            mobile-perceptibility spec. */}
         {accentColor && (
           <span
             aria-hidden="true"
             style={{
               position: "absolute",
-              left: -2,
+              left: -2.5,
               top: "50%",
               transform: "translateY(-50%)",
-              width: 4,
-              height: 4,
+              width: 5,
+              height: 5,
               borderRadius: "50%",
               backgroundColor: accentColor,
-              opacity: 0.4,
+              opacity: 0.55,
               pointerEvents: "none",
             }}
           />
@@ -128,8 +129,8 @@ export default function SettingsTile({
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 16,
-              height: 16,
+              width: 18,
+              height: 18,
               marginRight: 10,
               color: accentColor,
               opacity: 0.6,
