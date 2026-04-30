@@ -224,11 +224,16 @@ export default function ScanButtons({
 
       <div
         style={{
-          // CSS grid: 1fr 1fr columns are mathematically equal regardless of
-          // content. Definitive fix — content size cannot affect column width.
+          // minmax(0, 1fr) — NOT plain 1fr. Plain `1fr` is shorthand for
+          // `minmax(auto, 1fr)`, which floors each track at its min-content
+          // width. Different label/subtitle widths between SCAN UPC and AI
+          // VISION made the auto minimum diverge, leaving the buttons a few
+          // pixels apart. minmax(0, 1fr) drops the floor and forces strictly
+          // equal columns. This is the canonical Grid idiom for this exact
+          // problem — do not change back to `1fr`.
           marginTop: 20,
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
           gap: 8,
           width: "100%",
         }}
