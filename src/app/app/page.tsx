@@ -479,6 +479,19 @@ export default function DashboardPage() {
         .carousel-row { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
       <DotGridBackground />
+      {/* Fog layer — subtle vignette above the blobs, below content. Centers
+          the eye on the dashboard core; edges fade to the page bg. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 30%, transparent 0%, rgba(18,14,24,0.4) 60%, rgba(18,14,24,0.7) 100%)",
+        }}
+      />
       <CoinRain active={coinRainActive} />
 
       <div
@@ -625,12 +638,13 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 6. Scan zone */}
+        {/* 6. Scan zone — sits 16px under the hero. Tighter coupling than the
+            other sections because scanning directly drives profit. */}
         <div
           style={{
             paddingLeft: 18,
             paddingRight: 18,
-            marginTop: 20,
+            marginTop: 16,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",
@@ -900,14 +914,17 @@ export default function DashboardPage() {
             onPointerUp={() => setShowAllPressed(false)}
             onPointerLeave={() => setShowAllPressed(false)}
             style={{
-              display: "block",
-              width: "100%",
-              padding: 10,
-              marginTop: 4,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: "10px 16px",
+              margin: "8px auto 0",
               background: showAllPressed
                 ? "rgba(255,255,255,0.03)"
                 : "transparent",
-              border: "none",
+              border: "1px solid rgba(255,255,255,0.05)",
+              borderRadius: 8,
               cursor: "pointer",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 10,
@@ -919,6 +936,23 @@ export default function DashboardPage() {
             }}
           >
             {showAllTools ? "Show less" : "Show all tools"}
+            <svg
+              width={10}
+              height={10}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#5A4E70"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                transform: showAllTools ? "rotate(180deg)" : "rotate(0deg)",
+                transition:
+                  "transform 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
           </button>
         </section>
 
@@ -936,13 +970,14 @@ export default function DashboardPage() {
             animationDelay: "500ms",
           }}
         >
+          {/* Tiny centered "chapter break" — separates the tip from the
+              tools above so it reads as a distinct element. */}
           <div
             style={{
+              width: 60,
               height: 0.5,
-              backgroundColor: "rgba(255,255,255,0.03)",
-              marginLeft: -18,
-              marginRight: -18,
-              marginBottom: 16,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              margin: "0 auto 16px",
             }}
           />
           <p

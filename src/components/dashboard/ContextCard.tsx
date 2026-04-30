@@ -259,10 +259,19 @@ export default function ContextCard({
           boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06)",
           padding: "14px 16px",
           position: "relative",
-          // Mint-accent left rim for the hot-deals variant only.
+          // Left border picks up the card's accent so the rim color matches
+          // the icon color — mint for deals/yard sales, camel for zip/dead
+          // inventory/penny drops, neutral for the gray-icon idle nudge.
+          // Hot-deals variant gets a stronger 3px rim for emphasis.
           borderLeftWidth: card.accent === "mint" ? 3 : 1,
           borderLeftColor:
-            card.accent === "mint" ? "#5CE0B8" : "rgba(255,255,255,0.06)",
+            card.iconColor === "#5CE0B8"
+              ? card.accent === "mint"
+                ? "#5CE0B8"
+                : "rgba(92,224,184,0.15)"
+              : card.iconColor === "#D4A574"
+                ? "rgba(212,165,116,0.15)"
+                : "rgba(255,255,255,0.06)",
           animation: closing
             ? "contextCardOut 200ms ease-out forwards"
             : undefined,

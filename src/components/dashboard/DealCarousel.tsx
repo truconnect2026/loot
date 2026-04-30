@@ -41,7 +41,9 @@ export default function DealCarousel({
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 9,
-              color: "#5CE0B8",
+              // Faint mint tint on the count — reinforces "mint = money/deals"
+              // without competing with the label's dim plum.
+              color: "rgba(92,224,184,0.5)",
             }}
           >
             · {deals.length}
