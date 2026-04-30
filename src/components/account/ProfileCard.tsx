@@ -77,7 +77,7 @@ export default function ProfileCard({
             left: 0,
             right: 0,
             height: 2,
-            background: "linear-gradient(to right, #5CE0B8 0%, #D4A574 100%)",
+            background: "linear-gradient(to right, #5CE0B8, transparent)",
             borderTopLeftRadius: 4,
             borderTopRightRadius: 16,
             pointerEvents: "none",
@@ -162,13 +162,13 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO badge — quiet status indicator, not a button. Filled mint at
-            12% with no border so it doesn't compete with the user's name. */}
+        {/* PRO badge — register on second glance. Reduced bg + dimmer mint
+            text so the user's name reads first. */}
         {isPro && (
           <div
             style={{
               marginLeft: "auto",
-              backgroundColor: "rgba(92,224,184,0.12)",
+              backgroundColor: "rgba(92,224,184,0.08)",
               border: "none",
               borderRadius: 4,
               padding: "3px 8px",
@@ -180,7 +180,7 @@ export default function ProfileCard({
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
                 fontSize: 10,
-                color: "#5CE0B8",
+                color: "#4DBFA0",
               }}
             >
               PRO
