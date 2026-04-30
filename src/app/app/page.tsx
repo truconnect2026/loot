@@ -272,6 +272,9 @@ export default function DashboardPage() {
   const [weekProfit, setWeekProfit] = useState(0);
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
+  // Lifetime scan count drives the first-time-user branch — a user with zero
+  // rows ever gets the simplified onboarding view.
+  const [lifetimeScans, setLifetimeScans] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -383,6 +386,7 @@ export default function DashboardPage() {
     setWeekProfit(Math.round(weekProfitSum));
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
+    setLifetimeScans(rows.length);
     setProfitHistory(daily.map((v) => Math.round(v)));
     setStatsLoading(false);
   }, [supabase]);
@@ -471,6 +475,13 @@ export default function DashboardPage() {
     setVerdictData(lastScan);
     setVerdictOpen(true);
   }, [lastScan]);
+
+  // First-time-user branch: never scanned today AND never scanned ever. Gated
+  // on !statsLoading so we don't flash the onboarding view before stats land.
+  // Once they finish their first scan, isNewUser flips to false and the full
+  // dashboard fades in via the existing fadeInUp cascade.
+  const isNewUser =
+    !statsLoading && todayScans === 0 && lifetimeScans === 0;
 
   return (
     <>
@@ -587,6 +598,138 @@ export default function DashboardPage() {
           </button>
         </header>
 
+        {isNewUser ? (
+          /* ── First-time user — short, focused onboarding view. Welcome
+              line → scan buttons → blurred deal teaser → flip tip. The full
+              dashboard appears once they have any scan history. */
+          <>
+            {/* a. Welcome whisper — single line, no card. The entire value
+                proposition. */}
+            <div
+              style={{
+                padding: "24px 18px",
+                textAlign: "center",
+                animation:
+                  "welcomeFadeIn 600ms cubic-bezier(0.19, 1, 0.22, 1) both",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontWeight: 500,
+                  fontSize: 16,
+                  color: "#C8C0D8",
+                  lineHeight: 1.4,
+                }}
+              >
+                scan anything to see what it&rsquo;s worth
+              </p>
+            </div>
+
+            {/* b. Scan buttons — primary border pulses to invite the first tap. */}
+            <div style={{ paddingLeft: 18, paddingRight: 18, marginTop: 16 }}>
+              <ScanButtons
+                onScanUpc={() => startScan("barcode")}
+                onAiVision={() => startScan("vision")}
+                todayScans={todayScans}
+                pulsePrimary
+              />
+            </div>
+
+            {/* c. Deal carousel teaser — real DealCarousel underneath, frosted
+                overlay on top. Shapes are visible; data is gated behind a zip. */}
+            <section
+              style={{
+                paddingLeft: 18,
+                marginTop: 24,
+                position: "relative",
+              }}
+              aria-label="Deals teaser"
+            >
+              <div style={{ pointerEvents: "none" }} aria-hidden="true">
+                <DealCarousel
+                  label="DEALS NEAR YOU"
+                  deals={MOCK_DEALS_NEAR_YOU}
+                  onDealTap={() => {}}
+                  emptyMessage="No deals nearby right now."
+                />
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 18,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: "rgba(18,14,24,0.7)",
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                  borderRadius: 16,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 18px",
+                  zIndex: 1,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.5)",
+                    textAlign: "center",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  set your zip to unlock deals near you
+                </span>
+              </div>
+            </section>
+
+            {/* d. Flip tip — slightly louder than the returning-user tip
+                because new users still need to discover this content. */}
+            <section
+              style={{
+                paddingLeft: 18,
+                paddingRight: 18,
+                marginTop: 32,
+                marginBottom: 40,
+              }}
+            >
+              <div
+                style={{
+                  width: 60,
+                  height: 0.5,
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  margin: "0 auto 16px",
+                }}
+              />
+              <p
+                style={{
+                  maxWidth: 280,
+                  margin: "0 auto",
+                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontSize: 9,
+                  lineHeight: 1.7,
+                  color: "rgba(255,255,255,0.12)",
+                  textAlign: "center",
+                }}
+              >
+                griswold cast iron marked &lsquo;erie pa&rsquo; is worth 5-10×
+                more than unmarked. carry a magnet — sterling silver
+                won&rsquo;t stick.
+              </p>
+            </section>
+
+            <div
+              style={{
+                paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
+              }}
+            />
+          </>
+        ) : (
+        <>
         {/* 4. Smart context card — only renders if a condition matches */}
         <div
           id="context-card"
@@ -1003,6 +1146,8 @@ export default function DashboardPage() {
             paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
           }}
         />
+        </>
+        )}
       </div>
 
       {/* Overlays */}

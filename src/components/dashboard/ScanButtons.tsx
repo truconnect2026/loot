@@ -7,6 +7,8 @@ interface ScanButtonsProps {
   onAiVision: () => void;
   /** Today's scan count — used for both the gentle hint and the per-button counter. */
   todayScans: number;
+  /** First-time-user mode: SCAN UPC border breathes a quiet "tap me" pulse. */
+  pulsePrimary?: boolean;
 }
 
 function BarcodeIcon() {
@@ -64,6 +66,8 @@ interface HeroButtonProps {
   subtitle: string;
   todayScans: number;
   onTap: () => void;
+  /** Run the slow border pulse — only used by the primary button in new-user mode. */
+  pulse?: boolean;
 }
 
 function HeroButton({
@@ -73,6 +77,7 @@ function HeroButton({
   subtitle,
   todayScans,
   onTap,
+  pulse,
 }: HeroButtonProps) {
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -120,6 +125,8 @@ function HeroButton({
         cursor: "pointer",
         padding: 0,
         minWidth: 0,
+        // First-scan nudge — the keyframe overrides border-color while running.
+        animation: pulse ? "scanUpcPulse 2s ease-in-out infinite" : undefined,
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -204,6 +211,7 @@ export default function ScanButtons({
   onScanUpc,
   onAiVision,
   todayScans,
+  pulsePrimary,
 }: ScanButtonsProps) {
   const showHint = todayScans === 0;
 
@@ -230,6 +238,7 @@ export default function ScanButtons({
           subtitle="point at any barcode"
           todayScans={todayScans}
           onTap={onScanUpc}
+          pulse={pulsePrimary}
         />
         <HeroButton
           variant="camel"

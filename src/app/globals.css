@@ -108,3 +108,16 @@ input::placeholder {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Brand-new users get a single whisper-fade welcome line. ease-out-expo. */
+@keyframes welcomeFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slow border-color pulse on the new-user SCAN UPC button — a quiet "tap me"
+   that disappears the moment the user has any scan history. */
+@keyframes scanUpcPulse {
+  0%, 100% { border-color: rgba(92,224,184,0.15); }
+  50% { border-color: rgba(92,224,184,0.25); }
+}
