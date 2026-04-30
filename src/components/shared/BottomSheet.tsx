@@ -178,7 +178,7 @@ export default function BottomSheet({
               width: 40,
               height: 4,
               backgroundColor: "rgba(255,255,255,0.15)",
-              borderRadius: 9999,
+              borderRadius: 2,
             }}
           />
         </div>
