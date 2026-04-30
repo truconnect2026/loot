@@ -20,6 +20,15 @@ const cellLabel: React.CSSProperties = {
   marginBottom: 2,
 };
 
+// Smart email split — keep the full domain, truncate only the local part so
+// "truconnectmarketingsolutions@gmail.com" reads as "truconnect…@gmail.com"
+// instead of "truconnectmarketingsolutions@g…". The domain anchors identity.
+function splitEmail(email: string): { local: string; domain: string } {
+  const at = email.lastIndexOf("@");
+  if (at === -1) return { local: email, domain: "" };
+  return { local: email.slice(0, at), domain: email.slice(at) };
+}
+
 export default function ProfileCard({
   name,
   email,
@@ -31,55 +40,55 @@ export default function ProfileCard({
   scansLabel,
   onCancel,
 }: ProfileCardProps) {
+  const { local, domain } = splitEmail(email);
+
   return (
     <>
       <style>{`
-        .profile-card-surface {
-          position: relative;
-        }
         .profile-card-cancel {
           color: rgba(232, 99, 107, 0.6);
         }
         .profile-card-cancel:hover {
           color: rgba(232, 99, 107, 0.9);
         }
-        /* Gradient border via mask-composite — bright at top-left, mint kicker
-           at bottom-right. Sits above the card without affecting layout. */
-        .profile-card-surface::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(
-            135deg,
-            rgba(255,255,255,0.15) 0%,
-            rgba(255,255,255,0.04) 40%,
-            transparent 60%,
-            rgba(92,224,184,0.20) 100%
-          );
-          -webkit-mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-        }
       `}</style>
       <div
-        className="profile-card-surface"
         style={{
+          position: "relative",
           marginTop: 16,
-          // Glass tint — gradient border is the rim, no solid border underneath.
-          backgroundColor: "rgba(255,255,255,0.03)",
+          // Glass — slightly heavier wash than the previous 0.03 so the card
+          // reads as a foreground plane on the periwinkle ambient.
+          backgroundColor: "rgba(255,255,255,0.04)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: "4px 14px 14px 14px",
+          // Foreground-plane shadow — lifts the profile card above the
+          // settings tiles below.
           boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
+            "0 4px 24px -4px rgba(0,0,0,0.4), 0 1px 3px rgba(0,0,0,0.2)",
           padding: 20,
+          overflow: "hidden",
         }}
       >
+        {/* Crown — 2px gradient line flush at the very top. Mint left → camel
+            right. This is the profile card's signature; doesn't appear on any
+            other element in the app. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+            background: "linear-gradient(to right, #5CE0B8 0%, #D4A574 100%)",
+            borderTopLeftRadius: 4,
+            borderTopRightRadius: 14,
+            pointerEvents: "none",
+          }}
+        />
+
       {/* Profile row */}
       <div
         style={{
@@ -88,13 +97,16 @@ export default function ProfileCard({
           gap: 14,
         }}
       >
-        {/* Avatar */}
+        {/* Avatar — outline ring sits 2.5px outside the avatar edge. Static,
+            quiet, confident — the page's visual anchor. */}
         <div
           style={{
             width: 44,
             height: 44,
             borderRadius: "50%",
             border: "1px solid rgba(90, 78, 112, 0.3)",
+            outline: "1.5px solid #5CE0B8",
+            outlineOffset: "2.5px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -113,8 +125,10 @@ export default function ProfileCard({
           </span>
         </div>
 
-        {/* Name + email */}
-        <div style={{ minWidth: 0 }}>
+        {/* Name + email. Email truncates only the local part so the @domain
+            stays fully visible — identity comes from the domain, not the
+            random middle of the alias. */}
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
               fontFamily: "var(--font-outfit), sans-serif",
@@ -127,31 +141,42 @@ export default function ProfileCard({
           </div>
           <div
             style={{
+              marginTop: 4,
+              display: "flex",
+              alignItems: "baseline",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 11,
               color: "var(--text-muted)",
-              marginTop: 4,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              minWidth: 0,
             }}
           >
-            {email}
+            <span
+              style={{
+                flexShrink: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {local}
+            </span>
+            {domain && (
+              <span style={{ flexShrink: 0 }}>{domain}</span>
+            )}
           </div>
         </div>
 
-        {/* PRO pill */}
+        {/* PRO badge — quiet status indicator, not a button. Filled mint at
+            12% with no border so it doesn't compete with the user's name. */}
         {isPro && (
           <div
             style={{
               marginLeft: "auto",
-              backgroundColor: "var(--accent-mint-surface)",
-              border: "1px solid var(--accent-mint-border)",
+              backgroundColor: "rgba(92,224,184,0.12)",
+              border: "none",
               borderRadius: 4,
-              paddingLeft: 10,
-              paddingRight: 10,
-              paddingTop: 4,
-              paddingBottom: 4,
+              padding: "3px 8px",
               flexShrink: 0,
             }}
           >
@@ -159,8 +184,8 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
-                fontSize: 8,
-                color: "var(--accent-mint)",
+                fontSize: 10,
+                color: "#5CE0B8",
               }}
             >
               PRO

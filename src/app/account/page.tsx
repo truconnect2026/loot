@@ -271,6 +271,21 @@ export default function AccountPage() {
   return (
     <>
       <DotGridBackground />
+      {/* Ambient blue wash — sits between dot grid and content. The vault has
+          its own color temperature: a barely-perceptible periwinkle glow
+          centered behind the profile card area gives this page a cooler
+          temperature than the dashboard's warmer mint/camel palette. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle 350px at 50% 15%, rgba(123,143,255,0.03) 0%, rgba(123,143,255,0.015) 50%, transparent 75%)",
+        }}
+      />
       <RadiusSheet
         open={radiusSheetOpen}
         onClose={() => setRadiusSheetOpen(false)}
@@ -287,25 +302,47 @@ export default function AccountPage() {
           zIndex: 1,
         }}
       >
-        {/* Back arrow */}
-        <button
-          onClick={() => router.push("/app")}
-          onPointerDown={() => setBackPressed(true)}
-          onPointerUp={() => setBackPressed(false)}
-          onPointerLeave={() => setBackPressed(false)}
+        {/* Page header — back arrow + "Account" title. The title anchors the
+            page so a returning user lands and instantly knows where they are. */}
+        <div
           style={{
             marginTop: 16,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 4,
             display: "flex",
-            color: backPressed ? "var(--text-primary)" : "var(--text-muted)",
-            transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+            alignItems: "center",
+            gap: 12,
           }}
         >
-          <ChevronLeft />
-        </button>
+          <button
+            onClick={() => router.push("/app")}
+            onPointerDown={() => setBackPressed(true)}
+            onPointerUp={() => setBackPressed(false)}
+            onPointerLeave={() => setBackPressed(false)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              color: backPressed
+                ? "var(--text-primary)"
+                : "var(--text-muted)",
+              transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <ChevronLeft />
+          </button>
+          <span
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 600,
+              fontSize: 13,
+              letterSpacing: "0.05em",
+              color: "#5A4E70",
+            }}
+          >
+            Account
+          </span>
+        </div>
 
         {/* Profile Card */}
         <ProfileCard
