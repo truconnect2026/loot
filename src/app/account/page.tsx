@@ -514,10 +514,30 @@ export default function AccountPage() {
         {/* Spacing rhythm creates implicit groups without section headers:
             6/6 within Location, 18 between groups, 28 before Sign out. */}
 
+        {/* Section label — bridges the glass profile card to the matte
+            utility tiles. One word of context where the visual language
+            shifts. */}
+        <div
+          style={{
+            marginTop: 20,
+            marginBottom: 10,
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 600,
+            fontSize: 10,
+            letterSpacing: "0.12em",
+            color: "#3D2E55",
+            textAlign: "left",
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 30ms forwards",
+          }}
+        >
+          SETTINGS
+        </div>
+
         {/* Zip code — persists to profiles.zip_code */}
         <div
           style={{
-            marginTop: 16,
             opacity: 0,
             animation:
               "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 50ms forwards",

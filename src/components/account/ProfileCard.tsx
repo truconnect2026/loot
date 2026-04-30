@@ -189,13 +189,18 @@ export default function ProfileCard({
         )}
       </div>
 
-      {/* Dashed separator — divides identity (above) from billing (below). */}
+      {/* Dashed separator — divides identity (above) from billing (below).
+          Uses a repeating-linear-gradient instead of `border: dashed` so the
+          dash size stays consistent across browsers (Safari renders dashed
+          borders as small dots otherwise). */}
       <div
+        aria-hidden="true"
         style={{
           marginTop: 16,
           marginBottom: 14,
-          borderTop: "1px dashed #2A2240",
-          height: 0,
+          height: 1,
+          backgroundImage:
+            "repeating-linear-gradient(to right, #2A2240 0px, #2A2240 6px, transparent 6px, transparent 12px)",
         }}
       />
 
