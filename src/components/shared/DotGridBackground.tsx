@@ -437,7 +437,7 @@ export default function DotGridBackground({
             height: 500,
             borderRadius: "50%",
             backgroundColor: "#5CE0B8",
-            opacity: 0.08,
+            opacity: 0.09,
             filter: "blur(120px)",
             animation: reducedMotion
               ? undefined
@@ -454,7 +454,7 @@ export default function DotGridBackground({
             height: 400,
             borderRadius: "50%",
             backgroundColor: "#7B8FFF",
-            opacity: 0.06,
+            opacity: 0.07,
             filter: "blur(120px)",
             animation: reducedMotion
               ? undefined

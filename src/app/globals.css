@@ -37,12 +37,11 @@
   --press-bg: #1F1835;
 }
 
-html {
-  background: var(--bg-page);
+html, body {
+  background-color: #120e18;
 }
 
 body {
-  background: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-outfit), sans-serif;
   font-feature-settings: "tnum";
@@ -98,4 +97,14 @@ input::placeholder {
   0% { opacity: 0; letter-spacing: 0.20em; }
   50% { opacity: 1; letter-spacing: 0.14em; }
   100% { opacity: 1; letter-spacing: 0.10em; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

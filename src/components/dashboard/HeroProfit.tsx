@@ -206,144 +206,139 @@ export default function HeroProfit(props: HeroProfitProps) {
   const delta = deltaFor(period, props);
 
   return (
-    <>
-      <style>{`
-        @keyframes heroShimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}</style>
+    <div
+      style={{
+        // Glass surface with the lit-from-above gradient on top — this is
+        // the single most prominent element on the dashboard.
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%), rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 20,
+        boxShadow:
+          "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
+        padding: 20,
+      }}
+    >
+      {/* Two-line period header — label on its own line, pills on the next.
+          Stacking them avoids horizontal cramping on narrow phones. */}
       <div
         style={{
-          // Glass surface with the lit-from-above gradient on top — this is
-          // the single most prominent element on the dashboard.
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%), rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: 20,
-          boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-          padding: 20,
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontWeight: 500,
+          fontSize: 8,
+          letterSpacing: "0.12em",
+          color: "#5A4E70",
+          textTransform: "uppercase",
+          textAlign: "left",
         }}
       >
-        {/* Top row: label on the left, period pills on the right */}
+        {PERIOD_LABEL[period]}
+      </div>
+      <div style={{ display: "flex", gap: 4, marginTop: 4, justifyContent: "flex-start" }}>
+        <Pill label="Today" active={period === "today"} onTap={() => setPeriod("today")} />
+        <Pill label="Week" active={period === "week"} onTap={() => setPeriod("week")} />
+        <Pill label="Month" active={period === "month"} onTap={() => setPeriod("month")} />
+        <Pill label="All" active={period === "all"} onTap={() => setPeriod("all")} />
+      </div>
+
+      {/* Hero number sits 16px below the pills. Crossfade from shimmer to
+          real content once stats land — both layers occupy the same slot so
+          the layout doesn't jump. */}
+      <div style={{ position: "relative", marginTop: 16, height: 44 }}>
         <div
+          aria-hidden={!props.loading}
+          style={{
+            position: "absolute",
+            top: 4,
+            left: 0,
+            width: 120,
+            height: 36,
+            borderRadius: 8,
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backgroundImage:
+              "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
+            backgroundSize: "200% 100%",
+            animation: "shimmer 1.5s linear infinite",
+            opacity: props.loading ? 1 : 0,
+            transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          aria-hidden={props.loading}
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            marginBottom: 12,
+            alignItems: "baseline",
+            gap: 2,
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 300,
+            color: profitColor,
+            textShadow: profitGlow,
+            lineHeight: 1,
+            opacity: props.loading ? 0 : 1,
+            transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
-          <span
+          <span style={{ fontSize: 24 }}>$</span>
+          <AnimNum
+            value={profit}
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontWeight: 500,
-              fontSize: 8,
-              letterSpacing: "0.12em",
-              color: "#5A4E70",
-              textTransform: "uppercase",
-            }}
-          >
-            {PERIOD_LABEL[period]}
-          </span>
-          <div style={{ display: "flex", gap: 4 }}>
-            <Pill label="Today" active={period === "today"} onTap={() => setPeriod("today")} />
-            <Pill label="Week" active={period === "week"} onTap={() => setPeriod("week")} />
-            <Pill label="Month" active={period === "month"} onTap={() => setPeriod("month")} />
-            <Pill label="All" active={period === "all"} onTap={() => setPeriod("all")} />
-          </div>
-        </div>
-
-        {/* Hero number — Outfit thin LED readout */}
-        {props.loading ? (
-          <div
-            style={{
-              width: 140,
-              height: 44,
-              borderRadius: 8,
-              backgroundColor: "rgba(255,255,255,0.04)",
-              backgroundImage:
-                "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
-              backgroundSize: "200% 100%",
-              animation: "heroShimmer 1.5s linear infinite",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 2,
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontSize: 44,
               fontWeight: 300,
               color: profitColor,
-              textShadow: profitGlow,
-              lineHeight: 1,
+              fontFeatureSettings: '"tnum"',
             }}
-          >
-            <span style={{ fontSize: 24 }}>$</span>
-            <AnimNum
-              value={profit}
-              style={{
-                fontSize: 44,
-                fontWeight: 300,
-                color: profitColor,
-                fontFeatureSettings: '"tnum"',
-              }}
-            />
-          </div>
-        )}
-
-        {/* Delta chip */}
-        {delta && (
-          <div style={{ marginTop: 6 }}>
-            <span
-              style={{
-                display: "inline-block",
-                backgroundColor: delta.positive
-                  ? "rgba(92,224,184,0.08)"
-                  : "rgba(232,99,107,0.08)",
-                color: delta.positive ? "#5CE0B8" : "#E8636B",
-                borderRadius: 6,
-                padding: "3px 8px",
-                fontFamily: "var(--font-jetbrains-mono), monospace",
-                fontWeight: 500,
-                fontSize: 10,
-              }}
-            >
-              {delta.text}
-            </span>
-          </div>
-        )}
-
-        {/* Sparkline */}
-        <div style={{ marginTop: 12 }}>
-          <Sparkline values={props.dailyProfitHistory} />
-        </div>
-
-        {/* Today's secondary stats */}
-        <div
-          style={{
-            marginTop: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-          }}
-        >
-          <SecondaryStat label="Scans" value={`${props.todayScans}`} />
-          <Divider />
-          <SecondaryStat
-            label="Buys"
-            value={`${props.todayBuys}`}
-            valueColor="#5CE0B8"
           />
-          <Divider />
-          <SecondaryStat label="Spent" value={`$${props.todaySpent}`} />
         </div>
       </div>
-    </>
+
+      {/* Delta chip */}
+      {delta && (
+        <div style={{ marginTop: 6 }}>
+          <span
+            style={{
+              display: "inline-block",
+              backgroundColor: delta.positive
+                ? "rgba(92,224,184,0.08)"
+                : "rgba(232,99,107,0.08)",
+              color: delta.positive ? "#5CE0B8" : "#E8636B",
+              borderRadius: 6,
+              padding: "3px 8px",
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontWeight: 500,
+              fontSize: 10,
+            }}
+          >
+            {delta.text}
+          </span>
+        </div>
+      )}
+
+      {/* Sparkline */}
+      <div style={{ marginTop: 12 }}>
+        <Sparkline values={props.dailyProfitHistory} />
+      </div>
+
+      {/* Today's secondary stats */}
+      <div
+        style={{
+          marginTop: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <SecondaryStat label="Scans" value={`${props.todayScans}`} />
+        <Divider />
+        <SecondaryStat
+          label="Buys"
+          value={`${props.todayBuys}`}
+          valueColor="#5CE0B8"
+        />
+        <Divider />
+        <SecondaryStat label="Spent" value={`$${props.todaySpent}`} />
+      </div>
+    </div>
   );
 }
 

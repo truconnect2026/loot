@@ -23,10 +23,13 @@ import SourcingCards from "@/components/dashboard/SourcingCards";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
 
-// Light haptic helper — Android Chrome only, silent no-op everywhere else.
-function haptic(pattern: number | number[] = 10) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(pattern);
+// Light haptic helper — Android Chrome only, iOS silently fails. Defaults to
+// a 10ms tick when no pattern is passed.
+function haptic(ms?: number | number[]) {
+  try {
+    navigator?.vibrate?.(ms ?? 10);
+  } catch {
+    /* iOS silently fails, that's fine */
   }
 }
 
@@ -282,6 +285,11 @@ export default function DashboardPage() {
   // Tools drawer expansion
   const [showAllTools, setShowAllTools] = useState(false);
 
+  // Press feedback for header avatar + show-all-tools toggle. Inlined here
+  // because each is a one-off button — no need for a wrapper component.
+  const [avatarPressed, setAvatarPressed] = useState(false);
+  const [showAllPressed, setShowAllPressed] = useState(false);
+
   // Time/day for context card + sourcing cards. Read on the client only so
   // the SSR pass renders a stable null and the day-of-week never mismatches.
   const [now, setNow] = useState<Date | null>(null);
@@ -467,14 +475,6 @@ export default function DashboardPage() {
   return (
     <>
       <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
         .carousel-row::-webkit-scrollbar { display: none; height: 0; width: 0; }
         .carousel-row { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
@@ -487,7 +487,6 @@ export default function DashboardPage() {
           margin: "0 auto",
           position: "relative",
           zIndex: 1,
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
         {/* 1. Scroll sentinel */}
@@ -539,11 +538,16 @@ export default function DashboardPage() {
 
           <button
             onClick={() => router.push("/account")}
+            onPointerDown={() => setAvatarPressed(true)}
+            onPointerUp={() => setAvatarPressed(false)}
+            onPointerLeave={() => setAvatarPressed(false)}
             style={{
               width: 32,
               height: 32,
               borderRadius: "50%",
-              backgroundColor: "rgba(255,255,255,0.03)",
+              backgroundColor: avatarPressed
+                ? "rgba(255,255,255,0.06)"
+                : "rgba(255,255,255,0.03)",
               border: "1px solid rgba(255,255,255,0.06)",
               boxShadow:
                 "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
@@ -552,6 +556,9 @@ export default function DashboardPage() {
               justifyContent: "center",
               cursor: "pointer",
               padding: 0,
+              transform: avatarPressed ? "scale(0.95)" : "scale(1)",
+              transition:
+                "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             <span
@@ -655,16 +662,21 @@ export default function DashboardPage() {
                 textAlign: "left",
                 animation:
                   "fadeInUp 300ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                transition:
+                  "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
               }}
               onPointerDown={(e) => {
                 e.currentTarget.style.backgroundColor =
                   "rgba(255,255,255,0.03)";
+                e.currentTarget.style.transform = "scale(0.98)";
               }}
               onPointerUp={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.transform = "scale(1)";
               }}
               onPointerLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               <span
@@ -714,7 +726,7 @@ export default function DashboardPage() {
             marginTop: 24,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "180ms",
+            animationDelay: "200ms",
           }}
         >
           <DealCarousel
@@ -732,7 +744,7 @@ export default function DashboardPage() {
             marginTop: 20,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "240ms",
+            animationDelay: "280ms",
           }}
         >
           <DealCarousel
@@ -751,7 +763,7 @@ export default function DashboardPage() {
             marginTop: 24,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "300ms",
+            animationDelay: "360ms",
           }}
         >
           <div
@@ -783,7 +795,7 @@ export default function DashboardPage() {
             marginTop: 24,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "360ms",
+            animationDelay: "420ms",
           }}
         >
           <div
@@ -881,33 +893,39 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => setShowAllTools((v) => !v)}
+            onClick={() => {
+              haptic();
+              setShowAllTools((v) => !v);
+            }}
+            onPointerDown={() => setShowAllPressed(true)}
+            onPointerUp={() => setShowAllPressed(false)}
+            onPointerLeave={() => setShowAllPressed(false)}
             style={{
               display: "block",
               width: "100%",
               padding: 10,
               marginTop: 4,
-              background: "transparent",
+              background: showAllPressed
+                ? "rgba(255,255,255,0.03)"
+                : "transparent",
               border: "none",
               cursor: "pointer",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 10,
-              color: "#5A4E70",
+              color: showAllPressed ? "#C8C0D8" : "#5A4E70",
               textAlign: "center",
-              transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-            }}
-            onPointerEnter={(e) => {
-              e.currentTarget.style.color = "#C8C0D8";
-            }}
-            onPointerLeave={(e) => {
-              e.currentTarget.style.color = "#5A4E70";
+              transform: showAllPressed ? "scale(0.98)" : "scale(1)",
+              transition:
+                "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), color 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             {showAllTools ? "Show less" : "Show all tools"}
           </button>
         </section>
 
-        {/* 11. Flip tip — hairline above + centered tip */}
+        {/* 11. Flip tip — hairline above + centered tip. Tip is intentionally
+            near-invisible (rgba 0.07): a hidden detail for close readers, not
+            a distraction for the rest. */}
         <section
           style={{
             paddingLeft: 18,
@@ -916,7 +934,7 @@ export default function DashboardPage() {
             marginBottom: 40,
             opacity: 0,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "420ms",
+            animationDelay: "500ms",
           }}
         >
           <div
@@ -935,7 +953,7 @@ export default function DashboardPage() {
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 9,
               lineHeight: 1.7,
-              color: "rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.07)",
               textAlign: "center",
             }}
           >
@@ -944,8 +962,13 @@ export default function DashboardPage() {
           </p>
         </section>
 
-        {/* 12. Bottom pad */}
-        <div style={{ paddingBottom: 40 }} />
+        {/* 12. Bottom pad — safe-area-aware so the tip never slips under the
+            iOS home indicator. */}
+        <div
+          style={{
+            paddingBottom: "calc(40px + env(safe-area-inset-bottom, 0px))",
+          }}
+        />
       </div>
 
       {/* Overlays */}

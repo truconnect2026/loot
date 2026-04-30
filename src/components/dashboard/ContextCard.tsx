@@ -224,6 +224,12 @@ export default function ContextCard({
   if (dismissed.has(card.key)) return null;
 
   const handleDismiss = () => {
+    // Confirm the tap physically — Android Chrome only, silent elsewhere.
+    try {
+      navigator?.vibrate?.(10);
+    } catch {
+      /* iOS silently fails, that's fine */
+    }
     setClosing(true);
     setTimeout(() => {
       setDismissed((prev) => {
@@ -325,12 +331,21 @@ export default function ContextCard({
               padding: 0,
               cursor: "pointer",
               color: "#3D2E55",
-              transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+              transition:
+                "color 100ms cubic-bezier(0.16, 1, 0.3, 1), transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
             }}
             onPointerEnter={(e) => {
               e.currentTarget.style.color = "#C8C0D8";
             }}
+            onPointerDown={(e) => {
+              e.currentTarget.style.transform = "scale(0.9)";
+              e.currentTarget.style.color = "#C8C0D8";
+            }}
+            onPointerUp={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
             onPointerLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
               e.currentTarget.style.color = "#3D2E55";
             }}
           >
