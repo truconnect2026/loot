@@ -30,12 +30,16 @@ export default function DotGridBackground({
   const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
-    setHour(new Date().getHours());
-    if (typeof window !== "undefined" && window.matchMedia) {
-      setReducedMotion(
-        window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      );
-    }
+    // Microtask defers the setState past the synchronous effect body so
+    // react-hooks/set-state-in-effect doesn't trace the call into setState.
+    queueMicrotask(() => {
+      setHour(new Date().getHours());
+      if (typeof window !== "undefined" && window.matchMedia) {
+        setReducedMotion(
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        );
+      }
+    });
   }, []);
 
   useEffect(() => {

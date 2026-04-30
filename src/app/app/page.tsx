@@ -14,8 +14,6 @@ import type { Deal } from "@/components/dashboard/DealCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
-import DealCarousel from "@/components/dashboard/DealCarousel";
-import type { DealItem } from "@/components/dashboard/DealCard";
 import SourcingCards from "@/components/dashboard/SourcingCards";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
@@ -80,15 +78,6 @@ function CheckCircleIcon() {
   );
 }
 
-function HomeIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  );
-}
-
 function PackageIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
@@ -120,7 +109,7 @@ const TOP_TOOLS: Tool[] = [
   { name: "Shelf Scanner", icon: <ShelfIcon /> },
   { name: "Price Check", icon: <DollarIcon /> },
   { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
-  { name: "Authenticate", icon: <ShieldIcon /> },
+  { name: "Authenticate", icon: <CheckCircleIcon /> },
 ];
 
 const EXTRA_TOOLS: Tool[] = [
@@ -254,45 +243,6 @@ const FREE_DEALS: Deal[] = [
   },
 ];
 
-// ── Sourcing card icons (16px stroke) ──
-
-function SourcingTagIcon() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#D4A574"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-      <line x1={7} y1={7} x2={7.01} y2={7} />
-    </svg>
-  );
-}
-
-function SourcingMapIcon() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#5CE0B8"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-      <line x1={8} y1={2} x2={8} y2={18} />
-      <line x1={16} y1={6} x2={16} y2={22} />
-    </svg>
-  );
-}
-
 function ChevronDownIcon() {
   return (
     <svg
@@ -357,13 +307,6 @@ function ShowAllToolsButton({ expanded, onToggle }: ShowAllToolsButtonProps) {
   );
 }
 
-interface Stats {
-  scans: number;
-  buys: number;
-  spent: number;
-  profit: number;
-}
-
 interface ScanRow {
   cost: number | null;
   profit: number | null;
@@ -403,14 +346,7 @@ export default function DashboardPage() {
   const [weekProfit, setWeekProfit] = useState(0);
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
-  // Lifetime scan count drives the first-time-user branch — a user with zero
-  // rows ever gets the simplified onboarding view.
-  const [lifetimeScans, setLifetimeScans] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  // Last scan preview strip
-  const [lastScan, setLastScan] = useState<ScanResponse | null>(null);
 
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -419,10 +355,8 @@ export default function DashboardPage() {
   // Tools drawer expansion
   const [showAllTools, setShowAllTools] = useState(false);
 
-  // Press feedback for header avatar + show-all-tools toggle. Inlined here
-  // because each is a one-off button — no need for a wrapper component.
+  // Press feedback for header avatar — inlined since it's a one-off button.
   const [avatarPressed, setAvatarPressed] = useState(false);
-  const [showAllPressed, setShowAllPressed] = useState(false);
 
   // Time/day for context card + sourcing cards. Read on the client only so
   // the SSR pass renders a stable null and the day-of-week never mismatches.
@@ -434,41 +368,22 @@ export default function DashboardPage() {
   const dayOfWeek = now ? now.getDay() : 0;
   const hour = now ? now.getHours() : 0;
 
-  // Carousel scroll target — context card "View deals" jumps here.
-  const dealsCarouselRef = useRef<HTMLDivElement>(null);
-
-  // Scroll-position state for the sticky header
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Tools drawer state — `exiting` runs the reverse-stagger fade before
-  // the container collapses.
-  const [showAllTools, setShowAllTools] = useState(false);
+  // Tools drawer reverse-stagger close.
   const [toolsExiting, setToolsExiting] = useState(false);
 
   // Deal detail sheet state
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [dealSheetOpen, setDealSheetOpen] = useState(false);
 
-  // Client-side clock for ContextCard — set after mount so we don't ship
-  // a server time that mismatches the user's local time at hydration.
-  const [clock, setClock] = useState<{ day: number; hour: number } | null>(null);
-
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setStatsLoading(false);
-      return;
-    }
+    if (!userData.user) return;
 
     const { data, error } = await supabase
       .from("scans")
       .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) {
-      setStatsLoading(false);
-      return;
-    }
+    if (error || !data) return;
 
     const rows = data as ScanRow[];
 
@@ -534,9 +449,7 @@ export default function DashboardPage() {
     setWeekProfit(Math.round(weekProfitSum));
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
-    setLifetimeScans(rows.length);
     setProfitHistory(daily.map((v) => Math.round(v)));
-    setStatsLoading(false);
   }, [supabase]);
 
   // refreshStats sets state, which `react-hooks/set-state-in-effect` flags
@@ -565,17 +478,6 @@ export default function DashboardPage() {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, []);
-
-  // Stamp the local clock once on mount; keeps ContextCard's day/hour gates
-  // local-timezone correct without tripping hydration mismatches. The
-  // microtask defers the setState past the synchronous effect-body check
-  // that `react-hooks/set-state-in-effect` enforces.
-  useEffect(() => {
-    queueMicrotask(() => {
-      const d = new Date();
-      setClock({ day: d.getDay(), hour: d.getHours() });
-    });
   }, []);
 
   // Re-fetch profile + stats when the user returns to this tab — covers the
@@ -612,7 +514,6 @@ export default function DashboardPage() {
     (result: ScanResponse) => {
       setScanOpen(false);
       setVerdictData(result);
-      setLastScan(result);
       setVerdictOpen(true);
 
       if (result.verdict === "BUY") {
@@ -697,10 +598,6 @@ export default function DashboardPage() {
         }}
       >
         {/* 1. Scroll sentinel — drives the sticky-header background toggle */}
-        <div ref={sentinelRef} data-scroll-sentinel="" style={{ height: 1 }} />
-
-        {/* 2. Sticky header — chrome is 56px; padding-top carves out the iOS
-            safe-area inset so the visible chrome sits below the notch. */}
         <div
           ref={sentinelRef}
           data-scroll-sentinel=""
@@ -708,7 +605,7 @@ export default function DashboardPage() {
           aria-hidden="true"
         />
 
-        {/* 2 + 3. Sticky header — safe-area-aware, transparent → solid on scroll */}
+        {/* 2. Sticky header — safe-area-aware, transparent → solid on scroll */}
         <header
           style={{
             position: "sticky",
@@ -799,12 +696,12 @@ export default function DashboardPage() {
           }}
         >
           <ContextCard
-            todayScans={hasUser ? stats.scans : 0}
+            todayScans={todayScans}
             unsoldOldItems={0}
             hotDealsCount={0}
             userZip={null}
-            dayOfWeek={clock?.day ?? -1}
-            hour={clock?.hour ?? -1}
+            dayOfWeek={dayOfWeek}
+            hour={hour}
           />
         </div>
 
@@ -819,15 +716,15 @@ export default function DashboardPage() {
           }}
         >
           <HeroProfit
-            todayProfit={0}
-            yesterdayProfit={0}
-            weekProfit={0}
-            monthProfit={0}
-            allTimeProfit={0}
-            todayScans={0}
-            todayBuys={0}
-            todaySpent={0}
-            dailyProfitHistory={[0, 0, 0, 0, 0, 0, 0]}
+            todayProfit={todayProfit}
+            yesterdayProfit={yesterdayProfit}
+            weekProfit={weekProfit}
+            monthProfit={monthProfit}
+            allTimeProfit={allTimeProfit}
+            todayScans={todayScans}
+            todayBuys={todayBuys}
+            todaySpent={todaySpent}
+            dailyProfitHistory={profitHistory}
           />
         </div>
 
@@ -846,7 +743,7 @@ export default function DashboardPage() {
           <ScanButtons
             onScanUpc={() => startScan("barcode")}
             onAiVision={() => startScan("vision")}
-            hasScanned={hasUser ? stats.scans > 0 : true}
+            todayScans={todayScans}
           />
         </div>
 
@@ -884,7 +781,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 8. Sourcing intel */}
+        {/* 8. Sourcing intel — uses the polished SourcingCards component */}
         <div
           style={{
             padding: "0 18px",
@@ -894,109 +791,12 @@ export default function DashboardPage() {
           }}
         >
           <div style={SECTION_LABEL}>SOURCING</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {/* Penny Drops — warm camel tint */}
-            <div
-              style={{
-                flex: 1,
-                height: 100,
-                background:
-                  "linear-gradient(180deg, rgba(212,165,116,0.06) 0%, rgba(255,255,255,0.01) 100%)",
-                border: "1px solid rgba(212,165,116,0.08)",
-                borderRadius: 16,
-                padding: 12,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <SourcingTagIcon />
-                <span
-                  style={{
-                    fontFamily: "var(--font-outfit), sans-serif",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#C8C0D8",
-                  }}
-                >
-                  Penny Drops
-                </span>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                    fontSize: 9,
-                    color: "#5A4E70",
-                    marginBottom: 2,
-                  }}
-                >
-                  updates Tuesdays
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                    fontSize: 9,
-                    color: "#D4A574",
-                  }}
-                >
-                  48 items this week
-                </div>
-              </div>
-            </div>
-
-            {/* Yard Sale Map — mint tint */}
-            <div
-              style={{
-                flex: 1,
-                height: 100,
-                background:
-                  "linear-gradient(180deg, rgba(92,224,184,0.06) 0%, rgba(255,255,255,0.01) 100%)",
-                border: "1px solid rgba(92,224,184,0.08)",
-                borderRadius: 16,
-                padding: 12,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <SourcingMapIcon />
-                <span
-                  style={{
-                    fontFamily: "var(--font-outfit), sans-serif",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#C8C0D8",
-                  }}
-                >
-                  Yard Sale Map
-                </span>
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                    fontSize: 9,
-                    color: "#5A4E70",
-                    marginBottom: 2,
-                  }}
-                >
-                  updates Saturdays
-                </div>
-                <div
-                  style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                    fontSize: 9,
-                    color: "#5CE0B8",
-                  }}
-                >
-                  0 sales near you
-                </div>
-              </div>
-            </div>
-          </div>
+          <SourcingCards
+            pennyItemCount={48}
+            yardSaleTodayCount={0}
+            onPennyTap={() => console.log("penny drops tap")}
+            onYardSaleTap={() => console.log("yard sale tap")}
+          />
         </div>
 
         {/* 9. Tools drawer — overflow:hidden clips the MORE TOOLS hairline

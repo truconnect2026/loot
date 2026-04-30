@@ -9,7 +9,6 @@ import { createServerClient } from "@supabase/ssr";
  */
 
 const PROTECTED = ["/app", "/account"];
-const AUTH_ONLY = ["/"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });

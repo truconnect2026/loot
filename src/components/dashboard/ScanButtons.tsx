@@ -130,7 +130,6 @@ function HeroButton({
         gap: 4,
         cursor: "pointer",
         padding: 0,
-        minWidth: 0,
         // First-scan nudge — the keyframe overrides border-color while running.
         animation: pulse ? "scanUpcPulse 2s ease-in-out infinite" : undefined,
         transform: pressed ? "scale(0.97)" : "scale(1)",
