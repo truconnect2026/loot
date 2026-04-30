@@ -6,6 +6,7 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import HeroProfit from "@/components/dashboard/HeroProfit";
+import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 // Kept for the upcoming carousel-card refactor — its glass styling will be
 // reused once the deal/clearance feeds are wired up.
@@ -165,11 +166,15 @@ export default function DashboardPage() {
   const [hasUser, setHasUser] = useState(false);
 
   // Scroll-position state for the sticky header
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
   // Tools drawer state
   const [showAllTools, setShowAllTools] = useState(false);
+
+  // Client-side clock for ContextCard — set after mount so we don't ship
+  // a server time that mismatches the user's local time at hydration.
+  const [clock, setClock] = useState<{ day: number; hour: number } | null>(null);
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -212,13 +217,37 @@ export default function DashboardPage() {
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
+    const obs = new IntersectionObserver(
       ([entry]) => setScrolled(!entry.isIntersecting),
       { threshold: 0 }
     );
-    observer.observe(el);
-    return () => observer.disconnect();
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
+
+  // Stamp the local clock once on mount; keeps ContextCard's day/hour gates
+  // local-timezone correct without tripping hydration mismatches. The
+  // microtask defers the setState past the synchronous effect-body check
+  // that `react-hooks/set-state-in-effect` enforces.
+  useEffect(() => {
+    queueMicrotask(() => {
+      const d = new Date();
+      setClock({ day: d.getDay(), hour: d.getHours() });
+    });
+  }, []);
+
+  // Re-fetch profile + stats when the user returns to this tab — covers the
+  // common path of going to /account, setting a zip, then coming back so the
+  // ContextCard's no-zip branch resolves.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") {
+        void refreshStats();
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refreshStats]);
 
   const startScan = useCallback((mode: "barcode" | "vision") => {
     setScanMode(mode);
@@ -296,11 +325,15 @@ export default function DashboardPage() {
             alignItems: "center",
             justifyContent: "space-between",
             backgroundColor: scrolled ? "rgba(18,14,24,0.95)" : "transparent",
-            backdropFilter: scrolled ? "blur(12px)" : "none",
-            WebkitBackdropFilter: scrolled ? "blur(12px)" : "none",
-            boxShadow: scrolled ? "0 1px 0 rgba(255,255,255,0.04)" : "none",
+            backdropFilter: scrolled ? "blur(12px) saturate(150%)" : "none",
+            WebkitBackdropFilter: scrolled
+              ? "blur(12px) saturate(150%)"
+              : "none",
+            boxShadow: scrolled
+              ? "0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3)"
+              : "none",
             transition:
-              "background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+              "background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -349,7 +382,7 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* 3. Smart context card slot — built in prompt 3 */}
+        {/* 3. Smart context card — priority-driven daily nudge */}
         <div
           id="context-card"
           style={{
@@ -359,7 +392,16 @@ export default function DashboardPage() {
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "0ms",
           }}
-        />
+        >
+          <ContextCard
+            todayScans={hasUser ? stats.scans : 0}
+            unsoldOldItems={0}
+            hotDealsCount={0}
+            userZip={null}
+            dayOfWeek={clock?.day ?? -1}
+            hour={clock?.hour ?? -1}
+          />
+        </div>
 
         {/* 4. Hero profit card — mock data for now; real Supabase wiring later */}
         <div
@@ -402,6 +444,7 @@ export default function DashboardPage() {
 
         {/* 6. Deals near you — bleeds to right edge */}
         <div
+          id="deals-near-you"
           style={{
             paddingLeft: 18,
             marginTop: 24,

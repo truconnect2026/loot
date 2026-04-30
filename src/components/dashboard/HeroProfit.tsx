@@ -172,27 +172,51 @@ export default function HeroProfit({
           ? monthProfit
           : allTimeProfit;
 
+  // Three visual states.
+  const nonZeroDays = dailyProfitHistory.filter((v) => v !== 0).length;
+  const isEmpty =
+    todayProfit === 0 &&
+    todayScans === 0 &&
+    todayBuys === 0 &&
+    todaySpent === 0;
+  const isEarly = !isEmpty && nonZeroDays < 3;
+
   const isNegative = value < 0;
   const isZero = value === 0;
 
-  const heroColor = isZero ? "#5A4E70" : isNegative ? "#E8636B" : "#5CE0B8";
-  const heroGlow = isZero
-    ? "none"
-    : isNegative
-      ? "0 0 32px rgba(232,99,107,0.15)"
-      : "0 0 32px rgba(92,224,184,0.15)";
+  // Empty state forces a dim plum hero, no glow.
+  const heroColor = isEmpty
+    ? "#3D2E55"
+    : isZero
+      ? "#5A4E70"
+      : isNegative
+        ? "#E8636B"
+        : "#5CE0B8";
+  const heroGlow =
+    isEmpty || isZero
+      ? "none"
+      : isNegative
+        ? "0 0 32px rgba(232,99,107,0.15)"
+        : "0 0 32px rgba(92,224,184,0.15)";
+  const heroNumberSize = isEmpty ? 36 : 44;
+  const heroDollarSize = isEmpty ? 20 : 24;
 
   // Delta chip — only "today vs yesterday" is computable from current props.
   // Week/month deltas would need lastWeekProfit/lastMonthProfit; hidden until
-  // those props get added.
+  // those props get added. Also hidden in the empty state.
   let deltaText: string | null = null;
   let deltaPositive = true;
-  if (period === "today" && yesterdayProfit !== 0) {
+  if (!isEmpty && period === "today" && yesterdayProfit !== 0) {
     const diff = todayProfit - yesterdayProfit;
     deltaPositive = diff >= 0;
     const sign = diff >= 0 ? "+" : "-";
     deltaText = `${sign}$${Math.abs(diff)} vs yesterday`;
   }
+
+  // Secondary-stat colors flatten to dim plum in the empty state.
+  const scansColor = isEmpty ? "#3D2E55" : "#C8C0D8";
+  const buysColor = isEmpty ? "#3D2E55" : "#5CE0B8";
+  const spentColor = isEmpty ? "#3D2E55" : "#C8C0D8";
 
   return (
     <div
@@ -203,10 +227,12 @@ export default function HeroProfit({
         borderRadius: 20,
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-        padding: 20,
+        padding: isEmpty ? 16 : 20,
+        // ease-out-expo approximation for the state-change shape shifts.
+        transition: "padding 200ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Top row — period header + selector pills */}
+      {/* Top row — period header + selector pills (pills hidden when empty) */}
       <div
         style={{
           display: "flex",
@@ -225,19 +251,21 @@ export default function HeroProfit({
         >
           {PERIOD_COPY[period].header}
         </div>
-        <div style={{ display: "flex", gap: 4 }}>
-          {PERIODS.map((p) => (
-            <Pill
-              key={p}
-              label={PERIOD_COPY[p].pill}
-              active={period === p}
-              onTap={() => setPeriod(p)}
-            />
-          ))}
-        </div>
+        {!isEmpty && (
+          <div style={{ display: "flex", gap: 4 }}>
+            {PERIODS.map((p) => (
+              <Pill
+                key={p}
+                label={PERIOD_COPY[p].pill}
+                active={period === p}
+                onTap={() => setPeriod(p)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Hero number — Outfit 300 with LED glow */}
+      {/* Hero number — Outfit 300; size + glow flatten in the empty state */}
       <div
         style={{
           marginTop: 12,
@@ -254,7 +282,7 @@ export default function HeroProfit({
             style={{
               fontFamily: "var(--font-outfit), sans-serif",
               fontWeight: 300,
-              fontSize: 44,
+              fontSize: heroNumberSize,
               lineHeight: 1,
             }}
           >
@@ -265,7 +293,7 @@ export default function HeroProfit({
           style={{
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 300,
-            fontSize: 24,
+            fontSize: heroDollarSize,
             lineHeight: 1,
           }}
         >
@@ -276,13 +304,28 @@ export default function HeroProfit({
           style={{
             fontFamily: "var(--font-outfit), sans-serif",
             fontWeight: 300,
-            fontSize: 44,
+            fontSize: heroNumberSize,
             lineHeight: 1,
           }}
         />
       </div>
 
-      {/* Delta chip */}
+      {/* Empty-state hint sits below the dim hero */}
+      {isEmpty && (
+        <div
+          style={{
+            marginTop: 6,
+            textAlign: "center",
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.18)",
+          }}
+        >
+          scan your first item to start tracking
+        </div>
+      )}
+
+      {/* Delta chip — only when not empty and we have a comparator */}
       {deltaText && (
         <div style={{ marginTop: 6, display: "flex" }}>
           <div
@@ -303,12 +346,26 @@ export default function HeroProfit({
         </div>
       )}
 
-      {/* Sparkline */}
-      <div style={{ marginTop: 12 }}>
-        <Sparkline history={dailyProfitHistory} />
-      </div>
+      {/* Sparkline (active) / "tracking for X days" (early) / hidden (empty) */}
+      {!isEmpty && (
+        <div style={{ marginTop: 12 }}>
+          {isEarly ? (
+            <div
+              style={{
+                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontSize: 10,
+                color: "#5A4E70",
+              }}
+            >
+              tracking for {nonZeroDays} {nonZeroDays === 1 ? "day" : "days"}
+            </div>
+          ) : (
+            <Sparkline history={dailyProfitHistory} />
+          )}
+        </div>
+      )}
 
-      {/* Secondary stats — always today's numbers */}
+      {/* Secondary stats — always today's numbers; dim plum when empty */}
       <div
         style={{
           marginTop: 12,
@@ -322,19 +379,19 @@ export default function HeroProfit({
         <SecondaryStat
           label="Scans"
           value={`${todayScans}`}
-          valueColor="#C8C0D8"
+          valueColor={scansColor}
         />
         <StatDivider />
         <SecondaryStat
           label="Buys"
           value={`${todayBuys}`}
-          valueColor="#5CE0B8"
+          valueColor={buysColor}
         />
         <StatDivider />
         <SecondaryStat
           label="Spent"
           value={`$${todaySpent}`}
-          valueColor="#C8C0D8"
+          valueColor={spentColor}
         />
       </div>
     </div>
