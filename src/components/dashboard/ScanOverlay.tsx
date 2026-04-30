@@ -24,6 +24,13 @@ const ACCENT = {
   vision: { hex: "#D4A574", rgb: "212,165,116" },
 };
 
+// Light haptic — Android Chrome only, silent no-op everywhere else.
+function haptic(pattern: number | number[] = 10) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(pattern);
+  }
+}
+
 const FRAME_W = 280;
 const FRAME_H = 210; // 4:3 — most items people scan are wider than tall.
 
@@ -168,6 +175,9 @@ export default function ScanOverlay({
           scannerRef.current = await startBarcodeScanner(
             video,
             (upc) => {
+              // Confirm the decode physically — feels native on Android,
+              // silent everywhere else.
+              haptic();
               scannerRef.current?.stop();
               stopStream(streamRef.current);
               streamRef.current = null;
@@ -202,6 +212,8 @@ export default function ScanOverlay({
     if (!video) return;
     try {
       const image = captureFrame(video);
+      // Confirm the shutter physically.
+      haptic();
       stopStream(streamRef.current);
       streamRef.current = null;
       setPhase({
