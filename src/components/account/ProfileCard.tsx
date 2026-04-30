@@ -13,11 +13,14 @@ interface ProfileCardProps {
 }
 
 const cellLabel: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono), monospace",
+  // RENEWS / SCANS context annotations — barely-there muted plum so the
+  // values dominate the cells, not the labels.
+  fontFamily: "var(--font-outfit), sans-serif",
+  fontWeight: 600,
   fontSize: 9,
-  color: "var(--text-muted)",
+  color: "#3D2E55",
   letterSpacing: "0.08em",
-  marginBottom: 2,
+  marginBottom: 4,
 };
 
 // Smart email split — keep the full domain, truncate only the local part so
@@ -44,14 +47,6 @@ export default function ProfileCard({
 
   return (
     <>
-      <style>{`
-        .profile-card-cancel {
-          color: rgba(232, 99, 107, 0.6);
-        }
-        .profile-card-cancel:hover {
-          color: rgba(232, 99, 107, 0.9);
-        }
-      `}</style>
       <div
         style={{
           position: "relative",
@@ -194,23 +189,33 @@ export default function ProfileCard({
         )}
       </div>
 
-      {/* Dashed separator */}
+      {/* Dashed separator — divides identity (above) from billing (below). */}
       <div
         style={{
           marginTop: 16,
-          marginBottom: 16,
-          borderTop: "2px dashed var(--border-default)",
-          backgroundImage:
-            "repeating-linear-gradient(90deg, var(--border-default) 0, var(--border-default) 2px, transparent 2px, transparent 8px)",
-          backgroundSize: "8px 2px",
-          backgroundRepeat: "repeat-x",
+          marginBottom: 14,
+          borderTop: "1px dashed #2A2240",
           height: 0,
-          border: "none",
         }}
       />
 
-      {/* Subscription */}
+      {/* Subscription — left-aligned reading order: label → price → cells →
+          cancel. Nothing in this section is centered. */}
       <div>
+        {/* Tiny context label so the price doesn't float without anchor */}
+        <div
+          style={{
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 500,
+            fontSize: 11,
+            color: "#5A4E70",
+            letterSpacing: "0.04em",
+            marginBottom: 2,
+          }}
+        >
+          Your plan
+        </div>
+
         {/* Price — Outfit thin reads as luxury at 28px */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span
@@ -237,7 +242,9 @@ export default function ProfileCard({
           </span>
         </div>
 
-        {/* Recessed stat cells */}
+        {/* Recessed stat cells — tighter padding so they read as precision
+            slots, not empty rooms. "unlimited" gets a subtle mint glow as a
+            micro-reward for the pro user. */}
         <div
           style={{
             display: "flex",
@@ -250,7 +257,7 @@ export default function ProfileCard({
               flex: 1,
               backgroundColor: "var(--bg-recessed)",
               borderRadius: 8,
-              padding: 10,
+              padding: "8px 10px",
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
           >
@@ -259,7 +266,7 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
-                color: "var(--text-primary)",
+                color: "#C8C0D8",
                 fontFeatureSettings: '"tnum"',
               }}
             >
@@ -271,7 +278,7 @@ export default function ProfileCard({
               flex: 1,
               backgroundColor: "var(--bg-recessed)",
               borderRadius: 8,
-              padding: 10,
+              padding: "8px 10px",
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             }}
           >
@@ -280,7 +287,8 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
-                color: "var(--accent-mint)",
+                color: "#5CE0B8",
+                textShadow: "0 0 12px rgba(92,224,184,0.15)",
               }}
             >
               {scansLabel}
@@ -288,18 +296,18 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* Cancel — desaturated red, brightens slightly on hover */}
+        {/* Cancel anytime — legal reassurance, not a CTA. Muted plum, left-
+            aligned, smallest text on the card. */}
         <div
           onClick={onCancel}
-          className="profile-card-cancel"
           style={{
             marginTop: 10,
-            textAlign: "center",
+            textAlign: "left",
             fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 400,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+            fontWeight: 500,
+            fontSize: 11,
+            color: "#5A4E70",
+            cursor: "default",
           }}
         >
           cancel anytime
