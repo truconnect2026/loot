@@ -321,9 +321,24 @@ export default function AccountPage() {
         />
 
         {/* ── Settings ── */}
+        {/* SETTINGS section label — dim plum, hex literal so the cascade can't
+            re-tint it. The whisper that anchors the rest of the page. */}
+        <div
+          style={{
+            marginTop: 20,
+            marginBottom: 8,
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 9,
+            color: "#3D2E55",
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+          }}
+        >
+          SETTINGS
+        </div>
 
         {/* Group 1: Location settings (6px gap) */}
-        <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 6 }}>
           {/* Zip code — persists to profiles.zip_code */}
           <ZipInput value={profile.zipCode} onChange={updateZip} />
 

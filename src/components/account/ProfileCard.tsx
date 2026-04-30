@@ -12,10 +12,13 @@ interface ProfileCardProps {
   onCancel: () => void;
 }
 
+// Hex literal (not var(--text-muted)) so the cascade can't substitute mint
+// via a stale CSS variable — these labels must read as the dimmest text on
+// the card, the very-dark plum #3D2E55.
 const cellLabel: React.CSSProperties = {
   fontFamily: "var(--font-jetbrains-mono), monospace",
   fontSize: 9,
-  color: "var(--text-muted)",
+  color: "#3D2E55",
   letterSpacing: "0.08em",
   marginBottom: 2,
 };
