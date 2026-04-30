@@ -8,10 +8,9 @@ import CoinRain from "@/components/shared/CoinRain";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
-// Kept for the upcoming carousel-card refactor — its glass styling will be
-// reused once the deal/clearance feeds are wired up.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import FeedCard from "@/components/dashboard/FeedCard";
+import DealCarousel from "@/components/dashboard/DealCarousel";
+import DealDetailSheet from "@/components/dashboard/DealDetailSheet";
+import type { Deal } from "@/components/dashboard/DealCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
@@ -106,6 +105,234 @@ const EXTRA_TOOLS: Tool[] = [
   { name: "Scrap Finder", icon: <RecycleIcon /> },
 ];
 
+// Reverse-stagger exit timing for the tools drawer.
+const TOOL_EXIT_STEP_MS = 30;
+const TOOL_EXIT_FADE_MS = 150;
+const TOOL_EXIT_TOTAL_MS =
+  (EXTRA_TOOLS.length - 1) * TOOL_EXIT_STEP_MS + TOOL_EXIT_FADE_MS;
+const TOOL_COLLAPSE_MS = 200;
+
+// ── Mock deal data — replaced by Supabase queries later ──
+
+const NEARBY_DEALS: Deal[] = [
+  {
+    id: "d1",
+    title: "Vintage Pyrex casserole set, mint condition",
+    price: 40,
+    estimatedValue: 110,
+    distance: "2.3 mi",
+    source: "fb_marketplace",
+    isFree: false,
+    postedAt: "3h ago",
+    url: "",
+  },
+  {
+    id: "d2",
+    title: "Mid-century walnut nightstand",
+    price: 75,
+    estimatedValue: 220,
+    distance: "4.1 mi",
+    source: "craigslist",
+    isFree: false,
+    postedAt: "5h ago",
+    url: "",
+  },
+  {
+    id: "d3",
+    title: "Lot of vintage cameras, untested",
+    price: 50,
+    estimatedValue: 180,
+    distance: "1.8 mi",
+    source: "fb_marketplace",
+    isFree: false,
+    postedAt: "1d ago",
+    url: "",
+  },
+  {
+    id: "d4",
+    title: "Cast iron skillet, Griswold mark",
+    price: 30,
+    estimatedValue: 95,
+    distance: "3.6 mi",
+    source: "nextdoor",
+    isFree: false,
+    postedAt: "6h ago",
+    url: "",
+  },
+  {
+    id: "d5",
+    title: "Set of 4 Eames-style dining chairs",
+    price: 120,
+    estimatedValue: 350,
+    distance: "5.2 mi",
+    source: "fb_marketplace",
+    isFree: false,
+    postedAt: "2h ago",
+    url: "",
+  },
+];
+
+const FREE_DEALS: Deal[] = [
+  {
+    id: "f1",
+    title: "Old leather camera bag, curbside",
+    price: 0,
+    estimatedValue: 35,
+    distance: "1.2 mi",
+    source: "fb_marketplace",
+    isFree: true,
+    postedAt: "2h ago",
+    url: "",
+  },
+  {
+    id: "f2",
+    title: "Wooden bookshelf, free to good home",
+    price: 0,
+    estimatedValue: 60,
+    distance: "0.8 mi",
+    source: "craigslist_free",
+    isFree: true,
+    postedAt: "1h ago",
+    url: "",
+  },
+  {
+    id: "f3",
+    title: "Boxes of vintage National Geographic",
+    price: 0,
+    estimatedValue: 40,
+    distance: "3.4 mi",
+    source: "nextdoor",
+    isFree: true,
+    postedAt: "5h ago",
+    url: "",
+  },
+  {
+    id: "f4",
+    title: "Brass lamp, needs rewiring",
+    price: 0,
+    estimatedValue: 75,
+    distance: "2.7 mi",
+    source: "fb_marketplace",
+    isFree: true,
+    postedAt: "4h ago",
+    url: "",
+  },
+  {
+    id: "f5",
+    title: "Antique wooden picture frame",
+    price: 0,
+    estimatedValue: 50,
+    distance: "4.0 mi",
+    source: "craigslist_free",
+    isFree: true,
+    postedAt: "7h ago",
+    url: "",
+  },
+];
+
+// ── Sourcing card icons (16px stroke) ──
+
+function SourcingTagIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#D4A574"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+      <line x1={7} y1={7} x2={7.01} y2={7} />
+    </svg>
+  );
+}
+
+function SourcingMapIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5CE0B8"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+      <line x1={8} y1={2} x2={8} y2={18} />
+      <line x1={16} y1={6} x2={16} y2={22} />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      width={10}
+      height={10}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5A4E70"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+interface ShowAllToolsButtonProps {
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+function ShowAllToolsButton({ expanded, onToggle }: ShowAllToolsButtonProps) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        margin: "8px auto 0",
+        padding: "10px 16px",
+        border: "1px solid rgba(255,255,255,0.04)",
+        borderRadius: 8,
+        backgroundColor: pressed ? "rgba(255,255,255,0.03)" : "transparent",
+        cursor: "pointer",
+        fontFamily: "var(--font-jetbrains-mono), monospace",
+        fontSize: 10,
+        color: "#5A4E70",
+        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      <span>{expanded ? "Show less" : "Show all tools"}</span>
+      <span
+        style={{
+          display: "inline-flex",
+          transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+          transition: "transform 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <ChevronDownIcon />
+      </span>
+    </button>
+  );
+}
+
 interface Stats {
   scans: number;
   buys: number;
@@ -125,25 +352,6 @@ const SECTION_LABEL: React.CSSProperties = {
   color: "#3D2E55",
   letterSpacing: "0.10em",
   marginBottom: 12,
-};
-
-const CAROUSEL_SCROLL: React.CSSProperties = {
-  display: "flex",
-  overflowX: "auto",
-  scrollSnapType: "x mandatory",
-  gap: 10,
-  paddingRight: 18,
-  WebkitOverflowScrolling: "touch",
-};
-
-const CAROUSEL_CARD: React.CSSProperties = {
-  width: 280,
-  flexShrink: 0,
-  height: 140,
-  backgroundColor: "rgba(255,255,255,0.03)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  borderRadius: 16,
-  scrollSnapAlign: "start",
 };
 
 export default function DashboardPage() {
@@ -169,8 +377,14 @@ export default function DashboardPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
-  // Tools drawer state
+  // Tools drawer state — `exiting` runs the reverse-stagger fade before
+  // the container collapses.
   const [showAllTools, setShowAllTools] = useState(false);
+  const [toolsExiting, setToolsExiting] = useState(false);
+
+  // Deal detail sheet state
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [dealSheetOpen, setDealSheetOpen] = useState(false);
 
   // Client-side clock for ContextCard — set after mount so we don't ship
   // a server time that mismatches the user's local time at hydration.
@@ -285,6 +499,25 @@ export default function DashboardPage() {
     },
     [router]
   );
+
+  const handleDealTap = useCallback((deal: Deal) => {
+    setSelectedDeal(deal);
+    setDealSheetOpen(true);
+  }, []);
+
+  // Tools drawer toggle — opening is instant; closing fades the extra tiles
+  // back-to-front before the container collapses.
+  const toggleTools = useCallback(() => {
+    if (!showAllTools) {
+      setShowAllTools(true);
+      return;
+    }
+    setToolsExiting(true);
+    window.setTimeout(() => {
+      setShowAllTools(false);
+      window.setTimeout(() => setToolsExiting(false), TOOL_COLLAPSE_MS);
+    }, TOOL_EXIT_TOTAL_MS);
+  }, [showAllTools]);
 
   return (
     <>
@@ -442,39 +675,35 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 6. Deals near you — bleeds to right edge */}
+        {/* 6. Deals near you */}
         <div
           id="deals-near-you"
           style={{
-            paddingLeft: 18,
             marginTop: 24,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "180ms",
           }}
         >
-          <div style={SECTION_LABEL}>DEALS NEAR YOU</div>
-          <div className="loot-carousel" style={CAROUSEL_SCROLL}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} style={CAROUSEL_CARD} />
-            ))}
-          </div>
+          <DealCarousel
+            label="DEALS NEAR YOU"
+            deals={NEARBY_DEALS}
+            onDealTap={handleDealTap}
+          />
         </div>
 
-        {/* 7. Free & clearance — same shape */}
+        {/* 7. Free & clearance */}
         <div
           style={{
-            paddingLeft: 18,
             marginTop: 20,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "240ms",
           }}
         >
-          <div style={SECTION_LABEL}>FREE &amp; CLEARANCE</div>
-          <div className="loot-carousel" style={CAROUSEL_SCROLL}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} style={CAROUSEL_CARD} />
-            ))}
-          </div>
+          <DealCarousel
+            label="FREE & CLEARANCE"
+            deals={FREE_DEALS}
+            onDealTap={handleDealTap}
+          />
         </div>
 
         {/* 8. Sourcing intel */}
@@ -488,39 +717,106 @@ export default function DashboardPage() {
         >
           <div style={SECTION_LABEL}>SOURCING</div>
           <div style={{ display: "flex", gap: 8 }}>
+            {/* Penny Drops — warm camel tint */}
             <div
               style={{
                 flex: 1,
-                height: 90,
-                backgroundColor: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                height: 100,
+                background:
+                  "linear-gradient(180deg, rgba(212,165,116,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+                border: "1px solid rgba(212,165,116,0.08)",
                 borderRadius: 16,
                 padding: 12,
                 display: "flex",
-                alignItems: "flex-end",
-                fontFamily: "var(--font-outfit), sans-serif",
-                fontSize: 13,
-                color: "var(--text-primary)",
+                flexDirection: "column",
+                justifyContent: "space-between",
               }}
             >
-              Penny Drops
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <SourcingTagIcon />
+                <span
+                  style={{
+                    fontFamily: "var(--font-outfit), sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#C8C0D8",
+                  }}
+                >
+                  Penny Drops
+                </span>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 9,
+                    color: "#5A4E70",
+                    marginBottom: 2,
+                  }}
+                >
+                  updates Tuesdays
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 9,
+                    color: "#D4A574",
+                  }}
+                >
+                  48 items this week
+                </div>
+              </div>
             </div>
+
+            {/* Yard Sale Map — mint tint */}
             <div
               style={{
                 flex: 1,
-                height: 90,
-                backgroundColor: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                height: 100,
+                background:
+                  "linear-gradient(180deg, rgba(92,224,184,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+                border: "1px solid rgba(92,224,184,0.08)",
                 borderRadius: 16,
                 padding: 12,
                 display: "flex",
-                alignItems: "flex-end",
-                fontFamily: "var(--font-outfit), sans-serif",
-                fontSize: 13,
-                color: "var(--text-primary)",
+                flexDirection: "column",
+                justifyContent: "space-between",
               }}
             >
-              Yard Sale Map
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <SourcingMapIcon />
+                <span
+                  style={{
+                    fontFamily: "var(--font-outfit), sans-serif",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#C8C0D8",
+                  }}
+                >
+                  Yard Sale Map
+                </span>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 9,
+                    color: "#5A4E70",
+                    marginBottom: 2,
+                  }}
+                >
+                  updates Saturdays
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontSize: 9,
+                    color: "#5CE0B8",
+                  }}
+                >
+                  0 sales near you
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -579,12 +875,13 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {/* Hidden extras — animated max-height reveal */}
+          {/* Hidden extras — animated max-height reveal with reverse-stagger
+              fade-out on close */}
           <div
             style={{
               overflow: "hidden",
               maxHeight: showAllTools ? 400 : 0,
-              transition: "max-height 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+              transition: `max-height ${TOOL_COLLAPSE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
             }}
           >
             <div
@@ -595,35 +892,35 @@ export default function DashboardPage() {
                 marginTop: 8,
               }}
             >
-              {EXTRA_TOOLS.map((tool) => (
-                <ToolTile
-                  key={tool.name}
-                  name={tool.name}
-                  icon={tool.icon}
-                  onTap={() => handleToolTap(tool)}
-                />
-              ))}
+              {EXTRA_TOOLS.map((tool, index) => {
+                const reverseIndex = EXTRA_TOOLS.length - 1 - index;
+                return (
+                  <div
+                    key={tool.name}
+                    style={{
+                      opacity: toolsExiting ? 0 : 1,
+                      transition: `opacity ${TOOL_EXIT_FADE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+                      transitionDelay: toolsExiting
+                        ? `${reverseIndex * TOOL_EXIT_STEP_MS}ms`
+                        : "0ms",
+                    }}
+                  >
+                    <ToolTile
+                      name={tool.name}
+                      icon={tool.icon}
+                      onTap={() => handleToolTap(tool)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Show all toggle */}
-          <button
-            type="button"
-            onClick={() => setShowAllTools((v) => !v)}
-            style={{
-              width: "100%",
-              padding: 12,
-              background: "transparent",
-              border: "none",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontSize: 10,
-              color: "#5A4E70",
-              cursor: "pointer",
-              textAlign: "center",
-            }}
-          >
-            {showAllTools ? "Show fewer tools" : "Show all tools"}
-          </button>
+          {/* Show all toggle — proper button with chevron */}
+          <ShowAllToolsButton
+            expanded={showAllTools}
+            onToggle={toggleTools}
+          />
         </div>
 
         {/* 10. Flip tip */}
@@ -667,6 +964,12 @@ export default function DashboardPage() {
         open={verdictOpen}
         onClose={() => setVerdictOpen(false)}
         data={verdictData}
+      />
+
+      <DealDetailSheet
+        open={dealSheetOpen}
+        deal={selectedDeal}
+        onClose={() => setDealSheetOpen(false)}
       />
     </>
   );
