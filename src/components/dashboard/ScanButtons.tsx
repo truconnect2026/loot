@@ -109,13 +109,10 @@ function HeroButton({
       }}
       onPointerEnter={() => setHovered(true)}
       style={{
-        // Triple-constrained half-row so both buttons are pixel-identical
-        // even when their label widths differ. flex-grow is intentionally
-        // not used anywhere in this file.
-        width: "calc(50% - 4px)",
-        flex: "0 0 calc(50% - 4px)",
-        minWidth: 0,
-        maxWidth: "calc(50% - 4px)",
+        // Sizing is owned by the grid parent (1fr 1fr). The button just fills
+        // its cell — no width/flex/minWidth/maxWidth here, so content size
+        // can never push a button out of alignment.
+        width: "100%",
         boxSizing: "border-box",
         height: 80,
         borderRadius: 16,

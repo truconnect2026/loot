@@ -125,5 +125,5 @@ input::placeholder {
    that disappears the moment the user has any scan history. */
 @keyframes scanUpcPulse {
   0%, 100% { border-color: rgba(92,224,184,0.15); }
-  50% { border-color: rgba(92,224,184,0.25); }
+  50% { border-color: rgba(92,224,184,0.30); }
 }
