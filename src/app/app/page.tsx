@@ -562,13 +562,6 @@ export default function DashboardPage() {
     setDealSheetOpen(true);
   }, []);
 
-  // First-time-user branch: never scanned today AND never scanned ever.
-  // Gated on !statsLoading so the onboarding view doesn't flash before
-  // stats arrive. Once they finish their first scan, lifetimeScans flips
-  // to >= 1, isNewUser flips to false, and the full dashboard fades in.
-  const isNewUser =
-    !statsLoading && todayScans === 0 && lifetimeScans === 0;
-
   // Tools drawer toggle — opening is instant; closing fades the extra tiles
   // back-to-front before the container collapses.
   const toggleTools = useCallback(() => {
@@ -704,147 +697,6 @@ export default function DashboardPage() {
           </button>
         </header>
 
-        {isNewUser ? (
-          /* ── First-time user — short, focused onboarding view. Welcome
-              line → scan buttons → blurred deal teaser → flip tip. The full
-              dashboard appears once their first scan lands. */
-          <>
-            {/* a. Welcome whisper — single line, no card */}
-            <div
-              style={{
-                padding: "24px 18px",
-                textAlign: "center",
-                animation:
-                  "welcomeFadeIn 600ms cubic-bezier(0.16, 1, 0.3, 1) both",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontFamily: "var(--font-outfit), sans-serif",
-                  fontWeight: 500,
-                  fontSize: 16,
-                  color: "#C8C0D8",
-                  lineHeight: 1.4,
-                }}
-              >
-                scan anything to see what it&rsquo;s worth
-              </p>
-            </div>
-
-            {/* b. Scan buttons — primary border pulses to invite the first tap.
-                ScanButtons renders its own hint line when todayScans === 0. */}
-            <div
-              style={{
-                padding: "0 18px",
-                marginTop: 16,
-                overflow: "hidden",
-              }}
-            >
-              <ScanButtons
-                onScanUpc={() => startScan("barcode")}
-                onAiVision={() => startScan("vision")}
-                todayScans={todayScans}
-                pulsePrimary
-              />
-            </div>
-
-            {/* c. Full-width hairline — visual chapter break */}
-            <div
-              style={{
-                marginTop: 16,
-                height: 0.5,
-                backgroundColor: "rgba(255,255,255,0.04)",
-              }}
-            />
-
-            {/* d. Deal carousel teaser — real DealCarousel underneath, frosted
-                overlay on top. Shapes are visible; data is gated behind a zip. */}
-            <div
-              style={{
-                position: "relative",
-                marginTop: 24,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ pointerEvents: "none" }} aria-hidden="true">
-                <DealCarousel
-                  label="DEALS NEAR YOU"
-                  deals={NEARBY_DEALS}
-                  onDealTap={() => {}}
-                />
-              </div>
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  backgroundColor: "rgba(18,14,24,0.7)",
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                  zIndex: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 16,
-                  padding: "0 20px",
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.5)",
-                    textAlign: "center",
-                    letterSpacing: "0.04em",
-                  }}
-                >
-                  set your zip to unlock deals near you
-                </span>
-              </div>
-            </div>
-
-            {/* e. Flip tip — slightly louder than the returning-user tip
-                because new users still need to discover this content. */}
-            <div
-              style={{
-                padding: "0 18px",
-                marginTop: 32,
-              }}
-            >
-              <div
-                style={{
-                  width: 60,
-                  height: 0.5,
-                  backgroundColor: "rgba(255,255,255,0.04)",
-                  margin: "0 auto 16px",
-                }}
-              />
-              <div
-                style={{
-                  maxWidth: 280,
-                  margin: "0 auto",
-                  textAlign: "center",
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
-                  fontSize: 9,
-                  color: "rgba(255,255,255,0.12)",
-                  lineHeight: 1.6,
-                }}
-              >
-                griswold cast iron marked &apos;erie pa&apos; is worth 5-10× more than unmarked. carry a magnet — sterling silver won&apos;t stick.
-              </div>
-            </div>
-
-            {/* f. Bottom pad — safe-area-aware so the tip never slips under
-                the iOS home indicator. */}
-            <div
-              style={{
-                paddingBottom:
-                  "calc(40px + env(safe-area-inset-bottom, 0px))",
-              }}
-            />
-          </>
-        ) : (
-        <>
         {/* 3. Smart context card — priority-driven daily nudge */}
         <div
           id="context-card"
@@ -916,7 +768,7 @@ export default function DashboardPage() {
             marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "180ms",
+            animationDelay: "200ms",
           }}
         >
           <DealCarousel
@@ -932,7 +784,7 @@ export default function DashboardPage() {
             marginTop: 20,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "240ms",
+            animationDelay: "280ms",
           }}
         >
           <DealCarousel
@@ -948,7 +800,7 @@ export default function DashboardPage() {
             padding: "0 18px",
             marginTop: 24,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "300ms",
+            animationDelay: "360ms",
           }}
         >
           <div style={SECTION_LABEL}>SOURCING</div>
@@ -968,7 +820,7 @@ export default function DashboardPage() {
             marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "360ms",
+            animationDelay: "420ms",
           }}
         >
           {/* "MORE TOOLS" label with full-bleed hairlines */}
@@ -1084,7 +936,7 @@ export default function DashboardPage() {
             marginTop: 32,
             marginBottom: 40,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "420ms",
+            animationDelay: "500ms",
           }}
         >
           <div
@@ -1104,8 +956,6 @@ export default function DashboardPage() {
 
         {/* 11. Bottom pad */}
         <div style={{ height: 40 }} />
-        </>
-        )}
       </div>
 
       {/* Overlays */}
