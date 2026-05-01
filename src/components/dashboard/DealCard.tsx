@@ -14,13 +14,16 @@ export interface Deal {
   url: string;
 }
 
-// Map a raw source string to its short two-letter platform code.
+// Map a raw source string to a recognizable platform name. Used to be
+// short codes ("FB" / "CL" / "ND") but new users couldn't decode them
+// at a glance. Spelled-out names trade a few pixels of pill width for
+// universal recognition.
 export function sourceTag(raw: string): string {
   const s = raw.toLowerCase();
-  if (s.includes("marketplace") || s.includes("fb")) return "FB";
-  if (s.includes("craigslist")) return "CL";
-  if (s.includes("nextdoor")) return "ND";
-  return "??";
+  if (s.includes("marketplace") || s.includes("fb")) return "Facebook";
+  if (s.includes("craigslist")) return "Craigslist";
+  if (s.includes("nextdoor")) return "Nextdoor";
+  return raw;
 }
 
 // Map a raw source string to a "Open on …" CTA label.
@@ -36,6 +39,40 @@ export function dealProfit(deal: Deal): number {
   return deal.estimatedValue - (deal.isFree ? 0 : deal.price);
 }
 
+// Parse human-formatted "3h ago" / "45m ago" / "1d ago" into rough hours.
+// Returns 0 on parse failure (treats as just-posted).
+function hoursSincePosted(postedAt: string): number {
+  const m = postedAt.toLowerCase().match(/(\d+)\s*([mhd])/);
+  if (!m) return 0;
+  const n = parseInt(m[1] ?? "0", 10);
+  const unit = m[2];
+  if (unit === "m") return n / 60;
+  if (unit === "h") return n;
+  if (unit === "d") return n * 24;
+  return 0;
+}
+
+// Compress "3h ago" → "3h" so the freshness chip stays compact when
+// pairing label + time together.
+function shortPostedAt(postedAt: string): string {
+  return postedAt.replace(/\s*ago$/i, "").trim();
+}
+
+interface FreshnessSignal {
+  label: string;
+  /** Cool desaturated for "available", warm camel for "going fast". */
+  dotColor: string;
+}
+
+// Recent posts → "going fast" (high competition signal, lots of eyes).
+// Older posts → "likely available" (sat through the early-bird hour and
+// is probably still there). 4h cutoff is heuristic; tune with real data.
+function freshnessFor(postedAt: string): FreshnessSignal {
+  const hours = hoursSincePosted(postedAt);
+  if (hours < 4) return { label: "going fast", dotColor: "#D4A574" };
+  return { label: "likely available", dotColor: "#74B6A0" };
+}
+
 interface DealCardProps {
   deal: Deal;
   onTap: (deal: Deal) => void;
@@ -45,6 +82,8 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
   const [pressed, setPressed] = useState(false);
   const tag = sourceTag(deal.source);
   const profit = dealProfit(deal);
+  const fresh = freshnessFor(deal.postedAt);
+  const timeShort = shortPostedAt(deal.postedAt);
 
   return (
     <button
@@ -57,7 +96,9 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         position: "relative",
         flexShrink: 0,
         width: 232,
-        minHeight: 152,
+        // Bumped from 152 → 164 so the new "based on eBay sold" caption
+        // under the resale value has room without compressing the title.
+        minHeight: 164,
         display: "flex",
         flexDirection: "column",
         backgroundColor: "rgba(255,255,255,0.03)",
@@ -73,9 +114,9 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
       }}
     >
-      {/* Header row — source pill (left) + posted-at (right). The listed
-          price moved out of this row entirely; it lives in the price row
-          near the bottom of the card. */}
+      {/* Header row — source pill (spelled out) on left, freshness signal
+          on right. The freshness label tells the user whether to drive now
+          or skip; the dot color encodes the same in <100ms scan time. */}
       <div
         style={{
           display: "flex",
@@ -88,7 +129,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            padding: "3px 7px",
+            padding: "3px 8px",
             borderRadius: 6,
             backgroundColor: deal.isFree
               ? "rgba(92,224,184,0.18)"
@@ -97,24 +138,36 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
               ? "1px solid rgba(92,224,184,0.30)"
               : "1px solid rgba(255,255,255,0.08)",
             fontFamily: "var(--font-body)",
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: deal.isFree ? "#5CE0B8" : "#5A4E70",
-            lineHeight: 1,
+            fontSize: 10,
+            fontWeight: 600,
+            color: deal.isFree ? "#5CE0B8" : "#C8C0D8",
+            lineHeight: 1.2,
           }}
         >
           {tag}
         </span>
         <span
           style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
             fontFamily: "var(--font-body)",
-            fontSize: 9,
+            fontSize: 10,
             color: "#5A4E70",
-            letterSpacing: "0.05em",
+            lineHeight: 1.2,
           }}
         >
-          {deal.postedAt}
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: fresh.dotColor,
+            }}
+          />
+          {fresh.label} · {timeShort}
         </span>
       </div>
 
@@ -136,13 +189,15 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.title}
       </div>
 
-      {/* Price row — listed price → estimated value. marginTop:auto pushes
-          it to the bottom of available space, just above the absolute
-          distance/profit band. */}
+      {/* Price row — listed price → estimated value, with the resale
+          value's data-source caption stacked underneath it so the user
+          knows the $45 isn't an asking price, it's eBay sold-comp data.
+          marginTop:auto pushes the row to the bottom of available space,
+          just above the absolute distance/profit band. */}
       <div
         style={{
           marginTop: "auto",
-          marginBottom: 22,
+          marginBottom: 24,
           display: "flex",
           alignItems: "baseline",
           gap: 10,
@@ -185,18 +240,37 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         >
           →
         </span>
-        <span
+        <div
           style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 15,
-            fontWeight: 700,
-            color: "#5CE0B8",
-            lineHeight: 1,
-            fontFeatureSettings: '"tnum"',
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 2,
           }}
         >
-          ${deal.estimatedValue}
-        </span>
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 15,
+              fontWeight: 700,
+              color: "#5CE0B8",
+              lineHeight: 1,
+              fontFeatureSettings: '"tnum"',
+            }}
+          >
+            ${deal.estimatedValue}
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 9,
+              color: "rgba(255,255,255,0.40)",
+              lineHeight: 1,
+            }}
+          >
+            based on eBay sold
+          </span>
+        </div>
       </div>
 
       {/* Distance — bottom-left */}
@@ -206,30 +280,37 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           bottom: 12,
           left: 14,
           fontFamily: "var(--font-body)",
-          fontSize: 9,
+          fontSize: 10,
           color: "#5A4E70",
-          letterSpacing: "0.05em",
         }}
       >
         {deal.distance}
       </span>
 
-      {/* Profit indicator — bottom-right */}
+      {/* Profit chip — bottom-right. Now a distinct chip with mint surface
+          + border so it reads as a separate data point from the bare mint
+          $45 resale value above. Same pattern used on EmptyHero's profit
+          chip; consistent across the app. */}
       {profit > 0 && (
-        <span
+        <div
           style={{
             position: "absolute",
             bottom: 12,
             right: 14,
+            backgroundColor: "rgba(92,224,184,0.10)",
+            border: "1px solid rgba(92,224,184,0.20)",
+            borderRadius: 6,
+            padding: "3px 8px",
             fontFamily: "var(--font-body)",
-            fontSize: 9,
-            fontWeight: 600,
+            fontSize: 11,
+            fontWeight: 700,
             color: "#5CE0B8",
-            letterSpacing: "0.05em",
+            fontFeatureSettings: '"tnum"',
+            lineHeight: 1.2,
           }}
         >
           +${profit}
-        </span>
+        </div>
       )}
     </button>
   );
