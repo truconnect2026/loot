@@ -106,7 +106,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             color: "var(--text-primary)",
           }}
         >
-          BOLO Keywords
+          Watch list
         </span>
       </div>
 

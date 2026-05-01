@@ -116,7 +116,10 @@ export default function NotificationToggles({
 }: NotificationTogglesProps) {
   const subs = [
     { label: "Deal alerts", on: deals, toggle: onToggleDeals },
-    { label: "BOLO matches", on: bolo, toggle: onToggleBolo },
+    // "BOLO matches" → "Watch list matches" — see account/page.tsx for
+    // the BOLO rename rationale. Internal `bolo` prop stays so this
+    // doesn't ripple into a broader refactor of toggle plumbing.
+    { label: "Watch list matches", on: bolo, toggle: onToggleBolo },
     { label: "Penny drops", on: pennies, toggle: onTogglePennies },
   ];
 

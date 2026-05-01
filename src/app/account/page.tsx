@@ -512,7 +512,13 @@ export default function AccountPage() {
             <ChevronRight />
           </SettingsTile>
 
-          {/* BOLO keywords */}
+          {/* Watch list — was "BOLO keywords" but BOLO ("Be On the
+              LookOut") is reseller jargon mainstream users don't know.
+              "Watch list" reads instantly and matches familiar
+              marketplace patterns (eBay watch list, Craigslist saved
+              searches). Internal model names (`view === "bolo"`,
+              MOCK_KEYWORDS, the bolo_keywords table) stay so the rename
+              is purely user-facing copy. */}
           <SettingsTile
             onClick={() => setView("bolo")}
             icon={<CrosshairsIcon />}
@@ -527,7 +533,7 @@ export default function AccountPage() {
                 color: "var(--text-primary)",
               }}
             >
-              BOLO keywords
+              Watch list
             </span>
             <span
               style={{
