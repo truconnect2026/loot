@@ -134,21 +134,25 @@ function HeroButton({
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Today's scan count — top-right corner */}
-      <span
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 10,
-          fontFamily: "var(--font-body)",
-          fontSize: 9,
-          fontWeight: 500,
-          color: counterColor,
-          fontFeatureSettings: '"tnum"',
-        }}
-      >
-        {todayScans}
-      </span>
+      {/* Today's scan count — top-right corner. Hidden until there's
+          actually a count to show; a "0" in this position read as an
+          unread-notification badge and confused new users. */}
+      {todayScans > 0 && (
+        <span
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 10,
+            fontFamily: "var(--font-body)",
+            fontSize: 9,
+            fontWeight: 500,
+            color: counterColor,
+            fontFeatureSettings: '"tnum"',
+          }}
+        >
+          {todayScans}
+        </span>
+      )}
 
       {/* Top-edge shine */}
       <div
@@ -196,10 +200,15 @@ function HeroButton({
       </span>
       <span
         style={{
+          // Subtitle bumped from 8/40% to 11/70% so the "when to use which"
+          // hint is actually legible. New users couldn't tell SCAN UPC from
+          // AI VISION before; now the per-button instruction reads at a
+          // glance. Accent tint preserved (variant identity), alpha lifted.
           fontFamily: "var(--font-body)",
-          fontSize: 8,
-          color: `rgba(${accent},0.4)`,
-          letterSpacing: "0.04em",
+          fontSize: 11,
+          fontWeight: 500,
+          color: `rgba(${accent},0.7)`,
+          letterSpacing: "0.01em",
           position: "relative",
           zIndex: 1,
         }}
@@ -252,7 +261,7 @@ export default function ScanButtons({
           variant="camel"
           icon={<CameraIcon />}
           label="AI VISION"
-          subtitle="snap a photo of anything"
+          subtitle="no barcode? snap a photo"
           todayScans={todayScans}
           onTap={onAiVision}
         />
