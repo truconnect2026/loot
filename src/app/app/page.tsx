@@ -567,6 +567,13 @@ export default function DashboardPage() {
 
   // Tools drawer toggle — opening is instant; closing fades the extra tiles
   // back-to-front before the container collapses.
+  // First-time user = zero scan rows ever. Drives the EmptyHero swap at
+  // the hero slot AND the carousel reorder below (Free first, Deals second
+  // for new users; reverse for returning users with scan history).
+  // Gated on !statsLoading so the page doesn't flicker between layouts
+  // while Supabase is still resolving.
+  const isNewUser = !statsLoading && lifetimeScans === 0;
+
   const toggleTools = useCallback(() => {
     if (!showAllTools) {
       setShowAllTools(true);
@@ -774,39 +781,83 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 6. Deals near you — overflow:hidden clamps the carousel block
-            so its inner scroll-container can't push the page sideways */}
-        <div
-          id="deals-near-you"
-          style={{
-            marginTop: 24,
-            overflow: "hidden",
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "200ms",
-          }}
-        >
-          <DealCarousel
-            label="DEALS NEAR YOU"
-            deals={NEARBY_DEALS}
-            onDealTap={handleDealTap}
-          />
-        </div>
-
-        {/* 7. Free & clearance */}
-        <div
-          style={{
-            marginTop: 20,
-            overflow: "hidden",
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "280ms",
-          }}
-        >
-          <DealCarousel
-            label="FREE & CLEARANCE"
-            deals={FREE_DEALS}
-            onDealTap={handleDealTap}
-          />
-        </div>
+        {/* 6 + 7. Carousels — order swaps for first-time users.
+            New user: Free & Clearance first (lowest-barrier entry point —
+              free curbside items don't require purchase), then Deals.
+            Returning user: Deals Near You first (the primary feed for
+              someone with active sourcing flow), then Free & Clearance.
+            Position-based wrappers keep marginTop (24 first, 20 second)
+            and the fadeInUp staircase (200ms first, 280ms second) tied
+            to slot, not content. The deals-near-you scroll anchor moves
+            with the deals carousel so ContextCard's "View deals" still
+            scrolls to the right element. overflow:hidden clamps each
+            carousel's inner scroll-container so it can't push the page
+            sideways. */}
+        {isNewUser ? (
+          <>
+            <div
+              style={{
+                marginTop: 24,
+                overflow: "hidden",
+                animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                animationDelay: "200ms",
+              }}
+            >
+              <DealCarousel
+                label="FREE & CLEARANCE"
+                deals={FREE_DEALS}
+                onDealTap={handleDealTap}
+              />
+            </div>
+            <div
+              id="deals-near-you"
+              style={{
+                marginTop: 20,
+                overflow: "hidden",
+                animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                animationDelay: "280ms",
+              }}
+            >
+              <DealCarousel
+                label="DEALS NEAR YOU"
+                deals={NEARBY_DEALS}
+                onDealTap={handleDealTap}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              id="deals-near-you"
+              style={{
+                marginTop: 24,
+                overflow: "hidden",
+                animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                animationDelay: "200ms",
+              }}
+            >
+              <DealCarousel
+                label="DEALS NEAR YOU"
+                deals={NEARBY_DEALS}
+                onDealTap={handleDealTap}
+              />
+            </div>
+            <div
+              style={{
+                marginTop: 20,
+                overflow: "hidden",
+                animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                animationDelay: "280ms",
+              }}
+            >
+              <DealCarousel
+                label="FREE & CLEARANCE"
+                deals={FREE_DEALS}
+                onDealTap={handleDealTap}
+              />
+            </div>
+          </>
+        )}
 
         {/* 8. Sourcing intel — uses the polished SourcingCards component */}
         <div
