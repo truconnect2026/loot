@@ -49,7 +49,7 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
         position: "relative",
         cursor: "pointer",
         transition:
-          "background-color 200ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+          "background-color 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         flexShrink: 0,
       }}
     >
@@ -65,7 +65,7 @@ function Toggle({ on, onToggle, size = "normal" }: ToggleProps) {
           position: "absolute",
           top: thumbOffset,
           left: on ? trackW - thumbSize - thumbOffset : thumbOffset,
-          transition: "left 200ms cubic-bezier(0.32, 0.72, 0, 1)",
+          transition: "left 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
       />
     </div>
