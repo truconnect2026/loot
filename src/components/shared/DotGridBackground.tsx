@@ -431,14 +431,18 @@ export default function DotGridBackground({
           backgroundColor: "#120e18",
         }}
       >
-        {/* Mint — top-left */}
+        {/* Mint — top-left. Bounding box ends at y=200 (top:-160 + height:360)
+            so the blob no longer drifts down into the profile-card region on
+            the account page, where it was bleeding green into every label
+            even with the card now solid. The crown gradient at the top of
+            the profile card already provides the mint atmospheric hint. */}
         <div
           style={{
             position: "absolute",
             top: -160,
             left: -80,
             width: 500,
-            height: 500,
+            height: 360,
             borderRadius: "50%",
             backgroundColor: "#5CE0B8",
             opacity: 0.09,

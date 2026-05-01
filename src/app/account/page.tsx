@@ -321,15 +321,16 @@ export default function AccountPage() {
         />
 
         {/* ── Settings ── */}
-        {/* SETTINGS section label — dim plum, hex literal so the cascade can't
-            re-tint it. The whisper that anchors the rest of the page. */}
+        {/* SETTINGS section label — cold blue-purple, no warm components, so
+            OLED panels can't shift it green. Inline hex literal beats anything
+            in the cascade. */}
         <div
           style={{
             marginTop: 20,
             marginBottom: 8,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
-            color: "#3D2E55",
+            color: "#28203D",
             letterSpacing: "0.10em",
             textTransform: "uppercase",
           }}

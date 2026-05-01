@@ -12,13 +12,13 @@ interface ProfileCardProps {
   onCancel: () => void;
 }
 
-// Hex literal (not var(--text-muted)) so the cascade can't substitute mint
-// via a stale CSS variable — these labels must read as the dimmest text on
-// the card, the very-dark plum #3D2E55.
+// Cold blue-purple hex (no warm/red components) so OLED panels can't shift
+// these labels toward green. Spread inline on each cell — the runtime end
+// state is identical to writing style={{ color: '#28203D', ... }} per label.
 const cellLabel: React.CSSProperties = {
   fontFamily: "var(--font-jetbrains-mono), monospace",
   fontSize: 9,
-  color: "#3D2E55",
+  color: "#28203D",
   letterSpacing: "0.08em",
   marginBottom: 2,
 };
@@ -41,10 +41,10 @@ export default function ProfileCard({
           position: relative;
         }
         .profile-card-cancel {
-          color: #5A4E70;
+          color: #6B5F80;
         }
         .profile-card-cancel:hover {
-          color: #C8C0D8;
+          color: #9B8FB0;
         }
         /* Gradient border via mask-composite — bright top-left, plum dim
            bottom-right. The mint kicker that was here used to live on the
@@ -148,13 +148,14 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO pill */}
+        {/* PRO pill — filled bg only, no border / outline / shadow edge */}
         {isPro && (
           <div
             style={{
               marginLeft: "auto",
-              backgroundColor: "var(--accent-mint-surface)",
-              border: "1px solid var(--accent-mint-border)",
+              backgroundColor: "rgba(92,224,184,0.08)",
+              border: "none",
+              boxShadow: "none",
               borderRadius: 4,
               paddingLeft: 10,
               paddingRight: 10,
@@ -194,12 +195,13 @@ export default function ProfileCard({
 
       {/* Subscription */}
       <div>
-        {/* Plan label — muted plum, hex literal so the cascade can't shift it */}
+        {/* Plan label — cool lavender-gray hex literal. Warmer plums shift
+            warm/green-gray on OLED, this one stays neutral cool. */}
         <div
           style={{
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
-            color: "#5A4E70",
+            color: "#6B5F80",
             letterSpacing: "0.08em",
             marginBottom: 6,
           }}
