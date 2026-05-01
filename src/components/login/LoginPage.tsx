@@ -434,12 +434,33 @@ export default function LoginPage() {
             )}
           </div>
 
+          {/* ── Social proof ── quiet trust signal, not a sales pitch.
+              Sits between the card (where the user makes the sign-in
+              decision) and the tagline (which anchors the product
+              description). Voice rule applies: lowercase, no terminal
+              period. The number is a placeholder until real metrics
+              are wired up — keep the copy editable in one place. */}
+          <div
+            style={{
+              marginTop: 24,
+              textAlign: "center",
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              color: "rgba(255, 255, 255, 0.30)",
+              letterSpacing: "0.04em",
+              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              animationDelay: "600ms",
+            }}
+          >
+            trusted by 12,000+ resellers
+          </div>
+
           {/* ── Tagline ── concrete three-beat product description.
               Voice rule: all lowercase, no terminal period, commas allowed
               mid-line (see globals.css for the full rule). */}
           <div
             style={{
-              marginTop: 32,
+              marginTop: 12,
               textAlign: "center",
               fontFamily: "var(--font-body)",
               fontSize: 10,
