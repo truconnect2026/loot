@@ -12,13 +12,13 @@ interface ProfileCardProps {
   onCancel: () => void;
 }
 
-// Extremely dark blue-indigo, zero red, zero green warmth — OLED can't
-// shift this toward green. Reads as "almost invisible dark blue" which is
-// exactly what you want for annotation labels (whispers, not shouts).
+// Cool blue-purple, zero red, zero green warmth — OLED can't shift this
+// toward green. RENEWS / SCANS / SETTINGS all share the same color now;
+// they're the same kind of annotation, they should match.
 const cellLabel: React.CSSProperties = {
   fontFamily: "var(--font-jetbrains-mono), monospace",
   fontSize: 9,
-  color: "#1E1A30",
+  color: "#2D2845",
   letterSpacing: "0.08em",
   marginBottom: 2,
 };
@@ -77,14 +77,14 @@ export default function ProfileCard({
         style={{
           marginTop: 16,
           position: "relative",
-          // Hero card surface — slightly lighter than #1A1530 so the card
-          // visibly elevates above the settings tiles below. Solid (no
-          // backdrop-blur) so DotGridBackground can't bleed mint through.
-          backgroundColor: "#1E1838",
-          // 6% mint border — won't read green, gives the card edge faint
-          // warmth vs. the flat plum borders on tiles below. Combined with
-          // the brighter surface this is the VIP-pass treatment.
-          border: "1px solid rgba(92,224,184,0.06)",
+          // Brightest surface on the page (text/accents excepted) — clearly
+          // elevated above the settings tiles below. Solid (no backdrop-blur)
+          // so DotGridBackground can't bleed mint through.
+          backgroundColor: "#211C3D",
+          // Solid cool-purple border — was rgba(92,224,184,0.06) which may
+          // have been contributing to the green perception around the card.
+          // No mint anywhere on the card edge now.
+          border: "1px solid #2D2845",
           // Asymmetric corners — sharp top-left (the crown anchor), generous
           // 16px elsewhere. The ::before gradient uses border-radius: inherit
           // so it clips to these same corners automatically.
@@ -226,16 +226,15 @@ export default function ProfileCard({
         )}
       </div>
 
-      {/* Dashed separator — repeating linear gradient on a 1px tall row.
-          #4A3D65 dashes (was #3D2E55, too dim against the #1E1838 surface to
-          read on device). */}
+      {/* Solid hairline separator — the dashed pattern was disappearing on
+          device. Plain 1px line at #4A3D65 reads cleanly against the card
+          surface. Bump to #5A4E70 if this still doesn't show. */}
       <div
         style={{
           height: 1,
           width: "100%",
-          background:
-            "repeating-linear-gradient(to right, #4A3D65 0px, #4A3D65 5px, transparent 5px, transparent 10px)",
-          margin: "14px 0 12px 0",
+          background: "#4A3D65",
+          margin: "14px 0 10px 0",
         }}
       />
 
@@ -290,12 +289,15 @@ export default function ProfileCard({
           }}
         >
           {/* RENEWS / SCANS pits — solid #120e18 (page bg) hex literal so
-              the surface can't pick up ambient color via CSS variable. The
-              cell behind the labels is what was tinting on OLED. */}
+              the surface can't pick up ambient color via CSS variable.
+              1px #2D2845 border (matches the SETTINGS-label/card-border
+              cool purple) so the cells read as defined containers, not as
+              floating shapes whose edges might inherit any ambient tint. */}
           <div
             style={{
               flex: 1,
               backgroundColor: "#120e18",
+              border: "1px solid #2D2845",
               borderRadius: 8,
               padding: 10,
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
@@ -317,6 +319,7 @@ export default function ProfileCard({
             style={{
               flex: 1,
               backgroundColor: "#120e18",
+              border: "1px solid #2D2845",
               borderRadius: 8,
               padding: 10,
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
@@ -328,9 +331,11 @@ export default function ProfileCard({
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
                 color: "var(--accent-mint)",
-                // Soft mint halo — the brightest reward in the billing
-                // section, so it should glow.
-                textShadow: "0 0 16px rgba(92,224,184,0.35)",
+                // Double-layer mint halo — tighter bright core (50% inner)
+                // + wider soft outer (25% at 8px). Reads as a true glow on
+                // device, not just a faint smudge.
+                textShadow:
+                  "0 0 16px rgba(92,224,184,0.5), 0 0 8px rgba(92,224,184,0.25)",
               }}
             >
               {scansLabel}
