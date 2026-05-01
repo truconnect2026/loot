@@ -27,6 +27,14 @@ const RADIUS_OPTIONS: { value: number; label: string; subtitle: string }[] = [
   { value: 50, label: "50 mi", subtitle: "rural" },
 ];
 
+// Per-session skip flag — set when the user taps "skip for now" so the
+// dashboard's onboarding gate stops bouncing them back here for the rest
+// of this tab's session. sessionStorage (not localStorage) on purpose:
+// next browser session re-prompts so onboarding is encouraged but never
+// permanently disabled by a single skip. Both this page and page.tsx
+// reference this exact key — keep them in sync.
+export const ONBOARDING_SKIPPED_KEY = "loot.onboarding.skipped";
+
 interface BigDataCloudResponse {
   postcode?: string;
   countryCode?: string;
@@ -432,6 +440,38 @@ export default function OnboardingPage() {
               {submitError}
             </div>
           )}
+
+          {/* Skip — encouraged-not-required gate. Sets a session flag
+              and bounces to /app. The dashboard reads this flag on
+              mount to suppress the onboarding redirect for the rest
+              of this tab session; next session re-prompts. */}
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                window.sessionStorage.setItem(ONBOARDING_SKIPPED_KEY, "1");
+              } catch {
+                /* sessionStorage may be unavailable (private mode);
+                   the redirect will simply re-fire on next /app visit,
+                   which is acceptable degradation. */
+              }
+              router.replace("/app");
+            }}
+            style={{
+              display: "block",
+              margin: "20px auto 0",
+              background: "none",
+              border: "none",
+              padding: "8px 12px",
+              fontFamily: "var(--font-body)",
+              fontWeight: 500,
+              fontSize: 13,
+              color: "var(--text-muted)",
+              cursor: "pointer",
+            }}
+          >
+            skip for now
+          </button>
         </div>
       </div>
     </>

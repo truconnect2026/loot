@@ -8,6 +8,7 @@ import CoinRain from "@/components/shared/CoinRain";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import WinsTicker from "@/components/dashboard/WinsTicker";
+import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
 import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 import DealCarousel from "@/components/dashboard/DealCarousel";
@@ -530,8 +531,18 @@ export default function DashboardPage() {
   // adding latency to every protected request) — the user can briefly
   // see the dashboard shell while the profile fetch resolves, but the
   // redirect fires within the first ~200ms.
+  //
+  // Skip honor: if the user tapped "skip for now" on /onboarding earlier
+  // in this tab session, sessionStorage carries that decision and we
+  // suppress the redirect for the remainder of the session. Next browser
+  // session, the gate re-fires (sessionStorage clears on tab close), so
+  // onboarding stays encouraged but never permanently disabled.
   useEffect(() => {
     let cancelled = false;
+    const skipped =
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(ONBOARDING_SKIPPED_KEY) === "1";
+    if (skipped) return;
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
