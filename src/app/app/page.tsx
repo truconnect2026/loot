@@ -6,6 +6,7 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import HeroProfit from "@/components/dashboard/HeroProfit";
+import EmptyHero from "@/components/dashboard/EmptyHero";
 import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 import DealCarousel from "@/components/dashboard/DealCarousel";
@@ -349,6 +350,11 @@ export default function DashboardPage() {
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  // Drives the empty-hero swap: a brand-new user (zero rows ever) sees
+  // EmptyHero (demo + CTA + social proof) instead of HeroProfit. Gated on
+  // !statsLoading so the empty hero never flashes before data resolves.
+  const [lifetimeScans, setLifetimeScans] = useState(0);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -379,13 +385,19 @@ export default function DashboardPage() {
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
+    if (!userData.user) {
+      setStatsLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("scans")
       .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) return;
+    if (error || !data) {
+      setStatsLoading(false);
+      return;
+    }
 
     const rows = data as ScanRow[];
 
@@ -452,6 +464,8 @@ export default function DashboardPage() {
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
     setProfitHistory(daily.map((v) => Math.round(v)));
+    setLifetimeScans(rows.length);
+    setStatsLoading(false);
   }, [supabase]);
 
   // refreshStats sets state, which `react-hooks/set-state-in-effect` flags
@@ -717,17 +731,28 @@ export default function DashboardPage() {
             animationDelay: "60ms",
           }}
         >
-          <HeroProfit
-            todayProfit={todayProfit}
-            yesterdayProfit={yesterdayProfit}
-            weekProfit={weekProfit}
-            monthProfit={monthProfit}
-            allTimeProfit={allTimeProfit}
-            todayScans={todayScans}
-            todayBuys={todayBuys}
-            todaySpent={todaySpent}
-            dailyProfitHistory={profitHistory}
-          />
+          {/* First-time users (no scan rows ever) see EmptyHero — a demo
+              flow + scan CTA + social proof — instead of the dim "$0"
+              treatment that read as failure. The slot keeps the same
+              outer dimensions so the swap doesn't shift layout. Once any
+              scan exists, refreshStats flips lifetimeScans > 0 and the
+              real HeroProfit takes over. Gated on !statsLoading so
+              EmptyHero never flashes before stats resolve. */}
+          {!statsLoading && lifetimeScans === 0 ? (
+            <EmptyHero onScanTap={() => startScan("barcode")} />
+          ) : (
+            <HeroProfit
+              todayProfit={todayProfit}
+              yesterdayProfit={yesterdayProfit}
+              weekProfit={weekProfit}
+              monthProfit={monthProfit}
+              allTimeProfit={allTimeProfit}
+              todayScans={todayScans}
+              todayBuys={todayBuys}
+              todaySpent={todaySpent}
+              dailyProfitHistory={profitHistory}
+            />
+          )}
         </div>
 
         {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
