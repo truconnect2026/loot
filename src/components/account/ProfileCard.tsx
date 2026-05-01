@@ -28,21 +28,17 @@ const cellLabel: React.CSSProperties = {
 };
 
 // Smart email split — keep the full domain, truncate only the local part.
-// Hard-caps the local at 10 chars so the cut point is always visually
-// clean ("truconnect…@gmail.com") regardless of card width. Falling back
-// on container-driven flex truncation produced ugly mid-word cuts at
-// random character positions ("truconnectmarketingso…@gmail.com").
-const LOCAL_MAX = 10;
-
+// JS no longer hard-caps the local; instead the local span carries CSS
+// `max-width` in `ch` units (10ch on phones, 20ch on tablet+) so the cut
+// is character-aligned and adapts to the screen. The previous flex-only
+// truncation produced ugly mid-word cuts at random pixel boundaries
+// ("truconnectmarketingso…@gmail.com"); the JS hard cap fixed that on
+// phones but stayed at 10 chars even on tablets. CSS-driven max-width
+// gives both — clean cut points + responsive width.
 function splitEmail(email: string): { local: string; domain: string } {
   const at = email.lastIndexOf("@");
   if (at === -1) return { local: email, domain: "" };
-  const fullLocal = email.slice(0, at);
-  const local =
-    fullLocal.length > LOCAL_MAX
-      ? `${fullLocal.slice(0, LOCAL_MAX)}…`
-      : fullLocal;
-  return { local, domain: email.slice(at) };
+  return { local: email.slice(0, at), domain: email.slice(at) };
 }
 
 export default function ProfileCard({
@@ -218,6 +214,7 @@ export default function ProfileCard({
             }}
           >
             <span
+              className="loot-email-local"
               style={{
                 flexShrink: 1,
                 minWidth: 0,
@@ -231,6 +228,18 @@ export default function ProfileCard({
             {domain && (
               <span style={{ flexShrink: 0 }}>{domain}</span>
             )}
+            {/* Responsive cap on the local part. ch units = roughly the
+                width of '0' in the current font, which is close enough
+                to "fit N characters" for monospace and proportional
+                bodies alike. 10ch fits "truconnect…" on phones; 20ch
+                fits "truconnectmarketing…" on tablet+. The flex
+                ellipsis kicks in if the container is even narrower. */}
+            <style>{`
+              .loot-email-local { max-width: 10ch; }
+              @media (min-width: 640px) {
+                .loot-email-local { max-width: 20ch; }
+              }
+            `}</style>
           </div>
         </div>
 
@@ -417,7 +426,14 @@ export default function ProfileCard({
             and put the user's brain on the cancel path. Reframed as a
             functional link to the Stripe portal, where they can change
             plan, update payment, or cancel if they want. Same target,
-            different framing. */}
+            different framing.
+
+            The parent's onCancel handler MUST open the Stripe portal in
+            a new tab via window.open(url, "_blank", "noopener,noreferrer")
+            so the user keeps their place in Loot. Stripe customer-portal
+            sessions return on close to a configured return_url; that
+            return_url should also point back to /account so the loop
+            completes cleanly even if the user navigates within Stripe. */}
         <button
           type="button"
           onClick={onCancel}
@@ -434,7 +450,7 @@ export default function ProfileCard({
             cursor: "pointer",
           }}
         >
-          Manage plan →
+          Manage plan ↗
         </button>
       </div>
       </div>
