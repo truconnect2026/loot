@@ -1,5 +1,23 @@
 "use client";
 
+function BellIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
+}
+
 interface ToggleProps {
   on: boolean;
   onToggle: () => void;
@@ -63,6 +81,8 @@ interface NotificationTogglesProps {
   onToggleBolo: () => void;
   pennies: boolean;
   onTogglePennies: () => void;
+  /** Drives the left-edge dot + the BellIcon tint. */
+  accentColor?: string;
 }
 
 export default function NotificationToggles({
@@ -74,6 +94,7 @@ export default function NotificationToggles({
   onToggleBolo,
   pennies,
   onTogglePennies,
+  accentColor = "#B4A0D4",
 }: NotificationTogglesProps) {
   const subs = [
     { label: "Deal alerts", on: deals, toggle: onToggleDeals },
@@ -82,57 +103,76 @@ export default function NotificationToggles({
   ];
 
   return (
-    <div
-      style={{
-        // position:relative so the accent dot can absolutely position to the
-        // left edge.
-        position: "relative",
-        backgroundColor: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.04)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-        borderRadius: "4px 14px 14px 14px",
-        overflow: "hidden",
-      }}
-    >
-      {/* Accent dot — lavender, low alpha. Centered vertically on the parent
-          row (height 52, dot 5 → top 23.5). */}
+    <div style={{ position: "relative" }}>
+      {/* Accent dot — sits half outside the tile rim, matching the
+          SettingsTile chassis. Positioned on the OUTER wrapper so the inner
+          chassis can keep overflow:hidden for the rounded corners + sub-panel
+          bg clip. */}
       <div
         aria-hidden="true"
         style={{
           position: "absolute",
-          left: 8,
+          left: -2.5,
           top: 23.5,
           width: 5,
           height: 5,
           borderRadius: "50%",
-          backgroundColor: "rgba(180,160,212,0.55)",
+          backgroundColor: accentColor,
+          opacity: 0.55,
           pointerEvents: "none",
+          zIndex: 1,
         }}
       />
 
-      {/* Main toggle row — same surface as other settings tiles */}
       <div
         style={{
-          height: 52,
-          display: "flex",
-          alignItems: "center",
-          paddingLeft: 16,
-          paddingRight: 16,
+          backgroundColor: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+          borderRadius: "4px 14px 14px 14px",
+          overflow: "hidden",
         }}
       >
-        <span
+        {/* Main toggle row — 12px paddingLeft + 18px BellIcon + 10px gap so
+            the parent label starts at x=40, the same anchor as sub-toggles. */}
+        <div
           style={{
-            flex: 1,
-            fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 600,
-            fontSize: 13,
-            color: "var(--text-primary)",
+            height: 52,
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: 12,
+            paddingRight: 16,
           }}
         >
-          Push notifications
-        </span>
-        <Toggle on={enabled} onToggle={onToggleEnabled} />
-      </div>
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 18,
+              height: 18,
+              marginRight: 10,
+              color: accentColor,
+              opacity: 0.6,
+              flexShrink: 0,
+            }}
+          >
+            <BellIcon />
+          </span>
+          <span
+            style={{
+              flex: 1,
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 600,
+              fontSize: 13,
+              color: "var(--text-primary)",
+            }}
+          >
+            Push notifications
+          </span>
+          <Toggle on={enabled} onToggle={onToggleEnabled} />
+        </div>
 
       {/* Sub-toggle panel — recessed into a darker surface than the page bg
           (#100C18 vs #120e18) so the row reads as "controls set into a panel"
@@ -175,6 +215,7 @@ export default function NotificationToggles({
           ))}
         </div>
       )}
+      </div>
 
       <style>{`
         @keyframes ntFadeIn {

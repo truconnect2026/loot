@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import SettingsTile from "./SettingsTile";
 
 interface ZipInputProps {
   value: string;
   onChange: (val: string) => void;
+  icon?: ReactNode;
+  accentColor?: string;
 }
 
-export default function ZipInput({ value, onChange }: ZipInputProps) {
+export default function ZipInput({
+  value,
+  onChange,
+  icon,
+  accentColor,
+}: ZipInputProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +37,11 @@ export default function ZipInput({ value, onChange }: ZipInputProps) {
   }
 
   return (
-    <SettingsTile onClick={!editing ? () => setEditing(true) : undefined}>
+    <SettingsTile
+      onClick={!editing ? () => setEditing(true) : undefined}
+      icon={icon}
+      accentColor={accentColor}
+    >
       <span
         style={{
           flex: 1,

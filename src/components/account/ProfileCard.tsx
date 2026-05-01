@@ -76,6 +76,7 @@ export default function ProfileCard({
         className="profile-card-surface"
         style={{
           marginTop: 16,
+          position: "relative",
           // Solid surface — was rgba(255,255,255,0.03) + backdrop-blur(12px).
           // The glass was sampling DotGridBackground's mint blob behind it,
           // tinting every low-contrast label on the card. #1A1530 reads a
@@ -89,8 +90,28 @@ export default function ProfileCard({
           boxShadow:
             "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
           padding: 20,
+          overflow: "hidden",
         }}
       >
+      {/* Crown — 2px gradient line flush at the top edge. Mint left fades to
+          transparent right. Clips to the asymmetric top corners (4px TL,
+          16px TR). The card surface is solid below it so the crown is the
+          only mint pigment in the card and can't bleed into label text. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: "linear-gradient(to right, #5CE0B8, transparent)",
+          borderTopLeftRadius: 4,
+          borderTopRightRadius: 16,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Profile row */}
       <div
         style={{
@@ -99,13 +120,15 @@ export default function ProfileCard({
           gap: 14,
         }}
       >
-        {/* Avatar */}
+        {/* Avatar — 1px plum inner border, 1.5px mint outline 4px outside */}
         <div
           style={{
             width: 44,
             height: 44,
             borderRadius: "50%",
             border: "1px solid rgba(90, 78, 112, 0.3)",
+            outline: "1.5px solid #5CE0B8",
+            outlineOffset: "4px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -172,7 +195,10 @@ export default function ProfileCard({
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
                 fontSize: 8,
-                color: "var(--accent-mint)",
+                // Desaturated mint — the saturated #5CE0B8 reads too bright
+                // on the low-alpha mint pill bg. #4DBFA0 keeps the mint
+                // identity but sits at a quieter saturation level.
+                color: "#4DBFA0",
               }}
             >
               PRO

@@ -26,6 +26,9 @@ function deriveInitials(name: string | null, email: string): string {
 }
 
 // ── Icons ──
+// Tile icons use stroke="currentColor" so the SettingsTile chassis can tint
+// them via `color: accentColor` + `opacity: 0.6`. All identity icons share
+// the same shape weight: 18px, strokeWidth 1.75.
 
 function ChevronLeft() {
   return (
@@ -61,10 +64,105 @@ function ChevronRight() {
   );
 }
 
+function MapPinIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+      <circle cx={12} cy={10} r={3} />
+    </svg>
+  );
+}
+
+function RadarIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx={12} cy={12} r={10} />
+      <circle cx={12} cy={12} r={6} />
+      <circle cx={12} cy={12} r={2} />
+    </svg>
+  );
+}
+
+function CrosshairsIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx={12} cy={12} r={9} />
+      <line x1={12} y1={1} x2={12} y2={6} />
+      <line x1={12} y1={18} x2={12} y2={23} />
+      <line x1={1} y1={12} x2={6} y2={12} />
+      <line x1={18} y1={12} x2={23} y2={12} />
+    </svg>
+  );
+}
+
+function DownloadArrowIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1={12} y1={15} x2={12} y2={3} />
+    </svg>
+  );
+}
+
+function DoorIcon() {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1={21} y1={12} x2={9} y2={12} />
+    </svg>
+  );
+}
+
 // The Export tile right-side affordance. Chevron in idle, ghosted during the
-// optimistic "exporting" window. Matches the BOLO keywords row's chevron
-// pattern instead of duplicating a download glyph that already lives on the
-// left of the tile.
+// optimistic "exporting" window. 14px so it reads as visually distinct from
+// the 18px DownloadArrowIcon on the left.
 function ExportChevron({ opacity }: { opacity: number }) {
   return (
     <svg
@@ -83,24 +181,13 @@ function ExportChevron({ opacity }: { opacity: number }) {
   );
 }
 
-function DoorIcon() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--accent-red)"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1={21} y1={12} x2={9} y2={12} />
-    </svg>
-  );
-}
+// Tile accent colors — each drives both its tile's left dot and its icon tint.
+const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
+const ACCENT_RADIUS = "#D4A574"; // camel — distance
+const ACCENT_BOLO = "#5CE0B8"; // mint — keyword scope
+const ACCENT_NOTIF = "#B4A0D4"; // lavender — alerts
+const ACCENT_EXPORT = "#8A8A9A"; // neutral — utility
+const ACCENT_SIGNOUT = "#E8636B"; // coral — destructive
 
 // ── Mock data (BOLO + notifications stay mock until those tables wire up) ──
 const MOCK_KEYWORDS = ["Nintendo", "KitchenAid", "Pyrex", "Le Creuset", "Dyson", "Vitamix"];
@@ -287,6 +374,9 @@ export default function AccountPage() {
           padding: "0 18px",
           position: "relative",
           zIndex: 1,
+          // Vault arrival — single scale+fade on mount. Different motion
+          // personality from the dashboard's fadeInUp.
+          animation: "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) both",
         }}
       >
         {/* Back arrow — bottom padding is zero so the visual gap from chevron
@@ -344,10 +434,19 @@ export default function AccountPage() {
         {/* Group 1: Location settings (6px gap) */}
         <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 6 }}>
           {/* Zip code — persists to profiles.zip_code */}
-          <ZipInput value={profile.zipCode} onChange={updateZip} />
+          <ZipInput
+            value={profile.zipCode}
+            onChange={updateZip}
+            icon={<MapPinIcon />}
+            accentColor={ACCENT_ZIP}
+          />
 
           {/* Search radius */}
-          <SettingsTile onClick={() => setRadiusSheetOpen(true)}>
+          <SettingsTile
+            onClick={() => setRadiusSheetOpen(true)}
+            icon={<RadarIcon />}
+            accentColor={ACCENT_RADIUS}
+          >
             <span
               style={{
                 flex: 1,
@@ -382,7 +481,11 @@ export default function AccountPage() {
           </SettingsTile>
 
           {/* BOLO keywords */}
-          <SettingsTile onClick={() => setView("bolo")}>
+          <SettingsTile
+            onClick={() => setView("bolo")}
+            icon={<CrosshairsIcon />}
+            accentColor={ACCENT_BOLO}
+          >
             <span
               style={{
                 flex: 1,
@@ -408,8 +511,8 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 2: Notifications (mt-4) */}
-        <div style={{ marginTop: 16 }}>
+        {/* Group 2: Notifications — 18px gap below the location group */}
+        <div style={{ marginTop: 18 }}>
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={() => setNotifEnabled((v) => !v)}
@@ -419,12 +522,18 @@ export default function AccountPage() {
             onToggleBolo={() => setNotifBolo((v) => !v)}
             pennies={notifPennies}
             onTogglePennies={() => setNotifPennies((v) => !v)}
+            accentColor={ACCENT_NOTIF}
           />
         </div>
 
-        {/* Group 3: Export (mt-4) */}
-        <div style={{ marginTop: 16 }}>
-          <SettingsTile height={60} onClick={handleExport}>
+        {/* Group 3: Export — 18px gap */}
+        <div style={{ marginTop: 18 }}>
+          <SettingsTile
+            height={60}
+            onClick={handleExport}
+            icon={<DownloadArrowIcon />}
+            accentColor={ACCENT_EXPORT}
+          >
             <div style={{ flex: 1 }}>
               <div
                 style={{
@@ -463,12 +572,15 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 4: Sign out (mt-6) */}
-        <div style={{ marginTop: 24 }}>
+        {/* Group 4: Sign out — 28px gap, more breathing room before the
+            destructive action */}
+        <div style={{ marginTop: 28 }}>
           <SettingsTile
             height={52}
             variant="danger"
             onClick={handleSignOut}
+            icon={<DoorIcon />}
+            accentColor={ACCENT_SIGNOUT}
           >
             <span
               style={{
@@ -481,12 +593,11 @@ export default function AccountPage() {
             >
               Sign out
             </span>
-            <DoorIcon />
           </SettingsTile>
         </div>
 
-        {/* Bottom padding */}
-        <div style={{ paddingBottom: 40 }} />
+        {/* Bottom padding — 48px so the sign-out has air below it */}
+        <div style={{ paddingBottom: 48 }} />
       </div>
     </>
   );
