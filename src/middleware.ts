@@ -3,12 +3,17 @@ import { createServerClient } from "@supabase/ssr";
 
 /**
  * Auth middleware:
- * - Authed users hitting / → redirect to /app
- * - Unauthed users hitting /app or /account → redirect to /
- * - Always refreshes the session so cookies stay valid
+ * - Authed users hitting / → redirect to /app (the dashboard then
+ *   bounces them to /onboarding if they haven't set a zip yet).
+ * - Unauthed users hitting /app, /account, or /onboarding → /
+ * - Always refreshes the session so cookies stay valid.
+ *
+ * The onboarding gate (zip-required-before-dashboard) lives in the
+ * dashboard component itself, not here, because that check needs a
+ * profiles-table query which we don't want to run on every request.
  */
 
-const PROTECTED = ["/app", "/account"];
+const PROTECTED = ["/app", "/account", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -69,5 +74,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/app/:path*", "/account/:path*"],
+  matcher: ["/", "/app/:path*", "/account/:path*", "/onboarding/:path*"],
 };

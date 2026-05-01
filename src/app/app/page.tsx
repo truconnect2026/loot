@@ -522,6 +522,34 @@ export default function DashboardPage() {
     };
   }, [refreshStats]);
 
+  // Onboarding gate — bounce brand-new users (no zip set) to /onboarding
+  // before they see the dashboard. Runs once per mount; the onboarding
+  // page redirects them back to /app once they save. This is a soft
+  // client-side gate (middleware can't run a profiles query without
+  // adding latency to every protected request) — the user can briefly
+  // see the dashboard shell while the profile fetch resolves, but the
+  // redirect fires within the first ~200ms.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user || cancelled) return;
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("zip_code")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!profileRow?.zip_code) {
+        router.replace("/onboarding");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, router]);
+
   // Watch the scroll sentinel — when it leaves the viewport the header
   // gains a solid background and hairline.
   useEffect(() => {
