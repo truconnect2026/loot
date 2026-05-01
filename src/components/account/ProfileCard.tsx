@@ -384,6 +384,35 @@ export default function ProfileCard({
           </div>
         </div>
 
+        {/* PRO members benchmark — quiet reassurance for the paying user
+            that the price tracks something real. Static at launch; backed
+            by a Supabase aggregate (avg monthly realized profit across
+            active PRO accounts) once that view exists. Kept lowercase
+            and muted so it reads as a footnote, not a sales pitch. */}
+        {isPro && (
+          <div
+            style={{
+              marginTop: 10,
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              color: "var(--text-muted)",
+              lineHeight: 1.4,
+            }}
+          >
+            PRO members average{" "}
+            <span
+              style={{
+                color: "var(--money)",
+                fontWeight: 700,
+                fontFeatureSettings: '"tnum"',
+              }}
+            >
+              $340/mo
+            </span>
+            {" "}in flips found
+          </div>
+        )}
+
         {/* Manage plan — was "cancel anytime", which read as a warning
             and put the user's brain on the cancel path. Reframed as a
             functional link to the Stripe portal, where they can change

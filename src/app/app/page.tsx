@@ -7,6 +7,7 @@ import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
+import WinsTicker from "@/components/dashboard/WinsTicker";
 import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 import DealCarousel from "@/components/dashboard/DealCarousel";
@@ -850,6 +851,23 @@ export default function DashboardPage() {
             onAiVision={() => startScan("vision")}
             todayScans={todayScans}
           />
+        </div>
+
+        {/* Wins ticker — anonymized rotating signal that other resellers
+            are using the app. Sits between the scan zone and the first
+            carousel: just below the user's primary action, just above the
+            content they're about to scan. Static rotation at launch;
+            backed by a Supabase view later. */}
+        <div
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginTop: 14,
+            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+            animationDelay: "160ms",
+          }}
+        >
+          <WinsTicker />
         </div>
 
         {/* 6 + 7. Carousels — order swaps for first-time users.
