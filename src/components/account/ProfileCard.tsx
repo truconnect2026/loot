@@ -12,13 +12,13 @@ interface ProfileCardProps {
   onCancel: () => void;
 }
 
-// Cold blue-purple hex (no warm/red components) so OLED panels can't shift
-// these labels toward green. Spread inline on each cell — the runtime end
-// state is identical to writing style={{ color: '#28203D', ... }} per label.
+// Extremely dark blue-indigo, zero red, zero green warmth — OLED can't
+// shift this toward green. Reads as "almost invisible dark blue" which is
+// exactly what you want for annotation labels (whispers, not shouts).
 const cellLabel: React.CSSProperties = {
   fontFamily: "var(--font-jetbrains-mono), monospace",
   fontSize: 9,
-  color: "#28203D",
+  color: "#1E1A30",
   letterSpacing: "0.08em",
   marginBottom: 2,
 };
@@ -77,18 +77,22 @@ export default function ProfileCard({
         style={{
           marginTop: 16,
           position: "relative",
-          // Solid surface — was rgba(255,255,255,0.03) + backdrop-blur(12px).
-          // The glass was sampling DotGridBackground's mint blob behind it,
-          // tinting every low-contrast label on the card. #1A1530 reads a
-          // touch lighter than #120e18 page bg so the card still feels
-          // elevated, but nothing behind the card can bleed through.
-          backgroundColor: "#1A1530",
+          // Hero card surface — slightly lighter than #1A1530 so the card
+          // visibly elevates above the settings tiles below. Solid (no
+          // backdrop-blur) so DotGridBackground can't bleed mint through.
+          backgroundColor: "#1E1838",
+          // 6% mint border — won't read green, gives the card edge faint
+          // warmth vs. the flat plum borders on tiles below. Combined with
+          // the brighter surface this is the VIP-pass treatment.
+          border: "1px solid rgba(92,224,184,0.06)",
           // Asymmetric corners — sharp top-left (the crown anchor), generous
           // 16px elsewhere. The ::before gradient uses border-radius: inherit
           // so it clips to these same corners automatically.
           borderRadius: "4px 16px 16px 16px",
+          // Stronger drop shadow stack — on dark bg you need more weight to
+          // register depth. Inset top highlight kept for the subtle sheen.
           boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 4px 24px -4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)",
           padding: 20,
           overflow: "hidden",
         }}
@@ -108,6 +112,21 @@ export default function ProfileCard({
           background: "linear-gradient(to right, #5CE0B8, transparent)",
           borderTopLeftRadius: 4,
           borderTopRightRadius: 16,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Inner glow — barely-perceptible warm spot anchored near the avatar
+          for dimensionality. 3% mint at the focal point fades to transparent
+          by 70% — won't tint text, just gives the card surface a sense of
+          light source. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse at 30% 20%, rgba(92,224,184,0.03), transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -208,7 +227,7 @@ export default function ProfileCard({
       </div>
 
       {/* Dashed separator — repeating linear gradient on a 1px tall row.
-          #3D2E55 dashes against the #1A1530 card surface read on device. */}
+          #3D2E55 dashes against the #1E1838 card surface read on device. */}
       <div
         style={{
           height: 1,
@@ -234,14 +253,15 @@ export default function ProfileCard({
         >
           Your plan
         </div>
-        {/* Price — Outfit thin reads as luxury at 28px */}
+        {/* Price — Outfit thin reads as luxury at 28px. Bright off-white
+            with a cool tint so the price is unambiguously the hero figure. */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span
             style={{
               fontFamily: "var(--font-outfit), sans-serif",
               fontWeight: 300,
               fontSize: 28,
-              color: "var(--text-primary)",
+              color: "#E8E0F0",
               fontFeatureSettings: '"tnum"',
               lineHeight: 1,
             }}
@@ -268,10 +288,13 @@ export default function ProfileCard({
             marginTop: 10,
           }}
         >
+          {/* RENEWS / SCANS pits — solid #120e18 (page bg) hex literal so
+              the surface can't pick up ambient color via CSS variable. The
+              cell behind the labels is what was tinting on OLED. */}
           <div
             style={{
               flex: 1,
-              backgroundColor: "var(--bg-recessed)",
+              backgroundColor: "#120e18",
               borderRadius: 8,
               padding: 10,
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
@@ -292,7 +315,7 @@ export default function ProfileCard({
           <div
             style={{
               flex: 1,
-              backgroundColor: "var(--bg-recessed)",
+              backgroundColor: "#120e18",
               borderRadius: 8,
               padding: 10,
               boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
@@ -304,6 +327,9 @@ export default function ProfileCard({
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
                 color: "var(--accent-mint)",
+                // Soft mint halo — the brightest reward in the billing
+                // section, so it should glow.
+                textShadow: "0 0 16px rgba(92,224,184,0.35)",
               }}
             >
               {scansLabel}

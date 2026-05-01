@@ -160,27 +160,6 @@ function DoorIcon() {
   );
 }
 
-// The Export tile right-side affordance. Chevron in idle, ghosted during the
-// optimistic "exporting" window. 14px so it reads as visually distinct from
-// the 18px DownloadArrowIcon on the left.
-function ExportChevron({ opacity }: { opacity: number }) {
-  return (
-    <svg
-      width={14}
-      height={14}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#3D2E55"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ opacity, transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)" }}
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
-
 // Tile accent colors — each drives both its tile's left dot and its icon tint.
 const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
@@ -414,16 +393,15 @@ export default function AccountPage() {
         />
 
         {/* ── Settings ── */}
-        {/* SETTINGS section label — cold blue-purple, no warm components, so
-            OLED panels can't shift it green. Inline hex literal beats anything
-            in the cascade. */}
+        {/* SETTINGS section label — extremely dark blue-indigo, zero warmth
+            so OLED can't shift it green. Whisper, not a shout. */}
         <div
           style={{
             marginTop: 20,
             marginBottom: 8,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
-            color: "#28203D",
+            color: "#1E1A30",
             letterSpacing: "0.10em",
             textTransform: "uppercase",
           }}
@@ -566,9 +544,9 @@ export default function AccountPage() {
               >
                 exported
               </span>
-            ) : (
-              <ExportChevron opacity={exporting ? 0.3 : 1} />
-            )}
+            ) : exporting ? (
+              <CoinMarkSpinner />
+            ) : null}
           </SettingsTile>
         </div>
 

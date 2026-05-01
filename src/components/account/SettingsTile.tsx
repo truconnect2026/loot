@@ -10,9 +10,10 @@ interface SettingsTileProps {
    */
   variant?: "default" | "danger";
   /**
-   * Drives the left-edge accent dot (5px / 55% alpha) and the icon tint
-   * (60% alpha, applied via `color` so SVGs using stroke="currentColor"
-   * pick it up automatically).
+   * Drives the left-edge accent dot (5px / 70% alpha) and the icon tint
+   * (75% alpha, applied via `color` so SVGs using stroke="currentColor"
+   * pick it up automatically). Bumped from 55/60 — at the lower opacities
+   * the tile signature was nearly invisible on phone.
    */
   accentColor?: string;
   /** 18px stroke icon, rendered between the dot and the label. */
@@ -84,7 +85,7 @@ export default function SettingsTile({
         transition,
       }}
     >
-      {/* Left-edge accent dot — 5px / 55% opacity. Sits half outside the
+      {/* Left-edge accent dot — 5px / 70% opacity. Sits half outside the
           tile so it reads as a marker on the rim. */}
       {accentColor && (
         <span
@@ -98,13 +99,13 @@ export default function SettingsTile({
             height: 5,
             borderRadius: "50%",
             backgroundColor: accentColor,
-            opacity: 0.55,
+            opacity: 0.7,
             pointerEvents: "none",
           }}
         />
       )}
 
-      {/* Icon — 18px container, color from accentColor at 60% opacity. SVGs
+      {/* Icon — 18px container, color from accentColor at 75% opacity. SVGs
           should use stroke="currentColor" so this `color` flows through. */}
       {icon && (
         <span
@@ -117,7 +118,7 @@ export default function SettingsTile({
             height: 18,
             marginRight: 10,
             color: accentColor,
-            opacity: 0.6,
+            opacity: 0.75,
             flexShrink: 0,
           }}
         >

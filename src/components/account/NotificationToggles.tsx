@@ -118,7 +118,7 @@ export default function NotificationToggles({
           height: 5,
           borderRadius: "50%",
           backgroundColor: accentColor,
-          opacity: 0.55,
+          opacity: 0.7,
           pointerEvents: "none",
           zIndex: 1,
         }}
@@ -154,7 +154,7 @@ export default function NotificationToggles({
               height: 18,
               marginRight: 10,
               color: accentColor,
-              opacity: 0.6,
+              opacity: 0.75,
               flexShrink: 0,
             }}
           >
@@ -175,12 +175,13 @@ export default function NotificationToggles({
         </div>
 
       {/* Sub-toggle panel — recessed into a darker surface than the page bg
-          (#100C18 vs #120e18) so the row reads as "controls set into a panel"
-          rather than "two flush surfaces." Hairlines #1A1530 between rows. */}
+          (#0D0A14 vs #120e18). Bumped from #100C18 so the contrast between
+          the parent row and the sub-toggle pit is obvious at a glance.
+          Hairlines #1A1530 between rows. */}
       {enabled && (
         <div
           style={{
-            backgroundColor: "#100C18",
+            backgroundColor: "#0D0A14",
             boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
           }}
         >
