@@ -70,7 +70,10 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
         backgroundColor: pressed
           ? "rgba(255,255,255,0.09)"
           : "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        // Border removed — the auth card already carries one. Two nested
+        // borders read as boxed-in. The button now relies on its slightly
+        // brighter bg + inset highlight to separate from the card surface.
+        border: "none",
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
         borderRadius: 16,
@@ -147,9 +150,12 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        width: 54,
+        // Auto-width so "Continue" + arrow can sit inline. Padding sets
+        // the visual height; flexShrink stops the input from squeezing it.
         height: 52,
         flexShrink: 0,
+        paddingLeft: 16,
+        paddingRight: 14,
         backgroundColor: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.10)",
         boxShadow: pressed ? pressShadow : restShadow,
@@ -157,14 +163,25 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        gap: 8,
         cursor: "pointer",
-        padding: 0,
         position: "relative",
-        transform: pressed ? "scale(0.95)" : "scale(1)",
+        transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      <span
+        style={{
+          fontFamily: "var(--font-body)",
+          fontWeight: 600,
+          fontSize: 14,
+          color: "var(--ui-primary)",
+          letterSpacing: "0.01em",
+        }}
+      >
+        Continue
+      </span>
       <ArrowIcon />
     </button>
   );
@@ -211,11 +228,13 @@ export default function LoginPage() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        /* Saturn icon — gentle vertical drift, 5s loop. Pure transform so
-           it stays GPU-accelerated and scrolls smoothly on mobile. */
+        /* Saturn icon — gentle vertical drift, 5s loop. Baseline nudged
+           down 2px (resting at translateY(2px), floating up to 0) so the
+           planet sits optically centered with the LOOT wordmark cap-height
+           rather than appearing slightly high. Pure transform = GPU. */
         @keyframes saturnFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-2px); }
+          0%, 100% { transform: translateY(2px); }
+          50% { transform: translateY(0); }
         }
         /* LOOT wordmark — soft breathing glow. The visible LOOT stays calm;
            a duplicate text-shadow layer fades in over it. Animating opacity
@@ -301,15 +320,6 @@ export default function LoginPage() {
                 LOOT
               </span>
             </span>
-            <div
-              style={{
-                width: 48,
-                height: 1,
-                backgroundColor: "rgba(92,224,184,0.20)",
-                flexShrink: 0,
-                alignSelf: "center",
-              }}
-            />
           </div>
 
           {/* ── Auth glass card ── */}
