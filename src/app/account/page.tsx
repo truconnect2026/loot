@@ -61,22 +61,24 @@ function ChevronRight() {
   );
 }
 
-function DownloadIcon({ opacity }: { opacity: number }) {
+// The Export tile right-side affordance. Chevron in idle, ghosted during the
+// optimistic "exporting" window. Matches the BOLO keywords row's chevron
+// pattern instead of duplicating a download glyph that already lives on the
+// left of the tile.
+function ExportChevron({ opacity }: { opacity: number }) {
   return (
     <svg
-      width={16}
-      height={16}
+      width={14}
+      height={14}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="var(--accent-mint)"
+      stroke="#3D2E55"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       style={{ opacity, transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)" }}
     >
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1={12} y1={15} x2={12} y2={3} />
+      <polyline points="9 18 15 12 9 6" />
     </svg>
   );
 }
@@ -287,7 +289,8 @@ export default function AccountPage() {
           zIndex: 1,
         }}
       >
-        {/* Back arrow */}
+        {/* Back arrow — bottom padding is zero so the visual gap from chevron
+            bottom to the profile card top is exactly the card's marginTop (16). */}
         <button
           onClick={() => router.push("/app")}
           onPointerDown={() => setBackPressed(true)}
@@ -298,7 +301,7 @@ export default function AccountPage() {
             background: "none",
             border: "none",
             cursor: "pointer",
-            padding: 4,
+            padding: "4px 4px 0 4px",
             display: "flex",
             color: backPressed ? "var(--text-primary)" : "var(--text-muted)",
             transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -455,7 +458,7 @@ export default function AccountPage() {
                 exported
               </span>
             ) : (
-              <DownloadIcon opacity={exporting ? 0.3 : 1} />
+              <ExportChevron opacity={exporting ? 0.3 : 1} />
             )}
           </SettingsTile>
         </div>

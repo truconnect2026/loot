@@ -84,6 +84,9 @@ export default function NotificationToggles({
   return (
     <div
       style={{
+        // position:relative so the accent dot can absolutely position to the
+        // left edge.
+        position: "relative",
         backgroundColor: "rgba(255,255,255,0.02)",
         border: "1px solid rgba(255,255,255,0.04)",
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
@@ -91,7 +94,23 @@ export default function NotificationToggles({
         overflow: "hidden",
       }}
     >
-      {/* Main toggle row */}
+      {/* Accent dot — lavender, low alpha. Centered vertically on the parent
+          row (height 52, dot 5 → top 23.5). */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 8,
+          top: 23.5,
+          width: 5,
+          height: 5,
+          borderRadius: "50%",
+          backgroundColor: "rgba(180,160,212,0.55)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Main toggle row — same surface as other settings tiles */}
       <div
         style={{
           height: 52,
@@ -115,13 +134,14 @@ export default function NotificationToggles({
         <Toggle on={enabled} onToggle={onToggleEnabled} />
       </div>
 
-      {/* Sub-toggles — fade in when enabled */}
+      {/* Sub-toggle panel — recessed into a darker surface than the page bg
+          (#100C18 vs #120e18) so the row reads as "controls set into a panel"
+          rather than "two flush surfaces." Hairlines #1A1530 between rows. */}
       {enabled && (
         <div
           style={{
-            paddingLeft: 16,
-            paddingRight: 16,
-            paddingBottom: 12,
+            backgroundColor: "#100C18",
+            boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
           }}
         >
           {subs.map((sub, i) => (
@@ -130,8 +150,12 @@ export default function NotificationToggles({
               style={{
                 display: "flex",
                 alignItems: "center",
-                paddingLeft: 16,
-                height: 36,
+                // 40px aligns sub labels with where parent text would sit if
+                // the parent row had a 18px icon at left-pad 12 + gap 10.
+                paddingLeft: 40,
+                paddingRight: 16,
+                height: 40,
+                borderTop: i === 0 ? "none" : "1px solid #1A1530",
                 animation: `ntFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 50}ms both`,
               }}
             >

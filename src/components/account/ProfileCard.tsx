@@ -82,7 +82,10 @@ export default function ProfileCard({
           // touch lighter than #120e18 page bg so the card still feels
           // elevated, but nothing behind the card can bleed through.
           backgroundColor: "#1A1530",
-          borderRadius: "4px 14px 14px 14px",
+          // Asymmetric corners — sharp top-left (the crown anchor), generous
+          // 16px elsewhere. The ::before gradient uses border-radius: inherit
+          // so it clips to these same corners automatically.
+          borderRadius: "4px 16px 16px 16px",
           boxShadow:
             "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
           padding: 20,
@@ -178,18 +181,15 @@ export default function ProfileCard({
         )}
       </div>
 
-      {/* Dashed separator */}
+      {/* Dashed separator — repeating linear gradient on a 1px tall row.
+          #3D2E55 dashes against the #1A1530 card surface read on device. */}
       <div
         style={{
-          marginTop: 16,
-          marginBottom: 16,
-          borderTop: "2px dashed var(--border-default)",
-          backgroundImage:
-            "repeating-linear-gradient(90deg, var(--border-default) 0, var(--border-default) 2px, transparent 2px, transparent 8px)",
-          backgroundSize: "8px 2px",
-          backgroundRepeat: "repeat-x",
-          height: 0,
-          border: "none",
+          height: 1,
+          width: "100%",
+          background:
+            "repeating-linear-gradient(to right, #3D2E55 0px, #3D2E55 5px, transparent 5px, transparent 10px)",
+          margin: "14px 0 12px 0",
         }}
       />
 
