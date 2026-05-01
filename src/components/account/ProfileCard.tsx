@@ -41,13 +41,16 @@ export default function ProfileCard({
           position: relative;
         }
         .profile-card-cancel {
-          color: rgba(232, 99, 107, 0.6);
+          color: #5A4E70;
         }
         .profile-card-cancel:hover {
-          color: rgba(232, 99, 107, 0.9);
+          color: #C8C0D8;
         }
-        /* Gradient border via mask-composite — bright at top-left, mint kicker
-           at bottom-right. Sits above the card without affecting layout. */
+        /* Gradient border via mask-composite — bright top-left, plum dim
+           bottom-right. The mint kicker that was here used to live on the
+           border but, combined with the glass card behind it, made every
+           low-contrast label inside read as greenish. Switched the kicker
+           to dim plum so the card no longer has a green corner. */
         .profile-card-surface::before {
           content: "";
           position: absolute;
@@ -59,7 +62,7 @@ export default function ProfileCard({
             rgba(255,255,255,0.15) 0%,
             rgba(255,255,255,0.04) 40%,
             transparent 60%,
-            rgba(92,224,184,0.20) 100%
+            rgba(90,78,112,0.20) 100%
           );
           -webkit-mask:
             linear-gradient(#000 0 0) content-box,
@@ -73,10 +76,12 @@ export default function ProfileCard({
         className="profile-card-surface"
         style={{
           marginTop: 16,
-          // Glass tint — gradient border is the rim, no solid border underneath.
-          backgroundColor: "rgba(255,255,255,0.03)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          // Solid surface — was rgba(255,255,255,0.03) + backdrop-blur(12px).
+          // The glass was sampling DotGridBackground's mint blob behind it,
+          // tinting every low-contrast label on the card. #1A1530 reads a
+          // touch lighter than #120e18 page bg so the card still feels
+          // elevated, but nothing behind the card can bleed through.
+          backgroundColor: "#1A1530",
           borderRadius: "4px 14px 14px 14px",
           boxShadow:
             "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px -8px rgba(0,0,0,0.4)",
@@ -189,6 +194,18 @@ export default function ProfileCard({
 
       {/* Subscription */}
       <div>
+        {/* Plan label — muted plum, hex literal so the cascade can't shift it */}
+        <div
+          style={{
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 9,
+            color: "#5A4E70",
+            letterSpacing: "0.08em",
+            marginBottom: 6,
+          }}
+        >
+          Your plan
+        </div>
         {/* Price — Outfit thin reads as luxury at 28px */}
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span
@@ -266,7 +283,7 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* Cancel — desaturated red, brightens slightly on hover */}
+        {/* Cancel — muted plum, brightens to primary text on hover */}
         <div
           onClick={onCancel}
           className="profile-card-cancel"
