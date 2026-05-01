@@ -115,6 +115,30 @@
      ============================================================ */
   --font-label: var(--font-jetbrains-mono), monospace;
   --font-body: var(--font-outfit), sans-serif;
+
+  /* ============================================================
+     VOICE RULE (marketing/body copy)
+     ------------------------------------------------------------
+     All marketing/body copy in the app is written:
+       - all lowercase
+       - no terminal periods
+       - commas and question marks ALLOWED mid-line
+       - initialisms (UPC, CSV, AI, FB, CL, ND) preserved as-is
+       - proper nouns (Tuesday, Goodwill) preserved as-is
+
+     Examples that follow the rule:
+       "scan thrift finds, check online prices, flip for profit"
+       "scan your first item to start tracking"
+       "no barcode? snap a photo"
+       "works at thrift stores, yard sales, and retail clearance"
+       "tracking for 4 days"
+       "check your email"
+       "cancel anytime"
+       "CSV for taxes"
+
+     UI labels, button text, names, prices, and uppercase section
+     headers are NOT marketing copy and follow their own conventions.
+     ============================================================ */
 }
 
 html, body {

@@ -424,7 +424,9 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* ── Tagline ── */}
+          {/* ── Tagline ── concrete three-beat product description.
+              Voice rule: all lowercase, no terminal period, commas allowed
+              mid-line (see globals.css for the full rule). */}
           <div
             style={{
               marginTop: 32,
@@ -437,7 +439,7 @@ export default function LoginPage() {
               animationDelay: "700ms",
             }}
           >
-            profit hides in plain sight. now you don&apos;t miss it.
+            scan thrift finds, check online prices, flip for profit
           </div>
         </div>
       </div>
