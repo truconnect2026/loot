@@ -91,6 +91,30 @@
   /* Specific */
   --profit-glow: var(--money-glow);
   --press-bg: #1F1835;
+
+  /* ============================================================
+     FONT ROLE SYSTEM
+     ------------------------------------------------------------
+     Monospace (JetBrains Mono) is RESERVED for uppercase
+     section/category labels. Examples that ARE labels:
+       PROFIT · TODAY'S PROFIT · DEALS NEAR YOU · FREE & CLEARANCE
+       SETTINGS · SOURCING · MORE TOOLS · RENEWS · SCANS
+       SCAN UPC · AI VISION
+
+     Everything else uses Outfit, the body sans:
+       body copy, descriptions, subtitles, marketing taglines,
+       prices ($9.99, +$70), badges (PRO, FB, CL, ND), button
+       sublabels ("point at any barcode"), counters, all numbers.
+
+     Test: "Is this an uppercase section/category header?"
+       yes → font: var(--font-label)
+       no  → font: var(--font-body)
+
+     Brand-identity exception: the LOOT wordmark is a logotype,
+     not a label — it stays in JetBrains Mono regardless.
+     ============================================================ */
+  --font-label: var(--font-jetbrains-mono), monospace;
+  --font-body: var(--font-outfit), sans-serif;
 }
 
 html, body {

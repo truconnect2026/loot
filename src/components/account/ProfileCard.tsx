@@ -16,9 +16,10 @@ interface ProfileCardProps {
 // toward green. RENEWS / SCANS / SETTINGS all share the same color now;
 // they're the same kind of annotation, they should match.
 const cellLabel: React.CSSProperties = {
-  // RENEWS / SCANS context annotations — barely-there muted plum so the
-  // values dominate the cells, not the labels.
-  fontFamily: "var(--font-outfit), sans-serif",
+  // RENEWS / SCANS — uppercase category labels, stay in JetBrains Mono per
+  // the font role system. Barely-there muted plum so the values dominate
+  // the cells, not the labels.
+  fontFamily: "var(--font-label)",
   fontWeight: 600,
   fontSize: 9,
   color: "#2D2845",
@@ -172,7 +173,7 @@ export default function ProfileCard({
         >
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 500,
               fontSize: 16,
               color: "var(--text-muted)",
@@ -188,7 +189,7 @@ export default function ProfileCard({
         <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: 17,
               color: "var(--text-primary)",
@@ -201,7 +202,7 @@ export default function ProfileCard({
               marginTop: 4,
               display: "flex",
               alignItems: "baseline",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 11,
               color: "var(--text-muted)",
               minWidth: 0,
@@ -241,7 +242,7 @@ export default function ProfileCard({
           >
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontWeight: 700,
                 fontSize: 8,
                 color: "var(--accent-camel)",
@@ -273,7 +274,7 @@ export default function ProfileCard({
             warm/green-gray on OLED, this one stays neutral cool. */}
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             color: "#6B5F80",
             letterSpacing: "0.08em",
@@ -287,7 +288,7 @@ export default function ProfileCard({
         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 300,
               fontSize: 28,
               color: "#E8E0F0",
@@ -299,7 +300,7 @@ export default function ProfileCard({
           </span>
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 400,
               fontSize: 13,
               color: "var(--text-muted)",
@@ -337,7 +338,7 @@ export default function ProfileCard({
             <div style={cellLabel}>RENEWS</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color: "#C8C0D8",
                 fontFeatureSettings: '"tnum"',
@@ -359,7 +360,7 @@ export default function ProfileCard({
             <div style={cellLabel}>SCANS</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 // "unlimited" is a feature label, not currency. Off-mint per
                 // the role system; the value still reads as a benefit because
@@ -378,7 +379,7 @@ export default function ProfileCard({
           style={{
             marginTop: 4,
             textAlign: "left",
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 500,
             fontSize: 11,
             color: "#5A4E70",

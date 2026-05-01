@@ -20,7 +20,7 @@ export default function RadiusSheet({
       <div style={{ padding: "16px 24px 32px" }}>
         <div
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 15,
             color: "var(--text-primary)",
@@ -32,7 +32,7 @@ export default function RadiusSheet({
         </div>
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontWeight: 700,
             fontSize: 20,
             color: "var(--accent-mint)",
@@ -101,7 +101,7 @@ export default function RadiusSheet({
         >
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 9,
               color: "var(--text-dim)",
             }}
@@ -110,7 +110,7 @@ export default function RadiusSheet({
           </span>
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 9,
               color: "var(--text-dim)",
             }}

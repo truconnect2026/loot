@@ -146,7 +146,7 @@ export default function HaulLogPage() {
           </button>
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: 17,
               color: "var(--text-primary)",
@@ -176,7 +176,7 @@ export default function HaulLogPage() {
             >
               <div
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 9,
                   color: "var(--text-muted)",
                   letterSpacing: "0.10em",
@@ -187,7 +187,7 @@ export default function HaulLogPage() {
               </div>
               <div
                 style={{
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 300,
                   fontSize: 22,
                   color: "var(--accent-mint)",
@@ -207,7 +207,7 @@ export default function HaulLogPage() {
             >
               <div
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 9,
                   color: "var(--text-muted)",
                   letterSpacing: "0.10em",
@@ -218,7 +218,7 @@ export default function HaulLogPage() {
               </div>
               <div
                 style={{
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 300,
                   fontSize: 22,
                   color: "var(--text-primary)",
@@ -247,7 +247,7 @@ export default function HaulLogPage() {
             style={{
               textAlign: "center",
               paddingTop: 64,
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 11,
               color: "var(--text-dim)",
               letterSpacing: "0.10em",
@@ -262,7 +262,7 @@ export default function HaulLogPage() {
             style={{
               textAlign: "center",
               paddingTop: 32,
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 11,
               color: "var(--accent-red)",
             }}
@@ -295,7 +295,7 @@ export default function HaulLogPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
-                        fontFamily: "var(--font-outfit), sans-serif",
+                        fontFamily: "var(--font-body)",
                         fontWeight: 600,
                         fontSize: 13,
                         color: "var(--text-primary)",
@@ -308,7 +308,7 @@ export default function HaulLogPage() {
                     </div>
                     <div
                       style={{
-                        fontFamily: "var(--font-jetbrains-mono), monospace",
+                        fontFamily: "var(--font-body)",
                         fontSize: 9,
                         color: "var(--text-muted)",
                         letterSpacing: "0.06em",
@@ -334,7 +334,7 @@ export default function HaulLogPage() {
                     {row.verdict && (
                       <span
                         style={{
-                          fontFamily: "var(--font-jetbrains-mono), monospace",
+                          fontFamily: "var(--font-body)",
                           fontWeight: 700,
                           fontSize: 10,
                           color: verdictColor,
@@ -347,7 +347,7 @@ export default function HaulLogPage() {
                     {row.profit != null && (
                       <span
                         style={{
-                          fontFamily: "var(--font-jetbrains-mono), monospace",
+                          fontFamily: "var(--font-body)",
                           fontWeight: 700,
                           fontSize: 14,
                           color: verdictColor,

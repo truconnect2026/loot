@@ -47,7 +47,9 @@ export default function DealCarousel({
       <div
         style={{
           paddingLeft: 18,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          // Uppercase carousel category — DEALS NEAR YOU / FREE & CLEARANCE.
+          // Stays mono per the font role system.
+          fontFamily: "var(--font-label)",
           fontSize: 9,
           color: "#3D2E55",
           letterSpacing: "0.10em",

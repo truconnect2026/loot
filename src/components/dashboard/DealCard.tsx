@@ -96,7 +96,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             border: deal.isFree
               ? "1px solid rgba(92,224,184,0.30)"
               : "1px solid rgba(255,255,255,0.08)",
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: "0.08em",
@@ -108,7 +108,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         </span>
         <span
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             color: "#5A4E70",
             letterSpacing: "0.05em",
@@ -122,7 +122,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
       <div
         style={{
           marginTop: 10,
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontSize: 14,
           fontWeight: 600,
           color: "#C8C0D8",
@@ -151,7 +151,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.isFree ? (
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 14,
               fontWeight: 700,
               letterSpacing: "0.08em",
@@ -164,7 +164,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         ) : (
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 14,
               fontWeight: 700,
               color: "#C8C0D8",
@@ -177,7 +177,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         )}
         <span
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 11,
             color: "#5A4E70",
             lineHeight: 1,
@@ -187,7 +187,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         </span>
         <span
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 15,
             fontWeight: 700,
             color: "#5CE0B8",
@@ -205,7 +205,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           position: "absolute",
           bottom: 12,
           left: 14,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 9,
           color: "#5A4E70",
           letterSpacing: "0.05em",
@@ -221,7 +221,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             position: "absolute",
             bottom: 12,
             right: 14,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             fontWeight: 600,
             color: "#5CE0B8",

@@ -93,7 +93,7 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontWeight: 500,
           fontSize: 15,
           color: "rgba(255,255,255,0.85)",
@@ -109,7 +109,7 @@ function GoogleButton({ onTap, loading }: GoogleButtonProps) {
           left: 0,
           right: 0,
           textAlign: "center",
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontWeight: 500,
           fontSize: 15,
           color: "rgba(255,255,255,0.5)",
@@ -264,11 +264,14 @@ export default function LoginPage() {
             >
               <CoinMark size={32} color="#5CE0B8" />
             </div>
-            {/* LOOT — base layer (calm) + glow overlay (breathing) */}
+            {/* LOOT — base layer (calm) + glow overlay (breathing).
+                Brand-identity exception to the font role system: the
+                logotype stays in JetBrains Mono regardless of the
+                "monospace = uppercase labels only" rule. */}
             <span
               style={{
                 position: "relative",
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-label)",
                 fontWeight: 700,
                 fontSize: 44,
                 color: "#5CE0B8",
@@ -345,7 +348,7 @@ export default function LoginPage() {
                 style={{
                   paddingLeft: 12,
                   paddingRight: 12,
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 10,
                   color: "rgba(255,255,255,0.15)",
                 }}
@@ -366,7 +369,7 @@ export default function LoginPage() {
               <div
                 style={{
                   textAlign: "center",
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 500,
                   fontSize: 14,
                   // Success confirmation, not money. White-forward per role
@@ -408,7 +411,7 @@ export default function LoginPage() {
                     borderRadius: "16px 0 0 16px",
                     paddingLeft: 16,
                     paddingRight: 16,
-                    fontFamily: "var(--font-outfit), sans-serif",
+                    fontFamily: "var(--font-body)",
                     fontSize: 14,
                     color: "var(--text-primary)",
                     outline: "none",
@@ -426,7 +429,7 @@ export default function LoginPage() {
             style={{
               marginTop: 32,
               textAlign: "center",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 10,
               color: "rgba(255, 255, 255, 0.20)",
               letterSpacing: "0.10em",

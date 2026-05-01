@@ -68,7 +68,7 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
         style={{
           flex: 1,
           textAlign: "center",
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontWeight: 600,
           fontSize: 12,
           color: "var(--text-primary)",

@@ -49,7 +49,7 @@ export default function ZipInput({
       <span
         style={{
           flex: 1,
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontWeight: 600,
           fontSize: 13,
           color: "var(--text-primary)",
@@ -88,7 +88,7 @@ export default function ZipInput({
               background: "none",
               border: "none",
               outline: "none",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 700,
               fontSize: 13,
               // Zip is a number, not money. Interactive value → white.
@@ -101,7 +101,7 @@ export default function ZipInput({
         ) : isEmpty ? (
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 500,
               fontSize: 12,
               // "Add zip" is an interactive prompt, not currency. White
@@ -114,7 +114,7 @@ export default function ZipInput({
         ) : (
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 700,
               fontSize: 13,
               color: "var(--ui-primary)",

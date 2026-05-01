@@ -40,7 +40,7 @@ function Pill({ active, label, onTap }: PillProps) {
       style={{
         padding: "4px 10px",
         borderRadius: 8,
-        fontFamily: "var(--font-jetbrains-mono), monospace",
+        fontFamily: "var(--font-body)",
         fontWeight: 500,
         fontSize: 9,
         lineHeight: 1,
@@ -246,7 +246,9 @@ export default function HeroProfit({
       >
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            // Section label — uppercase category header, stays mono per the
+            // font role system.
+            fontFamily: "var(--font-label)",
             fontSize: 8,
             color: "#5A4E70",
             letterSpacing: "0.12em",
@@ -286,7 +288,7 @@ export default function HeroProfit({
           {isNegative && (
             <span
               style={{
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 300,
                 fontSize: heroNumberSize,
                 lineHeight: 1,
@@ -297,7 +299,7 @@ export default function HeroProfit({
           )}
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 300,
               fontSize: heroDollarSize,
               lineHeight: 1,
@@ -308,7 +310,7 @@ export default function HeroProfit({
           <AnimNum
             value={Math.abs(value)}
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 300,
               fontSize: heroNumberSize,
               lineHeight: 1,
@@ -318,7 +320,7 @@ export default function HeroProfit({
         {isEmpty && (
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 10,
               color: "rgba(255,255,255,0.18)",
               lineHeight: 1.3,
@@ -339,7 +341,7 @@ export default function HeroProfit({
                 : "rgba(232,99,107,0.08)",
               borderRadius: 6,
               padding: "3px 8px",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 500,
               fontSize: 10,
               color: deltaPositive ? "#5CE0B8" : "#E8636B",
@@ -356,7 +358,7 @@ export default function HeroProfit({
           {isEarly ? (
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 10,
                 color: "#5A4E70",
               }}
@@ -377,7 +379,7 @@ export default function HeroProfit({
           display: "flex",
           alignItems: "center",
           gap: 10,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: isEmpty ? 9 : 10,
         }}
       >

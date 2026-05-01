@@ -100,7 +100,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
         </button>
         <span
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 15,
             color: "var(--text-primary)",
@@ -130,7 +130,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             <span
               style={{
                 flex: 1,
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 500,
                 fontSize: 13,
                 color: "var(--text-primary)",
@@ -186,7 +186,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
                 background: "none",
                 border: "none",
                 outline: "none",
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontSize: 13,
                 color: "var(--text-primary)",
                 padding: 0,
@@ -210,7 +210,7 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
             <PlusIcon />
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 10,
                 color: "var(--text-muted)",
               }}

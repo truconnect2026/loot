@@ -73,8 +73,10 @@ const smallRecessedCell: React.CSSProperties = {
   boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
 };
 
+// Uppercase verdict-cell labels (COST / SELL / PROFIT / ROI / PLATFORM /
+// FEE / CONFIDENCE) — stay mono per the font role system.
 const cellLabel: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono), monospace",
+  fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "var(--text-muted)",
   letterSpacing: "0.08em",
@@ -153,7 +155,7 @@ function ListingCta({ data }: ListingCtaProps) {
       >
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             letterSpacing: "0.10em",
             color: "var(--text-muted)",
@@ -164,7 +166,7 @@ function ListingCta({ data }: ListingCtaProps) {
         </div>
         <div
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 14,
             color: "var(--text-primary)",
@@ -175,7 +177,7 @@ function ListingCta({ data }: ListingCtaProps) {
         </div>
         <div
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 400,
             fontSize: 12,
             color: "var(--text-muted)",
@@ -196,7 +198,7 @@ function ListingCta({ data }: ListingCtaProps) {
         >
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 11,
               color: "var(--accent-mint)",
             }}
@@ -216,7 +218,7 @@ function ListingCta({ data }: ListingCtaProps) {
                 ? "1px solid rgba(92,224,184,0.25)"
                 : "1px solid rgba(255,255,255,0.08)",
               color: copied ? "var(--accent-mint)" : "var(--text-primary)",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 700,
               fontSize: 10,
               letterSpacing: "0.10em",
@@ -295,7 +297,7 @@ function ListingCta({ data }: ListingCtaProps) {
       </span>
       <span
         style={{
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontWeight: 700,
           fontSize: 13,
           color: "var(--accent-mint)",
@@ -313,7 +315,7 @@ function ListingCta({ data }: ListingCtaProps) {
             left: 0,
             right: 0,
             textAlign: "center",
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 10,
             color: "var(--accent-red)",
           }}
@@ -344,7 +346,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
         {/* Method label */}
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 10,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -357,7 +359,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
         {/* Item name — wraps freely; word-break catches super-long tokens */}
         <div
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 17,
             color: "var(--text-primary)",
@@ -373,7 +375,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <div
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontWeight: 700,
               fontSize: 16,
               color: colors.text,
@@ -403,7 +405,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>COST</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontWeight: 700,
                 fontSize: 26,
                 color: "var(--text-primary)",
@@ -417,7 +419,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>SELL</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontWeight: 700,
                 fontSize: 26,
                 color: "var(--accent-mint)",
@@ -431,7 +433,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>PROFIT</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontWeight: 700,
                 fontSize: 26,
                 color: colors.text,
@@ -466,7 +468,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>ROI</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color: "var(--text-primary)",
                 fontFeatureSettings: '"tnum"',
@@ -479,7 +481,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>PLATFORM</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color: "var(--text-primary)",
               }}
@@ -491,7 +493,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>FEE</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color: "var(--text-primary)",
                 fontFeatureSettings: '"tnum"',
@@ -504,7 +506,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             <div style={cellLabel}>CONFIDENCE</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color:
                   data.confidence === "high"
@@ -535,7 +537,7 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               <span
                 key={p}
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 9,
                   letterSpacing: "0.08em",
                   padding: "4px 10px",

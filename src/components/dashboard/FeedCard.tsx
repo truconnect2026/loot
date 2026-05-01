@@ -159,7 +159,7 @@ export default function FeedCard({
         {/* Title */}
         <div
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 13,
             color: "var(--text-primary)",
@@ -172,7 +172,7 @@ export default function FeedCard({
         {/* Subtitle */}
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             color: "var(--text-muted)",
             marginTop: 2,
@@ -233,7 +233,7 @@ export default function FeedCard({
           </div>
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 9,
               color: accentHex,
             }}

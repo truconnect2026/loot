@@ -106,7 +106,7 @@ function CancelButton({ onCancel, label = "CANCEL" }: { onCancel: () => void; la
       onPointerLeave={() => setHovered(false)}
       style={{
         marginTop: 24,
-        fontFamily: "var(--font-jetbrains-mono), monospace",
+        fontFamily: "var(--font-body)",
         fontWeight: 500,
         fontSize: 11,
         color: "rgba(255,255,255,0.4)",
@@ -336,7 +336,7 @@ export default function ScanOverlay({
             position: "absolute",
             top: 16,
             left: 16,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 10,
             color: "rgba(255,255,255,0.3)",
             letterSpacing: "0.06em",
@@ -448,7 +448,7 @@ export default function ScanOverlay({
             style={{
               marginTop: 16,
               maxWidth: 280,
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: 13,
               color: "rgba(232,99,107,0.9)",
               textAlign: "center",
@@ -465,7 +465,8 @@ export default function ScanOverlay({
             <div
               style={{
                 marginTop: 24,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase mode label — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 12,
                 color: "var(--text-muted)",
               }}
@@ -481,7 +482,8 @@ export default function ScanOverlay({
             <div
               style={{
                 marginTop: 24,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase mode label — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 12,
                 color: "var(--text-muted)",
               }}
@@ -500,7 +502,8 @@ export default function ScanOverlay({
                 border: `1px solid rgba(${accent.rgb},0.25)`,
                 boxShadow: `inset 0 1px 0 0 rgba(${accent.rgb},0.20), 0 1px 2px rgba(0,0,0,0.3)`,
                 color: accent.hex,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase action label — stays mono.
+                fontFamily: "var(--font-label)",
                 fontWeight: 700,
                 fontSize: 12,
                 letterSpacing: "0.12em",
@@ -526,7 +529,8 @@ export default function ScanOverlay({
           >
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase status label — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 11,
                 color: "var(--text-muted)",
                 letterSpacing: "0.10em",
@@ -539,7 +543,7 @@ export default function ScanOverlay({
             </div>
             <div
               style={{
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontSize: 13,
                 color: "var(--text-primary)",
                 marginBottom: 12,
@@ -570,7 +574,7 @@ export default function ScanOverlay({
               >
                 <span
                   style={{
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontFamily: "var(--font-body)",
                     fontSize: 14,
                     color: "var(--text-muted)",
                     marginRight: 6,
@@ -595,7 +599,7 @@ export default function ScanOverlay({
                     background: "transparent",
                     border: "none",
                     outline: "none",
-                    fontFamily: "var(--font-jetbrains-mono), monospace",
+                    fontFamily: "var(--font-body)",
                     fontWeight: 700,
                     fontSize: 14,
                     color: "var(--text-primary)",
@@ -614,7 +618,7 @@ export default function ScanOverlay({
                   border: `1px solid rgba(${accent.rgb},0.25)`,
                   boxShadow: `inset 0 1px 0 rgba(${accent.rgb},0.20)`,
                   color: accent.hex,
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 700,
                   fontSize: 11,
                   letterSpacing: "0.10em",
@@ -633,7 +637,8 @@ export default function ScanOverlay({
             <div
               style={{
                 marginTop: 24,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase processing label — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 12,
                 color: "var(--text-muted)",
               }}
@@ -674,7 +679,8 @@ export default function ScanOverlay({
           >
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase error header — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 11,
                 letterSpacing: "0.10em",
                 color: "var(--accent-red)",
@@ -685,7 +691,7 @@ export default function ScanOverlay({
             </div>
             <div
               style={{
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontSize: 13,
                 color: "var(--text-primary)",
                 lineHeight: 1.4,

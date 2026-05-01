@@ -86,7 +86,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
       {/* Title */}
       <div
         style={{
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontSize: 17,
           fontWeight: 600,
           color: "#C8C0D8",
@@ -100,7 +100,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
       <div
         style={{
           marginTop: 4,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 10,
           color: "#5A4E70",
           letterSpacing: "0.04em",
@@ -121,7 +121,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
       >
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 8,
             color: "#5A4E70",
             letterSpacing: "0.12em",
@@ -140,7 +140,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
         >
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: 22,
               fontWeight: 600,
               color: deal.isFree ? "#5CE0B8" : "#C8C0D8",
@@ -151,7 +151,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           </span>
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 14,
               color: "#5A4E70",
               lineHeight: 1,
@@ -161,7 +161,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           </span>
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: 22,
               fontWeight: 600,
               color: "#C8C0D8",
@@ -180,7 +180,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
                 border: "1px solid rgba(92,224,184,0.18)",
                 borderRadius: 8,
                 padding: "4px 10px",
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 11,
                 fontWeight: 700,
                 color: "#5CE0B8",
@@ -200,7 +200,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           display: "flex",
           alignItems: "center",
           gap: 6,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 11,
           color: "#5A4E70",
         }}
@@ -221,7 +221,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           backgroundColor: "rgba(92,224,184,0.10)",
           border: "1px solid rgba(92,224,184,0.15)",
           borderRadius: 12,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: "0.08em",
@@ -244,7 +244,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           background: "transparent",
           border: "none",
           padding: 8,
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontSize: 13,
           color: "#5A4E70",
           cursor: "pointer",

@@ -281,7 +281,7 @@ export default function ContextCard({
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 500,
               fontSize: 13,
               lineHeight: 1.4,
@@ -300,7 +300,7 @@ export default function ContextCard({
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 500,
                 fontSize: 12,
                 color: "#5CE0B8",

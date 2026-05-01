@@ -9,8 +9,10 @@ interface StatsBarProps {
   profit: number;
 }
 
+// Uppercase stats labels (SCANS / BUYS / SPENT / PROFIT) — stay mono per
+// the font role system.
 const labelStyle: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono), monospace",
+  fontFamily: "var(--font-label)",
   fontWeight: 500,
   fontSize: 8,
   color: "var(--text-muted)",
@@ -61,7 +63,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         <AnimNum
           value={scans}
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontWeight: 700,
             fontSize: 15,
             color: "var(--text-primary)",
@@ -77,7 +79,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
         <AnimNum
           value={buys}
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontWeight: 700,
             fontSize: 15,
             color: "var(--accent-mint)",
@@ -94,7 +96,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
           value={spent}
           prefix="$"
           style={{
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontWeight: 700,
             fontSize: 15,
             color: "var(--text-primary)",
@@ -111,7 +113,7 @@ export default function StatsBar({ scans, buys, spent, profit }: StatsBarProps) 
           value={profit}
           prefix="$"
           style={{
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 300,
             fontSize: 22,
             color: "var(--accent-mint)",

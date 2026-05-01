@@ -176,7 +176,7 @@ export default function NotificationToggles({
         <span
           style={{
             flex: 1,
-            fontFamily: "var(--font-outfit), sans-serif",
+            fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 13,
             color: "var(--text-primary)",
@@ -218,7 +218,7 @@ export default function NotificationToggles({
               <span
                 style={{
                   flex: 1,
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 400,
                   fontSize: 12,
                   color: "var(--text-muted)",

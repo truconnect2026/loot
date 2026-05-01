@@ -285,7 +285,7 @@ function ShowAllToolsButton({ expanded, onToggle }: ShowAllToolsButtonProps) {
         borderRadius: 8,
         backgroundColor: pressed ? "rgba(255,255,255,0.03)" : "transparent",
         cursor: "pointer",
-        fontFamily: "var(--font-jetbrains-mono), monospace",
+        fontFamily: "var(--font-body)",
         fontSize: 10,
         color: "#5A4E70",
         transform: pressed ? "scale(0.98)" : "scale(1)",
@@ -315,7 +315,9 @@ interface ScanRow {
 }
 
 const SECTION_LABEL: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono), monospace",
+  // Uppercase category header (SOURCING) — stays in JetBrains Mono per
+  // the font role system.
+  fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "#3D2E55",
   letterSpacing: "0.10em",
@@ -634,7 +636,7 @@ export default function DashboardPage() {
             <CoinMark size={22} />
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontWeight: 700,
                 fontSize: 22,
                 color: "#5CE0B8",
@@ -673,7 +675,7 @@ export default function DashboardPage() {
           >
             <span
               style={{
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 500,
                 fontSize: 13,
                 color: "var(--text-muted)",
@@ -831,7 +833,8 @@ export default function DashboardPage() {
               style={{
                 paddingLeft: 12,
                 paddingRight: 12,
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                // Uppercase category header — stays mono.
+                fontFamily: "var(--font-label)",
                 fontSize: 9,
                 color: "#3D2E55",
                 letterSpacing: "0.10em",
@@ -931,7 +934,7 @@ export default function DashboardPage() {
               maxWidth: 280,
               margin: "0 auto",
               textAlign: "center",
-              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontFamily: "var(--font-body)",
               fontSize: 9,
               color: "rgba(255,255,255,0.12)",
               lineHeight: 1.6,

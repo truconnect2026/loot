@@ -408,7 +408,7 @@ export default function AccountPage() {
           </button>
           <span
             style={{
-              fontFamily: "var(--font-outfit), sans-serif",
+              fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: 13,
               letterSpacing: "0.05em",
@@ -448,7 +448,8 @@ export default function AccountPage() {
           style={{
             marginTop: 20,
             marginBottom: 8,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            // Uppercase section header — stays mono per the font role system.
+            fontFamily: "var(--font-label)",
             fontSize: 9,
             color: "#2D2845",
             letterSpacing: "0.10em",
@@ -477,7 +478,7 @@ export default function AccountPage() {
             <span
               style={{
                 flex: 1,
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--text-primary)",
@@ -498,7 +499,7 @@ export default function AccountPage() {
             >
               <span
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 700,
                   fontSize: 13,
                   color: "var(--text-primary)",
@@ -520,7 +521,7 @@ export default function AccountPage() {
             <span
               style={{
                 flex: 1,
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--text-primary)",
@@ -530,7 +531,7 @@ export default function AccountPage() {
             </span>
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono), monospace",
+                fontFamily: "var(--font-body)",
                 fontSize: 12,
                 color: "var(--text-muted)",
                 marginRight: 6,
@@ -568,7 +569,7 @@ export default function AccountPage() {
             <div style={{ flex: 1 }}>
               <div
                 style={{
-                  fontFamily: "var(--font-outfit), sans-serif",
+                  fontFamily: "var(--font-body)",
                   fontWeight: 600,
                   fontSize: 13,
                   color: "var(--text-primary)",
@@ -578,7 +579,7 @@ export default function AccountPage() {
               </div>
               <div
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 9,
                   color: "var(--text-muted)",
                   marginTop: 2,
@@ -590,7 +591,7 @@ export default function AccountPage() {
             {exportState === "done" ? (
               <span
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono), monospace",
+                  fontFamily: "var(--font-body)",
                   fontSize: 10,
                   color: "var(--accent-mint)",
                 }}
@@ -616,7 +617,7 @@ export default function AccountPage() {
             <span
               style={{
                 flex: 1,
-                fontFamily: "var(--font-outfit), sans-serif",
+                fontFamily: "var(--font-body)",
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--accent-red)",

@@ -111,7 +111,7 @@ function Card({
       <div style={{ display: "flex", alignItems: "center" }}>{icon}</div>
       <div
         style={{
-          fontFamily: "var(--font-outfit), sans-serif",
+          fontFamily: "var(--font-body)",
           fontWeight: 600,
           fontSize: 14,
           color: "#C8C0D8",
@@ -122,7 +122,7 @@ function Card({
       </div>
       <div
         style={{
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 9,
           color: "#5A4E70",
           lineHeight: 1.2,
@@ -133,7 +133,7 @@ function Card({
       <div
         style={{
           marginTop: "auto",
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 10,
           color: countHex,
           fontFeatureSettings: '"tnum"',

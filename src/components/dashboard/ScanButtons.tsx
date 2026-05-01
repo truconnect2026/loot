@@ -140,7 +140,7 @@ function HeroButton({
           position: "absolute",
           top: 8,
           right: 10,
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 9,
           fontWeight: 500,
           color: counterColor,
@@ -182,7 +182,8 @@ function HeroButton({
       <div style={{ position: "relative", zIndex: 1 }}>{icon}</div>
       <span
         style={{
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          // SCAN UPC / AI VISION — uppercase category label, stays mono.
+          fontFamily: "var(--font-label)",
           fontWeight: 700,
           fontSize: 11,
           letterSpacing: "0.12em",
@@ -195,7 +196,7 @@ function HeroButton({
       </span>
       <span
         style={{
-          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontFamily: "var(--font-body)",
           fontSize: 8,
           color: `rgba(${accent},0.4)`,
           letterSpacing: "0.04em",
@@ -262,7 +263,7 @@ export default function ScanButtons({
         <div
           style={{
             marginTop: 12,
-            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontFamily: "var(--font-body)",
             fontSize: 9,
             color: "rgba(255,255,255,0.10)",
             textAlign: "center",
