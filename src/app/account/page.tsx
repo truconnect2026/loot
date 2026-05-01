@@ -293,6 +293,31 @@ export default function AccountPage() {
     router.push("/");
   }, [supabase, router]);
 
+  // Manage plan — opens the Stripe customer portal in a NEW tab so the
+  // user keeps their place in Loot. window.open with `noopener,noreferrer`
+  // is the safe-default flag set: prevents the Stripe tab from getting a
+  // window.opener handle that could navigate this tab back.
+  //
+  // Real wire-up is pending the /api/stripe/portal route. Pattern:
+  //   const res = await fetch("/api/stripe/portal", { method: "POST" });
+  //   const { url } = await res.json();
+  //   if (url) window.open(url, "_blank", "noopener,noreferrer");
+  // The portal session's return_url must point back to /account so the
+  // loop closes cleanly when the user navigates within Stripe.
+  const handleManagePlan = useCallback(() => {
+    if (typeof window === "undefined") return;
+    // Placeholder until the portal route exists. Demonstrates the
+    // exact safe-flag pattern callers should use post-wire-up.
+    const url: string | null = null;
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      console.log(
+        "[account] Stripe portal URL not yet wired — would open in new tab.",
+      );
+    }
+  }, []);
+
   // Loading state — show the branded spinner until session + profile are ready.
   if (loading || !profile) {
     return (
@@ -436,7 +461,7 @@ export default function AccountPage() {
             period="/mo"
             renewsDate="May 27"
             scansLabel="unlimited"
-            onCancel={() => console.log("Open Stripe portal")}
+            onCancel={handleManagePlan}
           />
         </div>
 
