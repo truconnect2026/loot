@@ -393,15 +393,16 @@ export default function AccountPage() {
         />
 
         {/* ── Settings ── */}
-        {/* SETTINGS section label — extremely dark blue-indigo, zero warmth
-            so OLED can't shift it green. Whisper, not a shout. */}
+        {/* SETTINGS section label — slightly brighter blue-purple than the
+            dimmest annotations (RENEWS / SCANS at #1E1A30) so this section
+            header reads on device. Still cold (no red, no green). */}
         <div
           style={{
             marginTop: 20,
             marginBottom: 8,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
-            color: "#1E1A30",
+            color: "#2D2845",
             letterSpacing: "0.10em",
             textTransform: "uppercase",
           }}

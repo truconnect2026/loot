@@ -10,10 +10,10 @@ interface SettingsTileProps {
    */
   variant?: "default" | "danger";
   /**
-   * Drives the left-edge accent dot (5px / 70% alpha) and the icon tint
+   * Drives the inline accent dot (5px / 70% alpha) and the icon tint
    * (75% alpha, applied via `color` so SVGs using stroke="currentColor"
-   * pick it up automatically). Bumped from 55/60 — at the lower opacities
-   * the tile signature was nearly invisible on phone.
+   * pick it up automatically). The dot now lives inside the tile content
+   * row instead of half-clipped on the rim, so it can't be overflow-clipped.
    */
   accentColor?: string;
   /** 18px stroke icon, rendered between the dot and the label. */
@@ -76,8 +76,9 @@ export default function SettingsTile({
         borderRadius: "4px 16px 16px 16px",
         display: "flex",
         alignItems: "center",
-        // 12px horizontal padding — the icon + dot sit in this space.
-        paddingLeft: 12,
+        // Layout: [8px pad] [5px dot] [8px gap] [18px icon] [10px gap] [label]
+        // Right padding stays 12 since the right side carries values/chevrons.
+        paddingLeft: 8,
         paddingRight: 12,
         cursor: onClick ? "pointer" : "default",
         userSelect: "none",
@@ -85,22 +86,20 @@ export default function SettingsTile({
         transition,
       }}
     >
-      {/* Left-edge accent dot — 5px / 70% opacity. Sits half outside the
-          tile so it reads as a marker on the rim. */}
+      {/* Accent dot — interior, 5px / 70% opacity. Inline element so it
+          can't be overflow-clipped by anything; it just lives in the row. */}
       {accentColor && (
         <span
           aria-hidden="true"
           style={{
-            position: "absolute",
-            left: -2.5,
-            top: "50%",
-            transform: "translateY(-50%)",
+            display: "inline-block",
             width: 5,
             height: 5,
             borderRadius: "50%",
             backgroundColor: accentColor,
             opacity: 0.7,
-            pointerEvents: "none",
+            marginRight: 8,
+            flexShrink: 0,
           }}
         />
       )}

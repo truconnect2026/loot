@@ -227,13 +227,14 @@ export default function ProfileCard({
       </div>
 
       {/* Dashed separator — repeating linear gradient on a 1px tall row.
-          #3D2E55 dashes against the #1E1838 card surface read on device. */}
+          #4A3D65 dashes (was #3D2E55, too dim against the #1E1838 surface to
+          read on device). */}
       <div
         style={{
           height: 1,
           width: "100%",
           background:
-            "repeating-linear-gradient(to right, #3D2E55 0px, #3D2E55 5px, transparent 5px, transparent 10px)",
+            "repeating-linear-gradient(to right, #4A3D65 0px, #4A3D65 5px, transparent 5px, transparent 10px)",
           margin: "14px 0 12px 0",
         }}
       />

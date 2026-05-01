@@ -103,76 +103,70 @@ export default function NotificationToggles({
   ];
 
   return (
-    <div style={{ position: "relative" }}>
-      {/* Accent dot — sits half outside the tile rim, matching the
-          SettingsTile chassis. Positioned on the OUTER wrapper so the inner
-          chassis can keep overflow:hidden for the rounded corners + sub-panel
-          bg clip. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          left: -2.5,
-          top: 23.5,
-          width: 5,
-          height: 5,
-          borderRadius: "50%",
-          backgroundColor: accentColor,
-          opacity: 0.7,
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
-
+    <div
+      style={{
+        backgroundColor: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.04)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+        borderRadius: "4px 14px 14px 14px",
+        overflow: "hidden",
+      }}
+    >
+      {/* Main toggle row — interior layout matches SettingsTile:
+          [8 pad] [5 dot] [8 gap] [18 BellIcon] [10 gap] [label]. Label
+          starts at x=49, which is what the sub-toggles indent to. */}
       <div
         style={{
-          backgroundColor: "rgba(255,255,255,0.02)",
-          border: "1px solid rgba(255,255,255,0.04)",
-          boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-          borderRadius: "4px 14px 14px 14px",
-          overflow: "hidden",
+          height: 52,
+          display: "flex",
+          alignItems: "center",
+          paddingLeft: 8,
+          paddingRight: 16,
         }}
       >
-        {/* Main toggle row — 12px paddingLeft + 18px BellIcon + 10px gap so
-            the parent label starts at x=40, the same anchor as sub-toggles. */}
-        <div
+        {/* Inline lavender dot — same pattern as SettingsTile chassis. */}
+        <span
+          aria-hidden="true"
           style={{
-            height: 52,
-            display: "flex",
+            display: "inline-block",
+            width: 5,
+            height: 5,
+            borderRadius: "50%",
+            backgroundColor: accentColor,
+            opacity: 0.7,
+            marginRight: 8,
+            flexShrink: 0,
+          }}
+        />
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-flex",
             alignItems: "center",
-            paddingLeft: 12,
-            paddingRight: 16,
+            justifyContent: "center",
+            width: 18,
+            height: 18,
+            marginRight: 10,
+            color: accentColor,
+            opacity: 0.75,
+            flexShrink: 0,
           }}
         >
-          <span
-            aria-hidden="true"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 18,
-              height: 18,
-              marginRight: 10,
-              color: accentColor,
-              opacity: 0.75,
-              flexShrink: 0,
-            }}
-          >
-            <BellIcon />
-          </span>
-          <span
-            style={{
-              flex: 1,
-              fontFamily: "var(--font-outfit), sans-serif",
-              fontWeight: 600,
-              fontSize: 13,
-              color: "var(--text-primary)",
-            }}
-          >
-            Push notifications
-          </span>
-          <Toggle on={enabled} onToggle={onToggleEnabled} />
-        </div>
+          <BellIcon />
+        </span>
+        <span
+          style={{
+            flex: 1,
+            fontFamily: "var(--font-outfit), sans-serif",
+            fontWeight: 600,
+            fontSize: 13,
+            color: "var(--text-primary)",
+          }}
+        >
+          Push notifications
+        </span>
+        <Toggle on={enabled} onToggle={onToggleEnabled} />
+      </div>
 
       {/* Sub-toggle panel — recessed into a darker surface than the page bg
           (#0D0A14 vs #120e18). Bumped from #100C18 so the contrast between
@@ -191,9 +185,9 @@ export default function NotificationToggles({
               style={{
                 display: "flex",
                 alignItems: "center",
-                // 40px aligns sub labels with where parent text would sit if
-                // the parent row had a 18px icon at left-pad 12 + gap 10.
-                paddingLeft: 40,
+                // 49px aligns with parent label start: pad 8 + dot 5 + gap 8
+                // + icon 18 + gap 10 = 49.
+                paddingLeft: 49,
                 paddingRight: 16,
                 height: 40,
                 borderTop: i === 0 ? "none" : "1px solid #1A1530",
@@ -216,7 +210,6 @@ export default function NotificationToggles({
           ))}
         </div>
       )}
-      </div>
 
       <style>{`
         @keyframes ntFadeIn {
