@@ -6,11 +6,20 @@ import AnimNum from "@/components/shared/AnimNum";
 type Period = "today" | "week" | "month" | "all";
 
 interface HeroProfitProps {
+  // Potential — sum of scan-time profit estimates per period. The big
+  // headline number. Updates the moment the user scans a BUY.
   todayProfit: number;
   yesterdayProfit: number;
   weekProfit: number;
   monthProfit: number;
   allTimeProfit: number;
+  // Realized — sum of (sold_price - cost) per period. The quiet secondary
+  // number that confirms what's actually in the bank. Stays at $0 until
+  // the user marks something sold.
+  todayRealized: number;
+  weekRealized: number;
+  monthRealized: number;
+  allTimeRealized: number;
   todayScans: number;
   todayBuys: number;
   todaySpent: number;
@@ -19,11 +28,14 @@ interface HeroProfitProps {
 
 const PERIODS: Period[] = ["today", "week", "month", "all"];
 
+// Headers say "FOUND" instead of "PROFIT" so the user reads the number
+// as potential-flips-discovered, not money-in-pocket. Realized money sits
+// underneath as a secondary line.
 const PERIOD_COPY: Record<Period, { pill: string; header: string }> = {
-  today: { pill: "Today", header: "TODAY'S PROFIT" },
-  week: { pill: "Week", header: "THIS WEEK" },
-  month: { pill: "Month", header: "THIS MONTH" },
-  all: { pill: "All", header: "ALL TIME" },
+  today: { pill: "Today", header: "FOUND TODAY" },
+  week: { pill: "Week", header: "FOUND THIS WEEK" },
+  month: { pill: "Month", header: "FOUND THIS MONTH" },
+  all: { pill: "All", header: "FOUND ALL TIME" },
 };
 
 interface PillProps {
@@ -156,6 +168,10 @@ export default function HeroProfit({
   weekProfit,
   monthProfit,
   allTimeProfit,
+  todayRealized,
+  weekRealized,
+  monthRealized,
+  allTimeRealized,
   todayScans,
   todayBuys,
   todaySpent,
@@ -171,6 +187,17 @@ export default function HeroProfit({
         : period === "month"
           ? monthProfit
           : allTimeProfit;
+
+  // Realized for the same period — the period switcher controls both
+  // numbers so they stay aligned.
+  const realized =
+    period === "today"
+      ? todayRealized
+      : period === "week"
+        ? weekRealized
+        : period === "month"
+          ? monthRealized
+          : allTimeRealized;
 
   // Three visual states.
   // STATE_A — empty: no activity at all. Compact status-bar treatment.
@@ -330,6 +357,38 @@ export default function HeroProfit({
           </span>
         )}
       </div>
+
+      {/* Realized profit — secondary metric. Tells the user how much of
+          their "found" potential has actually landed in the bank.
+          Stays at $0 until they mark something sold via Haul Log.
+          The hint copy on $0 reframes the void: it's not "you've earned
+          nothing", it's "you haven't sold yet" — an action gap, not a
+          failure. */}
+      {!isEmpty && (
+        <div
+          style={{
+            marginTop: 6,
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            color: "var(--text-muted)",
+            fontFeatureSettings: '"tnum"',
+          }}
+        >
+          {realized > 0 ? (
+            <>
+              <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                ${realized}
+              </span>
+              <span> realized</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontWeight: 600 }}>$0</span>
+              <span> realized · sell items to track</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Delta chip — only when not empty and we have a comparator */}
       {!isEmpty && deltaText && (

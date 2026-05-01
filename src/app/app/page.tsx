@@ -310,9 +310,17 @@ function ShowAllToolsButton({ expanded, onToggle }: ShowAllToolsButtonProps) {
 
 interface ScanRow {
   cost: number | null;
+  // `profit` is the scan-time potential — what the model thinks this flip
+  // is worth right now. Drives the "FOUND" headline numbers.
   profit: number | null;
   verdict: string | null;
   created_at: string | null;
+  // `sold` + `sold_price` come from the haul-log mark-as-sold flow.
+  // (sold_price - cost) per row sums into the realized-profit secondary
+  // metric. Both columns can be null on rows that haven't been marked
+  // sold yet, which is the common case.
+  sold: boolean | null;
+  sold_price: number | null;
 }
 
 const SECTION_LABEL: React.CSSProperties = {
@@ -340,7 +348,12 @@ export default function DashboardPage() {
   // CoinRain state
   const [coinRainActive, setCoinRainActive] = useState(false);
 
-  // Real stats from Supabase + loading state for skeletons
+  // Real stats from Supabase + loading state for skeletons.
+  // *Profit fields are POTENTIAL — scan-time estimates ("you found this much
+  // worth of flips"). *Realized fields are ACTUAL — sold_price - cost on rows
+  // marked sold. The hero shows potential as the big headline number with
+  // realized as a quiet secondary line, so users get instant feedback the
+  // moment they scan instead of waiting weeks for an actual sale.
   const [todayScans, setTodayScans] = useState(0);
   const [todayBuys, setTodayBuys] = useState(0);
   const [todaySpent, setTodaySpent] = useState(0);
@@ -349,6 +362,10 @@ export default function DashboardPage() {
   const [weekProfit, setWeekProfit] = useState(0);
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
+  const [todayRealized, setTodayRealized] = useState(0);
+  const [weekRealized, setWeekRealized] = useState(0);
+  const [monthRealized, setMonthRealized] = useState(0);
+  const [allTimeRealized, setAllTimeRealized] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
   // Drives the empty-hero swap: a brand-new user (zero rows ever) sees
   // EmptyHero (demo + CTA + social proof) instead of HeroProfit. Gated on
@@ -392,7 +409,7 @@ export default function DashboardPage() {
 
     const { data, error } = await supabase
       .from("scans")
-      .select("cost, profit, verdict, created_at")
+      .select("cost, profit, verdict, created_at, sold, sold_price")
       .eq("user_id", userData.user.id);
     if (error || !data) {
       setStatsLoading(false);
@@ -421,6 +438,15 @@ export default function DashboardPage() {
     let weekProfitSum = 0;
     let monthProfitSum = 0;
     let allTimeProfitSum = 0;
+    // Realized buckets — sold_price - cost on rows marked sold. Bucketed by
+    // created_at (when the scan happened) so the realized number aligns
+    // period-by-period with the potential number above it. If product
+    // decides "realized should bucket by sold_at instead," swap the ts
+    // source on these four conditionals.
+    let todayRealizedSum = 0;
+    let weekRealizedSum = 0;
+    let monthRealizedSum = 0;
+    let allTimeRealizedSum = 0;
 
     // 7-day daily profit bucket — index 0 is 6 days ago, index 6 is today.
     const daily = [0, 0, 0, 0, 0, 0, 0];
@@ -430,6 +456,10 @@ export default function DashboardPage() {
       const profit = Number(row.profit) || 0;
       const cost = Number(row.cost) || 0;
       const isBuy = row.verdict === "BUY";
+      const isSold = row.sold === true && row.sold_price != null;
+      const realized = isSold
+        ? (Number(row.sold_price) || 0) - cost
+        : 0;
 
       if (ts >= todayMs) {
         todayCount++;
@@ -438,6 +468,7 @@ export default function DashboardPage() {
           todaySpentSum += cost;
           todayProfitSum += profit;
         }
+        if (isSold) todayRealizedSum += realized;
       } else if (ts >= yesterdayMs && isBuy) {
         yesterdayProfitSum += profit;
       }
@@ -445,6 +476,10 @@ export default function DashboardPage() {
       if (ts >= weekStartMs && isBuy) weekProfitSum += profit;
       if (ts >= monthStartMs && isBuy) monthProfitSum += profit;
       if (isBuy) allTimeProfitSum += profit;
+
+      if (ts >= weekStartMs && isSold) weekRealizedSum += realized;
+      if (ts >= monthStartMs && isSold) monthRealizedSum += realized;
+      if (isSold) allTimeRealizedSum += realized;
 
       if (ts >= weekStartMs && isBuy) {
         const dayIdx = Math.min(
@@ -463,6 +498,10 @@ export default function DashboardPage() {
     setWeekProfit(Math.round(weekProfitSum));
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
+    setTodayRealized(Math.round(todayRealizedSum));
+    setWeekRealized(Math.round(weekRealizedSum));
+    setMonthRealized(Math.round(monthRealizedSum));
+    setAllTimeRealized(Math.round(allTimeRealizedSum));
     setProfitHistory(daily.map((v) => Math.round(v)));
     setLifetimeScans(rows.length);
     setStatsLoading(false);
@@ -754,6 +793,10 @@ export default function DashboardPage() {
               weekProfit={weekProfit}
               monthProfit={monthProfit}
               allTimeProfit={allTimeProfit}
+              todayRealized={todayRealized}
+              weekRealized={weekRealized}
+              monthRealized={monthRealized}
+              allTimeRealized={allTimeRealized}
               todayScans={todayScans}
               todayBuys={todayBuys}
               todaySpent={todaySpent}
