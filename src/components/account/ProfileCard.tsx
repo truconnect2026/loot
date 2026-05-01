@@ -16,12 +16,24 @@ interface ProfileCardProps {
 // toward green. RENEWS / SCANS / SETTINGS all share the same color now;
 // they're the same kind of annotation, they should match.
 const cellLabel: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono), monospace",
+  // RENEWS / SCANS context annotations — barely-there muted plum so the
+  // values dominate the cells, not the labels.
+  fontFamily: "var(--font-outfit), sans-serif",
+  fontWeight: 600,
   fontSize: 9,
   color: "#2D2845",
   letterSpacing: "0.08em",
-  marginBottom: 2,
+  marginBottom: 4,
 };
+
+// Smart email split — keep the full domain, truncate only the local part so
+// "truconnectmarketingsolutions@gmail.com" reads as "truconnect…@gmail.com"
+// instead of "truconnectmarketingsolutions@g…". The domain anchors identity.
+function splitEmail(email: string): { local: string; domain: string } {
+  const at = email.lastIndexOf("@");
+  if (at === -1) return { local: email, domain: "" };
+  return { local: email.slice(0, at), domain: email.slice(at) };
+}
 
 export default function ProfileCard({
   name,
@@ -34,6 +46,8 @@ export default function ProfileCard({
   scansLabel,
   onCancel,
 }: ProfileCardProps) {
+  const { local, domain } = splitEmail(email);
+
   return (
     <>
       <style>{`
@@ -73,8 +87,8 @@ export default function ProfileCard({
         }
       `}</style>
       <div
-        className="profile-card-surface"
         style={{
+          position: "relative",
           marginTop: 16,
           position: "relative",
           // Sweet spot — visibly elevated above tiles without reading gray.
@@ -166,8 +180,10 @@ export default function ProfileCard({
           </span>
         </div>
 
-        {/* Name + email */}
-        <div style={{ minWidth: 0 }}>
+        {/* Name + email. Email truncates only the local part so the @domain
+            stays fully visible — identity comes from the domain, not the
+            random middle of the alias. */}
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div
             style={{
               fontFamily: "var(--font-outfit), sans-serif",
@@ -180,16 +196,29 @@ export default function ProfileCard({
           </div>
           <div
             style={{
+              marginTop: 4,
+              display: "flex",
+              alignItems: "baseline",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontSize: 11,
               color: "var(--text-muted)",
-              marginTop: 4,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              minWidth: 0,
             }}
           >
-            {email}
+            <span
+              style={{
+                flexShrink: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {local}
+            </span>
+            {domain && (
+              <span style={{ flexShrink: 0 }}>{domain}</span>
+            )}
           </div>
         </div>
 
@@ -202,10 +231,7 @@ export default function ProfileCard({
               border: "none",
               boxShadow: "none",
               borderRadius: 4,
-              paddingLeft: 10,
-              paddingRight: 10,
-              paddingTop: 4,
-              paddingBottom: 4,
+              padding: "3px 8px",
               flexShrink: 0,
             }}
           >
@@ -230,6 +256,7 @@ export default function ProfileCard({
           device. Plain 1px line at #4A3D65 reads cleanly against the card
           surface. Bump to #5A4E70 if this still doesn't show. */}
       <div
+        aria-hidden="true"
         style={{
           height: 1,
           width: "100%",
@@ -238,7 +265,8 @@ export default function ProfileCard({
         }}
       />
 
-      {/* Subscription */}
+      {/* Subscription — left-aligned reading order: label → price → cells →
+          cancel. Nothing in this section is centered. */}
       <div>
         {/* Plan label — cool lavender-gray hex literal. Warmer plums shift
             warm/green-gray on OLED, this one stays neutral cool. */}
@@ -280,7 +308,9 @@ export default function ProfileCard({
           </span>
         </div>
 
-        {/* Recessed stat cells */}
+        {/* Recessed stat cells — tighter padding so they read as precision
+            slots, not empty rooms. "unlimited" gets a subtle mint glow as a
+            micro-reward for the pro user. */}
         <div
           style={{
             display: "flex",
@@ -308,7 +338,7 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
-                color: "var(--text-primary)",
+                color: "#C8C0D8",
                 fontFeatureSettings: '"tnum"',
               }}
             >
@@ -346,15 +376,14 @@ export default function ProfileCard({
         {/* Cancel — muted plum, brightens to primary text on hover */}
         <div
           onClick={onCancel}
-          className="profile-card-cancel"
           style={{
-            marginTop: 10,
-            textAlign: "center",
+            marginTop: 4,
+            textAlign: "left",
             fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 400,
-            fontSize: 12,
-            cursor: "pointer",
-            transition: "color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+            fontWeight: 500,
+            fontSize: 11,
+            color: "#5A4E70",
+            cursor: "default",
           }}
         >
           cancel anytime

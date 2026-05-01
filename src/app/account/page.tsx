@@ -203,9 +203,10 @@ export default function AccountPage() {
   const [notifBolo, setNotifBolo] = useState(true);
   const [notifPennies, setNotifPennies] = useState(true);
 
-  // Export state
-  const [exporting, setExporting] = useState(false);
-  const [exported, setExported] = useState(false);
+  // Export 3-state machine: idle → loading → done → idle.
+  const [exportState, setExportState] = useState<
+    "idle" | "loading" | "done"
+  >("idle");
 
   // Back arrow state
   const [backPressed, setBackPressed] = useState(false);
@@ -275,14 +276,14 @@ export default function AccountPage() {
   );
 
   const handleExport = useCallback(() => {
-    setExporting(true);
-    // Simulated export
-    setTimeout(() => {
-      setExporting(false);
-      setExported(true);
-      setTimeout(() => setExported(false), 2000);
-    }, 800);
-  }, []);
+    if (exportState !== "idle") return;
+    setExportState("loading");
+    // Simulated export — real /api/export wiring will replace the timeout.
+    window.setTimeout(() => {
+      setExportState("done");
+      window.setTimeout(() => setExportState("idle"), 1500);
+    }, 1500);
+  }, [exportState]);
 
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -339,6 +340,21 @@ export default function AccountPage() {
   return (
     <>
       <DotGridBackground />
+      {/* Ambient blue wash — sits between dot grid and content. The vault has
+          its own color temperature: a barely-perceptible periwinkle glow
+          centered behind the profile card area gives this page a cooler
+          temperature than the dashboard's warmer mint/camel palette. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle 350px at 50% 15%, rgba(123,143,255,0.03) 0%, rgba(123,143,255,0.015) 50%, transparent 75%)",
+        }}
+      />
       <RadiusSheet
         open={radiusSheetOpen}
         onClose={() => setRadiusSheetOpen(false)}
@@ -372,25 +388,62 @@ export default function AccountPage() {
             cursor: "pointer",
             padding: "4px 4px 0 4px",
             display: "flex",
-            color: backPressed ? "var(--text-primary)" : "var(--text-muted)",
-            transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+            alignItems: "center",
+            gap: 12,
           }}
         >
-          <ChevronLeft />
-        </button>
+          <button
+            onClick={() => router.push("/app")}
+            onPointerDown={() => setBackPressed(true)}
+            onPointerUp={() => setBackPressed(false)}
+            onPointerLeave={() => setBackPressed(false)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 4,
+              display: "flex",
+              color: backPressed
+                ? "var(--text-primary)"
+                : "var(--text-muted)",
+              transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <ChevronLeft />
+          </button>
+          <span
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 600,
+              fontSize: 13,
+              letterSpacing: "0.05em",
+              color: "#5A4E70",
+            }}
+          >
+            Account
+          </span>
+        </div>
 
-        {/* Profile Card */}
-        <ProfileCard
-          name={profile.name ?? profile.email.split("@")[0]}
-          email={profile.email}
-          initials={profile.initials}
-          isPro={true}
-          price="$9.99"
-          period="/mo"
-          renewsDate="May 27"
-          scansLabel="unlimited"
-          onCancel={() => console.log("Open Stripe portal")}
-        />
+        {/* Profile Card — vaultReveal cascade, the page's arrival motion */}
+        <div
+          style={{
+            opacity: 0,
+            animation:
+              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 0ms forwards",
+          }}
+        >
+          <ProfileCard
+            name={profile.name ?? profile.email.split("@")[0]}
+            email={profile.email}
+            initials={profile.initials}
+            isPro={true}
+            price="$9.99"
+            period="/mo"
+            renewsDate="May 27"
+            scansLabel="unlimited"
+            onCancel={() => console.log("Open Stripe portal")}
+          />
+        </div>
 
         {/* ── Settings ── */}
         {/* SETTINGS section label — slightly brighter blue-purple than the
@@ -438,18 +491,21 @@ export default function AccountPage() {
               Search radius
             </span>
             <div
+              data-cell-flash=""
               style={{
                 backgroundColor: "var(--bg-recessed)",
-                borderRadius: 8,
+                borderRadius: "3px 8px 8px 8px",
                 padding: "6px 12px",
                 boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+                marginRight: 6,
+                transition: "background-color 120ms ease-out",
               }}
             >
               <span
                 style={{
                   fontFamily: "var(--font-jetbrains-mono), monospace",
                   fontWeight: 700,
-                  fontSize: 14,
+                  fontSize: 13,
                   color: "var(--text-primary)",
                   fontFeatureSettings: '"tnum"',
                 }}
@@ -457,7 +513,9 @@ export default function AccountPage() {
                 {radius} mi
               </span>
             </div>
+            <ChevronRight />
           </SettingsTile>
+        </div>
 
           {/* BOLO keywords */}
           <SettingsTile
@@ -481,7 +539,7 @@ export default function AccountPage() {
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
                 color: "var(--text-muted)",
-                marginRight: 4,
+                marginRight: 6,
               }}
             >
               {keywords.length} keywords

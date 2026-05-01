@@ -125,7 +125,14 @@ input::placeholder {
    that disappears the moment the user has any scan history. */
 @keyframes scanUpcPulse {
   0%, 100% { border-color: rgba(92,224,184,0.15); }
-  50% { border-color: rgba(92,224,184,0.25); }
+  50% { border-color: rgba(92,224,184,0.30); }
+}
+
+/* Account page entry — scale + fade. Different motion personality from the
+   dashboard's fadeInUp so the vault has its own arrival feel. */
+@keyframes vaultReveal {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* Account page entry — scale + fade. Different motion personality from the

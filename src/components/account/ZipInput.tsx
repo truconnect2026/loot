@@ -36,6 +36,10 @@ export default function ZipInput({
     }
   }
 
+  // Empty state shows "Add zip" in mint to signal interactivity, replacing
+  // the previous neutral em-dash that read as "no value, no action."
+  const isEmpty = !value;
+
   return (
     <SettingsTile
       onClick={!editing ? () => setEditing(true) : undefined}
@@ -54,15 +58,17 @@ export default function ZipInput({
         Zip code
       </span>
       <div
+        data-cell-flash=""
         style={{
           backgroundColor: "var(--bg-recessed)",
-          borderRadius: 8,
+          borderRadius: "3px 8px 8px 8px",
           padding: "6px 12px",
           border: editing
             ? "1px solid var(--accent-mint-border)"
             : "1px solid transparent",
           boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-          transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          transition:
+            "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 120ms ease-out",
         }}
       >
         {editing ? (
@@ -84,24 +90,35 @@ export default function ZipInput({
               outline: "none",
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               color: "var(--accent-mint)",
               textAlign: "center",
               padding: 0,
               fontFeatureSettings: '"tnum"',
             }}
           />
+        ) : isEmpty ? (
+          <span
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 500,
+              fontSize: 12,
+              color: "#5CE0B8",
+            }}
+          >
+            Add zip
+          </span>
         ) : (
           <span
             style={{
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
-              fontSize: 14,
+              fontSize: 13,
               color: "var(--accent-mint)",
               fontFeatureSettings: '"tnum"',
             }}
           >
-            {value || "—"}
+            {value}
           </span>
         )}
       </div>

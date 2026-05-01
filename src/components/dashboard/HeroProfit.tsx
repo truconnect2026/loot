@@ -173,13 +173,15 @@ export default function HeroProfit({
           : allTimeProfit;
 
   // Three visual states.
+  // STATE_A — empty: no activity at all. Compact status-bar treatment.
+  // STATE_B — has data but not enough days to draw a sparkline.
+  // STATE_C — full: pills, hero, delta, sparkline, real stats.
+  const hasAnyData =
+    todayProfit !== 0 || todayScans > 0 || todayBuys > 0 || todaySpent > 0;
   const nonZeroDays = dailyProfitHistory.filter((v) => v !== 0).length;
-  const isEmpty =
-    todayProfit === 0 &&
-    todayScans === 0 &&
-    todayBuys === 0 &&
-    todaySpent === 0;
-  const isEarly = !isEmpty && nonZeroDays < 3;
+  const hasSparkline = nonZeroDays >= 3;
+  const isEmpty = !hasAnyData;
+  const isEarly = hasAnyData && !hasSparkline;
 
   const isNegative = value < 0;
   const isZero = value === 0;
@@ -198,8 +200,9 @@ export default function HeroProfit({
       : isNegative
         ? "0 0 32px rgba(232,99,107,0.15)"
         : "0 0 32px rgba(92,224,184,0.15)";
-  const heroNumberSize = isEmpty ? 36 : 44;
-  const heroDollarSize = isEmpty ? 20 : 24;
+  // Empty hero shrinks to 28px so the card collapses to a status bar.
+  const heroNumberSize = isEmpty ? 28 : 44;
+  const heroDollarSize = isEmpty ? 18 : 24;
 
   // Delta chip — only "today vs yesterday" is computable from current props.
   // Week/month deltas would need lastWeekProfit/lastMonthProfit; hidden until
@@ -227,7 +230,7 @@ export default function HeroProfit({
         borderRadius: 20,
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-        padding: isEmpty ? 16 : 20,
+        padding: isEmpty ? 12 : 20,
         // ease-out-expo approximation for the state-change shape shifts.
         transition: "padding 200ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
@@ -249,7 +252,7 @@ export default function HeroProfit({
             letterSpacing: "0.12em",
           }}
         >
-          {PERIOD_COPY[period].header}
+          {isEmpty ? "PROFIT" : PERIOD_COPY[period].header}
         </div>
         {!isEmpty && (
           <div style={{ display: "flex", gap: 4 }}>
@@ -265,68 +268,69 @@ export default function HeroProfit({
         )}
       </div>
 
-      {/* Hero number — Outfit 300; size + glow flatten in the empty state */}
+      {/* Hero number — Outfit 300; in the empty state, the number sits inline
+          next to a one-line nudge so the whole card reads as a status bar. */}
       <div
         style={{
-          marginTop: 12,
+          marginTop: isEmpty ? 4 : 12,
           display: "flex",
           alignItems: "baseline",
+          gap: isEmpty ? 12 : 0,
           color: heroColor,
           textShadow: heroGlow,
           transition:
             "color 200ms cubic-bezier(0.16,1,0.3,1), text-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
-        {isNegative && (
+        <div style={{ display: "flex", alignItems: "baseline" }}>
+          {isNegative && (
+            <span
+              style={{
+                fontFamily: "var(--font-outfit), sans-serif",
+                fontWeight: 300,
+                fontSize: heroNumberSize,
+                lineHeight: 1,
+              }}
+            >
+              -
+            </span>
+          )}
           <span
+            style={{
+              fontFamily: "var(--font-outfit), sans-serif",
+              fontWeight: 300,
+              fontSize: heroDollarSize,
+              lineHeight: 1,
+            }}
+          >
+            $
+          </span>
+          <AnimNum
+            value={Math.abs(value)}
             style={{
               fontFamily: "var(--font-outfit), sans-serif",
               fontWeight: 300,
               fontSize: heroNumberSize,
               lineHeight: 1,
             }}
+          />
+        </div>
+        {isEmpty && (
+          <span
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 10,
+              color: "rgba(255,255,255,0.18)",
+              lineHeight: 1.3,
+            }}
           >
-            -
+            scan your first item to start tracking
           </span>
         )}
-        <span
-          style={{
-            fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 300,
-            fontSize: heroDollarSize,
-            lineHeight: 1,
-          }}
-        >
-          $
-        </span>
-        <AnimNum
-          value={Math.abs(value)}
-          style={{
-            fontFamily: "var(--font-outfit), sans-serif",
-            fontWeight: 300,
-            fontSize: heroNumberSize,
-            lineHeight: 1,
-          }}
-        />
       </div>
 
-      {/* Empty-state hint sits below the dim hero */}
-      {isEmpty && (
-        <div
-          style={{
-            marginTop: 6,
-            textAlign: "center",
-            fontFamily: "var(--font-jetbrains-mono), monospace",
-            fontSize: 10,
-            color: "rgba(255,255,255,0.18)",
-          }}
-        >
-          scan your first item to start tracking
-        </div>
-      )}
-
       {/* Delta chip — only when not empty and we have a comparator */}
-      {deltaText && (
+      {!isEmpty && deltaText && (
         <div style={{ marginTop: 6, display: "flex" }}>
           <div
             style={{
@@ -346,7 +350,7 @@ export default function HeroProfit({
         </div>
       )}
 
-      {/* Sparkline (active) / "tracking for X days" (early) / hidden (empty) */}
+      {/* Sparkline (full) / "tracking for X days" (early) / hidden (empty) */}
       {!isEmpty && (
         <div style={{ marginTop: 12 }}>
           {isEarly ? (
@@ -365,15 +369,16 @@ export default function HeroProfit({
         </div>
       )}
 
-      {/* Secondary stats — always today's numbers; dim plum when empty */}
+      {/* Secondary stats — always today's numbers; tightens to 9px and dims
+          to plum across the row in the empty state. */}
       <div
         style={{
-          marginTop: 12,
+          marginTop: isEmpty ? 8 : 12,
           display: "flex",
           alignItems: "center",
           gap: 10,
           fontFamily: "var(--font-jetbrains-mono), monospace",
-          fontSize: 10,
+          fontSize: isEmpty ? 9 : 10,
         }}
       >
         <SecondaryStat

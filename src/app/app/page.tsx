@@ -347,6 +347,11 @@ export default function DashboardPage() {
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+  // Lifetime scan count drives the first-time-user branch — a user with zero
+  // rows ever sees the simplified onboarding view. statsLoading gates the
+  // branch so the onboarding view doesn't flash before stats land.
+  const [lifetimeScans, setLifetimeScans] = useState(0);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -377,13 +382,19 @@ export default function DashboardPage() {
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) return;
+    if (!userData.user) {
+      setStatsLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("scans")
       .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) return;
+    if (error || !data) {
+      setStatsLoading(false);
+      return;
+    }
 
     const rows = data as ScanRow[];
 
@@ -450,6 +461,8 @@ export default function DashboardPage() {
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
     setProfitHistory(daily.map((v) => Math.round(v)));
+    setLifetimeScans(rows.length);
+    setStatsLoading(false);
   }, [supabase]);
 
   // refreshStats sets state, which `react-hooks/set-state-in-effect` flags
@@ -755,7 +768,7 @@ export default function DashboardPage() {
             marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "180ms",
+            animationDelay: "200ms",
           }}
         >
           <DealCarousel
@@ -771,7 +784,7 @@ export default function DashboardPage() {
             marginTop: 20,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "240ms",
+            animationDelay: "280ms",
           }}
         >
           <DealCarousel
@@ -787,7 +800,7 @@ export default function DashboardPage() {
             padding: "0 18px",
             marginTop: 24,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "300ms",
+            animationDelay: "360ms",
           }}
         >
           <div style={SECTION_LABEL}>SOURCING</div>
@@ -807,7 +820,7 @@ export default function DashboardPage() {
             marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "360ms",
+            animationDelay: "420ms",
           }}
         >
           {/* "MORE TOOLS" label with full-bleed hairlines */}
@@ -923,7 +936,7 @@ export default function DashboardPage() {
             marginTop: 32,
             marginBottom: 40,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "420ms",
+            animationDelay: "500ms",
           }}
         >
           <div

@@ -57,7 +57,9 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         position: "relative",
         flexShrink: 0,
         width: 232,
-        minHeight: 142,
+        minHeight: 152,
+        display: "flex",
+        flexDirection: "column",
         backgroundColor: "rgba(255,255,255,0.03)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
@@ -71,11 +73,13 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
       }}
     >
-      {/* Header row — source pill + price slot */}
+      {/* Header row — source pill (left) + posted-at (right). The listed
+          price moved out of this row entirely; it lives in the price row
+          near the bottom of the card. */}
       <div
         style={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
         }}
@@ -102,42 +106,22 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         >
           {tag}
         </span>
-
-        {deal.isFree ? (
-          <span
-            style={{
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              color: "#5CE0B8",
-              lineHeight: 1,
-              paddingTop: 2,
-            }}
-          >
-            FREE
-          </span>
-        ) : (
-          <span
-            style={{
-              fontFamily: "var(--font-outfit), sans-serif",
-              fontSize: 16,
-              fontWeight: 600,
-              color: "#C8C0D8",
-              lineHeight: 1,
-              paddingTop: 1,
-            }}
-          >
-            ${deal.price}
-          </span>
-        )}
+        <span
+          style={{
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 9,
+            color: "#5A4E70",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {deal.postedAt}
+        </span>
       </div>
 
-      {/* Title — 2-line clamp, leaves room for the absolute bottom row */}
+      {/* Title — 2-line clamp */}
       <div
         style={{
           marginTop: 10,
-          marginBottom: 26,
           fontFamily: "var(--font-outfit), sans-serif",
           fontSize: 14,
           fontWeight: 600,
@@ -152,11 +136,74 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.title}
       </div>
 
+      {/* Price row — listed price → estimated value. marginTop:auto pushes
+          it to the bottom of available space, just above the absolute
+          distance/profit band. */}
+      <div
+        style={{
+          marginTop: "auto",
+          marginBottom: 22,
+          display: "flex",
+          alignItems: "baseline",
+          gap: 10,
+        }}
+      >
+        {deal.isFree ? (
+          <span
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              color: "#5CE0B8",
+              lineHeight: 1,
+            }}
+          >
+            FREE
+          </span>
+        ) : (
+          <span
+            style={{
+              fontFamily: "var(--font-jetbrains-mono), monospace",
+              fontSize: 14,
+              fontWeight: 700,
+              color: "#C8C0D8",
+              lineHeight: 1,
+              fontFeatureSettings: '"tnum"',
+            }}
+          >
+            ${deal.price}
+          </span>
+        )}
+        <span
+          style={{
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 11,
+            color: "#5A4E70",
+            lineHeight: 1,
+          }}
+        >
+          →
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-jetbrains-mono), monospace",
+            fontSize: 15,
+            fontWeight: 700,
+            color: "#5CE0B8",
+            lineHeight: 1,
+            fontFeatureSettings: '"tnum"',
+          }}
+        >
+          ${deal.estimatedValue}
+        </span>
+      </div>
+
       {/* Distance — bottom-left */}
       <span
         style={{
           position: "absolute",
-          bottom: 14,
+          bottom: 12,
           left: 14,
           fontFamily: "var(--font-jetbrains-mono), monospace",
           fontSize: 9,
@@ -172,7 +219,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         <span
           style={{
             position: "absolute",
-            bottom: 14,
+            bottom: 12,
             right: 14,
             fontFamily: "var(--font-jetbrains-mono), monospace",
             fontSize: 9,
