@@ -27,13 +27,22 @@ const cellLabel: React.CSSProperties = {
   marginBottom: 4,
 };
 
-// Smart email split — keep the full domain, truncate only the local part so
-// "truconnectmarketingsolutions@gmail.com" reads as "truconnect…@gmail.com"
-// instead of "truconnectmarketingsolutions@g…". The domain anchors identity.
+// Smart email split — keep the full domain, truncate only the local part.
+// Hard-caps the local at 10 chars so the cut point is always visually
+// clean ("truconnect…@gmail.com") regardless of card width. Falling back
+// on container-driven flex truncation produced ugly mid-word cuts at
+// random character positions ("truconnectmarketingso…@gmail.com").
+const LOCAL_MAX = 10;
+
 function splitEmail(email: string): { local: string; domain: string } {
   const at = email.lastIndexOf("@");
   if (at === -1) return { local: email, domain: "" };
-  return { local: email.slice(0, at), domain: email.slice(at) };
+  const fullLocal = email.slice(0, at);
+  const local =
+    fullLocal.length > LOCAL_MAX
+      ? `${fullLocal.slice(0, LOCAL_MAX)}…`
+      : fullLocal;
+  return { local, domain: email.slice(at) };
 }
 
 export default function ProfileCard({
@@ -225,18 +234,19 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO pill — earned-status badge in camel/gold. Mint moved off
-            this pill: PRO is tier identity, not money. Camel reads as
-            "premium" without claiming the currency role. */}
+        {/* PRO badge — solid camel fill with dark text. Reads as a
+            tier marker the user has *earned*, not a quiet outline.
+            Dark text on the warm fill keeps it premium without
+            shouting; mint stays reserved for money. */}
         {isPro && (
           <div
             style={{
               marginLeft: "auto",
-              backgroundColor: "rgba(212,165,116,0.10)",
+              backgroundColor: "var(--accent-camel)",
               border: "none",
               boxShadow: "none",
               borderRadius: 4,
-              padding: "3px 8px",
+              padding: "4px 9px",
               flexShrink: 0,
             }}
           >
@@ -244,8 +254,9 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-body)",
                 fontWeight: 700,
-                fontSize: 8,
-                color: "var(--accent-camel)",
+                fontSize: 10,
+                letterSpacing: "0.04em",
+                color: "var(--bg-page)",
               }}
             >
               PRO
@@ -373,21 +384,29 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* Cancel — muted plum, brightens to primary text on hover */}
-        <div
+        {/* Manage plan — was "cancel anytime", which read as a warning
+            and put the user's brain on the cancel path. Reframed as a
+            functional link to the Stripe portal, where they can change
+            plan, update payment, or cancel if they want. Same target,
+            different framing. */}
+        <button
+          type="button"
           onClick={onCancel}
           style={{
-            marginTop: 4,
+            marginTop: 6,
+            background: "none",
+            border: "none",
+            padding: 0,
             textAlign: "left",
             fontFamily: "var(--font-body)",
             fontWeight: 500,
-            fontSize: 11,
-            color: "#5A4E70",
-            cursor: "default",
+            fontSize: 12,
+            color: "var(--text-muted)",
+            cursor: "pointer",
           }}
         >
-          cancel anytime
-        </div>
+          Manage plan →
+        </button>
       </div>
       </div>
     </>

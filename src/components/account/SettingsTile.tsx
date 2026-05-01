@@ -76,9 +76,11 @@ export default function SettingsTile({
         borderRadius: "4px 16px 16px 16px",
         display: "flex",
         alignItems: "center",
-        // Layout: [8px pad] [5px dot] [8px gap] [18px icon] [10px gap] [label]
-        // Right padding stays 12 since the right side carries values/chevrons.
-        paddingLeft: 8,
+        // Layout: [14px pad] [18px icon] [10px gap] [label] [right accessory] [12px pad].
+        // Bumped from 8 → 14 since the accent dot was removed; the icon
+        // now sits at a comfortable left margin instead of looking
+        // crowded against the tile edge.
+        paddingLeft: 14,
         paddingRight: 12,
         cursor: onClick ? "pointer" : "default",
         userSelect: "none",
@@ -86,23 +88,9 @@ export default function SettingsTile({
         transition,
       }}
     >
-      {/* Accent dot — interior, 5px / 70% opacity. Inline element so it
-          can't be overflow-clipped by anything; it just lives in the row. */}
-      {accentColor && (
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-block",
-            width: 5,
-            height: 5,
-            borderRadius: "50%",
-            backgroundColor: accentColor,
-            opacity: 0.7,
-            marginRight: 8,
-            flexShrink: 0,
-          }}
-        />
-      )}
+      {/* Accent dots removed — they read as error/incomplete-setup
+          indicators with no documented meaning. The icon already carries
+          the per-tile color cue, and clarity beats decoration here. */}
 
       {/* Icon — 18px container, color from accentColor at 75% opacity. SVGs
           should use stroke="currentColor" so this `color` flows through. */}

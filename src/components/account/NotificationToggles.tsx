@@ -132,31 +132,19 @@ export default function NotificationToggles({
       }}
     >
       {/* Main toggle row — interior layout matches SettingsTile:
-          [8 pad] [5 dot] [8 gap] [18 BellIcon] [10 gap] [label]. Label
-          starts at x=49, which is what the sub-toggles indent to. */}
+          [14 pad] [18 BellIcon] [10 gap] [label]. Label starts at x=42,
+          which is what the sub-toggles indent to. Accent dot removed
+          to match the SettingsTile cleanup — the bell icon already
+          carries the per-tile color cue. */}
       <div
         style={{
           height: 52,
           display: "flex",
           alignItems: "center",
-          paddingLeft: 8,
+          paddingLeft: 14,
           paddingRight: 16,
         }}
       >
-        {/* Inline lavender dot — same pattern as SettingsTile chassis. */}
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-block",
-            width: 5,
-            height: 5,
-            borderRadius: "50%",
-            backgroundColor: accentColor,
-            opacity: 0.7,
-            marginRight: 8,
-            flexShrink: 0,
-          }}
-        />
         <span
           aria-hidden="true"
           style={{
@@ -205,9 +193,9 @@ export default function NotificationToggles({
               style={{
                 display: "flex",
                 alignItems: "center",
-                // 49px aligns with parent label start: pad 8 + dot 5 + gap 8
-                // + icon 18 + gap 10 = 49.
-                paddingLeft: 49,
+                // 42px aligns with parent label start: pad 14 + icon 18
+                // + gap 10 = 42 (after the accent-dot removal).
+                paddingLeft: 42,
                 paddingRight: 16,
                 height: 40,
                 cursor: "pointer",

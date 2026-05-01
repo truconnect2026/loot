@@ -558,10 +558,27 @@ export default function AccountPage() {
           />
         </div>
 
-        {/* Group 3: Export — 18px gap */}
-        <div style={{ marginTop: 18 }}>
+        {/* DATA section — Export got its own break so the haul-log
+            tile reads as a power feature, not a buried row. Section
+            label mirrors the SETTINGS header above; subtitle copy
+            now explains the actual value ("track your flips for tax
+            season") instead of the cryptic "CSV for taxes". */}
+        <div
+          style={{
+            marginTop: 24,
+            marginBottom: 8,
+            fontFamily: "var(--font-label)",
+            fontSize: 9,
+            color: "#2D2845",
+            letterSpacing: "0.10em",
+            textTransform: "uppercase",
+          }}
+        >
+          DATA
+        </div>
+        <div>
           <SettingsTile
-            height={60}
+            height={64}
             onClick={handleExport}
             icon={<DownloadArrowIcon />}
             accentColor={ACCENT_EXPORT}
@@ -580,12 +597,12 @@ export default function AccountPage() {
               <div
                 style={{
                   fontFamily: "var(--font-body)",
-                  fontSize: 9,
+                  fontSize: 11,
                   color: "var(--text-muted)",
                   marginTop: 2,
                 }}
               >
-                CSV for taxes
+                track your flips for tax season
               </div>
             </div>
             {exportState === "done" ? (

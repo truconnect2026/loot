@@ -101,11 +101,13 @@ export default function ZipInput({
         ) : isEmpty ? (
           <span
             style={{
+              // Match the filled-state value font (13 / 700) so the empty
+              // "Add zip" chip looks like a value chip waiting to be filled,
+              // not a separate button-style affordance. Same chip language
+              // as the radius "15 mi" cell.
               fontFamily: "var(--font-body)",
-              fontWeight: 500,
-              fontSize: 12,
-              // "Add zip" is an interactive prompt, not currency. White
-              // signals "tap me" without false-flagging money.
+              fontWeight: 700,
+              fontSize: 13,
               color: "var(--ui-primary)",
             }}
           >
