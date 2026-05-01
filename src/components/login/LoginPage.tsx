@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { createClient } from "@/lib/supabase";
 import CoinMark from "@/components/shared/CoinMark";
 import DotGridBackground from "@/components/shared/DotGridBackground";
+import PwaInstallBar from "@/components/login/PwaInstallBar";
 
 // Google "G" logo — official colors
 function GoogleIcon() {
@@ -474,6 +475,14 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Install bar — only renders for users on a platform that can
+          install (iOS Safari, or Android/Chromium browsers that fire
+          beforeinstallprompt). Self-gates on standalone mode, the
+          7-day cooldown, the session-dismiss flag, and the installed
+          flag. Pinned to the viewport bottom inside the safe area;
+          login content stays untouched. */}
+      <PwaInstallBar />
     </>
   );
 }
