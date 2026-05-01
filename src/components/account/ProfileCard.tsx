@@ -77,10 +77,10 @@ export default function ProfileCard({
         style={{
           marginTop: 16,
           position: "relative",
-          // Brightest surface on the page (text/accents excepted) — clearly
-          // elevated above the settings tiles below. Solid (no backdrop-blur)
-          // so DotGridBackground can't bleed mint through.
-          backgroundColor: "#211C3D",
+          // Sweet spot — visibly elevated above tiles without reading gray.
+          // #211C3D was a touch too washed out; #1E1838 keeps the dark purple.
+          // Solid (no backdrop-blur) so DotGridBackground can't bleed mint.
+          backgroundColor: "#1E1838",
           // Solid cool-purple border — was rgba(92,224,184,0.06) which may
           // have been contributing to the green perception around the card.
           // No mint anywhere on the card edge now.
