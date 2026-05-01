@@ -24,25 +24,38 @@ interface WinMessage {
   suffix?: string;
 }
 
+// Order matters: 7s rotation × 5 messages = 35s full loop. Most users
+// only see the first message before scrolling away or tapping into a
+// scan flow, so the slot at index 0 has to land. Ordered by impact —
+// biggest dollar amount + most recognizable thrift-flip item first,
+// then concrete dollar stories, then ambient activity counts last.
+// Impact decreases monotonically from index 0 to the end of the array.
 const WINS: WinMessage[] = [
+  // Highest dollar + iconic thrift-flip brand. The opener.
+  {
+    prefix: "vintage Pyrex flip near you — ",
+    amount: "+$120",
+  },
+  // Solid dollar + universally recognizable household brand.
   {
     prefix: "a reseller near you flipped a KitchenAid for ",
     amount: "+$85",
   },
-  {
-    prefix: "3 deals claimed in your area today",
-  },
+  // Smaller absolute number but the strongest leverage story (16× return)
+  // — the kind of detail a reseller forwards to their group chat.
   {
     prefix: "someone scored a $5 cast iron worth ",
     amount: "$80",
     suffix: " nearby",
   },
+  // Ambient activity, no dollar — implies profitable transactions
+  // happening nearby.
+  {
+    prefix: "3 deals claimed in your area today",
+  },
+  // Ambient volume, no dollar — softest signal, sits last.
   {
     prefix: "12 free curbside finds posted in your area today",
-  },
-  {
-    prefix: "vintage Pyrex flip near you — ",
-    amount: "+$120",
   },
 ];
 
