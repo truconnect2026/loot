@@ -374,19 +374,11 @@ export default function AccountPage() {
           animation: "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) both",
         }}
       >
-        {/* Back arrow — bottom padding is zero so the visual gap from chevron
-            bottom to the profile card top is exactly the card's marginTop (16). */}
-        <button
-          onClick={() => router.push("/app")}
-          onPointerDown={() => setBackPressed(true)}
-          onPointerUp={() => setBackPressed(false)}
-          onPointerLeave={() => setBackPressed(false)}
+        {/* Page header — back arrow + "Account" title. The title anchors the
+            page so a returning user lands and instantly knows where they are. */}
+        <div
           style={{
             marginTop: 16,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "4px 4px 0 4px",
             display: "flex",
             alignItems: "center",
             gap: 12,
@@ -515,7 +507,6 @@ export default function AccountPage() {
             </div>
             <ChevronRight />
           </SettingsTile>
-        </div>
 
           {/* BOLO keywords */}
           <SettingsTile
@@ -593,7 +584,7 @@ export default function AccountPage() {
                 CSV for taxes
               </div>
             </div>
-            {exported ? (
+            {exportState === "done" ? (
               <span
                 style={{
                   fontFamily: "var(--font-jetbrains-mono), monospace",
@@ -603,7 +594,7 @@ export default function AccountPage() {
               >
                 exported
               </span>
-            ) : exporting ? (
+            ) : exportState === "loading" ? (
               <CoinMarkSpinner />
             ) : null}
           </SettingsTile>

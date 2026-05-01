@@ -347,11 +347,6 @@ export default function DashboardPage() {
   const [monthProfit, setMonthProfit] = useState(0);
   const [allTimeProfit, setAllTimeProfit] = useState(0);
   const [profitHistory, setProfitHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
-  // Lifetime scan count drives the first-time-user branch — a user with zero
-  // rows ever sees the simplified onboarding view. statsLoading gates the
-  // branch so the onboarding view doesn't flash before stats land.
-  const [lifetimeScans, setLifetimeScans] = useState(0);
-  const [statsLoading, setStatsLoading] = useState(true);
 
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -382,19 +377,13 @@ export default function DashboardPage() {
 
   const refreshStats = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setStatsLoading(false);
-      return;
-    }
+    if (!userData.user) return;
 
     const { data, error } = await supabase
       .from("scans")
       .select("cost, profit, verdict, created_at")
       .eq("user_id", userData.user.id);
-    if (error || !data) {
-      setStatsLoading(false);
-      return;
-    }
+    if (error || !data) return;
 
     const rows = data as ScanRow[];
 
@@ -461,8 +450,6 @@ export default function DashboardPage() {
     setMonthProfit(Math.round(monthProfitSum));
     setAllTimeProfit(Math.round(allTimeProfitSum));
     setProfitHistory(daily.map((v) => Math.round(v)));
-    setLifetimeScans(rows.length);
-    setStatsLoading(false);
   }, [supabase]);
 
   // refreshStats sets state, which `react-hooks/set-state-in-effect` flags

@@ -87,8 +87,8 @@ export default function ProfileCard({
         }
       `}</style>
       <div
+        className="profile-card-surface"
         style={{
-          position: "relative",
           marginTop: 16,
           position: "relative",
           // Sweet spot — visibly elevated above tiles without reading gray.
