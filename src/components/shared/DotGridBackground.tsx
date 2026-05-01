@@ -58,7 +58,45 @@ export default function DotGridBackground({
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      updateClipRect();
     };
+
+    // Particles attenuate near anything marked [data-particle-clip="true"]
+    // (the login card). Recomputed on resize + once a second to catch any
+    // late layout shifts. Cached so the draw loop is a pure read.
+    let clipRect: DOMRect | null = null;
+    const CLIP_BUFFER = 32; // px — soft falloff distance outside the rect
+    const updateClipRect = () => {
+      const el = document.querySelector(
+        '[data-particle-clip="true"]',
+      ) as HTMLElement | null;
+      clipRect = el ? el.getBoundingClientRect() : null;
+    };
+    queueMicrotask(updateClipRect);
+    const clipPoll = window.setInterval(updateClipRect, 1000);
+
+    /** Returns 0..1 — how much of the particle's alpha to keep at (x, y).
+        Inside the card → 0. Outside the buffer → 1. Linear in between. */
+    const clipFactor = (x: number, y: number) => {
+      if (!clipRect) return 1;
+      const insideX = x >= clipRect.left && x <= clipRect.right;
+      const insideY = y >= clipRect.top && y <= clipRect.bottom;
+      if (insideX && insideY) return 0;
+      // Distance to the nearest card edge along each axis (0 if inside that axis).
+      const dx = insideX
+        ? 0
+        : Math.min(
+            Math.abs(x - clipRect.left),
+            Math.abs(x - clipRect.right),
+          );
+      const dy = insideY
+        ? 0
+        : Math.min(Math.abs(y - clipRect.top), Math.abs(y - clipRect.bottom));
+      const dist = Math.max(dx, dy);
+      if (dist >= CLIP_BUFFER) return 1;
+      return dist / CLIP_BUFFER;
+    };
+
     resize();
     window.addEventListener("resize", resize);
 
@@ -93,9 +131,11 @@ export default function DotGridBackground({
       const h = viewH();
       ctx.clearRect(0, 0, w, h);
       for (const p of particles) {
+        const alpha = p.opacity * clipFactor(p.x, p.y);
+        if (alpha <= 0.001) continue;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(92, 224, 184, ${p.opacity})`;
+        ctx.fillStyle = `rgba(92, 224, 184, ${alpha})`;
         ctx.fill();
       }
     };
@@ -104,6 +144,7 @@ export default function DotGridBackground({
       drawStatic();
       return () => {
         window.removeEventListener("resize", resize);
+        window.clearInterval(clipPoll);
       };
     }
 
@@ -177,9 +218,11 @@ export default function DotGridBackground({
           }
         }
 
+        const finalAlpha = alpha * clipFactor(p.x, p.y);
+        if (finalAlpha <= 0.001) continue;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(92, 224, 184, ${alpha})`;
+        ctx.fillStyle = `rgba(92, 224, 184, ${finalAlpha})`;
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);
@@ -189,6 +232,7 @@ export default function DotGridBackground({
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      window.clearInterval(clipPoll);
     };
   }, [variant, reducedMotion]);
 

@@ -206,6 +206,19 @@ export default function LoginPage() {
           from { opacity: 0; transform: translateY(12px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        /* Saturn icon — gentle vertical drift, 5s loop. Pure transform so
+           it stays GPU-accelerated and scrolls smoothly on mobile. */
+        @keyframes saturnFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+        /* LOOT wordmark — soft breathing glow. The visible LOOT stays calm;
+           a duplicate text-shadow layer fades in over it. Animating opacity
+           only keeps the effect on the compositor thread. */
+        @keyframes lootGlowPulse {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 0.6; }
+        }
       `}</style>
       <DotGridBackground variant="login" />
 
@@ -237,18 +250,48 @@ export default function LoginPage() {
               marginBottom: 64,
             }}
           >
-            <CoinMark size={32} />
+            <div
+              style={{
+                display: "flex",
+                animation: "saturnFloat 5s ease-in-out infinite",
+                willChange: "transform",
+              }}
+            >
+              <CoinMark size={32} color="#5CE0B8" />
+            </div>
+            {/* LOOT — base layer (calm) + glow overlay (breathing) */}
             <span
               style={{
+                position: "relative",
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
                 fontSize: 44,
                 color: "#5CE0B8",
                 letterSpacing: "0.08em",
                 lineHeight: 1,
+                display: "inline-block",
               }}
             >
               LOOT
+              {/* Glow layer — transparent text, all the visible mass is in
+                  the text-shadow. Opacity-only animation = compositor only. */}
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  color: "transparent",
+                  textShadow:
+                    "0 0 14px rgba(92,224,184,0.55), 0 0 28px rgba(92,224,184,0.30)",
+                  pointerEvents: "none",
+                  animation:
+                    "lootGlowPulse 5s ease-in-out infinite",
+                  willChange: "opacity",
+                }}
+              >
+                LOOT
+              </span>
             </span>
             <div
               style={{
@@ -263,6 +306,7 @@ export default function LoginPage() {
 
           {/* ── Auth glass card ── */}
           <div
+            data-particle-clip="true"
             style={{
               backgroundColor: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.07)",
