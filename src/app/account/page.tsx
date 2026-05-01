@@ -160,10 +160,13 @@ function DoorIcon() {
   );
 }
 
-// Tile accent colors — each drives both its tile's left dot and its icon tint.
+// Tile accent colors — each drives both its tile's left dot and its icon
+// tint. Per the role system (mint = money only), BOLO moved off mint to a
+// desaturated decor teal so the keyword/scope category no longer claims
+// the currency role.
 const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
-const ACCENT_BOLO = "#5CE0B8"; // mint — keyword scope
+const ACCENT_BOLO = "#74B6A0"; // decor cool teal — keyword scope
 const ACCENT_NOTIF = "#B4A0D4"; // lavender — alerts
 const ACCENT_EXPORT = "#8A8A9A"; // neutral — utility
 const ACCENT_SIGNOUT = "#E8636B"; // coral — destructive

@@ -135,7 +135,9 @@ export default function DotGridBackground({
         if (alpha <= 0.001) continue;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(92, 224, 184, ${alpha})`;
+        // Particles are decorative (per the role system). Cool desaturated
+        // teal-grey instead of mint so they don't falsely signal "money".
+        ctx.fillStyle = `rgba(116, 140, 150, ${alpha})`;
         ctx.fill();
       }
     };
@@ -222,7 +224,8 @@ export default function DotGridBackground({
         if (finalAlpha <= 0.001) continue;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(92, 224, 184, ${finalAlpha})`;
+        // Decorative cool desaturated teal-grey — see drawStatic above.
+        ctx.fillStyle = `rgba(116, 140, 150, ${finalAlpha})`;
         ctx.fill();
       }
       raf = requestAnimationFrame(draw);
@@ -237,8 +240,12 @@ export default function DotGridBackground({
   }, [variant, reducedMotion]);
 
   if (variant === "login") {
-    // Time-of-day tinting — afternoon defaults used during SSR before hour resolves.
-    let largeMintColor = "#5CE0B8";
+    // Time-of-day tinting — afternoon defaults used during SSR before hour
+    // resolves. Atmospheric blobs are decorative per the role system, so
+    // the "mint" blob is a desaturated cool teal (#74B6A0), NOT the money
+    // mint — close enough to read as the same temperature, far enough off
+    // that the page doesn't look like it's tinted with the dollar color.
+    let largeMintColor = "#74B6A0";
     let largeMintOpacity = 0.12;
     let largePeriOpacity = 0.08;
     let showMorningGold = false;
@@ -246,11 +253,11 @@ export default function DotGridBackground({
 
     if (hour !== null) {
       if (hour >= 6 && hour < 12) {
-        // Morning — mint slightly brighter, add small gold near top.
+        // Morning — atmosphere slightly brighter, add small gold near top.
         largeMintOpacity = 0.13;
         showMorningGold = true;
       } else if (hour >= 18 && hour < 24) {
-        // Evening — cooler teal mint, periwinkle warmer.
+        // Evening — cooler teal-blue, periwinkle warmer.
         largeMintColor = "#4AB8D4";
         largeMintOpacity = 0.1;
         largePeriOpacity = 0.09;
@@ -346,7 +353,8 @@ export default function DotGridBackground({
                 : "loginBlobLargeB 25s ease-in-out infinite",
             }}
           />
-          {/* Small mint — bottom-left */}
+          {/* Small atmospheric blob — bottom-left. Desaturated teal so the
+              page reads cool without claiming the money color. */}
           <div
             style={{
               position: "absolute",
@@ -355,7 +363,7 @@ export default function DotGridBackground({
               width: 150,
               height: 150,
               borderRadius: "50%",
-              backgroundColor: "#5CE0B8",
+              backgroundColor: "#74B6A0",
               opacity: 0.1 * dim,
               filter: "blur(80px)",
               animation: reducedMotion
@@ -475,11 +483,10 @@ export default function DotGridBackground({
           backgroundColor: "#120e18",
         }}
       >
-        {/* Mint — top-left. Bounding box ends at y=200 (top:-160 + height:360)
-            so the blob no longer drifts down into the profile-card region on
-            the account page, where it was bleeding green into every label
-            even with the card now solid. The crown gradient at the top of
-            the profile card already provides the mint atmospheric hint. */}
+        {/* Atmospheric blob — top-left. Decorative per the role system, so
+            this is desaturated teal (#74B6A0) instead of the money mint.
+            Bounding box ends at y=200 so it no longer drifts down into the
+            profile-card region on the account page. */}
         <div
           style={{
             position: "absolute",
@@ -488,7 +495,7 @@ export default function DotGridBackground({
             width: 500,
             height: 360,
             borderRadius: "50%",
-            backgroundColor: "#5CE0B8",
+            backgroundColor: "#74B6A0",
             opacity: 0.09,
             filter: "blur(120px)",
             animation: reducedMotion

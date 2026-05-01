@@ -153,14 +153,16 @@ export default function ProfileCard({
           gap: 14,
         }}
       >
-        {/* Avatar — 1px plum inner border, 1.5px mint outline 4px outside */}
+        {/* Avatar — 1px plum inner border, 1.5px decorative ring 4px outside.
+            The ring is decorative atmosphere, not money — switched off mint
+            to a cool desaturated tone per the role system. */}
         <div
           style={{
             width: 44,
             height: 44,
             borderRadius: "50%",
             border: "1px solid rgba(90, 78, 112, 0.3)",
-            outline: "1.5px solid #5CE0B8",
+            outline: "1.5px solid rgba(116, 140, 150, 0.55)",
             outlineOffset: "4px",
             display: "flex",
             alignItems: "center",
@@ -222,12 +224,14 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO pill — filled bg only, no border / outline / shadow edge */}
+        {/* PRO pill — earned-status badge in camel/gold. Mint moved off
+            this pill: PRO is tier identity, not money. Camel reads as
+            "premium" without claiming the currency role. */}
         {isPro && (
           <div
             style={{
               marginLeft: "auto",
-              backgroundColor: "rgba(92,224,184,0.08)",
+              backgroundColor: "rgba(212,165,116,0.10)",
               border: "none",
               boxShadow: "none",
               borderRadius: 4,
@@ -240,10 +244,7 @@ export default function ProfileCard({
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 700,
                 fontSize: 8,
-                // Desaturated mint — the saturated #5CE0B8 reads too bright
-                // on the low-alpha mint pill bg. #4DBFA0 keeps the mint
-                // identity but sits at a quieter saturation level.
-                color: "#4DBFA0",
+                color: "var(--accent-camel)",
               }}
             >
               PRO
@@ -360,12 +361,10 @@ export default function ProfileCard({
               style={{
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontSize: 12,
-                color: "var(--accent-mint)",
-                // Double-layer mint halo — tighter bright core (50% inner)
-                // + wider soft outer (25% at 8px). Reads as a true glow on
-                // device, not just a faint smudge.
-                textShadow:
-                  "0 0 16px rgba(92,224,184,0.5), 0 0 8px rgba(92,224,184,0.25)",
+                // "unlimited" is a feature label, not currency. Off-mint per
+                // the role system; the value still reads as a benefit because
+                // of the word, not the color.
+                color: "var(--text-primary)",
               }}
             >
               {scansLabel}

@@ -30,13 +30,15 @@ function GoogleIcon() {
 }
 
 function ArrowIcon() {
+  // Send button is interactive UI, not money — stroke is white per the
+  // role system, no longer mint.
   return (
     <svg
       width={18}
       height={18}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5CE0B8"
+      stroke="#FFFFFF"
       strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -129,10 +131,12 @@ interface SendButtonProps {
 function SendButton({ onTap, disabled }: SendButtonProps) {
   const [pressed, setPressed] = useState(false);
 
+  // Interactive surface — white-forward per the role system. Mint here
+  // would falsely signal "money" on a button whose only job is "submit".
   const restShadow =
-    "inset 0 1px 0 0 rgba(92,224,184,0.18), 0 1px 2px rgba(0,0,0,0.3)";
+    "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.3)";
   const pressShadow =
-    "0 0 0 1px rgba(92,224,184,0.20), 0 0 24px -4px rgba(92,224,184,0.35)";
+    "0 0 0 1px rgba(255,255,255,0.18), 0 0 24px -4px rgba(255,255,255,0.20)";
 
   return (
     <button
@@ -146,8 +150,8 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         width: 54,
         height: 52,
         flexShrink: 0,
-        backgroundColor: "rgba(92,224,184,0.08)",
-        border: "1px solid rgba(92,224,184,0.15)",
+        backgroundColor: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.10)",
         boxShadow: pressed ? pressShadow : restShadow,
         borderRadius: "0 16px 16px 0",
         display: "flex",
@@ -194,10 +198,11 @@ export default function LoginPage() {
     if (!error) setEmailSent(true);
   }
 
-  // Sunken email input — trough shadow, focus blooms a faint mint glow.
+  // Sunken email input — trough shadow, focus blooms a faint white glow.
+  // (Mint here would falsely read as "money is involved" on a sign-in field.)
   const inputBaseShadow = "inset 0 1px 2px 0 rgba(0,0,0,0.4)";
   const inputFocusShadow =
-    "inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 16px -4px rgba(92,224,184,0.15)";
+    "inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 16px -4px rgba(255,255,255,0.12)";
 
   return (
     <>
@@ -364,7 +369,9 @@ export default function LoginPage() {
                   fontFamily: "var(--font-outfit), sans-serif",
                   fontWeight: 500,
                   fontSize: 14,
-                  color: "var(--accent-mint)",
+                  // Success confirmation, not money. White-forward per role
+                  // system; the success cue is the message itself, not color.
+                  color: "var(--ui-primary)",
                   height: 52,
                   display: "flex",
                   alignItems: "center",
@@ -392,7 +399,7 @@ export default function LoginPage() {
                     height: 52,
                     backgroundColor: "rgba(0,0,0,0.3)",
                     border: emailFocused
-                      ? "1px solid rgba(92,224,184,0.25)"
+                      ? "1px solid rgba(255,255,255,0.25)"
                       : "1px solid rgba(255,255,255,0.06)",
                     borderRight: "none",
                     boxShadow: emailFocused

@@ -2,6 +2,29 @@
 @config "../../tailwind.config.ts";
 
 :root {
+  /* ============================================================
+     COLOR ROLE SYSTEM
+     ------------------------------------------------------------
+     Mint/teal is the MONEY color. ONLY use it for elements that
+     directly represent dollars: profit numbers, sell/resale
+     prices, +$X chips, plan pricing.
+
+     Test: "Does this element directly represent currency?"
+       yes → use --money / --money-* tokens.
+       no  → pick a non-money role from the list below.
+
+     Two narrow brand-identity exceptions to the money rule:
+       - the LOOT wordmark (the logo IS our color)
+       - the CoinMark Saturn icon (logo)
+     Everything else mint must justify itself as money.
+
+     Roles:
+       --money-*          dollars only
+       --ui-*             interactive (buttons, links, toggles, focus)
+       --decor-*          decorative (particles, ambient glows, dots)
+       --text-*           type ramp incl. inactive/placeholder
+     ============================================================ */
+
   /* Backgrounds */
   --bg-page: #120e18;
   --bg-surface: #17122A;
@@ -18,22 +41,55 @@
   --text-muted: #5A4E70;
   --text-dim: #3D2E55;
 
-  /* Accents */
-  --accent-mint: #5CE0B8;
+  /* Money — RESERVED. Do not use these tokens for non-currency UI. */
+  --money: #5CE0B8;
+  --money-dim: #4DBFA0;
+  --money-surface: rgba(92, 224, 184, 0.08);
+  --money-border: rgba(92, 224, 184, 0.20);
+  --money-glow: 0 0 20px rgba(92, 224, 184, 0.15);
+
+  /* Interactive — buttons, links, toggle ON, tap targets, focus rings.
+     White-forward so a user reading the page knows "this is what tapping
+     does," distinct from "this is dollars". */
+  --ui-primary: #FFFFFF;
+  --ui-secondary: #E8E5F0;
+  --ui-on: #FFFFFF;
+  --ui-surface: rgba(255, 255, 255, 0.06);
+  --ui-surface-pressed: rgba(255, 255, 255, 0.10);
+  --ui-border: rgba(255, 255, 255, 0.10);
+  --ui-border-focus: rgba(255, 255, 255, 0.25);
+  --ui-glow: rgba(255, 255, 255, 0.10);
+
+  /* Decorative — particles, ambient glows, accent dots, atmospheric blobs.
+     Cool desaturated teal-grey holds the page's temperature without
+     claiming the money role. RGB triplets so call sites can dial alpha. */
+  --decor-cool-rgb: 116, 140, 150;        /* desaturated teal-grey */
+  --decor-warm-rgb: 212, 165, 116;        /* camel — already-decorative warm */
+  --decor-blue-rgb: 123, 143, 255;        /* periwinkle — already-decorative cool */
+  --decor-cool: rgba(116, 140, 150, 1);
+
+  /* Brand identity — LOOT wordmark + CoinMark only. Same hex as --money,
+     but the semantic role is different: this is logo, that is currency. */
+  --brand-mint: #5CE0B8;
+
+  /* Legacy accents (kept until call sites migrate). New code: prefer the
+     role tokens above. --accent-mint is now an alias for --money so any
+     non-money use is a known violation to be fixed. */
+  --accent-mint: var(--money);
   --accent-camel: #D4A574;
   --accent-red: #E8636B;
   --accent-blue: #7B8FFF;
 
-  /* Accent surfaces (8% opacity fills) */
-  --accent-mint-surface: #5CE0B814;
-  --accent-mint-border: #5CE0B840;
+  /* Accent surfaces (legacy aliases) */
+  --accent-mint-surface: var(--money-surface);
+  --accent-mint-border: var(--money-border);
   --accent-camel-surface: #D4A57414;
   --accent-camel-border: #D4A57440;
   --accent-red-surface: #E8636B14;
   --accent-red-border: #E8636B40;
 
   /* Specific */
-  --profit-glow: 0 0 20px #5CE0B815;
+  --profit-glow: var(--money-glow);
   --press-bg: #1F1835;
 }
 

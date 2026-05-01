@@ -45,9 +45,11 @@ function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
   const thumbOffset = 2;
   const radius = isSmall ? 10 : 12;
 
-  // Solid mint when on, recessed dark when off — the brightest brand moment
-  // on this page.
-  const trackBg = on ? "#5CE0B8" : "#2A2240";
+  // ON: off-white interactive track (--ui-secondary). OFF: recessed dark.
+  // Mint moved out of toggles entirely — toggles are interactive UI, not
+  // money. Track sits a touch dimmer than the white thumb so the thumb's
+  // drop-shadow halo gives clean separation when ON.
+  const trackBg = on ? "#E8E5F0" : "#2A2240";
 
   return (
     <div

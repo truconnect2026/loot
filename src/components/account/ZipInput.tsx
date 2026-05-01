@@ -64,7 +64,7 @@ export default function ZipInput({
           borderRadius: "3px 8px 8px 8px",
           padding: "6px 12px",
           border: editing
-            ? "1px solid var(--accent-mint-border)"
+            ? "1px solid var(--ui-border-focus)"
             : "1px solid transparent",
           boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
           transition:
@@ -91,7 +91,8 @@ export default function ZipInput({
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
               fontSize: 13,
-              color: "var(--accent-mint)",
+              // Zip is a number, not money. Interactive value → white.
+              color: "var(--ui-primary)",
               textAlign: "center",
               padding: 0,
               fontFeatureSettings: '"tnum"',
@@ -103,7 +104,9 @@ export default function ZipInput({
               fontFamily: "var(--font-outfit), sans-serif",
               fontWeight: 500,
               fontSize: 12,
-              color: "#5CE0B8",
+              // "Add zip" is an interactive prompt, not currency. White
+              // signals "tap me" without false-flagging money.
+              color: "var(--ui-primary)",
             }}
           >
             Add zip
@@ -114,7 +117,7 @@ export default function ZipInput({
               fontFamily: "var(--font-jetbrains-mono), monospace",
               fontWeight: 700,
               fontSize: 13,
-              color: "var(--accent-mint)",
+              color: "var(--ui-primary)",
               fontFeatureSettings: '"tnum"',
             }}
           >
