@@ -410,7 +410,10 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          {/* Submit */}
+          {/* Submit — primary CTA. Lifted from a ghost-feel 8% white fill
+              to 15% so it reads as the unambiguous primary action. Border
+              and text bumped in step. submitting state keeps the dimmer
+              4% fill so the disabled affordance is still obvious. */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -421,15 +424,15 @@ export default function OnboardingPage() {
               height: 54,
               backgroundColor: submitting
                 ? "rgba(255,255,255,0.04)"
-                : "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.12)",
+                : "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.29)",
               boxShadow:
                 "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.3)",
               borderRadius: 16,
               fontFamily: "var(--font-body)",
               fontWeight: 600,
               fontSize: 15,
-              color: "var(--ui-primary)",
+              color: "rgba(255,255,255,0.92)",
               cursor: submitting ? "default" : "pointer",
               opacity: submitting ? 0.6 : 1,
               transition: "all 150ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -585,11 +588,18 @@ function RadiusOption({
         background: active
           ? "linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%)"
           : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+        // Both states use 2px border so toggling between them never
+        // shifts the layout by 1px. Selected = bright mint; unselected
+        // keeps its current muted color (just at 2px instead of 1px).
         border: active
-          ? "1px solid rgba(255,255,255,0.32)"
-          : "1px solid rgba(255,255,255,0.10)",
+          ? "2px solid #5CE0B8"
+          : "2px solid rgba(255,255,255,0.10)",
+        // Selected gets a quiet mint glow as the deliberate selection
+        // signal — the bright border is the loud signal, the soft glow
+        // is the supporting cue. Unselected keeps the current depth
+        // shadow stack so it still floats on the page.
         boxShadow: active
-          ? "inset 0 1px 0 0 rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.10), 0 0 20px -4px rgba(255,255,255,0.20), 0 4px 16px -4px rgba(0,0,0,0.3)"
+          ? "0 0 8px rgba(92,224,184,0.10)"
           : "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 2px 4px rgba(0,0,0,0.2), 0 4px 12px -4px rgba(0,0,0,0.3)",
         borderRadius: 16,
         display: "flex",
