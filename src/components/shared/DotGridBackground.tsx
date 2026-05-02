@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from "react";
 
 interface DotGridBackgroundProps {
-  variant?: "default" | "login";
+  variant?: "default" | "login" | "grid";
 }
 
 export default function DotGridBackground({
@@ -238,6 +238,38 @@ export default function DotGridBackground({
       window.clearInterval(clipPoll);
     };
   }, [variant, reducedMotion]);
+
+  if (variant === "grid") {
+    // Dashboard background — a quiet graph-paper grid + center-bias
+    // vignette. No animation, no canvas, no particles. The grid says
+    // "this is a workspace, not a stage"; the radial overlay says
+    // "your eye belongs in the middle of the screen." Fixed positioning
+    // means the surface stays put as the dashboard scrolls — content
+    // glides over a stable substrate, like icons over a desktop.
+    //
+    // Stacking (first listed = topmost in CSS multi-bg):
+    //   1. Radial vignette — undimmed center, ~40% black at edges
+    //   2. Horizontal 1px line every 28px @ 3% white
+    //   3. Vertical 1px line every 28px @ 3% white
+    //   4. Solid #120e18 page bg (via backgroundColor)
+    return (
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          backgroundColor: "#120e18",
+          backgroundImage: [
+            "radial-gradient(ellipse 90% 70% at 50% 30%, transparent 0%, transparent 38%, rgba(0,0,0,0.40) 100%)",
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.030) 0, rgba(255,255,255,0.030) 1px, transparent 1px, transparent 28px)",
+            "repeating-linear-gradient(90deg, rgba(255,255,255,0.030) 0, rgba(255,255,255,0.030) 1px, transparent 1px, transparent 28px)",
+          ].join(", "),
+        }}
+      />
+    );
+  }
 
   if (variant === "login") {
     // Time-of-day tinting — afternoon defaults used during SSR before hour

@@ -114,7 +114,10 @@ function HeroButton({
         // can never push a button out of alignment.
         width: "100%",
         boxSizing: "border-box",
-        height: 80,
+        // 88 (was 80) + gap 6 (was 4) gives icon/label/subtitle a few more
+        // pixels of breathing room each. Subtitles now read as headlines
+        // of their own row instead of cramming up against the label.
+        height: 88,
         borderRadius: 16,
         background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.05) 100%)`,
         border: `1px solid rgba(${accent},0.18)`,
@@ -124,7 +127,7 @@ function HeroButton({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 4,
+        gap: 6,
         cursor: "pointer",
         padding: 0,
         // First-scan nudge — the keyframe overrides border-color while running.
@@ -200,14 +203,16 @@ function HeroButton({
       </span>
       <span
         style={{
-          // Subtitle bumped from 8/40% to 11/70% so the "when to use which"
-          // hint is actually legible. New users couldn't tell SCAN UPC from
-          // AI VISION before; now the per-button instruction reads at a
-          // glance. Accent tint preserved (variant identity), alpha lifted.
+          // Subtitle is functional instruction text ("when to use which"),
+          // not decoration. Pulled off the accent tint and onto plain
+          // white at 60% so it reads as readable copy regardless of
+          // variant. The variant identity comes from the label color
+          // above; pushing the subtitle through the accent rgb() bath
+          // made the camel one in particular drift toward unreadable.
           fontFamily: "var(--font-body)",
           fontSize: 11,
           fontWeight: 500,
-          color: `rgba(${accent},0.7)`,
+          color: "rgba(255,255,255,0.60)",
           letterSpacing: "0.01em",
           position: "relative",
           zIndex: 1,

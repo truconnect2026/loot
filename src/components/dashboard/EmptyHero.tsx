@@ -9,21 +9,59 @@ interface EmptyHeroProps {
 
 /**
  * Empty-state hero for first-time users (lifetimeScans === 0). Replaces the
- * dim "$0" treatment that read as failure with three things, in order:
+ * dim "$0" treatment that read as failure with two things, in order:
  *   1. A demo verdict card that shows the WHAT (sample item + flow).
  *   2. A primary CTA that opens the scanner directly.
- *   3. A quiet social-proof line that mirrors the login page.
  *
  * Once a scan exists in history, page.tsx swaps this out for HeroProfit.
  *
  * Voice rule: lowercase, no terminal periods. Color rule: mint stays
  * reserved for money — the sell price + profit are mint, the cost is not.
- * Font rule: SAMPLE label is uppercase + mono; everything else is Outfit.
+ * Font rule: SAMPLE SCAN label is uppercase + mono; everything else is Outfit.
  */
 export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
   const [pressed, setPressed] = useState(false);
 
   return (
+    <>
+      <style>{`
+        /* Mask-composite gradient border on the demo card — bright mint
+           top-left fading to dim mint bottom-right. Same trick as
+           ProfileCard's gradient edge. The card's own borderRadius is
+           inherited so the gradient clips to the same rounded corners. */
+        .loot-empty-hero-demo {
+          position: relative;
+        }
+        .loot-empty-hero-demo::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(
+            135deg,
+            rgba(92,224,184,0.45) 0%,
+            rgba(92,224,184,0.18) 35%,
+            rgba(92,224,184,0.06) 65%,
+            rgba(92,224,184,0.20) 100%
+          );
+          -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
+        /* Profit chip — slow shimmer sweep. The chip's solid mint fill
+           stays put; a transparent → white-highlight → transparent
+           gradient slides across it every ~3.5s. Eye-catch without
+           pulse mechanics. animation cycles the gradient's
+           background-position from off-left to off-right. */
+        @keyframes emptyHeroChipShimmer {
+          0% { background-position: -150% 0, 0 0; }
+          60%, 100% { background-position: 250% 0, 0 0; }
+        }
+      `}</style>
     <div
       style={{
         // Outer wrapper matches HeroProfit's glass treatment so the slot
@@ -37,34 +75,59 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
         padding: 16,
       }}
     >
-      {/* ─── Demo verdict card ─── */}
+      {/* ─── Demo verdict card ─── This is the user's first taste of a
+          scan result, so it gets celebratory treatment unique to this
+          slot: mint gradient border (mask-composite), faint outer
+          mint glow, and a barely-visible horizontal scan-line texture
+          at 5% alpha that says "scanner output" without competing
+          with the type. The base sits on solid #120e18 (page bg) so
+          the mint edge can't pick up ambient color from the wrapper. */}
       <div
+        className="loot-empty-hero-demo"
         style={{
-          backgroundColor: "rgba(0,0,0,0.20)",
-          border: "1px solid rgba(255,255,255,0.04)",
-          boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+          // Layered background: scan-lines on top of a faint mint tint
+          // on top of the dark base. Comma-separated bg images stack
+          // top→bottom in source order. 4px line spacing reads as
+          // "scanner refresh" texture; 0.05 alpha keeps it subliminal.
+          backgroundImage:
+            "repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,0.05) 3px, rgba(255,255,255,0.05) 4px), radial-gradient(ellipse 100% 80% at 30% 0%, rgba(92,224,184,0.06), transparent 60%)",
+          backgroundColor: "#120e18",
+          boxShadow:
+            // Inset top sheen + recessed-pit shadow + outer mint glow.
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 24px -4px rgba(92,224,184,0.22), 0 4px 16px -4px rgba(0,0,0,0.4)",
           borderRadius: 14,
           padding: 14,
         }}
       >
-        {/* SAMPLE label — uppercase category header */}
-        <div
+        {/* SAMPLE SCAN pill — promoted from plain text to a bordered
+            chip so the demo card is unambiguously "a preview of what
+            you'll get" rather than a generic info card. Mint-bordered
+            because the slot delivers money outcomes; the inline-block
+            keeps the chip flush left and prevents it from stretching
+            across the row. */}
+        <span
           style={{
+            display: "inline-block",
+            padding: "3px 8px",
+            border: "1px solid rgba(92,224,184,0.30)",
+            backgroundColor: "rgba(92,224,184,0.08)",
+            borderRadius: 4,
             fontFamily: "var(--font-label)",
-            fontWeight: 500,
+            fontWeight: 600,
             fontSize: 8,
-            color: "#5A4E70",
-            letterSpacing: "0.12em",
+            color: "#5CE0B8",
+            letterSpacing: "0.14em",
+            lineHeight: 1,
           }}
         >
-          SAMPLE
-        </div>
+          SAMPLE SCAN
+        </span>
 
         {/* Item name — body sentence-case (proper nouns stay capitalized
             elsewhere; here it's a generic item description, lowercase) */}
         <div
           style={{
-            marginTop: 6,
+            marginTop: 8,
             fontFamily: "var(--font-body)",
             fontWeight: 600,
             fontSize: 14,
@@ -75,24 +138,41 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
           vintage Pyrex casserole set
         </div>
 
-        {/* Flow rows: cost → sell. Sell is mint (money); cost is white. */}
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Flow rows: cost → sell. Differentiated visual weight is the
+            whole point of the comparison — $5 reads as the cheap input
+            (smaller, muted plum), $45 reads as the exciting output
+            (larger, bolder, mint). The eye should naturally bounce
+            from "$5 cost (small)" → "$45 sell (big)" → "+$40 profit
+            chip (shimmering)." 8px gap between rows gives the stair-
+            step a moment to breathe. */}
+        <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
           <FlowRow
             leftLabel="found at Goodwill"
             rightValue="$5"
-            rightColor="#C8C0D8"
+            rightColor="#6B5F80"
+            valueSize={12}
+            valueWeight={600}
           />
           <FlowRow
             leftLabel="sold on eBay"
             rightValue="$45"
             rightColor="#5CE0B8"
+            valueSize={18}
+            valueWeight={800}
           />
         </div>
 
-        {/* Profit chip — money */}
+        {/* Profit chip — money. The shimmer layer is a transparent →
+            white highlight → transparent linear-gradient stacked on
+            top of the chip's existing solid mint fill via comma-
+            separated background images. background-size makes the
+            shimmer 200% wide so it can fully translate off-screen on
+            both sides; the keyframe slides background-position from
+            -150% to 250%. The static mint fill keeps backgroundSize
+            of 100% so it doesn't move. */}
         <div
           style={{
-            marginTop: 10,
+            marginTop: 12,
             display: "flex",
             justifyContent: "flex-end",
           }}
@@ -103,11 +183,18 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
               fontWeight: 700,
               fontSize: 13,
               color: "#5CE0B8",
-              backgroundColor: "rgba(92,224,184,0.10)",
-              border: "1px solid rgba(92,224,184,0.20)",
+              backgroundImage:
+                "linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%), linear-gradient(rgba(92,224,184,0.12), rgba(92,224,184,0.12))",
+              backgroundSize: "200% 100%, 100% 100%",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "-150% 0, 0 0",
+              border: "1px solid rgba(92,224,184,0.28)",
               borderRadius: 6,
               padding: "3px 10px",
               fontFeatureSettings: '"tnum"',
+              boxShadow:
+                "0 0 16px -4px rgba(92,224,184,0.35)",
+              animation: "emptyHeroChipShimmer 3.5s ease-in-out infinite",
             }}
           >
             +$40 profit
@@ -115,7 +202,13 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
         </div>
       </div>
 
-      {/* ─── Primary CTA ─── interactive (white per role system) */}
+      {/* ─── Primary CTA ─── interactive (white per role system).
+          Border alpha bumped from 0.10 → 0.22 so the edge reads as
+          unambiguously white. The +$40 mint chip sits directly above
+          this button; at 0.10 the white edge was faint enough to
+          inherit a perceptual mint cast from the chip. 0.22 forces the
+          button to read white on its own. Same logic on the inset
+          highlight (0.10 → 0.16). */}
       <button
         type="button"
         onClick={onScanTap}
@@ -129,10 +222,10 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
           backgroundColor: pressed
             ? "rgba(255,255,255,0.10)"
             : "rgba(255,255,255,0.06)",
-          border: "1px solid rgba(255,255,255,0.10)",
+          border: "1px solid rgba(255,255,255,0.22)",
           boxShadow: pressed
-            ? "0 0 0 1px rgba(255,255,255,0.18), 0 0 24px -4px rgba(255,255,255,0.18)"
-            : "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.3)",
+            ? "0 0 0 1px rgba(255,255,255,0.28), 0 0 24px -4px rgba(255,255,255,0.20)"
+            : "inset 0 1px 0 0 rgba(255,255,255,0.16), 0 1px 2px rgba(0,0,0,0.3)",
           borderRadius: 14,
           display: "flex",
           alignItems: "center",
@@ -157,21 +250,8 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
         </span>
         <ArrowIcon />
       </button>
-
-      {/* ─── Social proof ─── quiet, matching the login treatment */}
-      <div
-        style={{
-          marginTop: 10,
-          textAlign: "center",
-          fontFamily: "var(--font-body)",
-          fontSize: 11,
-          color: "rgba(255, 255, 255, 0.30)",
-          letterSpacing: "0.04em",
-        }}
-      >
-        join 12,000+ resellers
-      </div>
     </div>
+    </>
   );
 }
 
@@ -179,9 +259,20 @@ interface FlowRowProps {
   leftLabel: string;
   rightValue: string;
   rightColor: string;
+  /** Override the right-value font size (default 13). Used to scale
+   * $5 down vs $45 up so the price comparison reads as a stair-step. */
+  valueSize?: number;
+  /** Override the right-value font weight (default 700). */
+  valueWeight?: number;
 }
 
-function FlowRow({ leftLabel, rightValue, rightColor }: FlowRowProps) {
+function FlowRow({
+  leftLabel,
+  rightValue,
+  rightColor,
+  valueSize = 13,
+  valueWeight = 700,
+}: FlowRowProps) {
   return (
     <div
       style={{
@@ -205,10 +296,11 @@ function FlowRow({ leftLabel, rightValue, rightColor }: FlowRowProps) {
       <span
         style={{
           fontFamily: "var(--font-body)",
-          fontWeight: 700,
-          fontSize: 13,
+          fontWeight: valueWeight,
+          fontSize: valueSize,
           color: rightColor,
           fontFeatureSettings: '"tnum"',
+          lineHeight: 1,
         }}
       >
         {rightValue}

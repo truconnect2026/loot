@@ -525,28 +525,42 @@ export default function DashboardPage() {
   }, [refreshStats]);
 
   // Onboarding gate — bounce brand-new users (no zip set) to /onboarding
-  // before they see the dashboard. Runs once per mount; the onboarding
-  // page redirects them back to /app once they save. This is a soft
-  // client-side gate (middleware can't run a profiles query without
-  // adding latency to every protected request) — the user can briefly
-  // see the dashboard shell while the profile fetch resolves, but the
-  // redirect fires within the first ~200ms.
+  // BEFORE they see any dashboard content. Until this resolves we render
+  // a full-screen splash matching --bg-page (see below), so the user
+  // experiences login → dark screen → onboarding rather than login →
+  // dashboard flash → onboarding. This is the fix for the flash.
   //
   // Skip honor: if the user tapped "skip for now" on /onboarding earlier
   // in this tab session, sessionStorage carries that decision and we
-  // suppress the redirect for the remainder of the session. Next browser
-  // session, the gate re-fires (sessionStorage clears on tab close), so
-  // onboarding stays encouraged but never permanently disabled.
+  // suppress the redirect (and clear the splash immediately) for the
+  // remainder of the session. Next browser session, the gate re-fires
+  // (sessionStorage clears on tab close), so onboarding stays encouraged
+  // but never permanently disabled.
+  const [gateChecked, setGateChecked] = useState(false);
   useEffect(() => {
     let cancelled = false;
     const skipped =
       typeof window !== "undefined" &&
       window.sessionStorage.getItem(ONBOARDING_SKIPPED_KEY) === "1";
-    if (skipped) return;
+    if (skipped) {
+      queueMicrotask(() => {
+        if (!cancelled) setGateChecked(true);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
-      if (!user || cancelled) return;
+      if (cancelled) return;
+      // Unauthenticated reaches here only if route protection upstream
+      // missed; clear the splash so the page doesn't hang. The auth
+      // layer will handle routing them away.
+      if (!user) {
+        setGateChecked(true);
+        return;
+      }
       const { data: profileRow } = await supabase
         .from("profiles")
         .select("zip_code")
@@ -554,8 +568,13 @@ export default function DashboardPage() {
         .maybeSingle();
       if (cancelled) return;
       if (!profileRow?.zip_code) {
+        // Redirect without ever flipping gateChecked — the splash stays
+        // up through the navigation, so no dashboard content is ever
+        // painted for a user without a zip.
         router.replace("/onboarding");
+        return;
       }
+      setGateChecked(true);
     })();
     return () => {
       cancelled = true;
@@ -665,6 +684,51 @@ export default function DashboardPage() {
     }, TOOL_EXIT_TOTAL_MS);
   }, [showAllTools]);
 
+  // Splash gate — covers the brief async window between mount and the
+  // zip-code check resolving. Same bg as --bg-page so it visually
+  // continues from the login page; if the user gets redirected to
+  // /onboarding, the next page paints over a screen of identical color.
+  // The Saturn icon at 60% alpha gives a "loading" cue without spinning
+  // (a spinner would feel like an error state on a 200ms wait).
+  if (!gateChecked) {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "#120e18",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 100,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            opacity: 0.6,
+          }}
+        >
+          <CoinMark size={28} color="#5CE0B8" />
+          <span
+            style={{
+              fontFamily: "var(--font-label)",
+              fontWeight: 700,
+              fontSize: 36,
+              color: "#5CE0B8",
+              letterSpacing: "0.08em",
+              lineHeight: 1,
+            }}
+          >
+            LOOT
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -675,20 +739,11 @@ export default function DashboardPage() {
         .loot-carousel::-webkit-scrollbar { display: none; }
         .loot-carousel { scrollbar-width: none; }
       `}</style>
-      <DotGridBackground />
-      {/* Fog layer — subtle vignette above the blobs, below content. Centers
-          the eye on the dashboard core; edges fade to the page bg. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-          background:
-            "radial-gradient(ellipse 90% 70% at 50% 30%, transparent 0%, rgba(18,14,24,0.4) 60%, rgba(18,14,24,0.7) 100%)",
-        }}
-      />
+      {/* Dashboard background — quiet graph-paper grid + centered
+          vignette. No blobs, no particles: the dashboard is a
+          workspace, not a stage. The grid variant carries its own
+          radial vignette so the standalone fog layer is gone. */}
+      <DotGridBackground variant="grid" />
       <CoinRain active={coinRainActive} />
 
       <div
@@ -807,12 +862,15 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 4. Hero profit card — mock data for now; real Supabase wiring later */}
+        {/* 4. Hero profit card — mock data for now; real Supabase wiring later.
+            10px from ContextCard above: these belong to the same "personal
+            status + next action" cluster, so they sit close per the
+            8-12px related-elements spacing rule. */}
         <div
           id="hero-profit"
           style={{
             padding: "0 18px",
-            marginTop: 16,
+            marginTop: 10,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "60ms",
           }}
@@ -847,11 +905,13 @@ export default function DashboardPage() {
 
         {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
             overflow:hidden clips those bleeds at the section box, which
-            matches the page wrapper / viewport edge. */}
+            matches the page wrapper / viewport edge. 10px from the hero
+            above: hero shows the "what" (sample/profit), scan is the
+            "how" (action) — same cluster, related-elements spacing. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 20,
+            marginTop: 10,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",
@@ -867,13 +927,14 @@ export default function DashboardPage() {
         {/* Wins ticker — anonymized rotating signal that other resellers
             are using the app. Sits between the scan zone and the first
             carousel: just below the user's primary action, just above the
-            content they're about to scan. Static rotation at launch;
-            backed by a Supabase view later. */}
+            content they're about to scan. Section-break role, so it gets
+            symmetric ~16-18px spacing above and below per the spec.
+            Static rotation at launch; backed by a Supabase view later. */}
         <div
           style={{
             paddingLeft: 18,
             paddingRight: 18,
-            marginTop: 14,
+            marginTop: 18,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "160ms",
           }}
@@ -897,7 +958,7 @@ export default function DashboardPage() {
           <>
             <div
               style={{
-                marginTop: 24,
+                marginTop: 18,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -930,7 +991,7 @@ export default function DashboardPage() {
             <div
               id="deals-near-you"
               style={{
-                marginTop: 24,
+                marginTop: 18,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -959,11 +1020,12 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* 8. Sourcing intel — uses the polished SourcingCards component */}
+        {/* 8. Sourcing intel — uses the polished SourcingCards component.
+            Section break from the deals carousels above. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 24,
+            marginTop: 20,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "360ms",
           }}
@@ -978,11 +1040,11 @@ export default function DashboardPage() {
         </div>
 
         {/* 9. Tools drawer — overflow:hidden clips the MORE TOOLS hairline
-            bleeds at the section edge */}
+            bleeds at the section edge. Section break from sourcing. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 24,
+            marginTop: 20,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "420ms",
@@ -1095,32 +1157,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* 10. Flip tip */}
-        <div
-          style={{
-            padding: "0 18px",
-            marginTop: 32,
-            marginBottom: 40,
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "500ms",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 280,
-              margin: "0 auto",
-              textAlign: "center",
-              fontFamily: "var(--font-body)",
-              fontSize: 9,
-              color: "rgba(255,255,255,0.12)",
-              lineHeight: 1.6,
-            }}
-          >
-            griswold cast iron marked &apos;erie pa&apos; is worth 5-10× more than unmarked. carry a magnet — sterling silver won&apos;t stick.
-          </div>
-        </div>
-
-        {/* 11. Bottom pad */}
+        {/* Bottom pad */}
         <div style={{ height: 40 }} />
       </div>
 

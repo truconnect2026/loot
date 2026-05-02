@@ -101,18 +101,74 @@ export default function PwaInstallBar() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    // Dev escape hatch: append ?pwareset=1 to wipe the storage gates
+    // (session dismiss + 7-day cooldown + installed flag) so a
+    // previously-dismissed bar can be re-tested without manually clearing
+    // DevTools storage. Runs before any of the gates below.
+    const search = window.location.search;
+    if (search.includes("pwareset=1")) {
+      try {
+        window.localStorage.removeItem(STORAGE_INSTALLED);
+        window.localStorage.removeItem(STORAGE_DISMISSED_AT);
+        window.sessionStorage.removeItem(STORAGE_SESSION_DISMISSED);
+      } catch {
+        /* private mode — silent no-op */
+      }
+    }
+    // Debug logging gate: dev builds always log; in any env, ?pwadebug=1
+    // turns it on. Tagged so it doesn't get lost in console noise.
+    const debug =
+      process.env.NODE_ENV !== "production" || search.includes("pwadebug=1");
+    const log = (...args: unknown[]) => {
+      if (debug) console.log("[PwaInstallBar]", ...args);
+    };
+
+    const standaloneMq =
+      window.matchMedia?.("(display-mode: standalone)").matches ?? false;
+    const navStandalone =
+      (window.navigator as Navigator & { standalone?: boolean }).standalone;
+    const ua = window.navigator.userAgent;
+    log("detection", {
+      standaloneMq,
+      navStandalone,
+      ua,
+      isStandalone: isStandalone(),
+      isIosSafari: isIosSafari(),
+      maxTouchPoints: window.navigator.maxTouchPoints,
+      installedFlag: safeLocalGet(STORAGE_INSTALLED),
+      sessionDismissed: safeSessionGet(STORAGE_SESSION_DISMISSED),
+      dismissedAt: safeLocalGet(STORAGE_DISMISSED_AT),
+    });
+
     // Already installed — never render.
-    if (isStandalone()) return;
-    if (safeLocalGet(STORAGE_INSTALLED) === "1") return;
+    if (isStandalone()) {
+      log("gate: standalone, not rendering");
+      return;
+    }
+    if (safeLocalGet(STORAGE_INSTALLED) === "1") {
+      log("gate: installed flag set, not rendering");
+      return;
+    }
 
     // Dismissed this session — never render this session.
-    if (safeSessionGet(STORAGE_SESSION_DISMISSED) === "1") return;
+    if (safeSessionGet(STORAGE_SESSION_DISMISSED) === "1") {
+      log("gate: session-dismissed, not rendering");
+      return;
+    }
 
     // Within 7-day cooldown after a previous dismiss — wait it out.
     const dismissedAtRaw = safeLocalGet(STORAGE_DISMISSED_AT);
     if (dismissedAtRaw) {
       const ts = parseInt(dismissedAtRaw, 10);
-      if (Number.isFinite(ts) && Date.now() - ts < COOLDOWN_MS) return;
+      if (Number.isFinite(ts) && Date.now() - ts < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - (Date.now() - ts);
+        log(
+          "gate: in 7-day cooldown",
+          `${Math.round(remainingMs / 86400000)}d remaining`,
+          "(append ?pwareset=1 to clear)",
+        );
+        return;
+      }
     }
 
     // Defer the setState calls past the synchronous effect body so the
@@ -126,6 +182,9 @@ export default function PwaInstallBar() {
       if (isIosSafari()) {
         platformRef.current = "ios";
         setShouldRender(true);
+        log("platform: ios — rendering");
+      } else {
+        log("platform: not iOS — waiting for beforeinstallprompt");
       }
     });
 

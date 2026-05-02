@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 interface ProfileCardProps {
   name: string;
   email: string;
@@ -416,7 +418,7 @@ export default function ProfileCard({
                 fontFeatureSettings: '"tnum"',
               }}
             >
-              $340/mo
+              $1,200/mo
             </span>
             {" "}in flips found
           </div>
@@ -428,32 +430,88 @@ export default function ProfileCard({
             plan, update payment, or cancel if they want. Same target,
             different framing.
 
+            Promoted from a subtle text link to a full-width bordered
+            pill so it reads as an intentional action, not an
+            afterthought caption. The ↗ stays as the external-link cue.
+            Sits last in the card with a small top margin separating
+            it from the "PRO members average" benchmark above.
+
             The parent's onCancel handler MUST open the Stripe portal in
             a new tab via window.open(url, "_blank", "noopener,noreferrer")
             so the user keeps their place in Loot. Stripe customer-portal
             sessions return on close to a configured return_url; that
             return_url should also point back to /account so the loop
             completes cleanly even if the user navigates within Stripe. */}
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{
-            marginTop: 6,
-            background: "none",
-            border: "none",
-            padding: 0,
-            textAlign: "left",
-            fontFamily: "var(--font-body)",
-            fontWeight: 500,
-            fontSize: 12,
-            color: "var(--text-muted)",
-            cursor: "pointer",
-          }}
-        >
-          Manage plan ↗
-        </button>
+        <ManagePlanButton onTap={onCancel} />
       </div>
       </div>
     </>
+  );
+}
+
+interface ManagePlanButtonProps {
+  onTap: () => void;
+}
+
+// Full-width bordered pill, white text, subtle white-alpha edge — same
+// pill language as the EmptyHero CTA so the action reads as a peer of
+// other primary affordances in the app, not as a footer link. Press
+// state mirrors GoogleButton/SendButton (scale 0.98, brighter bg) so
+// taps feel acknowledged without being theatrical.
+function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      style={{
+        marginTop: 14,
+        width: "100%",
+        height: 40,
+        backgroundColor: pressed
+          ? "rgba(255,255,255,0.08)"
+          : "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.18)",
+        boxShadow: pressed
+          ? "0 0 0 1px rgba(255,255,255,0.22), 0 0 16px -4px rgba(255,255,255,0.16)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.3)",
+        borderRadius: 12,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        cursor: "pointer",
+        padding: 0,
+        transform: pressed ? "scale(0.98)" : "scale(1)",
+        transition:
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--font-body)",
+          fontWeight: 600,
+          fontSize: 13,
+          color: "var(--ui-primary)",
+          letterSpacing: "0.01em",
+        }}
+      >
+        Manage plan
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 13,
+          color: "var(--ui-primary)",
+          lineHeight: 1,
+        }}
+      >
+        ↗
+      </span>
+    </button>
   );
 }

@@ -21,10 +21,15 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
  * field on success; manual entry remains the fallback for any failure.
  */
 
-const RADIUS_OPTIONS: { value: number; label: string; subtitle: string }[] = [
-  { value: 5, label: "5 mi", subtitle: "urban" },
-  { value: 15, label: "15 mi", subtitle: "suburban" },
-  { value: 50, label: "50 mi", subtitle: "rural" },
+const RADIUS_OPTIONS: {
+  value: number;
+  label: string;
+  subtitle: string;
+  rings: 1 | 2 | 3;
+}[] = [
+  { value: 5, label: "5 mi", subtitle: "urban", rings: 1 },
+  { value: 15, label: "15 mi", subtitle: "suburban", rings: 2 },
+  { value: 50, label: "50 mi", subtitle: "rural", rings: 3 },
 ];
 
 // Per-session skip flag — set when the user taps "skip for now" so the
@@ -185,7 +190,7 @@ export default function OnboardingPage() {
   if (checking) {
     return (
       <>
-        <DotGridBackground />
+        <DotGridBackground variant="grid" />
         <div
           style={{
             position: "fixed",
@@ -309,6 +314,11 @@ export default function OnboardingPage() {
                 if (e.key === "Enter") handleSubmit();
               }}
               style={{
+                // Matches the login email input — same bg, border alphas,
+                // recessed-pit shadow + focus-bloom glow, 16px radius.
+                // The login is the user's first impression of input
+                // language; reusing it keeps onboarding feeling like the
+                // same app rather than a one-off form page.
                 flex: 1,
                 minWidth: 0,
                 height: 52,
@@ -319,9 +329,9 @@ export default function OnboardingPage() {
                 boxShadow: zipFocused
                   ? "inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 16px -4px rgba(255,255,255,0.12)"
                   : "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-                borderRadius: 14,
-                paddingLeft: 18,
-                paddingRight: 18,
+                borderRadius: 16,
+                paddingLeft: 16,
+                paddingRight: 16,
                 fontFamily: "var(--font-body)",
                 fontSize: 16,
                 fontWeight: 600,
@@ -393,6 +403,7 @@ export default function OnboardingPage() {
                 key={opt.value}
                 label={opt.label}
                 subtitle={opt.subtitle}
+                rings={opt.rings}
                 active={radius === opt.value}
                 onTap={() => setRadius(opt.value)}
               />
@@ -495,24 +506,31 @@ function UseLocationButton({
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
+        // Primary path on the row — beefier white-fill (0.14 vs 0.06)
+        // and a more decisive border (0.28 vs 0.10) so the button
+        // reads as the easiest action instead of an inline accessory.
+        // Press state brightens the fill further; the inset highlight
+        // + outer halo on press matches the "tap landed" language used
+        // by other primary buttons across the app.
         flexShrink: 0,
         height: 52,
         paddingLeft: 14,
         paddingRight: 14,
         backgroundColor: pressed
-          ? "rgba(255,255,255,0.10)"
-          : "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
-        borderRadius: 14,
+          ? "rgba(255,255,255,0.20)"
+          : "rgba(255,255,255,0.14)",
+        border: "1px solid rgba(255,255,255,0.28)",
+        boxShadow: pressed
+          ? "inset 0 1px 0 0 rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.30), 0 0 18px -4px rgba(255,255,255,0.20)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.16), 0 1px 2px rgba(0,0,0,0.3)",
+        borderRadius: 16,
         display: "flex",
         alignItems: "center",
         gap: 8,
         cursor: loading ? "default" : "pointer",
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
         opacity: loading ? 0.7 : 1,
       }}
     >
@@ -520,7 +538,7 @@ function UseLocationButton({
       <span
         style={{
           fontFamily: "var(--font-body)",
-          fontWeight: 500,
+          fontWeight: 600,
           fontSize: 13,
           color: "var(--ui-primary)",
           whiteSpace: "nowrap",
@@ -535,11 +553,24 @@ function UseLocationButton({
 interface RadiusOptionProps {
   label: string;
   subtitle: string;
+  rings: 1 | 2 | 3;
   active: boolean;
   onTap: () => void;
 }
 
-function RadiusOption({ label, subtitle, active, onTap }: RadiusOptionProps) {
+// Scan-button-style radius card: icon (concentric rings indicating
+// search radius), label, subtitle. Active state lifts to a brighter
+// fill + white outer halo so the selection is unambiguous at a
+// glance. Same vertical structure (icon → label → subtitle) and same
+// 6px gap as the dashboard's SCAN UPC / AI VISION buttons so the
+// tactile language carries forward.
+function RadiusOption({
+  label,
+  subtitle,
+  rings,
+  active,
+  onTap,
+}: RadiusOptionProps) {
   const [pressed, setPressed] = useState(false);
   return (
     <button
@@ -550,35 +581,38 @@ function RadiusOption({ label, subtitle, active, onTap }: RadiusOptionProps) {
       onPointerLeave={() => setPressed(false)}
       style={{
         width: "100%",
-        height: 72,
-        backgroundColor: active
-          ? "rgba(255,255,255,0.10)"
-          : "rgba(255,255,255,0.04)",
+        height: 92,
+        background: active
+          ? "linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%)"
+          : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
         border: active
-          ? "1px solid rgba(255,255,255,0.30)"
-          : "1px solid rgba(255,255,255,0.08)",
+          ? "1px solid rgba(255,255,255,0.32)"
+          : "1px solid rgba(255,255,255,0.10)",
         boxShadow: active
-          ? "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 0 16px -4px rgba(255,255,255,0.10)"
-          : "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-        borderRadius: 14,
+          ? "inset 0 1px 0 0 rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.10), 0 0 20px -4px rgba(255,255,255,0.20), 0 4px 16px -4px rgba(0,0,0,0.3)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 2px 4px rgba(0,0,0,0.2), 0 4px 12px -4px rgba(0,0,0,0.3)",
+        borderRadius: 16,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 4,
+        gap: 6,
         cursor: "pointer",
+        padding: 0,
         transform: pressed ? "scale(0.97)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      <RingsIcon rings={rings} active={active} />
       <span
         style={{
           fontFamily: "var(--font-body)",
           fontWeight: 700,
-          fontSize: 16,
+          fontSize: 15,
           color: active ? "var(--ui-primary)" : "var(--text-primary)",
           fontFeatureSettings: '"tnum"',
+          lineHeight: 1,
         }}
       >
         {label}
@@ -586,14 +620,44 @@ function RadiusOption({ label, subtitle, active, onTap }: RadiusOptionProps) {
       <span
         style={{
           fontFamily: "var(--font-body)",
-          fontWeight: 400,
+          fontWeight: 500,
           fontSize: 11,
-          color: "var(--text-muted)",
+          color: active ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.55)",
+          lineHeight: 1,
         }}
       >
         {subtitle}
       </span>
     </button>
+  );
+}
+
+// Concentric rings — center dot + 1/2/3 outward rings depending on
+// the option. The visual scales with the search radius: 5 mi gets
+// one tight ring, 50 mi gets three wide ones, so the icon reads as
+// "this is how wide your net is" before you even read the label.
+function RingsIcon({
+  rings,
+  active,
+}: {
+  rings: 1 | 2 | 3;
+  active: boolean;
+}) {
+  const stroke = active ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.55)";
+  return (
+    <svg
+      width={22}
+      height={22}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={stroke}
+      strokeWidth={1.5}
+    >
+      <circle cx={12} cy={12} r={1.5} fill={stroke} stroke="none" />
+      {rings >= 1 && <circle cx={12} cy={12} r={5} />}
+      {rings >= 2 && <circle cx={12} cy={12} r={8.5} opacity={0.7} />}
+      {rings >= 3 && <circle cx={12} cy={12} r={11} opacity={0.5} />}
+    </svg>
   );
 }
 
