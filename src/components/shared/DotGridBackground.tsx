@@ -249,9 +249,12 @@ export default function DotGridBackground({
     //
     // Stacking (first listed = topmost in CSS multi-bg):
     //   1. Radial vignette — undimmed center, ~40% black at edges
-    //   2. Horizontal 1px line every 28px @ 3% white
-    //   3. Vertical 1px line every 28px @ 3% white
+    //   2. Horizontal 1px line every 28px @ 1.75% white
+    //   3. Vertical 1px line every 28px @ 1.75% white
     //   4. Solid #120e18 page bg (via backgroundColor)
+    // Grid lines were 3% white — too visible on device. 1.75% reads as
+    // "felt more than seen" — the substrate registers without competing
+    // with the cards on top.
     return (
       <div
         aria-hidden="true"
@@ -263,8 +266,8 @@ export default function DotGridBackground({
           backgroundColor: "#120e18",
           backgroundImage: [
             "radial-gradient(ellipse 90% 70% at 50% 30%, transparent 0%, transparent 38%, rgba(0,0,0,0.40) 100%)",
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.030) 0, rgba(255,255,255,0.030) 1px, transparent 1px, transparent 28px)",
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.030) 0, rgba(255,255,255,0.030) 1px, transparent 1px, transparent 28px)",
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.0175) 0, rgba(255,255,255,0.0175) 1px, transparent 1px, transparent 28px)",
+            "repeating-linear-gradient(90deg, rgba(255,255,255,0.0175) 0, rgba(255,255,255,0.0175) 1px, transparent 1px, transparent 28px)",
           ].join(", "),
         }}
       />
