@@ -133,7 +133,7 @@ const TOOL_COLLAPSE_MS = 200;
 const NEARBY_DEALS: Deal[] = [
   {
     id: "d1",
-    title: "Vintage Pyrex casserole set, mint condition",
+    title: "vintage Pyrex casserole set, mint condition",
     price: 40,
     estimatedValue: 110,
     distance: "2.3 mi",
@@ -144,7 +144,7 @@ const NEARBY_DEALS: Deal[] = [
   },
   {
     id: "d2",
-    title: "Mid-century walnut nightstand",
+    title: "mid-century walnut nightstand",
     price: 75,
     estimatedValue: 220,
     distance: "4.1 mi",
@@ -155,7 +155,7 @@ const NEARBY_DEALS: Deal[] = [
   },
   {
     id: "d3",
-    title: "Lot of vintage cameras, untested",
+    title: "lot of vintage cameras, untested",
     price: 50,
     estimatedValue: 180,
     distance: "1.8 mi",
@@ -166,7 +166,7 @@ const NEARBY_DEALS: Deal[] = [
   },
   {
     id: "d4",
-    title: "Cast iron skillet, Griswold mark",
+    title: "cast iron skillet, Griswold mark",
     price: 30,
     estimatedValue: 95,
     distance: "3.6 mi",
@@ -177,7 +177,7 @@ const NEARBY_DEALS: Deal[] = [
   },
   {
     id: "d5",
-    title: "Set of 4 Eames-style dining chairs",
+    title: "set of 4 Eames-style dining chairs",
     price: 120,
     estimatedValue: 350,
     distance: "5.2 mi",
@@ -191,7 +191,7 @@ const NEARBY_DEALS: Deal[] = [
 const FREE_DEALS: Deal[] = [
   {
     id: "f1",
-    title: "Old leather camera bag, curbside",
+    title: "old leather camera bag, curbside",
     price: 0,
     estimatedValue: 35,
     distance: "1.2 mi",
@@ -202,7 +202,7 @@ const FREE_DEALS: Deal[] = [
   },
   {
     id: "f2",
-    title: "Wooden bookshelf, free to good home",
+    title: "wooden bookshelf, free to good home",
     price: 0,
     estimatedValue: 60,
     distance: "0.8 mi",
@@ -213,7 +213,7 @@ const FREE_DEALS: Deal[] = [
   },
   {
     id: "f3",
-    title: "Boxes of vintage National Geographic",
+    title: "boxes of vintage National Geographic",
     price: 0,
     estimatedValue: 40,
     distance: "3.4 mi",
@@ -224,7 +224,7 @@ const FREE_DEALS: Deal[] = [
   },
   {
     id: "f4",
-    title: "Brass lamp, needs rewiring",
+    title: "brass lamp, needs rewiring",
     price: 0,
     estimatedValue: 75,
     distance: "2.7 mi",
@@ -235,7 +235,7 @@ const FREE_DEALS: Deal[] = [
   },
   {
     id: "f5",
-    title: "Antique wooden picture frame",
+    title: "antique wooden picture frame",
     price: 0,
     estimatedValue: 50,
     distance: "4.0 mi",
@@ -924,23 +924,10 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Wins ticker — anonymized rotating signal that other resellers
-            are using the app. Sits between the scan zone and the first
-            carousel: just below the user's primary action, just above the
-            content they're about to scan. Section-break role, so it gets
-            symmetric ~16-18px spacing above and below per the spec.
-            Static rotation at launch; backed by a Supabase view later. */}
-        <div
-          style={{
-            paddingLeft: 18,
-            paddingRight: 18,
-            marginTop: 18,
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "160ms",
-          }}
-        >
-          <WinsTicker />
-        </div>
+        {/* WinsTicker is no longer a standalone section — it's nested
+            inside the first carousel's header below as a `liveSignal`,
+            so the ticker reads as that section's activity feed rather
+            than as an orphaned line floating between sections. */}
 
         {/* 6 + 7. Carousels — order swaps for first-time users.
             New user: Free & Clearance first (lowest-barrier entry point —
@@ -968,6 +955,7 @@ export default function DashboardPage() {
                 label="FREE & CLEARANCE"
                 deals={FREE_DEALS}
                 onDealTap={handleDealTap}
+                liveSignal={<WinsTicker />}
               />
             </div>
             <div
@@ -1001,6 +989,7 @@ export default function DashboardPage() {
                 label="DEALS NEAR YOU"
                 deals={NEARBY_DEALS}
                 onDealTap={handleDealTap}
+                liveSignal={<WinsTicker />}
               />
             </div>
             <div

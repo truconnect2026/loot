@@ -253,13 +253,20 @@ export default function LoginPage() {
             paddingRight: 24,
           }}
         >
-          {/* ── Logo ── */}
+          {/* ── Logo ── 64 → 44 to pull the wordmark closer to the
+              auth card. The page used to feel like wordmark / dead
+              space / card / dead space; this tightens the
+              composition so the Saturn icon, wordmark, card, and
+              tagline read as one cohesive unit. The viewport-level
+              minHeight + justifyContent:center still centers the
+              whole stack vertically — it just centers a more
+              compact stack now. */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 10,
-              marginBottom: 64,
+              marginBottom: 44,
             }}
           >
             <div
@@ -423,14 +430,14 @@ export default function LoginPage() {
           </div>
 
           {/* ── Social proof ── quiet trust signal, not a sales pitch.
-              Sits between the card (where the user makes the sign-in
-              decision) and the tagline (which anchors the product
-              description). Voice rule applies: lowercase, no terminal
-              period. The number is a placeholder until real metrics
-              are wired up — keep the copy editable in one place. */}
+              Tightened from 24 → 14 so the line sits snugly under the
+              card instead of floating below it. Voice rule applies:
+              lowercase, no terminal period. The number is a
+              placeholder until real metrics are wired up — keep the
+              copy editable in one place. */}
           <div
             style={{
-              marginTop: 24,
+              marginTop: 14,
               textAlign: "center",
               fontFamily: "var(--font-body)",
               fontSize: 11,
@@ -448,7 +455,7 @@ export default function LoginPage() {
               mid-line (see globals.css for the full rule). */}
           <div
             style={{
-              marginTop: 12,
+              marginTop: 10,
               textAlign: "center",
               fontFamily: "var(--font-body)",
               fontSize: 10,

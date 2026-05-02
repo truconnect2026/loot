@@ -25,32 +25,38 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
   return (
     <>
       <style>{`
-        /* Mask-composite gradient border on the demo card — bright mint
-           top-left fading to dim mint bottom-right. Same trick as
-           ProfileCard's gradient edge. The card's own borderRadius is
-           inherited so the gradient clips to the same rounded corners. */
+        /* Demo card — dashed white border + diagonal DEMO watermark so
+           the card is unmistakably a preview, not a real scan result.
+           Border style switched from solid mint gradient to 2px dashed
+           white at 15% alpha; the dashed pattern reads as "this is a
+           placeholder" the way drafts and templates do. Watermark
+           lives in ::after, rotated -15° and clipped to the card via
+           overflow:hidden on the parent — combination of dashed border
+           + SAMPLE SCAN pill + DEMO watermark makes accidental
+           confusion with real scan history practically impossible. */
         .loot-empty-hero-demo {
           position: relative;
+          overflow: hidden;
         }
-        .loot-empty-hero-demo::before {
-          content: "";
+        .loot-empty-hero-demo::after {
+          content: "DEMO";
           position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(
-            135deg,
-            rgba(92,224,184,0.45) 0%,
-            rgba(92,224,184,0.18) 35%,
-            rgba(92,224,184,0.06) 65%,
-            rgba(92,224,184,0.20) 100%
-          );
-          -webkit-mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) rotate(-15deg);
+          font-family: var(--font-label);
+          font-weight: 700;
+          font-size: 88px;
+          letter-spacing: 0.18em;
+          color: rgba(255,255,255,0.04);
           pointer-events: none;
+          white-space: nowrap;
+          z-index: 0;
+        }
+        /* All real content inside the card sits above the watermark. */
+        .loot-empty-hero-demo > * {
+          position: relative;
+          z-index: 1;
         }
         /* Profit chip — slow shimmer sweep. The chip's solid mint fill
            stays put; a transparent → white-highlight → transparent
@@ -75,13 +81,15 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
         padding: 16,
       }}
     >
-      {/* ─── Demo verdict card ─── This is the user's first taste of a
-          scan result, so it gets celebratory treatment unique to this
-          slot: mint gradient border (mask-composite), faint outer
-          mint glow, and a barely-visible horizontal scan-line texture
-          at 5% alpha that says "scanner output" without competing
-          with the type. The base sits on solid #120e18 (page bg) so
-          the mint edge can't pick up ambient color from the wrapper. */}
+      {/* ─── Demo verdict card ─── First taste of a scan result.
+          Three signals make the demo nature unmistakable:
+            1. 2px dashed white border (instead of solid) — the
+               classic visual language for "draft/template/placeholder."
+            2. SAMPLE SCAN pill in the top-left corner.
+            3. Diagonal DEMO watermark across the card center at 4%.
+          The faint mint atmospherics (radial wash + outer glow)
+          stay so the card still reads as a money-related preview
+          rather than a generic stub. */}
       <div
         className="loot-empty-hero-demo"
         style={{
@@ -92,9 +100,12 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
           backgroundImage:
             "repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,0.05) 3px, rgba(255,255,255,0.05) 4px), radial-gradient(ellipse 100% 80% at 30% 0%, rgba(92,224,184,0.06), transparent 60%)",
           backgroundColor: "#120e18",
+          // 2px dashed white at 15% alpha — explicit "this is a
+          // template" marker. Replaces the solid mint gradient border.
+          border: "2px dashed rgba(255,255,255,0.15)",
           boxShadow:
             // Inset top sheen + recessed-pit shadow + outer mint glow.
-            "inset 0 1px 0 0 rgba(255,255,255,0.06), inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 24px -4px rgba(92,224,184,0.22), 0 4px 16px -4px rgba(0,0,0,0.4)",
+            "inset 0 1px 0 0 rgba(255,255,255,0.06), inset 0 1px 2px 0 rgba(0,0,0,0.4), 0 0 24px -4px rgba(92,224,184,0.18), 0 4px 16px -4px rgba(0,0,0,0.4)",
           borderRadius: 14,
           padding: 14,
         }}

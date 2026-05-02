@@ -43,34 +43,40 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        height: 56,
-        // Background plane — recessed into the page so the eye reads
-        // scan-buttons → cards → tools as a clear z-axis.
+        // Tools are utilities, not money-making opportunities — they
+        // should clearly sit below deals in the visual hierarchy.
+        // Stripped the border, inset highlight, and rest-state fill
+        // so the row reads as a list entry rather than a deal-tier
+        // card. 60px height keeps the touch target generous; press
+        // state is the only background shift, so taps still feel
+        // acknowledged. Left-aligned name (was centered) reinforces
+        // the list-row feel.
+        height: 60,
         backgroundColor: pressed
           ? "rgba(255,255,255,0.04)"
-          : "rgba(255,255,255,0.015)",
-        border: "1px solid rgba(255,255,255,0.03)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.02)",
-        borderRadius: 12,
+          : "transparent",
+        border: "none",
+        boxShadow: "none",
+        borderRadius: 10,
         display: "flex",
         alignItems: "center",
+        gap: 12,
         paddingLeft: 12,
         paddingRight: 12,
         cursor: "pointer",
         userSelect: "none",
-        transform: pressed ? "scale(0.98)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div style={{ flexShrink: 0, display: "flex" }}>{icon}</div>
       <div
         style={{
           flex: 1,
-          textAlign: "center",
+          textAlign: "left",
           fontFamily: "var(--font-body)",
-          fontWeight: 600,
-          fontSize: 12,
+          fontWeight: 500,
+          fontSize: 13,
           color: "var(--text-primary)",
         }}
       >

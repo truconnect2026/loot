@@ -35,13 +35,17 @@ function BarcodeIcon() {
 }
 
 function CameraIcon() {
+  // Stroke pulled off camel onto soft mint — same hue family as
+  // SCAN UPC (mint = money / scan-leads-to-money), one notch dimmer
+  // so AI VISION reads as the secondary path. Keeps the color
+  // system clean: no warm amber introduced anywhere else in the UI.
   return (
     <svg
       width={28}
       height={28}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#D4A574"
+      stroke="rgba(92,224,184,0.70)"
       strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -82,18 +86,41 @@ function HeroButton({
   const [pressed, setPressed] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const accent = variant === "mint" ? "92,224,184" : "212,165,116";
-  const accentColor = variant === "mint" ? "#5CE0B8" : "#D4A574";
-  // Mint (SCAN UPC, primary) sits a touch brighter than camel (AI VISION).
-  // The brighter top stop is what makes the scan zone the foreground plane.
-  const topAlpha = variant === "mint" ? 0.15 : 0.12;
+  // Both variants now use mint (the money color) — primary vs
+  // secondary is encoded as glow intensity, not hue. This keeps the
+  // color system clean: nothing else in the UI introduces amber, so
+  // having amber on AI VISION made it look like a stray accent
+  // rather than a deliberate variant.
+  const accent = "92,224,184";
+  const accentColor = variant === "mint" ? "#5CE0B8" : "rgba(92,224,184,0.72)";
+  // Primary glows brighter; secondary is one notch dimmer.
+  const topAlpha = variant === "mint" ? 0.18 : 0.10;
+  const borderAlpha = variant === "mint" ? 0.28 : 0.16;
+  const haloAlpha = variant === "mint" ? 0.18 : 0.10;
+  // Ambient under-glow — stacked box-shadows mimic a radial
+  // gradient's soft falloff. Larger spreads (24-48px) and higher
+  // alphas than the previous tight 20px halo so the buttons
+  // unambiguously read as "lit from below" rather than as
+  // rendering artifacts. Primary doubles the alpha of secondary on
+  // every layer.
+  const glowPrimary = variant === "mint";
+  const glowMid = glowPrimary ? 0.40 : 0.20;
+  const glowFar = glowPrimary ? 0.20 : 0.10;
 
   // Foreground-plane shadow — the scan buttons should feel like they're
-  // floating above the rest of the dashboard.
-  const restShadow = `inset 0 1px 0 0 rgba(${accent},0.15), 0 2px 4px rgba(0,0,0,0.2), 0 8px 20px -4px rgba(0,0,0,0.3)`;
-  const hoverShadow = `0 0 0 1px rgba(${accent},0.15), 0 0 20px -4px rgba(${accent},0.25), 0 8px 20px -4px rgba(0,0,0,0.3)`;
+  // floating above the rest of the dashboard, lit from below.
+  const restShadow =
+    `inset 0 1px 0 0 rgba(${accent},0.18),` +
+    ` 0 2px 4px rgba(0,0,0,0.20),` +
+    ` 0 12px 28px -6px rgba(${accent},${glowMid}),` +
+    ` 0 24px 48px -12px rgba(${accent},${glowFar})`;
+  const hoverShadow =
+    `inset 0 1px 0 0 rgba(${accent},0.22),` +
+    ` 0 0 0 1px rgba(${accent},${glowPrimary ? 0.22 : 0.14}),` +
+    ` 0 12px 32px -4px rgba(${accent},${glowMid + 0.06}),` +
+    ` 0 24px 48px -10px rgba(${accent},${glowFar + 0.04})`;
 
-  // Counter is dim when zero, accent-tinted at 0.5 alpha once it's been used.
+  // Counter is dim when zero, mint-tinted at 0.5 alpha once it's been used.
   const counterColor =
     todayScans > 0 ? `rgba(${accent},0.5)` : "rgba(255,255,255,0.25)";
 
@@ -119,8 +146,8 @@ function HeroButton({
         // of their own row instead of cramming up against the label.
         height: 88,
         borderRadius: 16,
-        background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.05) 100%)`,
-        border: `1px solid rgba(${accent},0.18)`,
+        background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.04) 100%)`,
+        border: `1px solid rgba(${accent},${borderAlpha})`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
         display: "flex",
@@ -182,7 +209,7 @@ function HeroButton({
           left: "50%",
           marginLeft: -24,
           borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(${accent},0.12), transparent 70%)`,
+          background: `radial-gradient(circle, rgba(${accent},${haloAlpha}), transparent 70%)`,
           pointerEvents: "none",
         }}
       />

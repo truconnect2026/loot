@@ -191,9 +191,9 @@ export default function ContextCard({
   if (!userZip) {
     message = {
       icon: <MapPinIcon color="#D4A574" />,
-      text: "Set your zip code to unlock deals, clearance, and penny drops in your area.",
+      text: "set your zip code to unlock deals, clearance, and penny drops in your area",
       cta: {
-        label: "Set zip code →",
+        label: "set zip code →",
         onTap: () => router.push("/account"),
       },
     };
@@ -202,7 +202,7 @@ export default function ContextCard({
       icon: <BoltIcon color="#5CE0B8" />,
       text: `${hotDealsCount} underpriced ${plural(hotDealsCount, "item", "items")} near you right now`,
       cta: {
-        label: "View deals →",
+        label: "view deals →",
         onTap: scrollToDeals,
       },
       accentBorder: true,
@@ -212,7 +212,7 @@ export default function ContextCard({
       icon: <AlertTriangleIcon color="#D4A574" />,
       text: `${unsoldOldItems} ${plural(unsoldOldItems, "item", "items")} unsold for 14+ days — consider repricing`,
       cta: {
-        label: "View inventory →",
+        label: "view inventory →",
         onTap: () => router.push("/app/haul"),
       },
     };
@@ -226,7 +226,7 @@ export default function ContextCard({
       icon: <MapIcon color="#5CE0B8" />,
       text: "Saturday morning — prime yard sale time in your area",
       cta: {
-        label: "Open yard sale map →",
+        label: "open yard sale map →",
         onTap: () => {
           // Yard-sale map route not yet wired.
           console.log("yard sale map");
@@ -236,7 +236,7 @@ export default function ContextCard({
   } else if (todayScans === 0 && hour >= 8) {
     message = {
       icon: <CoinMark size={20} color="#5A4E70" />,
-      text: "No scans today yet. Your next flip is out there.",
+      text: "no scans today yet — your next flip is out there",
     };
   }
 

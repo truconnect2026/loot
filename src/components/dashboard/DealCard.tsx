@@ -26,13 +26,15 @@ export function sourceTag(raw: string): string {
   return raw;
 }
 
-// Map a raw source string to a "Open on …" CTA label.
+// Map a raw source string to an "open on …" CTA label. Lowercase
+// per the voice rule; platform names are proper nouns and stay
+// capitalized.
 export function sourceCtaLabel(raw: string): string {
   const s = raw.toLowerCase();
-  if (s.includes("marketplace") || s.includes("fb")) return "Open on Facebook";
-  if (s.includes("craigslist")) return "Open on Craigslist";
-  if (s.includes("nextdoor")) return "Open on Nextdoor";
-  return "Open listing";
+  if (s.includes("marketplace") || s.includes("fb")) return "open on Facebook";
+  if (s.includes("craigslist")) return "open on Craigslist";
+  if (s.includes("nextdoor")) return "open on Nextdoor";
+  return "open listing";
 }
 
 export function dealProfit(deal: Deal): number {

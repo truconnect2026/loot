@@ -145,6 +145,12 @@ function Card({
   );
 }
 
+// Muted-plum count color — matches `--text-muted` semantically. Used
+// for zero-state counts so "0 sales near you" doesn't read as a
+// positive signal in mint. Mint stays reserved for money; an empty
+// count is a neutral fact, not a money outcome.
+const MUTED_COUNT_HEX = "#6B5F80";
+
 export default function SourcingCards({
   pennyItemCount,
   yardSaleTodayCount,
@@ -159,7 +165,10 @@ export default function SourcingCards({
         title="Penny Drops"
         subtitle="updated Tuesdays"
         count={`${pennyItemCount} items this week`}
-        countHex="#D4A574"
+        // Camel for non-zero (positive count); muted plum at zero so
+        // an empty week reads as "nothing to act on yet" rather than
+        // as a styled callout.
+        countHex={pennyItemCount > 0 ? "#D4A574" : MUTED_COUNT_HEX}
         onTap={onPennyTap}
       />
       <Card
@@ -168,7 +177,10 @@ export default function SourcingCards({
         title="Yard Sales"
         subtitle="updates Saturdays"
         count={`${yardSaleTodayCount} sales near you`}
-        countHex="#5CE0B8"
+        // Mint at non-zero (real money opportunity nearby); muted plum
+        // at zero so "0 sales near you" doesn't falsely read positive
+        // in the money color. Mint = money only, per the role system.
+        countHex={yardSaleTodayCount > 0 ? "#5CE0B8" : MUTED_COUNT_HEX}
         onTap={onYardSaleTap}
       />
     </div>

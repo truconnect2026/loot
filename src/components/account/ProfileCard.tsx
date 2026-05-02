@@ -395,26 +395,32 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO members benchmark — quiet reassurance for the paying user
-            that the price tracks something real. Static at launch; backed
-            by a Supabase aggregate (avg monthly realized profit across
-            active PRO accounts) once that view exists. Kept lowercase
-            and muted so it reads as a footnote, not a sales pitch. */}
+        {/* PRO members benchmark — promoted from a footnote to the
+            second-most-prominent line in the plan card after the price.
+            This is the most persuasive copy in the app (it's what a
+            reseller is paying for) and it should read as a confident
+            stat, not a caption. Body now at 15px / 80% white; the
+            $1,200/mo span is mint at 800 weight so the dollar number
+            is unambiguously the hero of the line. Static at launch;
+            backed by a Supabase aggregate (avg monthly realized profit
+            across active PRO accounts) once that view exists. */}
         {isPro && (
           <div
             style={{
-              marginTop: 10,
+              marginTop: 12,
               fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "var(--text-muted)",
-              lineHeight: 1.4,
+              fontSize: 15,
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.80)",
+              lineHeight: 1.35,
             }}
           >
             PRO members average{" "}
             <span
               style={{
                 color: "var(--money)",
-                fontWeight: 700,
+                fontWeight: 800,
+                fontSize: 16,
                 fontFeatureSettings: '"tnum"',
               }}
             >
@@ -501,17 +507,30 @@ function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
       >
         Manage plan
       </span>
-      <span
+      {/* External-link cue — inline SVG instead of the Unicode ↗
+          glyph. iOS Safari renders U+2197 as a colored emoji
+          (looks like an embossed blue square), which read as a
+          rogue UI element rather than a text glyph. SVG with
+          currentColor matches the button text exactly: stroke
+          white, no fill, no background shape. */}
+      <svg
         aria-hidden="true"
+        width={14}
+        height={14}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         style={{
-          fontFamily: "var(--font-body)",
-          fontSize: 13,
           color: "var(--ui-primary)",
-          lineHeight: 1,
+          flexShrink: 0,
         }}
       >
-        ↗
-      </span>
+        <line x1={7} y1={17} x2={17} y2={7} />
+        <polyline points="7 7 17 7 17 17" />
+      </svg>
     </button>
   );
 }

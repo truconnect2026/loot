@@ -7,17 +7,29 @@ interface DealCarouselProps {
   label: string;
   deals: Deal[];
   onDealTap: (deal: Deal) => void;
+  /** Optional live-activity element (e.g. WinsTicker) rendered
+   * inline below the section label. Used for the first carousel
+   * on the dashboard so the ticker reads as that section's
+   * activity feed rather than as an orphaned line above it. */
+  liveSignal?: React.ReactNode;
 }
 
+// Fade sits flush against the page bg (#120e18) so the carousel
+// edge dissolves rather than clipping. Strong end goes fully opaque
+// — at 0.95 the leftover 5% reads as a hairline rather than a fade,
+// especially against the dashboard's grid pattern. The mid-stop at
+// 50% with slight alpha softens the curve so the fade feels
+// continuous rather than linear.
 const FADE_BG_LEFT =
-  "linear-gradient(to right, rgba(18,14,24,0.95) 0%, transparent 100%)";
+  "linear-gradient(to right, rgba(18,14,24,1) 0%, rgba(18,14,24,0.6) 50%, transparent 100%)";
 const FADE_BG_RIGHT =
-  "linear-gradient(to left, rgba(18,14,24,0.95) 0%, transparent 100%)";
+  "linear-gradient(to left, rgba(18,14,24,1) 0%, rgba(18,14,24,0.6) 50%, transparent 100%)";
 
 export default function DealCarousel({
   label,
   deals,
   onDealTap,
+  liveSignal,
 }: DealCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
@@ -53,11 +65,28 @@ export default function DealCarousel({
           fontSize: 9,
           color: "#3D2E55",
           letterSpacing: "0.10em",
-          marginBottom: 12,
+          marginBottom: liveSignal ? 6 : 12,
         }}
       >
         {label}
       </div>
+
+      {/* Live signal — rendered inside the section header so it
+          reads as this section's activity feed, not as a floating
+          line between sections. Tightened the label's bottom margin
+          when present (6px → label → 6px → ticker → 10px → cards)
+          so the trio reads as one nested header. */}
+      {liveSignal && (
+        <div
+          style={{
+            paddingLeft: 18,
+            paddingRight: 18,
+            marginBottom: 10,
+          }}
+        >
+          {liveSignal}
+        </div>
+      )}
 
       <div style={{ position: "relative" }}>
         <div
@@ -86,7 +115,7 @@ export default function DealCarousel({
             left: 0,
             top: 0,
             bottom: 0,
-            width: 40,
+            width: 48,
             background: FADE_BG_LEFT,
             pointerEvents: "none",
             zIndex: 2,
@@ -103,7 +132,7 @@ export default function DealCarousel({
             right: 0,
             top: 0,
             bottom: 0,
-            width: 40,
+            width: 48,
             background: FADE_BG_RIGHT,
             pointerEvents: "none",
             zIndex: 2,
