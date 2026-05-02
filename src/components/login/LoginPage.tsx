@@ -151,12 +151,11 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        // Auto-width so "Continue" + arrow can sit inline. Padding sets
-        // the visual height; flexShrink stops the input from squeezing it.
+        // Square 54×52 pill — icon-only. flexShrink stops the input from
+        // squeezing it.
+        width: 54,
         height: 52,
         flexShrink: 0,
-        paddingLeft: 16,
-        paddingRight: 14,
         backgroundColor: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.10)",
         boxShadow: pressed ? pressShadow : restShadow,
@@ -164,7 +163,6 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
         cursor: "pointer",
         position: "relative",
         transform: pressed ? "scale(0.97)" : "scale(1)",
@@ -172,17 +170,6 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <span
-        style={{
-          fontFamily: "var(--font-body)",
-          fontWeight: 600,
-          fontSize: 14,
-          color: "var(--ui-primary)",
-          letterSpacing: "0.01em",
-        }}
-      >
-        Continue
-      </span>
       <ArrowIcon />
     </button>
   );
