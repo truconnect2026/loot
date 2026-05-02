@@ -9,13 +9,16 @@ interface ToolTileProps {
 }
 
 function ChevronRight() {
+  // Chevron is the tile's primary tap-affordance cue — bumped to
+  // 32% white from the previous near-black plum so users can
+  // actually see the "tappable" signal at a glance.
   return (
     <svg
       width={14}
       height={14}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#2A2240"
+      stroke="rgba(255,255,255,0.32)"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -43,21 +46,23 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        // Tools are utilities, not money-making opportunities — they
-        // should clearly sit below deals in the visual hierarchy.
-        // Stripped the border, inset highlight, and rest-state fill
-        // so the row reads as a list entry rather than a deal-tier
-        // card. 60px height keeps the touch target generous; press
-        // state is the only background shift, so taps still feel
-        // acknowledged. Left-aligned name (was centered) reinforces
-        // the list-row feel.
-        height: 60,
-        backgroundColor: pressed
-          ? "rgba(255,255,255,0.04)"
-          : "transparent",
-        border: "none",
-        boxShadow: "none",
-        borderRadius: 10,
+        // Tools are utilities — clearly below deals in the visual
+        // hierarchy (no glows, no gradients, no elevation), but they
+        // need their own contrast against the opaque page bg now
+        // that the grid no longer bleeds through to provide it.
+        // 13% white fill, 15% white 1px border, and a 5% white
+        // top-edge inset highlight give each tile defined edges
+        // and a hint of dimension without crossing into card-tier
+        // treatment. Press state nudges the fill to 17% so taps
+        // still feel acknowledged.
+        height: 58,
+        backgroundColor: "#120e18",
+        backgroundImage: pressed
+          ? "linear-gradient(rgba(255,255,255,0.17), rgba(255,255,255,0.17))"
+          : "linear-gradient(rgba(255,255,255,0.13), rgba(255,255,255,0.13))",
+        border: "1px solid rgba(255,255,255,0.15)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
+        borderRadius: 8,
         display: "flex",
         alignItems: "center",
         gap: 12,
@@ -66,7 +71,7 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
         cursor: "pointer",
         userSelect: "none",
         transition:
-          "background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "background-image 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div style={{ flexShrink: 0, display: "flex" }}>{icon}</div>

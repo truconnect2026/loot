@@ -255,7 +255,13 @@ export default function ContextCard({
     >
       <div
         style={{
-          backgroundColor: "rgba(255,255,255,0.03)",
+          // Opaque page-bg base + 3% white tint on top so the
+          // dashboard grid can't bleed through. backdropFilter is
+          // kept for parity with the previous treatment but the
+          // opaque base means it's largely cosmetic now.
+          backgroundColor: "#120e18",
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
           border: "1px solid rgba(255,255,255,0.06)",

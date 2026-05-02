@@ -151,15 +151,19 @@ function SendButton({ onTap, disabled }: SendButtonProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        // Square 54×52 pill — icon-only. flexShrink stops the input from
-        // squeezing it.
+        // 54×52 right cap of the email input row — icon-only. The
+        // outer (right) corner radius matches the email input's
+        // outer (left) corner radius so the joined pair reads as
+        // one unified input pill, not as a flat box bolted onto a
+        // rounded input. flexShrink stops the input from squeezing
+        // it. Inner edge stays sharp (0) since it abuts the input.
         width: 54,
         height: 52,
         flexShrink: 0,
         backgroundColor: "rgba(255,255,255,0.06)",
         border: "1px solid rgba(255,255,255,0.10)",
         boxShadow: pressed ? pressShadow : restShadow,
-        borderRadius: "0 16px 16px 0",
+        borderRadius: "0 20px 20px 0",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -245,12 +249,20 @@ export default function LoginPage() {
           zIndex: 1,
         }}
       >
+        {/* 36px translateY shifts the whole composition (logo, auth
+            card, social proof, tagline, install hint) below true
+            center so the cluster's vertical balance feels right
+            against the deep bottom space. Using transform instead of
+            margin/padding so the centering math doesn't get torqued
+            on different viewport heights — the visual offset is
+            constant across iPhone SE through iPad. */}
         <div
           style={{
             width: "100%",
             maxWidth: 340,
             paddingLeft: 24,
             paddingRight: 24,
+            transform: "translateY(36px)",
           }}
         >
           {/* ── Logo ── 64 → 44 to pull the wordmark closer to the
@@ -413,7 +425,7 @@ export default function LoginPage() {
                     boxShadow: emailFocused
                       ? inputFocusShadow
                       : inputBaseShadow,
-                    borderRadius: "16px 0 0 16px",
+                    borderRadius: "20px 0 0 20px",
                     paddingLeft: 16,
                     paddingRight: 16,
                     fontFamily: "var(--font-body)",
@@ -430,18 +442,19 @@ export default function LoginPage() {
           </div>
 
           {/* ── Social proof ── quiet trust signal, not a sales pitch.
-              Tightened from 24 → 14 so the line sits snugly under the
-              card instead of floating below it. Voice rule applies:
-              lowercase, no terminal period. The number is a
-              placeholder until real metrics are wired up — keep the
-              copy editable in one place. */}
+              Hierarchy flipped: dropped from 30 → 22% white so the
+              tagline below outranks it visually. Social proof is
+              secondary — it reinforces trust; the tagline explains
+              the product. Voice rule applies: lowercase, no terminal
+              period. The number is a placeholder until real metrics
+              are wired up — keep the copy editable in one place. */}
           <div
             style={{
               marginTop: 14,
               textAlign: "center",
               fontFamily: "var(--font-body)",
               fontSize: 11,
-              color: "rgba(255, 255, 255, 0.30)",
+              color: "rgba(255, 255, 255, 0.22)",
               letterSpacing: "0.04em",
               animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
               animationDelay: "600ms",
@@ -451,15 +464,19 @@ export default function LoginPage() {
           </div>
 
           {/* ── Tagline ── concrete three-beat product description.
-              Voice rule: all lowercase, no terminal period, commas allowed
-              mid-line (see globals.css for the full rule). */}
+              Promoted from 20 → 38% white so it reads more clearly
+              than the social proof above — the tagline does the work
+              of explaining the product, social proof is secondary
+              reinforcement. Voice rule: all lowercase, no terminal
+              period, commas allowed mid-line (see globals.css for
+              the full rule). */}
           <div
             style={{
               marginTop: 10,
               textAlign: "center",
               fontFamily: "var(--font-body)",
               fontSize: 10,
-              color: "rgba(255, 255, 255, 0.20)",
+              color: "rgba(255, 255, 255, 0.38)",
               letterSpacing: "0.10em",
               animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
               animationDelay: "700ms",
@@ -467,74 +484,70 @@ export default function LoginPage() {
           >
             scan thrift finds, check online prices, flip for profit
           </div>
-        </div>
-      </div>
 
-      {/* Home-screen hint — pinned bottom pill. Reads as part of the
-          UI chrome (a system action-bar hint, not a marketing banner)
-          rather than as a stray sentence below the tagline. The
-          PwaInstallBar above is the active prompt with an Install
-          button on platforms that can install; this pill is the quiet
-          always-on reminder for everyone else. Centered, ~36px tall,
-          glass surface several notches lighter than the auth card. */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-          zIndex: 50,
-          animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-          animationDelay: "780ms",
-        }}
-      >
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            height: 36,
-            paddingLeft: 14,
-            paddingRight: 14,
-            backgroundColor: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 18,
-            backdropFilter: "blur(12px) saturate(140%)",
-            WebkitBackdropFilter: "blur(12px) saturate(140%)",
-          }}
-        >
-          {/* Phone icon with downward arrow — same shape as the
-              PwaInstallBar's primary phone glyph at smaller scale. */}
-          <svg
-            width={14}
-            height={14}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="rgba(255,255,255,0.40)"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x={5} y={2} width={14} height={20} rx={2.5} />
-            <path d="M12 8v6" />
-            <polyline points="9 11 12 14 15 11" />
-          </svg>
-          <span
+          {/* Home-screen install hint — moved out of fixed-position
+              and into the cluster's bottom edge so the gap to the
+              tagline is constant across viewports (was a "chasm" on
+              tall viewports with the previous fixed positioning).
+              Centered via the parent's alignItems on the outer flex
+              container — but this row is centered on its own to be
+              safe across any container alignment. 14px gap above
+              keeps the bottom group (social proof → tagline → hint)
+              reading as one tight cluster. */}
+          <div
             style={{
-              fontFamily: "var(--font-body)",
-              fontWeight: 500,
-              fontSize: 12,
-              color: "rgba(255,255,255,0.50)",
-              letterSpacing: "0.01em",
-              whiteSpace: "nowrap",
+              marginTop: 14,
+              display: "flex",
+              justifyContent: "center",
+              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              animationDelay: "780ms",
             }}
           >
-            add to home screen
-          </span>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                height: 36,
+                paddingLeft: 14,
+                paddingRight: 14,
+                backgroundColor: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 18,
+                backdropFilter: "blur(12px) saturate(140%)",
+                WebkitBackdropFilter: "blur(12px) saturate(140%)",
+              }}
+            >
+              {/* Phone icon with downward arrow — same shape as the
+                  PwaInstallBar's primary phone glyph at smaller scale. */}
+              <svg
+                width={14}
+                height={14}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.40)"
+                strokeWidth={1.75}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x={5} y={2} width={14} height={20} rx={2.5} />
+                <path d="M12 8v6" />
+                <polyline points="9 11 12 14 15 11" />
+              </svg>
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 500,
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.50)",
+                  letterSpacing: "0.01em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                add to home screen
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

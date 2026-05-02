@@ -69,8 +69,10 @@ function Card({
 
   // Warm accent tint per variant — the whole card glows in its accent so
   // these read as "live sourcing intel," distinct from the cold tool tiles.
+  // Tint sits on top of an opaque page-bg base so the dashboard's grid
+  // pattern can never bleed through the card surface.
   const accentRgb = variant === "mint" ? "92,224,184" : "212,165,116";
-  const background = `linear-gradient(180deg, rgba(${accentRgb},0.07) 0%, rgba(255,255,255,0.01) 100%)`;
+  const backgroundImage = `linear-gradient(180deg, rgba(${accentRgb},0.07) 0%, rgba(255,255,255,0.01) 100%)`;
   const border = `1px solid rgba(${accentRgb},0.10)`;
   const restShadow = `inset 0 1px 0 0 rgba(${accentRgb},0.08), 0 2px 8px rgba(0,0,0,0.15)`;
 
@@ -91,7 +93,13 @@ function Card({
       style={{
         flex: 1,
         height: 100,
-        background,
+        // Opaque page-bg base (slightly brighter on press) + accent
+        // tint gradient on top. backgroundImage paints over
+        // backgroundColor, so the grid pattern below the card can't
+        // show through. Press state nudges the base toward white
+        // instead of swapping in a translucent overlay.
+        backgroundColor: pressed ? "#1A1422" : "#120e18",
+        backgroundImage,
         border,
         borderRadius: 14,
         boxShadow: restShadow,
@@ -103,7 +111,6 @@ function Card({
         flexDirection: "column",
         gap: 4,
         transform: pressed ? "scale(0.98)" : "scale(1)",
-        backgroundColor: pressed ? "rgba(255,255,255,0.04)" : undefined,
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}

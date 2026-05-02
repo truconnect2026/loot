@@ -72,8 +72,12 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
       style={{
         // Outer wrapper matches HeroProfit's glass treatment so the slot
         // doesn't shift dimensions when the swap happens after first scan.
-        background:
-          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%), rgba(255,255,255,0.03)",
+        // Opaque page-bg base + the original translucent gradient on
+        // top so the dashboard's grid pattern can never bleed through
+        // the card surface.
+        backgroundColor: "#120e18",
+        backgroundImage:
+          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 20,
         boxShadow:

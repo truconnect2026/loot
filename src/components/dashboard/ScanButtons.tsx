@@ -145,12 +145,16 @@ function HeroButton({
         // of their own row instead of cramming up against the label.
         height: 88,
         borderRadius: 16,
-        // Flat 15% white fill — chunky, confident, neutral. Pushed up
-        // from 11 → 15 so the buttons read as physical surfaces you
-        // want to press, not translucent overlays. Mint identity
-        // moved entirely into the glow stack below (radial halo, bottom
-        // shadow, pulse). Variant distinction = glow intensity, not bg hue.
-        background: "rgba(255,255,255,0.15)",
+        // Opaque #120e18 base + 15% white tint stacked on top, so the
+        // grid pattern from the dashboard background never bleeds
+        // through the button. backgroundImage paints over
+        // backgroundColor; the result is a solid surface that reads
+        // as physical, not as a translucent hole. Mint identity lives
+        // entirely in the glow stack below (radial halo, bottom
+        // shadow, pulse) — bg stays neutral white-on-dark.
+        backgroundColor: "#120e18",
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))",
         border: `1px solid rgba(${accent},${borderAlpha})`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",

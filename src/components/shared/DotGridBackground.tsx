@@ -103,9 +103,30 @@ export default function DotGridBackground({
     const viewW = () => window.innerWidth;
     const viewH = () => window.innerHeight;
 
+    // Minimum spacing between particles so two dots can never sit close
+    // enough to read as a single blob. Enforced at spawn time via
+    // rejection sampling, and continuously during drift via soft
+    // repulsion in the draw loop. 40px is far enough that even the
+    // largest particles (3.5px radius = 7px diameter) feel discrete.
+    const MIN_SPACING = 40;
+    const MIN_SPACING_SQ = MIN_SPACING * MIN_SPACING;
+
+    type Particle = {
+      x: number;
+      y: number;
+      speed: number;
+      radius: number;
+      wobbleSpeed: number;
+      wobblePhase: number;
+      opacity: number;
+      flashCountdown: number;
+      flashState: "idle" | "rising" | "holding" | "fading";
+      flashFrame: 0 | number;
+    };
+
     // Size-based parallax: small particles (1–2px) drift fast (0.4–0.6 px/frame);
     // large particles (2.5–3.5px) drift slow (0.15–0.3 px/frame).
-    const makeParticle = (randomY = true) => {
+    const makeParticle = (randomY = true): Particle => {
       const radius = 1 + Math.random() * 2.5;
       const sizeT = Math.min(1, Math.max(0, (radius - 1) / 2.5));
       const speed = 0.55 - 0.35 * sizeT + (Math.random() - 0.5) * 0.06;
@@ -123,7 +144,36 @@ export default function DotGridBackground({
       };
     };
 
-    const particles = Array.from({ length: 18 }, () => makeParticle(true));
+    // Rejection-sampling spawn: try up to N candidates, pick the first
+    // that's not within MIN_SPACING of any existing particle. After N
+    // tries we give up and return whatever we have — better to ship a
+    // close pair occasionally than freeze the loop.
+    const makeNonOverlapping = (
+      existing: Particle[],
+      randomY = true,
+      maxTries = 24,
+    ): Particle => {
+      let last = makeParticle(randomY);
+      for (let i = 0; i < maxTries; i++) {
+        let ok = true;
+        for (const other of existing) {
+          const dx = last.x - other.x;
+          const dy = last.y - other.y;
+          if (dx * dx + dy * dy < MIN_SPACING_SQ) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) return last;
+        last = makeParticle(randomY);
+      }
+      return last;
+    };
+
+    const particles: Particle[] = [];
+    for (let i = 0; i < 18; i++) {
+      particles.push(makeNonOverlapping(particles, true));
+    }
 
     // Reduced-motion: paint particles once, no RAF loop.
     const drawStatic = () => {
@@ -168,12 +218,47 @@ export default function DotGridBackground({
       const w = viewW();
       const h = viewH();
       ctx.clearRect(0, 0, w, h);
+
+      // Soft repulsion pass — keeps particles from drifting into each
+      // other. Pairwise O(n²) over 18 particles = 153 checks/frame,
+      // negligible. When two particles overlap their MIN_SPACING
+      // bubble, push them apart along the displacement vector by half
+      // the overlap each, so the system relaxes to a non-clustered
+      // state without any single particle moving too suddenly.
+      for (let i = 0; i < particles.length; i++) {
+        const a = particles[i];
+        for (let j = i + 1; j < particles.length; j++) {
+          const b = particles[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < MIN_SPACING_SQ && distSq > 0.01) {
+            const dist = Math.sqrt(distSq);
+            const overlap = (MIN_SPACING - dist) * 0.5;
+            const nx = dx / dist;
+            const ny = dy / dist;
+            a.x -= nx * overlap;
+            a.y -= ny * overlap;
+            b.x += nx * overlap;
+            b.y += ny * overlap;
+          }
+        }
+      }
+
       for (const p of particles) {
         p.y -= p.speed;
         p.x += Math.sin(time * p.wobbleSpeed + p.wobblePhase) * 0.3;
 
         if (p.y < -2) {
-          const fresh = makeParticle(false);
+          // Recycle at the bottom — same rejection-sampling approach
+          // as initial spawn so the new entrant doesn't pop in next
+          // to an existing particle. Pass `particles` minus self via
+          // the inline filter so the candidate isn't compared to its
+          // own (still-stale) coordinates.
+          const fresh = makeNonOverlapping(
+            particles.filter((q) => q !== p),
+            false,
+          );
           p.x = fresh.x;
           p.y = fresh.y;
           p.speed = fresh.speed;

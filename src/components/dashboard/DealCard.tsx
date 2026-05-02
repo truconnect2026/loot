@@ -103,7 +103,13 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         minHeight: 164,
         display: "flex",
         flexDirection: "column",
-        backgroundColor: "rgba(255,255,255,0.03)",
+        // Opaque page-bg base + 3% white tint on top so the dashboard
+        // grid can't bleed through the card surface. Press-state
+        // brightening is handled by the parent transform; bg stays
+        // a stable opaque surface.
+        backgroundColor: "#120e18",
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
         scrollSnapAlign: "start",
