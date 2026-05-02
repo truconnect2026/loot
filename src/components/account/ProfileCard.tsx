@@ -463,7 +463,9 @@ interface ManagePlanButtonProps {
 // pill language as the EmptyHero CTA so the action reads as a peer of
 // other primary affordances in the app, not as a footer link. Press
 // state mirrors GoogleButton/SendButton (scale 0.98, brighter bg) so
-// taps feel acknowledged without being theatrical.
+// taps feel acknowledged without being theatrical. Retention/upsell
+// surface, so it carries a faint mint under-glow (8% money color)
+// that ties the action to the value system without tinting the chrome.
 function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
   const [pressed, setPressed] = useState(false);
   return (
@@ -477,13 +479,17 @@ function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
         marginTop: 14,
         width: "100%",
         height: 40,
-        backgroundColor: pressed
-          ? "rgba(255,255,255,0.08)"
-          : "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.18)",
+        // Top-to-bottom white gradient adds dimension — the button
+        // reads as a tactile surface lit from above instead of a
+        // flat translucent layer. Press state shifts the whole
+        // gradient one notch brighter.
+        background: pressed
+          ? "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.16) 100%)"
+          : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.12) 100%)",
+        border: "1px solid rgba(255,255,255,0.25)",
         boxShadow: pressed
-          ? "0 0 0 1px rgba(255,255,255,0.22), 0 0 16px -4px rgba(255,255,255,0.16)"
-          : "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 1px 2px rgba(0,0,0,0.3)",
+          ? "inset 0 1px 0 0 rgba(255,255,255,0.16), 0 0 0 1px rgba(255,255,255,0.28), 0 4px 16px -4px rgba(92,224,184,0.18), 0 0 16px -4px rgba(255,255,255,0.18)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.14), 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(92,224,184,0.08)",
         borderRadius: 12,
         display: "flex",
         alignItems: "center",
@@ -493,7 +499,7 @@ function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
         padding: 0,
         transform: pressed ? "scale(0.98)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <span

@@ -467,23 +467,74 @@ export default function LoginPage() {
           >
             scan thrift finds, check online prices, flip for profit
           </div>
+        </div>
+      </div>
 
-          {/* Home-screen install hint — quiet text, no icon, no button.
-              Separate from PwaInstallBar (which is the actual prompt) — this
-              just reinforces the value once the user is here. */}
-          <div
+      {/* Home-screen hint — pinned bottom pill. Reads as part of the
+          UI chrome (a system action-bar hint, not a marketing banner)
+          rather than as a stray sentence below the tagline. The
+          PwaInstallBar above is the active prompt with an Install
+          button on platforms that can install; this pill is the quiet
+          always-on reminder for everyone else. Centered, ~36px tall,
+          glass surface several notches lighter than the auth card. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none",
+          zIndex: 50,
+          animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+          animationDelay: "780ms",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            height: 36,
+            paddingLeft: 14,
+            paddingRight: 14,
+            backgroundColor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 18,
+            backdropFilter: "blur(12px) saturate(140%)",
+            WebkitBackdropFilter: "blur(12px) saturate(140%)",
+          }}
+        >
+          {/* Phone icon with downward arrow — same shape as the
+              PwaInstallBar's primary phone glyph at smaller scale. */}
+          <svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="rgba(255,255,255,0.40)"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x={5} y={2} width={14} height={20} rx={2.5} />
+            <path d="M12 8v6" />
+            <polyline points="9 11 12 14 15 11" />
+          </svg>
+          <span
             style={{
-              marginTop: 10,
-              textAlign: "center",
               fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "rgba(255, 255, 255, 0.30)",
-              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-              animationDelay: "780ms",
+              fontWeight: 500,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.50)",
+              letterSpacing: "0.01em",
+              whiteSpace: "nowrap",
             }}
           >
-            add loot to your home screen for the best experience
-          </div>
+            add to home screen
+          </span>
         </div>
       </div>
 
