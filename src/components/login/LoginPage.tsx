@@ -467,6 +467,23 @@ export default function LoginPage() {
           >
             scan thrift finds, check online prices, flip for profit
           </div>
+
+          {/* Home-screen install hint — quiet text, no icon, no button.
+              Separate from PwaInstallBar (which is the actual prompt) — this
+              just reinforces the value once the user is here. */}
+          <div
+            style={{
+              marginTop: 10,
+              textAlign: "center",
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              color: "rgba(255, 255, 255, 0.30)",
+              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              animationDelay: "780ms",
+            }}
+          >
+            add loot to your home screen for the best experience
+          </div>
         </div>
       </div>
 

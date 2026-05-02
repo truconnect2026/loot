@@ -96,9 +96,10 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
           // Layered background: scan-lines on top of a faint mint tint
           // on top of the dark base. Comma-separated bg images stack
           // top→bottom in source order. 4px line spacing reads as
-          // "scanner refresh" texture; 0.05 alpha keeps it subliminal.
+          // "scanner refresh" texture; 0.02 alpha keeps it felt-not-seen
+          // (was 0.05 — too visible, competed with the price comparison).
           backgroundImage:
-            "repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,0.05) 3px, rgba(255,255,255,0.05) 4px), radial-gradient(ellipse 100% 80% at 30% 0%, rgba(92,224,184,0.06), transparent 60%)",
+            "repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(255,255,255,0.02) 3px, rgba(255,255,255,0.02) 4px), radial-gradient(ellipse 100% 80% at 30% 0%, rgba(92,224,184,0.06), transparent 60%)",
           backgroundColor: "#120e18",
           // 2px dashed white at 15% alpha — explicit "this is a
           // template" marker. Replaces the solid mint gradient border.

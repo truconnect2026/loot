@@ -18,7 +18,7 @@ function BarcodeIcon() {
       height={28}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5CE0B8"
+      stroke="rgba(255,255,255,0.95)"
       strokeWidth={1.5}
       strokeLinecap="round"
     >
@@ -35,17 +35,17 @@ function BarcodeIcon() {
 }
 
 function CameraIcon() {
-  // Stroke pulled off camel onto soft mint — same hue family as
-  // SCAN UPC (mint = money / scan-leads-to-money), one notch dimmer
-  // so AI VISION reads as the secondary path. Keeps the color
-  // system clean: no warm amber introduced anywhere else in the UI.
+  // Crisp white on the white-fill button — matches BarcodeIcon. The
+  // primary/secondary variant distinction now lives entirely in the
+  // mint glow intensity (radial halo + bottom shadow), so the icon
+  // stroke stays the same on both.
   return (
     <svg
       width={28}
       height={28}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="rgba(92,224,184,0.70)"
+      stroke="rgba(255,255,255,0.95)"
       strokeWidth={1.5}
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -94,7 +94,6 @@ function HeroButton({
   const accent = "92,224,184";
   const accentColor = variant === "mint" ? "#5CE0B8" : "rgba(92,224,184,0.72)";
   // Primary glows brighter; secondary is one notch dimmer.
-  const topAlpha = variant === "mint" ? 0.18 : 0.10;
   const borderAlpha = variant === "mint" ? 0.28 : 0.16;
   const haloAlpha = variant === "mint" ? 0.18 : 0.10;
   // Ambient under-glow — stacked box-shadows mimic a radial
@@ -146,7 +145,10 @@ function HeroButton({
         // of their own row instead of cramming up against the label.
         height: 88,
         borderRadius: 16,
-        background: `linear-gradient(180deg, rgba(${accent},${topAlpha}) 0%, rgba(${accent},0.04) 100%)`,
+        // Flat 11% white fill — chunky, confident, neutral. Mint identity
+        // moved entirely into the glow stack below (radial halo, bottom
+        // shadow, pulse). Variant distinction = glow intensity, not bg hue.
+        background: "rgba(255,255,255,0.11)",
         border: `1px solid rgba(${accent},${borderAlpha})`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
@@ -299,14 +301,15 @@ export default function ScanButtons({
         />
       </div>
 
-      {/* New-user hint — only while today's scans is still 0 */}
+      {/* New-user hint — only while today's scans is still 0. 40% white so
+          it reads at a glance without competing with the scan buttons. */}
       {showHint && (
         <div
           style={{
             marginTop: 12,
             fontFamily: "var(--font-body)",
             fontSize: 9,
-            color: "rgba(255,255,255,0.10)",
+            color: "rgba(255,255,255,0.40)",
             textAlign: "center",
           }}
         >
