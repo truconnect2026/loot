@@ -733,6 +733,56 @@ export interface ClearanceFeedItem {
   platform_to_sell: "Amazon" | "eBay" | "Facebook";
 }
 
+// ──────────────────────────────────────────────────────────────────
+// BOLO match — used by the /api/cron/bolo-check route. Per user,
+// asks Haiku whether any of their watch-list keywords correspond
+// to plausible deals near them right now. Returns matches the cron
+// can fan out as push notifications.
+// ──────────────────────────────────────────────────────────────────
+
+const BOLO_SYSTEM = `You are a resale arbitrage expert. Given a reseller's watch list keywords and their service area, identify any items currently likely to be available locally that match those keywords AND are worth flipping. If nothing meaningful is available, return an empty array. Respond with ONLY a JSON array, no markdown:
+[
+  {
+    "title": "string",
+    "estimated_price": number,
+    "estimated_resale_value": number,
+    "platform": "Facebook" or "Craigslist" or "Nextdoor",
+    "keyword_matched": "string"
+  }
+]`;
+
+export interface BoloMatch {
+  title: string;
+  estimated_price: number;
+  estimated_resale_value: number;
+  platform: string;
+  keyword_matched: string;
+}
+
+export async function boloMatch(args: {
+  keywords: string[];
+  zip: string;
+  radius: number;
+}): Promise<BoloMatch[]> {
+  if (args.keywords.length === 0) return [];
+  const items = await callFeedTool(
+    BOLO_SYSTEM,
+    `Watch list keywords: ${args.keywords.join(", ")}\nZip: ${args.zip}\nRadius: ${args.radius} miles\nReturn matches as a JSON array. If nothing matches, return [].`,
+  );
+  return items
+    .map((it) => {
+      const obj = (it ?? {}) as Record<string, unknown>;
+      return {
+        title: String(obj.title ?? ""),
+        estimated_price: Number(obj.estimated_price ?? 0),
+        estimated_resale_value: Number(obj.estimated_resale_value ?? 0),
+        platform: String(obj.platform ?? ""),
+        keyword_matched: String(obj.keyword_matched ?? ""),
+      };
+    })
+    .filter((m) => m.title.length > 0);
+}
+
 export async function clearanceFeed(): Promise<ClearanceFeedItem[]> {
   const items = await callFeedTool(
     CLEARANCE_FEED_SYSTEM,

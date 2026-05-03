@@ -12,6 +12,10 @@ import ZipInput from "@/components/account/ZipInput";
 import RadiusSheet from "@/components/account/RadiusSheet";
 import BoloList from "@/components/account/BoloList";
 import NotificationToggles from "@/components/account/NotificationToggles";
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-client";
 
 function deriveInitials(name: string | null, email: string): string {
   if (name) {
@@ -219,8 +223,14 @@ export default function AccountPage() {
   const [keywords, setKeywords] = useState(MOCK_KEYWORDS);
   const [radiusSheetOpen, setRadiusSheetOpen] = useState(false);
 
-  // Notifications
-  const [notifEnabled, setNotifEnabled] = useState(true);
+  // Notifications. `notifEnabled` (the master switch) is derived
+  // from the existence of a push_subscriptions row, NOT from a
+  // separate column. The sub-toggles persist to notification_prefs.
+  // Defaults are true on first load — toggling them flips both
+  // local state and the DB row.
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifBusy, setNotifBusy] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
   const [notifDeals, setNotifDeals] = useState(true);
   const [notifBolo, setNotifBolo] = useState(true);
   const [notifPennies, setNotifPennies] = useState(true);
@@ -268,6 +278,23 @@ export default function AccountPage() {
         zipCode = "";
       }
 
+      // Load notification_prefs + push subscription presence in
+      // parallel. Defaults stay true (matching initial state) when
+      // there's no row yet — the user-facing semantic is "on by
+      // default until you turn something off."
+      const [{ data: notifRow }, { data: pushRow }] = await Promise.all([
+        supabase
+          .from("notification_prefs")
+          .select("deals, bolo, pennies")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("push_subscriptions")
+          .select("user_id")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
       if (!cancelled) {
         setProfile({
           id: user.id,
@@ -283,6 +310,12 @@ export default function AccountPage() {
               ? profileRow.plan_type
               : null,
         });
+        if (notifRow) {
+          setNotifDeals(notifRow.deals !== false);
+          setNotifBolo(notifRow.bolo !== false);
+          setNotifPennies(notifRow.pennies !== false);
+        }
+        setNotifEnabled(!!pushRow);
         setRadius(profileRow?.search_radius_miles ?? 15);
         setLoading(false);
       }
@@ -315,6 +348,78 @@ export default function AccountPage() {
       window.setTimeout(() => setExportState("idle"), 1500);
     }, 1500);
   }, [exportState]);
+
+  // Master push toggle. Turning ON: register the SW, request
+  // Notification permission, subscribe via pushManager, POST the
+  // subscription to /api/push/subscribe. Turning OFF: reverse —
+  // unsubscribe locally and delete the row server-side. Errors
+  // (permission denied, missing VAPID env, etc.) revert the toggle
+  // and surface a transient inline message.
+  const handleTogglePushEnabled = useCallback(async () => {
+    if (notifBusy) return;
+    setNotifBusy(true);
+    setNotifError(null);
+    try {
+      if (notifEnabled) {
+        await unsubscribeFromPush();
+        setNotifEnabled(false);
+      } else {
+        const result = await subscribeToPush();
+        if (result.ok) {
+          setNotifEnabled(true);
+        } else {
+          const msg =
+            result.reason === "denied"
+              ? "permission denied — enable in browser settings"
+              : result.reason === "unsupported"
+                ? "your browser doesn't support push"
+                : result.reason === "missing-vapid"
+                  ? "push isn't configured on this build"
+                  : (result.message ?? "couldn't enable push");
+          setNotifError(msg);
+        }
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  }, [notifEnabled, notifBusy]);
+
+  // Per-bucket toggles. Optimistically flip local state, upsert the
+  // row, revert on failure. notification_prefs uses user_id as the
+  // primary key so upsert with onConflict=user_id replaces cleanly.
+  const persistNotifPrefs = useCallback(
+    async (next: { deals?: boolean; bolo?: boolean; pennies?: boolean }) => {
+      if (!profile) return;
+      const row = {
+        user_id: profile.id,
+        deals: next.deals ?? notifDeals,
+        bolo: next.bolo ?? notifBolo,
+        pennies: next.pennies ?? notifPennies,
+      };
+      await supabase
+        .from("notification_prefs")
+        .upsert(row, { onConflict: "user_id" });
+    },
+    [profile, supabase, notifDeals, notifBolo, notifPennies],
+  );
+
+  const handleToggleDeals = useCallback(() => {
+    const next = !notifDeals;
+    setNotifDeals(next);
+    void persistNotifPrefs({ deals: next });
+  }, [notifDeals, persistNotifPrefs]);
+
+  const handleToggleBolo = useCallback(() => {
+    const next = !notifBolo;
+    setNotifBolo(next);
+    void persistNotifPrefs({ bolo: next });
+  }, [notifBolo, persistNotifPrefs]);
+
+  const handleTogglePennies = useCallback(() => {
+    const next = !notifPennies;
+    setNotifPennies(next);
+    void persistNotifPrefs({ pennies: next });
+  }, [notifPennies, persistNotifPrefs]);
 
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -639,19 +744,38 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 2: Notifications — 18px gap below the location group */}
+        {/* Group 2: Notifications — 18px gap below the location group.
+            The master toggle subscribes via the browser Push API and
+            stores the endpoint in push_subscriptions. The sub-toggles
+            persist to notification_prefs. notifError surfaces the
+            most common failure (denied permission) inline. */}
         <div style={{ marginTop: 18 }}>
           <NotificationToggles
             enabled={notifEnabled}
-            onToggleEnabled={() => setNotifEnabled((v) => !v)}
+            onToggleEnabled={handleTogglePushEnabled}
             deals={notifDeals}
-            onToggleDeals={() => setNotifDeals((v) => !v)}
+            onToggleDeals={handleToggleDeals}
             bolo={notifBolo}
-            onToggleBolo={() => setNotifBolo((v) => !v)}
+            onToggleBolo={handleToggleBolo}
             pennies={notifPennies}
-            onTogglePennies={() => setNotifPennies((v) => !v)}
+            onTogglePennies={handleTogglePennies}
             accentColor={ACCENT_NOTIF}
           />
+          {notifError && (
+            <div
+              role="alert"
+              style={{
+                marginTop: 8,
+                paddingLeft: 14,
+                fontFamily: "var(--font-body)",
+                fontSize: 11,
+                fontWeight: 500,
+                color: "rgba(232,99,107,0.85)",
+              }}
+            >
+              {notifError}
+            </div>
+          )}
         </div>
 
         {/* DATA section — Export got its own break so the haul-log
