@@ -17,6 +17,9 @@ interface ScanOverlayProps {
   mode: "barcode" | "vision";
   onResult: (verdict: ScanResponse) => void;
   onCancel: () => void;
+  /** Called when /api/scan returns 403 (free-user daily limit hit).
+   * The dashboard closes the overlay and opens the PaywallSheet. */
+  onPaywall?: (info: { used: number; limit: number }) => void;
 }
 
 const ACCENT = {
@@ -130,6 +133,7 @@ export default function ScanOverlay({
   mode,
   onResult,
   onCancel,
+  onPaywall,
 }: ScanOverlayProps) {
   const [phase, setPhase] = useState<Phase>({ kind: "framing" });
   const [costInput, setCostInput] = useState("");
@@ -276,8 +280,28 @@ export default function ScanOverlay({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as ScanResponse | { error: string };
+      const data = (await res.json()) as
+        | ScanResponse
+        | {
+            error: string;
+            scans_used?: number;
+            scans_limit?: number;
+          };
       if (!res.ok || "error" in data) {
+        // 403 with scans_used + scans_limit = the daily-limit gate.
+        // Bubble up to the dashboard so it can swap our overlay for
+        // the PaywallSheet rather than render a generic error here.
+        if (
+          res.status === 403 &&
+          "error" in data &&
+          typeof data.scans_used === "number" &&
+          typeof data.scans_limit === "number"
+        ) {
+          if (progressTimer.current) clearInterval(progressTimer.current);
+          progressTimer.current = null;
+          onPaywall?.({ used: data.scans_used, limit: data.scans_limit });
+          return;
+        }
         const apiMessage =
           "error" in data ? data.error : `Scan failed (${res.status})`;
         const message = flagError(

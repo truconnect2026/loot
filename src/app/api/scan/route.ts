@@ -29,7 +29,13 @@ export interface ScanResponse {
 
 interface ScanError {
   error: string;
+  /** Set on 403 limit-exceeded responses so the paywall sheet can
+   * render an accurate "X/5 used" label. */
+  scans_used?: number;
+  scans_limit?: number;
 }
+
+const FREE_DAILY_LIMIT = 5;
 
 export async function POST(
   req: NextRequest
@@ -42,6 +48,50 @@ export async function POST(
   }
 
   const cost = typeof body.cost === "number" && body.cost >= 0 ? body.cost : 0;
+
+  // Subscription gate — Pro users skip; free users capped at 5/day.
+  // Anonymous (logged-out) callers fall through with no gate; the
+  // route does not insert a haul-log row for them either, so the
+  // worst case is a free verdict to a non-user.
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+    if (user) {
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("is_pro")
+        .eq("id", user.id)
+        .maybeSingle();
+      const isPro = profileRow?.is_pro === true;
+      if (!isPro) {
+        const startOfDay = new Date();
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        const { count } = await supabase
+          .from("scans")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", startOfDay.toISOString());
+        const used = count ?? 0;
+        if (used >= FREE_DAILY_LIMIT) {
+          return NextResponse.json(
+            {
+              error:
+                "Daily scan limit reached. Upgrade to Pro for unlimited scans.",
+              scans_used: used,
+              scans_limit: FREE_DAILY_LIMIT,
+            },
+            { status: 403 },
+          );
+        }
+      }
+    }
+  } catch (gateErr) {
+    // If the gate query itself blew up (Supabase outage), let the
+    // scan proceed — better to give a free user a freebie than to
+    // 500 a paying user mid-flow.
+    console.error("Scan gate check failed:", gateErr);
+  }
 
   try {
     let itemName: string;

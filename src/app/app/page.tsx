@@ -21,8 +21,10 @@ import SourcingCards from "@/components/dashboard/SourcingCards";
 import ToolSheet, {
   type ToolKind,
 } from "@/components/dashboard/ToolSheet";
+import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
+import type { ScanCountResponse } from "@/app/api/scan-count/route";
 
 // Light haptic helper — Android Chrome only, iOS silently fails. Defaults to
 // a 10ms tick when no pattern is passed.
@@ -284,6 +286,26 @@ export default function DashboardPage() {
   // mount; SourcingCards reads the literal number for its callout.
   const [pennyCount, setPennyCount] = useState(0);
 
+  // Subscription / scan-count state — drives the X/5 counter under
+  // the scan zone for free users and the PaywallSheet on 403.
+  const [scanCount, setScanCount] = useState<ScanCountResponse | null>(null);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallInfo, setPaywallInfo] = useState<{
+    used: number;
+    limit: number;
+  } | null>(null);
+
+  const refreshScanCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/scan-count");
+      if (!res.ok) return;
+      const data = (await res.json()) as ScanCountResponse;
+      setScanCount(data);
+    } catch {
+      /* swallow — counter just stays null */
+    }
+  }, []);
+
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -432,6 +454,22 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [refreshStats]);
+
+  // Scan-count — fetched on mount and after every successful scan
+  // so the X/5 counter under the ScanButtons reflects live state.
+  // Pro users get isPro: true and the counter hides. Wrapped in an
+  // async IIFE for the function-boundary the
+  // react-hooks/set-state-in-effect rule wants.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await refreshScanCount();
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshScanCount]);
 
   // Onboarding gate — bounce brand-new users (no zip set) to /onboarding
   // BEFORE they see any dashboard content. Until this resolves we render
@@ -621,12 +659,50 @@ export default function DashboardPage() {
 
       // Pull fresh totals — the scan row was just inserted server-side.
       refreshStats();
+      // Re-fetch the daily-scan count too, so the X/5 counter ticks
+      // immediately for free users instead of waiting for next mount.
+      void refreshScanCount();
     },
-    [refreshStats]
+    [refreshStats, refreshScanCount]
   );
 
   const cancelScan = useCallback(() => {
     setScanOpen(false);
+  }, []);
+
+  // /api/scan returned 403 — close the scanner overlay, open the
+  // PaywallSheet with the limit info from the response. Refresh the
+  // counter as a side effect so the dashboard tile is in sync.
+  const handlePaywall = useCallback(
+    (info: { used: number; limit: number }) => {
+      setScanOpen(false);
+      setPaywallInfo(info);
+      setPaywallOpen(true);
+      void refreshScanCount();
+    },
+    [refreshScanCount],
+  );
+
+  // PaywallSheet's CTA — POST checkout, then redirect in-tab to
+  // Stripe. Same pattern as account/handleSubscribe but lives here
+  // because the dashboard owns the paywall state.
+  const handleSubscribe = useCallback(async (priceId: string) => {
+    if (typeof window === "undefined") return;
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId }),
+      });
+      if (!res.ok) {
+        console.error("[paywall] checkout failed:", await res.text());
+        return;
+      }
+      const { url } = (await res.json()) as { url?: string };
+      if (url) window.location.href = url;
+    } catch (err) {
+      console.error("[paywall] checkout error:", err);
+    }
   }, []);
 
   // Tool sheet state — null when closed, set to a ToolKind when a
@@ -911,6 +987,27 @@ export default function DashboardPage() {
             onAiVision={() => startScan("vision")}
             todayScans={todayScans}
           />
+          {/* Free-user quota counter — sits below the scan zone,
+              hidden for Pro members and during the loading window
+              before the first /api/scan-count response. */}
+          {scanCount && !scanCount.isPro && (
+            <div
+              style={{
+                marginTop: 10,
+                textAlign: "center",
+                fontFamily: "var(--font-body)",
+                fontWeight: 500,
+                fontSize: 11,
+                color:
+                  scanCount.remaining <= 1
+                    ? "rgba(232,99,107,0.85)"
+                    : "rgba(255,255,255,0.45)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {scanCount.used}/{scanCount.limit} free scans today
+            </div>
+          )}
         </div>
 
         {/* WinsTicker is no longer a standalone section — it's nested
@@ -1153,6 +1250,7 @@ export default function DashboardPage() {
         mode={scanMode}
         onResult={handleScanResult}
         onCancel={cancelScan}
+        onPaywall={handlePaywall}
       />
 
       <VerdictSheet
@@ -1171,6 +1269,16 @@ export default function DashboardPage() {
         open={activeTool !== null}
         tool={activeTool}
         onClose={() => setActiveTool(null)}
+      />
+
+      <PaywallSheet
+        open={paywallOpen}
+        used={paywallInfo?.used ?? 0}
+        limit={paywallInfo?.limit ?? 5}
+        monthlyPriceId={process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? ""}
+        annualPriceId={process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""}
+        onSubscribe={handleSubscribe}
+        onClose={() => setPaywallOpen(false)}
       />
     </>
   );

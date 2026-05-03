@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import ProfileCard from "@/components/account/ProfileCard";
+import UpgradeCard from "@/components/account/UpgradeCard";
 import SettingsTile from "@/components/account/SettingsTile";
 import ZipInput from "@/components/account/ZipInput";
 import RadiusSheet from "@/components/account/RadiusSheet";
@@ -23,6 +24,21 @@ function deriveInitials(name: string | null, email: string): string {
     }
   }
   return (email[0] || "?").toUpperCase();
+}
+
+// Renewal date — formats "Mon DD" if same year, else "Mon DD, YYYY".
+// Falls back to em-dash on null/invalid input so the cell never
+// crashes on a fresh row that hasn't received a webhook yet.
+function formatRenewsDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const monthDay = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  if (d.getFullYear() === new Date().getFullYear()) return monthDay;
+  return `${monthDay}, ${d.getFullYear()}`;
 }
 
 // ── Icons ──
@@ -182,6 +198,9 @@ interface UserProfile {
   email: string;
   initials: string;
   zipCode: string;
+  isPro: boolean;
+  subscriptionRenewsAt: string | null;
+  planType: "monthly" | "annual" | null;
 }
 
 export default function AccountPage() {
@@ -235,7 +254,9 @@ export default function AccountPage() {
 
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("id, zip_code, search_radius_miles")
+        .select(
+          "id, zip_code, search_radius_miles, is_pro, subscription_renews_at, plan_type",
+        )
         .eq("id", user.id)
         .maybeSingle();
 
@@ -254,6 +275,13 @@ export default function AccountPage() {
           email,
           initials: deriveInitials(rawName, email),
           zipCode,
+          isPro: profileRow?.is_pro === true,
+          subscriptionRenewsAt: profileRow?.subscription_renews_at ?? null,
+          planType:
+            profileRow?.plan_type === "monthly" ||
+            profileRow?.plan_type === "annual"
+              ? profileRow.plan_type
+              : null,
         });
         setRadius(profileRow?.search_radius_miles ?? 15);
         setLoading(false);
@@ -293,30 +321,55 @@ export default function AccountPage() {
     router.push("/");
   }, [supabase, router]);
 
-  // Manage plan — opens the Stripe customer portal in a NEW tab so the
-  // user keeps their place in Loot. window.open with `noopener,noreferrer`
-  // is the safe-default flag set: prevents the Stripe tab from getting a
-  // window.opener handle that could navigate this tab back.
-  //
-  // Real wire-up is pending the /api/stripe/portal route. Pattern:
-  //   const res = await fetch("/api/stripe/portal", { method: "POST" });
-  //   const { url } = await res.json();
-  //   if (url) window.open(url, "_blank", "noopener,noreferrer");
-  // The portal session's return_url must point back to /account so the
-  // loop closes cleanly when the user navigates within Stripe.
-  const handleManagePlan = useCallback(() => {
+  // Manage plan — POSTs to /api/stripe/portal which creates a Stripe
+  // Customer Portal session and returns the hosted URL. Open in a
+  // NEW tab so the user keeps their place in Loot. The safe-flag set
+  // `noopener,noreferrer` prevents the Stripe tab from getting a
+  // window.opener handle that could navigate this tab back, and
+  // strips the Referer header from the outbound request.
+  const handleManagePlan = useCallback(async () => {
     if (typeof window === "undefined") return;
-    // Placeholder until the portal route exists. Demonstrates the
-    // exact safe-flag pattern callers should use post-wire-up.
-    const url: string | null = null;
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      console.log(
-        "[account] Stripe portal URL not yet wired — would open in new tab.",
-      );
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      if (!res.ok) {
+        console.error("[account] Portal session failed:", await res.text());
+        return;
+      }
+      const { url } = (await res.json()) as { url?: string };
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      console.error("[account] Portal session error:", err);
     }
   }, []);
+
+  // Subscribe — POSTs to /api/stripe/checkout with the chosen
+  // priceId, then redirects in-tab to the Stripe-hosted checkout
+  // page. (No new tab here — checkout is the primary action; the
+  // user comes back via success_url after paying.)
+  const handleSubscribe = useCallback(
+    async (priceId: string) => {
+      if (typeof window === "undefined") return;
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priceId }),
+        });
+        if (!res.ok) {
+          console.error(
+            "[account] Checkout session failed:",
+            await res.text(),
+          );
+          return;
+        }
+        const { url } = (await res.json()) as { url?: string };
+        if (url) window.location.href = url;
+      } catch (err) {
+        console.error("[account] Checkout session error:", err);
+      }
+    },
+    [],
+  );
 
   // Loading state — show the branded spinner until session + profile are ready.
   if (loading || !profile) {
@@ -452,17 +505,29 @@ export default function AccountPage() {
               "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 0ms forwards",
           }}
         >
-          <ProfileCard
-            name={profile.name ?? profile.email.split("@")[0]}
-            email={profile.email}
-            initials={profile.initials}
-            isPro={true}
-            price="$9.99"
-            period="/mo"
-            renewsDate="May 27"
-            scansLabel="unlimited"
-            onCancel={handleManagePlan}
-          />
+          {profile.isPro ? (
+            <ProfileCard
+              name={profile.name ?? profile.email.split("@")[0]}
+              email={profile.email}
+              initials={profile.initials}
+              isPro={true}
+              price={profile.planType === "annual" ? "$89.99" : "$9.99"}
+              period={profile.planType === "annual" ? "/yr" : "/mo"}
+              renewsDate={formatRenewsDate(profile.subscriptionRenewsAt)}
+              scansLabel="unlimited"
+              onCancel={handleManagePlan}
+            />
+          ) : (
+            <UpgradeCard
+              monthlyPriceId={
+                process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? ""
+              }
+              annualPriceId={
+                process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""
+              }
+              onSubscribe={handleSubscribe}
+            />
+          )}
         </div>
 
         {/* ── Settings ── */}
