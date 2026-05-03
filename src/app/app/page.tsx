@@ -18,6 +18,9 @@ import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import SourcingCards from "@/components/dashboard/SourcingCards";
+import ToolSheet, {
+  type ToolKind,
+} from "@/components/dashboard/ToolSheet";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
 
@@ -105,20 +108,28 @@ function RecycleIcon() {
 interface Tool {
   name: string;
   icon: React.ReactNode;
+  /** Internal route — used by Haul Log, which opens the haul page. */
   href?: string;
+  /** Tool sheet to open. Mutually exclusive with `href`. Tiles
+   * with neither (Estate Sales, currently unwired) just log on tap. */
+  toolKind?: ToolKind;
 }
 
 const TOP_TOOLS: Tool[] = [
-  { name: "Shelf Scanner", icon: <ShelfIcon /> },
-  { name: "Price Check", icon: <DollarIcon /> },
+  { name: "Shelf Scanner", icon: <ShelfIcon />, toolKind: "shelf-scan" },
+  { name: "Price Check", icon: <DollarIcon />, toolKind: "price-check" },
   { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
-  { name: "Authenticate", icon: <CheckCircleIcon /> },
+  { name: "Authenticate", icon: <CheckCircleIcon />, toolKind: "fake-check" },
 ];
 
 const EXTRA_TOOLS: Tool[] = [
-  { name: "Estate Sales", icon: <HomeIcon /> },
-  { name: "Liquidation Analyzer", icon: <PackageIcon /> },
-  { name: "Scrap Finder", icon: <RecycleIcon /> },
+  { name: "Tag Decoder", icon: <HomeIcon />, toolKind: "tag-decode" },
+  {
+    name: "Liquidation Analyzer",
+    icon: <PackageIcon />,
+    toolKind: "liquidation",
+  },
+  { name: "Scrap Finder", icon: <RecycleIcon />, toolKind: "scrap-id" },
 ];
 
 // Reverse-stagger exit timing for the tools drawer.
@@ -128,123 +139,10 @@ const TOOL_EXIT_TOTAL_MS =
   (EXTRA_TOOLS.length - 1) * TOOL_EXIT_STEP_MS + TOOL_EXIT_FADE_MS;
 const TOOL_COLLAPSE_MS = 200;
 
-// ── Mock deal data — replaced by Supabase queries later ──
-
-const NEARBY_DEALS: Deal[] = [
-  {
-    id: "d1",
-    title: "vintage Pyrex casserole set, mint condition",
-    price: 40,
-    estimatedValue: 110,
-    distance: "2.3 mi",
-    source: "fb_marketplace",
-    isFree: false,
-    postedAt: "3h ago",
-    url: "",
-  },
-  {
-    id: "d2",
-    title: "mid-century walnut nightstand",
-    price: 75,
-    estimatedValue: 220,
-    distance: "4.1 mi",
-    source: "craigslist",
-    isFree: false,
-    postedAt: "5h ago",
-    url: "",
-  },
-  {
-    id: "d3",
-    title: "lot of vintage cameras, untested",
-    price: 50,
-    estimatedValue: 180,
-    distance: "1.8 mi",
-    source: "fb_marketplace",
-    isFree: false,
-    postedAt: "1d ago",
-    url: "",
-  },
-  {
-    id: "d4",
-    title: "cast iron skillet, Griswold mark",
-    price: 30,
-    estimatedValue: 95,
-    distance: "3.6 mi",
-    source: "nextdoor",
-    isFree: false,
-    postedAt: "6h ago",
-    url: "",
-  },
-  {
-    id: "d5",
-    title: "set of 4 Eames-style dining chairs",
-    price: 120,
-    estimatedValue: 350,
-    distance: "5.2 mi",
-    source: "fb_marketplace",
-    isFree: false,
-    postedAt: "2h ago",
-    url: "",
-  },
-];
-
-const FREE_DEALS: Deal[] = [
-  {
-    id: "f1",
-    title: "old leather camera bag, curbside",
-    price: 0,
-    estimatedValue: 35,
-    distance: "1.2 mi",
-    source: "fb_marketplace",
-    isFree: true,
-    postedAt: "2h ago",
-    url: "",
-  },
-  {
-    id: "f2",
-    title: "wooden bookshelf, free to good home",
-    price: 0,
-    estimatedValue: 60,
-    distance: "0.8 mi",
-    source: "craigslist_free",
-    isFree: true,
-    postedAt: "1h ago",
-    url: "",
-  },
-  {
-    id: "f3",
-    title: "boxes of vintage National Geographic",
-    price: 0,
-    estimatedValue: 40,
-    distance: "3.4 mi",
-    source: "nextdoor",
-    isFree: true,
-    postedAt: "5h ago",
-    url: "",
-  },
-  {
-    id: "f4",
-    title: "brass lamp, needs rewiring",
-    price: 0,
-    estimatedValue: 75,
-    distance: "2.7 mi",
-    source: "fb_marketplace",
-    isFree: true,
-    postedAt: "4h ago",
-    url: "",
-  },
-  {
-    id: "f5",
-    title: "antique wooden picture frame",
-    price: 0,
-    estimatedValue: 50,
-    distance: "4.0 mi",
-    source: "craigslist_free",
-    isFree: true,
-    postedAt: "7h ago",
-    url: "",
-  },
-];
+// Deal data is fetched live from /api/feeds/{deals,free} on mount
+// (see useEffect in DashboardPage). Cached server-side for 4 hours
+// per (zip, feed_type) so this only burns Claude tokens once per
+// zip per ~quarter-day.
 
 function ChevronDownIcon() {
   return (
@@ -374,6 +272,17 @@ export default function DashboardPage() {
   // !statsLoading so the empty hero never flashes before data resolves.
   const [lifetimeScans, setLifetimeScans] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
+
+  // Live deal feeds — fetched from /api/feeds/{deals,free} once the
+  // user's zip is known. Cached server-side for 4 hours per zip.
+  const [userZip, setUserZip] = useState<string | null>(null);
+  const [userRadius, setUserRadius] = useState<number>(15);
+  const [nearbyDeals, setNearbyDeals] = useState<Deal[]>([]);
+  const [freeDeals, setFreeDeals] = useState<Deal[]>([]);
+  const [feedsLoading, setFeedsLoading] = useState(true);
+  // Penny count for SourcingCards. Derived from /api/feeds/pennies on
+  // mount; SourcingCards reads the literal number for its callout.
+  const [pennyCount, setPennyCount] = useState(0);
 
   // Header solidifies once the scroll sentinel leaves the viewport.
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -563,7 +472,7 @@ export default function DashboardPage() {
       }
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("zip_code")
+        .select("zip_code, search_radius_miles")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
@@ -574,12 +483,86 @@ export default function DashboardPage() {
         router.replace("/onboarding");
         return;
       }
+      // Surface zip + radius into state so the feed effects below
+      // can fetch /api/feeds/{deals,free} once the user is gated in.
+      setUserZip(profileRow.zip_code);
+      if (profileRow.search_radius_miles) {
+        setUserRadius(profileRow.search_radius_miles);
+      }
       setGateChecked(true);
     })();
     return () => {
       cancelled = true;
     };
   }, [supabase, router]);
+
+  // Live deal feeds — fire once the user's zip resolves. Each feed
+  // route returns either fresh Claude-generated listings or a cached
+  // payload (4-hour TTL keyed by zip+feed_type). Errors on either
+  // feed degrade silently to an empty list, which the carousel
+  // renders with the "no deals found" empty state.
+  useEffect(() => {
+    if (!userZip) return;
+    let cancelled = false;
+    // The async IIFE below is the function-boundary the
+    // react-hooks/set-state-in-effect rule wants to see between the
+    // synchronous effect body and any setState call. setFeedsLoading
+    // is the only setter that needs to fire before the network
+    // round-trip; defer it inside the IIFE alongside the others.
+    (async () => {
+      setFeedsLoading(true);
+      try {
+        const [dealsRes, freeRes] = await Promise.all([
+          fetch(
+            `/api/feeds/deals?zip=${encodeURIComponent(userZip)}&radius=${userRadius}`,
+          ),
+          fetch(
+            `/api/feeds/free?zip=${encodeURIComponent(userZip)}&radius=${userRadius}`,
+          ),
+        ]);
+        if (cancelled) return;
+        if (dealsRes.ok) {
+          const data = (await dealsRes.json()) as { deals: Deal[] };
+          if (!cancelled) setNearbyDeals(data.deals ?? []);
+        }
+        if (freeRes.ok) {
+          const data = (await freeRes.json()) as { deals: Deal[] };
+          if (!cancelled) setFreeDeals(data.deals ?? []);
+        }
+      } catch {
+        /* swallow — empty arrays + carousel empty state */
+      } finally {
+        if (!cancelled) setFeedsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userZip, userRadius]);
+
+  // Penny count — non-location feed, fires once on mount regardless
+  // of zip. The cache is shared across all users (national feed) so
+  // this typically resolves from cache after the first request.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/feeds/pennies");
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          items?: unknown[];
+        };
+        if (!cancelled) {
+          setPennyCount(Array.isArray(data.items) ? data.items.length : 0);
+        }
+      } catch {
+        /* swallow — count stays 0 */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Watch the scroll sentinel — when it leaves the viewport the header
   // gains a solid background and hairline.
@@ -646,13 +629,19 @@ export default function DashboardPage() {
     setScanOpen(false);
   }, []);
 
+  // Tool sheet state — null when closed, set to a ToolKind when a
+  // tile is tapped. The sheet stays mounted across opens so its
+  // own internal state (input value, status) cleans up on each
+  // open via the effect inside ToolSheet itself.
+  const [activeTool, setActiveTool] = useState<ToolKind | null>(null);
+
   const handleToolTap = useCallback(
     (tool: Tool) => {
       haptic();
       if (tool.href) {
         router.push(tool.href);
-      } else {
-        console.log(`Tool: ${tool.name}`);
+      } else if (tool.toolKind) {
+        setActiveTool(tool.toolKind);
       }
     },
     [router]
@@ -953,9 +942,11 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="FREE & CLEARANCE"
-                deals={FREE_DEALS}
+                deals={freeDeals}
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
+                loading={feedsLoading}
+                emptyMessage="no free finds near you — try expanding your search radius"
               />
             </div>
             <div
@@ -969,8 +960,10 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="DEALS NEAR YOU"
-                deals={NEARBY_DEALS}
+                deals={nearbyDeals}
                 onDealTap={handleDealTap}
+                loading={feedsLoading}
+                emptyMessage="no deals found near you — try expanding your search radius"
               />
             </div>
           </>
@@ -987,9 +980,11 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="DEALS NEAR YOU"
-                deals={NEARBY_DEALS}
+                deals={nearbyDeals}
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
+                loading={feedsLoading}
+                emptyMessage="no deals found near you — try expanding your search radius"
               />
             </div>
             <div
@@ -1002,8 +997,10 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="FREE & CLEARANCE"
-                deals={FREE_DEALS}
+                deals={freeDeals}
                 onDealTap={handleDealTap}
+                loading={feedsLoading}
+                emptyMessage="no free finds near you — try expanding your search radius"
               />
             </div>
           </>
@@ -1021,7 +1018,7 @@ export default function DashboardPage() {
         >
           <div style={SECTION_LABEL}>SOURCING</div>
           <SourcingCards
-            pennyItemCount={48}
+            pennyItemCount={pennyCount}
             yardSaleTodayCount={0}
             onPennyTap={() => console.log("penny drops tap")}
             onYardSaleTap={() => console.log("yard sale tap")}
@@ -1168,6 +1165,12 @@ export default function DashboardPage() {
         open={dealSheetOpen}
         deal={selectedDeal}
         onClose={() => setDealSheetOpen(false)}
+      />
+
+      <ToolSheet
+        open={activeTool !== null}
+        tool={activeTool}
+        onClose={() => setActiveTool(null)}
       />
     </>
   );

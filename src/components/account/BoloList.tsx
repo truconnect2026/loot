@@ -187,7 +187,8 @@ export default function BoloList({ keywords, onAdd, onRemove, onBack }: BoloList
                 border: "none",
                 outline: "none",
                 fontFamily: "var(--font-body)",
-                fontSize: 13,
+                // 16px minimum — iOS Safari auto-zooms below 16.
+                fontSize: 16,
                 color: "var(--text-primary)",
                 padding: 0,
               }}

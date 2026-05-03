@@ -18,12 +18,6 @@ const PROTECTED = ["/app", "/account", "/onboarding"];
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  // Skip auth when Supabase isn't configured (dev with placeholder env vars)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl || supabaseUrl.includes("your-project")) {
-    return response;
-  }
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -45,13 +39,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session — must call getUser() not getSession() per Supabase docs
+  // Refresh session — must call getUser() not getSession() per Supabase docs.
+  // Wrapped in try/catch so a transient network blip doesn't 500 the page;
+  // the worst case is the user gets the unauthed branch and redirects to
+  // login, which is recoverable.
   let user = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data.user;
   } catch {
-    // Supabase unreachable (e.g. placeholder env vars) — treat as unauthed
+    /* network failure — treat as unauthed */
   }
 
   const { pathname } = request.nextUrl;

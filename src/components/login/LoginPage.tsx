@@ -429,7 +429,10 @@ export default function LoginPage() {
                     paddingLeft: 16,
                     paddingRight: 16,
                     fontFamily: "var(--font-body)",
-                    fontSize: 14,
+                    // 16px minimum — iOS Safari auto-zooms into any
+                    // input below 16. Visual size bumped from 14 → 16
+                    // to keep the page from yanking on focus.
+                    fontSize: 16,
                     color: "var(--text-primary)",
                     outline: "none",
                     transition:

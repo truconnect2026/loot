@@ -3,6 +3,84 @@
 import { useEffect, useRef, useState } from "react";
 import DealCard, { type Deal } from "@/components/dashboard/DealCard";
 
+// Loading skeleton — matches DealCard's 232×164 footprint and 14px
+// inner padding so swapping in the real cards doesn't shift the
+// scroll position. The shimmer is a static low-contrast surface;
+// adding a moving gradient sweep here would compete with the
+// existing winsTicker pulse for attention.
+function DealCardSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        flexShrink: 0,
+        width: 232,
+        minHeight: 164,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        backgroundColor: "#120e18",
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 16,
+        padding: 14,
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+      }}
+    >
+      <div
+        style={{
+          width: 64,
+          height: 12,
+          borderRadius: 4,
+          backgroundColor: "rgba(255,255,255,0.06)",
+        }}
+      />
+      <div
+        style={{
+          width: "85%",
+          height: 14,
+          borderRadius: 4,
+          backgroundColor: "rgba(255,255,255,0.06)",
+        }}
+      />
+      <div
+        style={{
+          width: "60%",
+          height: 14,
+          borderRadius: 4,
+          backgroundColor: "rgba(255,255,255,0.06)",
+        }}
+      />
+      <div style={{ flex: 1 }} />
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 18,
+            borderRadius: 4,
+            backgroundColor: "rgba(255,255,255,0.08)",
+          }}
+        />
+        <div
+          style={{
+            width: 64,
+            height: 18,
+            borderRadius: 4,
+            backgroundColor: "rgba(92,224,184,0.10)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 interface DealCarouselProps {
   label: string;
   deals: Deal[];
@@ -12,6 +90,10 @@ interface DealCarouselProps {
    * on the dashboard so the ticker reads as that section's
    * activity feed rather than as an orphaned line above it. */
   liveSignal?: React.ReactNode;
+  /** Render skeleton placeholders instead of cards while data loads. */
+  loading?: boolean;
+  /** Shown in place of cards when `deals` is empty and not loading. */
+  emptyMessage?: string;
 }
 
 // Fade sits flush against the page bg (#120e18) so the carousel
@@ -30,7 +112,10 @@ export default function DealCarousel({
   deals,
   onDealTap,
   liveSignal,
+  loading,
+  emptyMessage,
 }: DealCarouselProps) {
+  const isEmpty = !loading && deals.length === 0;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
@@ -102,9 +187,36 @@ export default function DealCarousel({
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} onTap={onDealTap} />
-          ))}
+          {loading
+            ? // Skeleton placeholders match the live cards' 232×164
+              // dimensions exactly so the layout doesn't shift when
+              // real data arrives.
+              Array.from({ length: 4 }).map((_, i) => (
+                <DealCardSkeleton key={`skel-${i}`} />
+              ))
+            : deals.map((deal) => (
+                <DealCard key={deal.id} deal={deal} onTap={onDealTap} />
+              ))}
+          {isEmpty && (
+            <div
+              style={{
+                width: "100%",
+                minHeight: 164,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                paddingLeft: 12,
+                paddingRight: 12,
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                color: "rgba(255,255,255,0.45)",
+                textAlign: "center",
+                lineHeight: 1.4,
+              }}
+            >
+              {emptyMessage ?? "no deals found near you"}
+            </div>
+          )}
         </div>
 
         {/* Left edge fade — appears once user scrolls past 10px */}

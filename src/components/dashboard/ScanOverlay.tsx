@@ -601,7 +601,8 @@ export default function ScanOverlay({
                     outline: "none",
                     fontFamily: "var(--font-body)",
                     fontWeight: 700,
-                    fontSize: 14,
+                    // 16px minimum — iOS Safari auto-zooms below 16.
+                    fontSize: 16,
                     color: "var(--text-primary)",
                     minWidth: 0,
                     width: "100%",
