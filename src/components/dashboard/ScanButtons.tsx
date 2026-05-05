@@ -14,8 +14,8 @@ interface ScanButtonsProps {
 function BarcodeIcon() {
   return (
     <svg
-      width={28}
-      height={28}
+      width={36}
+      height={36}
       viewBox="0 0 24 24"
       fill="none"
       stroke="rgba(255,255,255,0.95)"
@@ -41,8 +41,8 @@ function CameraIcon() {
   // stroke stays the same on both.
   return (
     <svg
-      width={28}
-      height={28}
+      width={36}
+      height={36}
       viewBox="0 0 24 24"
       fill="none"
       stroke="rgba(255,255,255,0.95)"
@@ -104,15 +104,19 @@ function HeroButton({
   const glowMid = glowPrimary ? 0.40 : 0.20;
   const glowFar = glowPrimary ? 0.20 : 0.10;
 
-  // Foreground-plane shadow — the scan buttons should feel like they're
-  // floating above the rest of the dashboard, lit from below.
+  // Foreground-plane shadow — the scan buttons should feel like
+  // they're floating above the rest of the dashboard, lit from
+  // above (the white top-edge inset) AND below (the mint under-
+  // glow). The white inset at 0.08 reads as catching room light
+  // off the upper edge; the mint stack underneath is the brand
+  // halo that makes the buttons feel powered-on.
   const restShadow =
-    `inset 0 1px 0 0 rgba(${accent},0.18),` +
+    `inset 0 1px 0 0 rgba(255,255,255,0.08),` +
     ` 0 2px 4px rgba(0,0,0,0.20),` +
     ` 0 12px 28px -6px rgba(${accent},${glowMid}),` +
     ` 0 24px 48px -12px rgba(${accent},${glowFar})`;
   const hoverShadow =
-    `inset 0 1px 0 0 rgba(${accent},0.22),` +
+    `inset 0 1px 0 0 rgba(255,255,255,0.10),` +
     ` 0 0 0 1px rgba(${accent},${glowPrimary ? 0.22 : 0.14}),` +
     ` 0 12px 32px -4px rgba(${accent},${glowMid + 0.06}),` +
     ` 0 24px 48px -10px rgba(${accent},${glowFar + 0.04})`;
@@ -147,8 +151,12 @@ function HeroButton({
         // entirely in the glow stack below (radial halo, bottom
         // shadow, pulse) — bg stays neutral white-on-dark.
         backgroundColor: "#120e18",
-        backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))",
+        // Press state darkens the surface 3% (15% → 12% white tint)
+        // so the button reads as physically depressing under the
+        // finger; rest stays at 15% for the brighter "lit" look.
+        backgroundImage: pressed
+          ? "linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12))"
+          : "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))",
         border: `1px solid rgba(${accent},${borderAlpha})`,
         boxShadow: hovered ? hoverShadow : restShadow,
         position: "relative",
@@ -201,7 +209,19 @@ function HeroButton({
           pointerEvents: "none",
         }}
       />
-      <div style={{ position: "relative", zIndex: 1 }}>{icon}</div>
+      {/* Icon — drop-shadow gives it a subtle mint halo so the
+          glyph reads as a light source, not just a stencil. The
+          filter only paints the SVG strokes, not a box around the
+          wrapper, so it stays clean against the button surface. */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          filter: "drop-shadow(0 0 6px rgba(92, 224, 184, 0.15))",
+        }}
+      >
+        {icon}
+      </div>
       <span
         style={{
           // SCAN UPC / AI VISION — uppercase category label, stays mono.
@@ -218,16 +238,15 @@ function HeroButton({
       </span>
       <span
         style={{
-          // Subtitle is functional instruction text ("when to use which"),
-          // not decoration. Pulled off the accent tint and onto plain
-          // white at 60% so it reads as readable copy regardless of
-          // variant. The variant identity comes from the label color
-          // above; pushing the subtitle through the accent rgb() bath
-          // made the camel one in particular drift toward unreadable.
+          // Subtitle bumped to a slightly warmer plum
+          // (rgba(200, 192, 216, 0.5)) so it reads at arm's length
+          // without competing with the accent label above. The
+          // variant identity is encoded entirely in the label
+          // color, so the subtitle stays neutral.
           fontFamily: "var(--font-body)",
           fontSize: 11,
           fontWeight: 500,
-          color: "rgba(255,255,255,0.60)",
+          color: "rgba(200, 192, 216, 0.5)",
           letterSpacing: "0.01em",
           position: "relative",
           zIndex: 1,

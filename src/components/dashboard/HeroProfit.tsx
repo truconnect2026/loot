@@ -213,9 +213,14 @@ export default function HeroProfit({
   const isNegative = value < 0;
   const isZero = value === 0;
 
-  // Empty state forces a dim plum hero, no glow.
+  // Empty state shows the $0 in ghost mint (0.2 alpha) rather than
+  // dim plum. It's still zero, but the money color hints at what
+  // the number becomes after the first BUY scan. Pulse animation
+  // (defined in JSX below) gives the ghost number an "awaiting
+  // input" cadence. Populated zero stays plum (no money to celebrate
+  // yet), negative stays red (real loss).
   const heroColor = isEmpty
-    ? "#3D2E55"
+    ? "rgba(92, 224, 184, 0.2)"
     : isZero
       ? "#5A4E70"
       : isNegative
@@ -272,12 +277,17 @@ export default function HeroProfit({
   return (
     <div
       style={{
-        // Opaque page-bg base + the original translucent gradient on
-        // top so the dashboard's grid pattern can never bleed through
-        // the hero card. backgroundImage paints over backgroundColor.
+        // Empty-state surface gets a top-left mint whisper (0.03)
+        // fading into the dark base — the scoreboard hints at the
+        // money color even at $0. Populated state keeps the original
+        // soft white gradient since the live numbers carry their own
+        // mint without help. backgroundImage paints over
+        // backgroundColor; the image is a solid color stack so the
+        // dashboard grid still can't bleed through.
         backgroundColor: "#120e18",
-        backgroundImage:
-          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+        backgroundImage: isEmpty
+          ? "linear-gradient(165deg, rgba(92, 224, 184, 0.03) 0%, rgba(23, 18, 42, 0.9) 40%, rgba(23, 18, 42, 0.9) 100%)"
+          : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 20,
         boxShadow:
@@ -399,15 +409,24 @@ export default function HeroProfit({
           />
         </div>
         {isEmpty && (
+          // Action-pointed copy that physically points to the scan
+          // buttons sitting just below this card. Mint arrow draws
+          // the eye downward; the rest of the line at low-key gray
+          // keeps the energy on the action, not the words.
           <span
             style={{
               fontFamily: "var(--font-body)",
-              fontSize: 10,
-              color: "rgba(255,255,255,0.18)",
+              fontWeight: 500,
+              fontSize: 13,
+              color: "rgba(200, 192, 216, 0.55)",
               lineHeight: 1.3,
+              display: "inline-flex",
+              alignItems: "baseline",
+              gap: 4,
             }}
           >
-            scan your first item to start tracking
+            scan your first find{" "}
+            <span style={{ color: "#5CE0B8" }}>↓</span>
           </span>
         )}
       </div>
@@ -488,20 +507,47 @@ export default function HeroProfit({
           headline. Once the user records a BUY (Buys/Spent become
           non-zero), the full row below takes over. */}
       {showOnlyScansLine && (
-        <div
-          style={{
-            marginTop: 8,
-            fontFamily: "var(--font-body)",
-            fontSize: 12,
-            color: "#5A4E70",
-            fontFeatureSettings: '"tnum"',
-          }}
-        >
-          <span style={{ color: "#5CE0B8", fontWeight: 600 }}>
-            {todayScans}
-          </span>{" "}
-          scan{todayScans === 1 ? "" : "s"} so far — keep going
-        </div>
+        <>
+          <div
+            style={{
+              marginTop: 8,
+              fontFamily: "var(--font-body)",
+              fontSize: 12,
+              color: "#5A4E70",
+              fontFeatureSettings: '"tnum"',
+            }}
+          >
+            <span style={{ color: "#5CE0B8", fontWeight: 600 }}>
+              {todayScans}
+            </span>{" "}
+            scan{todayScans === 1 ? "" : "s"} so far — keep going
+          </div>
+          {/* Subtle progress track — width proportional to
+              scans/10 so the user sees mint creep in even at 1
+              scan. Capped at 100% (10+ scans fills the bar) so a
+              high-volume day still reads as "you're on fire" rather
+              than overflowing the track. */}
+          <div
+            style={{
+              marginTop: 6,
+              height: 2,
+              borderRadius: 2,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.min(100, todayScans * 10)}%`,
+                height: "100%",
+                backgroundColor: "rgba(92, 224, 184, 0.3)",
+                borderRadius: 2,
+                transition:
+                  "width 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
+            />
+          </div>
+        </>
       )}
 
       {/* Secondary stats — only renders when at least TWO of the

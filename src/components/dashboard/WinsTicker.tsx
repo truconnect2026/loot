@@ -83,15 +83,25 @@ export default function WinsTicker() {
   if (!win) return null;
 
   return (
+    // Outer: full-width centering row so the pill sits centered in
+    // whatever container the ticker is dropped into. The pill
+    // itself is the inline-flex chip below.
+    <div style={{ display: "flex", justifyContent: "center" }}>
     <div
       role="status"
       aria-live="polite"
       style={{
-        display: "flex",
+        // Pill — frames the ticker as intentional content instead
+        // of floating prose. Soft 0.02 white surface + 20px corners
+        // gives it just enough chrome to read as a chip without
+        // competing with the section header above.
+        display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
-        height: 18,
+        padding: "6px 14px",
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.02)",
         opacity: visible ? 0.9 : 0,
         transition: `opacity ${FADE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
       }}
@@ -151,6 +161,7 @@ export default function WinsTicker() {
         )}
         {win.suffix}
       </span>
+    </div>
     </div>
   );
 }

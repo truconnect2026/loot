@@ -993,21 +993,28 @@ export default function DashboardPage() {
           />
           {/* Free-user quota counter — sits below the scan zone,
               hidden for Pro members and during the loading window
-              before the first /api/scan-count response. Rendered as
-              a soft pill instead of plain text so it reads as a UI
-              element, not a floating annotation.
+              before the first /api/scan-count response.
               Three states:
-                remaining > 1  → mint  "X/N free scans"
-                remaining = 1  → red   "X/N free scans" (running low)
-                remaining = 0  → red   "0 scans left" (saying X/X
-                  free scans implies "you have scans" which is the
-                  opposite of the actual state).
-              "today" dropped from the copy — it's implied by the
-              live counter and saves horizontal pill width. */}
+                remaining > 1  → mint pill "X/N free scans"
+                remaining = 1  → red pill "X/N free scans" (running low)
+                remaining = 0  → red pill "upgrade for unlimited" —
+                  the entire pill becomes a tap target that opens the
+                  PaywallSheet. The exhausted state turns into a
+                  conversion point instead of an error message. The
+                  red surface softens to 0.06 / 0.10 alpha so the
+                  CTA reads as inviting, not alarmed. */}
           {scanCount && !scanCount.isPro && (
             (() => {
               const exhausted = scanCount.remaining <= 0;
               const urgent = exhausted || scanCount.remaining === 1;
+              const handleExhaustedTap = () => {
+                if (!exhausted) return;
+                setPaywallInfo({
+                  used: scanCount.used,
+                  limit: scanCount.limit,
+                });
+                setPaywallOpen(true);
+              };
               return (
                 <div
                   style={{
@@ -1016,30 +1023,38 @@ export default function DashboardPage() {
                     justifyContent: "center",
                   }}
                 >
-                  <span
+                  <button
+                    type="button"
+                    onClick={handleExhaustedTap}
+                    disabled={!exhausted}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
                       padding: "6px 16px",
                       borderRadius: 20,
-                      backgroundColor: urgent
-                        ? "rgba(232, 99, 107, 0.08)"
-                        : "rgba(92, 224, 184, 0.08)",
-                      border: urgent
-                        ? "1px solid rgba(232, 99, 107, 0.12)"
-                        : "1px solid rgba(92, 224, 184, 0.12)",
+                      backgroundColor: exhausted
+                        ? "rgba(232, 99, 107, 0.06)"
+                        : urgent
+                          ? "rgba(232, 99, 107, 0.08)"
+                          : "rgba(92, 224, 184, 0.08)",
+                      border: exhausted
+                        ? "1px solid rgba(232, 99, 107, 0.10)"
+                        : urgent
+                          ? "1px solid rgba(232, 99, 107, 0.12)"
+                          : "1px solid rgba(92, 224, 184, 0.12)",
                       fontFamily: "var(--font-body)",
                       fontWeight: 500,
                       fontSize: 11,
                       color: urgent ? "#E8636B" : "#5CE0B8",
                       letterSpacing: "0.02em",
                       fontFeatureSettings: '"tnum"',
+                      cursor: exhausted ? "pointer" : "default",
                     }}
                   >
                     {exhausted
-                      ? "0 scans left"
+                      ? "upgrade for unlimited"
                       : `${scanCount.used}/${scanCount.limit} free scans`}
-                  </span>
+                  </button>
                 </div>
               );
             })()
