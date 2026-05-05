@@ -41,47 +41,58 @@ export default function UpgradeCard({
           100% { background-position: 0% 50%; }
         }
       `}</style>
-      {/* Gradient border wrapper — the 1.5px padding becomes the
-          border width when the inner content paints its own bg.
-          Closing the gradient stop with the same mint as the start
-          makes the shimmer wrap-around seamless. */}
+      {/* Gradient border wrapper — the 2px padding becomes the
+          visible border width when the inner content paints its own
+          bg over it. Color stops bumped to 0.7 / 0.6 / 0.6 / 0.7 so
+          the mint→camel→periwinkle hand-off is actually distinct
+          (the previous 0.5/0.4 alphas blended into a single muted
+          lavender on most screens). 4-color gradient with mint at
+          both ends makes the shimmer wrap-around seamless; 400%
+          background-size + 4s loop creates a visible color drift
+          rather than a static halo. */}
       <div
         style={{
           marginTop: 16,
-          padding: 1.5,
+          padding: 2,
           borderRadius: 16,
           background:
             "linear-gradient(135deg, " +
-            "rgba(92, 224, 184, 0.5), " +
-            "rgba(212, 165, 116, 0.4), " +
-            "rgba(123, 143, 255, 0.4), " +
-            "rgba(92, 224, 184, 0.5)" +
+            "rgba(92, 224, 184, 0.7) 0%, " +
+            "rgba(212, 165, 116, 0.6) 35%, " +
+            "rgba(123, 143, 255, 0.6) 65%, " +
+            "rgba(92, 224, 184, 0.7) 100%" +
             ")",
-          backgroundSize: "300% 300%",
-          animation: "upgradeBorderShimmer 6s ease-in-out infinite",
+          backgroundSize: "400% 400%",
+          animation: "upgradeBorderShimmer 4s ease-in-out infinite",
           boxShadow: "0 4px 24px -4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)",
         }}
       >
         <div
           style={{
             position: "relative",
-            // Inner content card. 14.5 = 16 wrapper - 1.5 padding so
-            // the inner corner sits flush inside the gradient frame.
-            borderRadius: 14.5,
-            // Top-center mint wash over the opaque base creates a
-            // subtle "lit from above" highlight that sells the
-            // premium-tier feel without competing with the gradient
-            // border. backgroundImage paints over backgroundColor.
-            backgroundColor: "#1E1838",
+            // Inner content card. 14 = 16 wrapper - 2 padding so the
+            // inner corner sits flush inside the 2px gradient frame.
+            borderRadius: 14,
+            // Inner glow — radial wash with origin just above the top
+            // edge (50% -10%) creates a downward-facing "lit from
+            // above" highlight. 0.07 center alpha (up from 0.04) is
+            // the threshold where the wash actually registers on
+            // OLED phone screens against the dark base. Base bg
+            // bumped to 0.9 alpha for a slightly more solid surface
+            // under the gradient frame.
+            backgroundColor: "rgba(23, 18, 42, 0.9)",
             backgroundImage:
-              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(92, 224, 184, 0.04) 0%, transparent 50%)",
+              "radial-gradient(ellipse 90% 50% at 50% -10%, rgba(92, 224, 184, 0.07) 0%, transparent 60%)",
             padding: 20,
             overflow: "hidden",
           }}
         >
-          {/* Section label — gold sparkle pip + mint header. The ✦
-              earns its color from the sparkle vocabulary the rest of
-              the app uses for premium / first-class moments. */}
+          {/* Section label — gold sparkle + mint header. The ✦ is
+              rendered at 14px (much larger than the 9px label text)
+              so it reads as a deliberate accent rather than a
+              speck. marginRight on the sparkle gives it a fixed 6px
+              gap to the wordmark independent of the label's letter-
+              spacing. */}
           <div
             style={{
               fontFamily: "var(--font-label)",
@@ -91,10 +102,18 @@ export default function UpgradeCard({
               marginBottom: 4,
               display: "inline-flex",
               alignItems: "center",
-              gap: 6,
             }}
           >
-            <span style={{ color: "#D4A574" }}>✦</span>
+            <span
+              style={{
+                color: "#D4A574",
+                fontSize: 14,
+                marginRight: 6,
+                lineHeight: 1,
+              }}
+            >
+              ✦
+            </span>
             <span style={{ color: "#5CE0B8" }}>UPGRADE TO PRO</span>
           </div>
           <div

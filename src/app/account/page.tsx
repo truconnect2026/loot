@@ -741,12 +741,12 @@ export default function AccountPage() {
         </div>
 
         {/* ── Settings ── */}
-        {/* SETTINGS section label — slightly brighter blue-purple than the
-            dimmest annotations (RENEWS / SCANS at #1E1A30) so this section
-            header reads on device. Still cold (no red, no green). */}
+        {/* SETTINGS section label — 28px gap from the upgrade card
+            above per the spacing spec; gives the premium tier its
+            own breathing room before the functional settings list. */}
         <div
           style={{
-            marginTop: 20,
+            marginTop: 28,
             marginBottom: 8,
             // Uppercase section header — stays mono per the font role system.
             fontFamily: "var(--font-label)",
@@ -759,8 +759,10 @@ export default function AccountPage() {
           SETTINGS
         </div>
 
-        {/* Group 1: Location settings (6px gap) */}
-        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Group 1: Location settings — 8px between rows so each
+            tile reads as its own card with air around it instead of
+            crammed against its neighbors. */}
+        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {/* Zip code — persists to profiles.zip_code */}
           <ZipInput
             value={profile.zipCode}
@@ -838,28 +840,56 @@ export default function AccountPage() {
             >
               Watch list
             </span>
-            {/* Watch list count — same chip treatment as zip and
-                radius so the right column reads as a consistent
-                ladder of badges. */}
+            {/* Watch list count chip — when the list is empty we
+                swap the "0 keywords" readout for an inviting "+ add
+                keywords" prompt (mint plus + muted text). Empty
+                state should invite action, not report a zero. */}
             <div
               style={{
                 backgroundColor: "rgba(255,255,255,0.06)",
                 borderRadius: 8,
                 padding: "4px 12px",
                 marginRight: 6,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
               }}
             >
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains-mono)",
-                  fontWeight: 500,
-                  fontSize: 12,
-                  color: "#C8C0D8",
-                  fontFeatureSettings: '"tnum"',
-                }}
-              >
-                {watchRows.length} keywords
-              </span>
+              {watchRows.length === 0 ? (
+                <>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontSize: 12,
+                      color: "rgba(92, 224, 184, 0.5)",
+                      lineHeight: 1,
+                    }}
+                  >
+                    +
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-body)",
+                      fontSize: 11,
+                      color: "#5A4E70",
+                    }}
+                  >
+                    add keywords
+                  </span>
+                </>
+              ) : (
+                <span
+                  style={{
+                    fontFamily: "var(--font-jetbrains-mono)",
+                    fontWeight: 500,
+                    fontSize: 12,
+                    color: "#C8C0D8",
+                    fontFeatureSettings: '"tnum"',
+                  }}
+                >
+                  {watchRows.length} keywords
+                </span>
+              )}
             </div>
             <ChevronRight />
           </SettingsTile>
@@ -986,7 +1016,9 @@ function SignOutLink({ onTap }: SignOutLinkProps) {
   return (
     <div
       style={{
-        marginTop: 16,
+        // 28px from the DATA section above — quiet exit deserves
+        // its own breathing room, not jammed against the export tile.
+        marginTop: 28,
         display: "flex",
         justifyContent: "center",
       }}
