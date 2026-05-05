@@ -20,6 +20,7 @@ import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import SourcingCards from "@/components/dashboard/SourcingCards";
 import ToolSheet, {
   type ToolKind,
+  type ToolSheetTool,
 } from "@/components/dashboard/ToolSheet";
 import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
@@ -707,14 +708,13 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Tool sheet state — null when closed, set to a ToolKind when a
-  // tile is tapped. The sheet stays mounted across opens so its
-  // own internal state (input value, status) cleans up on each
-  // open via the effect inside ToolSheet itself.
-  const [activeTool, setActiveTool] = useState<ToolKind | null>(null);
-  // Shelf Scanner has its own dedicated sheet (thumbnail, filter
-  // bar, expand-to-compare) so it lives outside the unified
-  // ToolSheet routing — the tile maps directly to this flag.
+  // ToolSheet handles every tool EXCEPT shelf-scan. Its `activeTool`
+  // state is typed as ToolSheetTool (which excludes "shelf-scan") so
+  // the type system enforces the routing — even if a future bug tries
+  // to call setActiveTool("shelf-scan"), tsc would fail the build
+  // before it could ship. Shelf Scanner has its own dedicated sheet
+  // (thumbnail, filter bar, expand-to-compare).
+  const [activeTool, setActiveTool] = useState<ToolSheetTool | null>(null);
   const [shelfOpen, setShelfOpen] = useState(false);
 
   const handleToolTap = useCallback(
@@ -722,10 +722,18 @@ export default function DashboardPage() {
       haptic();
       if (tool.href) {
         router.push(tool.href);
-      } else if (tool.toolKind === "shelf-scan") {
+        return;
+      }
+      if (tool.toolKind === "shelf-scan") {
+        // Dedicated sheet — see ShelfScanSheet. Routing this through
+        // ToolSheet is now a tsc error, not just a runtime mistake.
         setShelfOpen(true);
-      } else if (tool.toolKind) {
-        setActiveTool(tool.toolKind);
+        return;
+      }
+      if (tool.toolKind) {
+        // Explicit narrowing — ToolKind includes "shelf-scan" (which
+        // we already returned on above) but ToolSheetTool does not.
+        setActiveTool(tool.toolKind as ToolSheetTool);
       }
     },
     [router]

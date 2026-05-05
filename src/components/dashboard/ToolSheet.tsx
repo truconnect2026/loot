@@ -27,6 +27,12 @@ import BottomSheet from "@/components/shared/BottomSheet";
  * ShelfScanSheet instead of opening this component.
  */
 
+// ToolKind is the union the dashboard tile config uses — keeps a
+// single source of truth across all tiles. ToolSheetTool is the
+// strict subset this sheet handles; "shelf-scan" is excluded so the
+// type system itself prevents shelf-scan from ever being routed
+// through ToolSheet's plain-text card path. If a future bug ever
+// tries to set activeTool to "shelf-scan", tsc fails the build.
 export type ToolKind =
   | "shelf-scan"
   | "price-check"
@@ -34,6 +40,8 @@ export type ToolKind =
   | "tag-decode"
   | "scrap-id"
   | "liquidation";
+
+export type ToolSheetTool = Exclude<ToolKind, "shelf-scan">;
 
 interface ToolSpec {
   title: string;
@@ -44,16 +52,7 @@ interface ToolSpec {
   textLabel?: string;
 }
 
-// "shelf-scan" gets a placeholder spec so the Record<ToolKind,…>
-// type stays exhaustive, but the dashboard never opens the ToolSheet
-// for shelf-scan — see ShelfScanSheet for the real implementation.
-const TOOL_SPECS: Record<ToolKind, ToolSpec> = {
-  "shelf-scan": {
-    title: "Shelf Scanner",
-    blurb: "(handled by dedicated sheet)",
-    apiPath: "/api/shelf-scan",
-    inputType: "image",
-  },
+const TOOL_SPECS: Record<ToolSheetTool, ToolSpec> = {
   "price-check": {
     title: "Price Check",
     blurb: "type an item — get the realistic resale price",
@@ -90,7 +89,7 @@ const TOOL_SPECS: Record<ToolKind, ToolSpec> = {
 
 interface ToolSheetProps {
   open: boolean;
-  tool: ToolKind | null;
+  tool: ToolSheetTool | null;
   onClose: () => void;
 }
 
@@ -100,7 +99,11 @@ interface ApiError {
   error: string;
 }
 
-export default function ToolSheet({ open, tool, onClose }: ToolSheetProps) {
+export default function ToolSheet({
+  open,
+  tool,
+  onClose,
+}: ToolSheetProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<unknown>(null);
@@ -585,10 +588,14 @@ function CameraGlyph() {
 // them in a stable layout.
 // ────────────────────────────────────────────────────────────────
 
-function ResultBlock({ tool, data }: { tool: ToolKind; data: unknown }) {
+function ResultBlock({
+  tool,
+  data,
+}: {
+  tool: ToolSheetTool;
+  data: unknown;
+}) {
   switch (tool) {
-    case "shelf-scan":
-      return <ShelfScanResult />;
     case "price-check":
       return <PriceCheckResult data={data} />;
     case "fake-check":
@@ -633,15 +640,6 @@ const rowValueStyle: React.CSSProperties = {
   fontWeight: 600,
 };
 
-// Defensive placeholder — shelf-scan has its own sheet, so this
-// branch is unreachable in practice. The case stays in the switch
-// purely so the ToolKind union remains exhaustive without a tsc
-// non-exhaustive-switch warning.
-function ShelfScanResult() {
-  return (
-    <EmptyResult message="shelf scanner uses a dedicated sheet" />
-  );
-}
 
 function PriceCheckResult({ data }: { data: unknown }) {
   const obj = asObject(data);
@@ -979,18 +977,3 @@ function BulletList({
   );
 }
 
-function EmptyResult({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        marginTop: 20,
-        textAlign: "center",
-        fontFamily: "var(--font-body)",
-        fontSize: 13,
-        color: "rgba(255,255,255,0.45)",
-      }}
-    >
-      {message}
-    </div>
-  );
-}
