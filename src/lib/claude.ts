@@ -286,18 +286,70 @@ async function callTextTool(
   return parseJsonObject<Record<string, unknown>>(extractText(message));
 }
 
-const SHELF_SCAN_SYSTEM = `You are a reseller's assistant. Identify every visible item in this photo (book spines, product labels, brand names, etc). Return a JSON object with a single field "items" whose value is an array of objects with fields: name, estimated_retail_value, estimated_resale_value, confidence (high/medium/low), notes. Rank the array by profit potential, highest first. Respond with ONLY the JSON object — no markdown, no prose.`;
+// Shelf scan — multi-item identification with per-platform pricing.
+// Claude returns cost (estimated thrift price) + sell prices for FB
+// Local, FB Shipped, and eBay; the model also picks the best platform
+// after computing fees (FB Local 0%, FB Shipped 10%, eBay 13.25% +
+// $0.30) and assigns BUY/MAYBE/PASS using the same thresholds the
+// barcode verdict path uses (BUY > $15 or > 100% ROI, MAYBE $5-15,
+// PASS < $5). The route handler does NOT recompute these — letting
+// the model do the math keeps the JSON shape stable and means the UI
+// can ignore fee tables entirely.
+const SHELF_SCAN_SYSTEM = `You are an expert thrift store reseller analyzing a photo of items on a shelf, table, or display. Identify every distinct item visible in the image. For each item, estimate what a thrift store would price it at, what it could sell for on Facebook Marketplace locally, and what it would sell for on eBay (based on your knowledge of typical eBay sold listings for similar items).
+
+Return ONLY valid JSON — no markdown, no backticks, no explanation text. Return an object with a single key "items" whose value is an array of objects with these exact fields:
+
+  name (string, specific descriptive name),
+  cost (number, estimated thrift store price in dollars),
+  sellFBLocal (number, estimated Facebook Marketplace local pickup price),
+  sellFBShipped (number, estimated FB Marketplace shipped price, accounting for shipping costs the buyer pays),
+  sellEbay (number, estimated eBay sold price based on your knowledge of comparable sold listings),
+  profit (number, use the highest of the three sell prices minus cost),
+  bestPlatform (string, one of "FB Local" / "FB Shipped" / "eBay" — whichever gives the best NET profit after fees: FB Local 0% fee, FB Shipped 10% fee, eBay 13.25% + $0.30 fee),
+  verdict (string, one of BUY/MAYBE/PASS — BUY if best net profit > 15 or ROI > 100%, MAYBE if net profit 5-15, PASS if net profit < 5 or negative),
+  confidence (string, one of HIGH/MEDIUM/LOW based on how clearly you can identify and price the item),
+  description (string, brief note on condition, brand recognition, why it's worth grabbing or not).
+
+Rank the array by profit descending.`;
+
+export type ShelfScanPlatform = "FB Local" | "FB Shipped" | "eBay";
 
 export interface ShelfScanItem {
   name: string;
-  estimated_retail_value: number;
-  estimated_resale_value: number;
-  confidence: "high" | "medium" | "low";
-  notes: string;
+  cost: number;
+  sellFBLocal: number;
+  sellFBShipped: number;
+  sellEbay: number;
+  profit: number;
+  bestPlatform: ShelfScanPlatform;
+  verdict: Verdict;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  description: string;
 }
 
 export interface ShelfScanResult {
   items: ShelfScanItem[];
+}
+
+function normalizePlatform(raw: unknown): ShelfScanPlatform {
+  if (raw === "FB Local" || raw === "FB Shipped" || raw === "eBay") return raw;
+  // Tolerate common case variants the model occasionally emits.
+  if (typeof raw === "string") {
+    const s = raw.toLowerCase().replace(/\s+/g, "");
+    if (s === "fblocal" || s === "facebooklocal") return "FB Local";
+    if (s === "fbshipped" || s === "facebookshipped") return "FB Shipped";
+    if (s === "ebay") return "eBay";
+  }
+  return "FB Local";
+}
+
+function normalizeShelfConfidence(raw: unknown): "HIGH" | "MEDIUM" | "LOW" {
+  if (raw === "HIGH" || raw === "MEDIUM" || raw === "LOW") return raw;
+  if (typeof raw === "string") {
+    const s = raw.toUpperCase();
+    if (s === "HIGH" || s === "MEDIUM" || s === "LOW") return s;
+  }
+  return "MEDIUM";
 }
 
 export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
@@ -306,17 +358,24 @@ export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
   return {
     items: items.map((it) => {
       const obj = (it ?? {}) as Record<string, unknown>;
+      const verdictRaw = obj.verdict;
+      const verdict: Verdict =
+        verdictRaw === "BUY" ||
+        verdictRaw === "PASS" ||
+        verdictRaw === "MAYBE"
+          ? verdictRaw
+          : "PASS";
       return {
         name: String(obj.name ?? "Unknown item"),
-        estimated_retail_value: Number(obj.estimated_retail_value ?? 0),
-        estimated_resale_value: Number(obj.estimated_resale_value ?? 0),
-        confidence:
-          obj.confidence === "high" ||
-          obj.confidence === "medium" ||
-          obj.confidence === "low"
-            ? obj.confidence
-            : "medium",
-        notes: String(obj.notes ?? ""),
+        cost: Number(obj.cost ?? 0),
+        sellFBLocal: Number(obj.sellFBLocal ?? 0),
+        sellFBShipped: Number(obj.sellFBShipped ?? 0),
+        sellEbay: Number(obj.sellEbay ?? 0),
+        profit: Number(obj.profit ?? 0),
+        bestPlatform: normalizePlatform(obj.bestPlatform),
+        verdict,
+        confidence: normalizeShelfConfidence(obj.confidence),
+        description: String(obj.description ?? ""),
       };
     }),
   };

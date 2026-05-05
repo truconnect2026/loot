@@ -7,17 +7,24 @@ import BottomSheet from "@/components/shared/BottomSheet";
  * Unified bottom sheet for the More-Tools tile suite. Each tool maps
  * to a tile on the dashboard:
  *
- *   shelf-scan       photo  → ranked list of items + resale values
  *   price-check      text   → eBay average + range + demand
  *   fake-check       photo  → authenticity verdict + red flags
  *   tag-decode       photo  → store, prices, clearance codes
  *   scrap-id         photo  → metal type, purity, $ per lb
  *   liquidation      url|text → manifest analysis + roi
  *
+ * Shelf Scanner is intentionally NOT here — it has its own sheet
+ * (ShelfScanSheet) because the design surface is too distinct from
+ * the other tools (thumbnail + filter bar + per-card expand +
+ * sticky batch-listings bar).
+ *
  * Photo tools use <input type="file" accept="image/*" capture="environment">
  * — that gets the native iOS/Android camera UI for free, including
  * proper auto-focus and zoom controls. Custom viewfinders are reserved
- * for continuous-detection cases (the barcode scanner).
+ * for continuous-detection cases (the barcode scanner). The
+ * "shelf-scan" literal stays in this union so the dashboard's tile
+ * config keeps a single source of truth, but tapping it routes to
+ * ShelfScanSheet instead of opening this component.
  */
 
 export type ToolKind =
@@ -37,10 +44,13 @@ interface ToolSpec {
   textLabel?: string;
 }
 
+// "shelf-scan" gets a placeholder spec so the Record<ToolKind,…>
+// type stays exhaustive, but the dashboard never opens the ToolSheet
+// for shelf-scan — see ShelfScanSheet for the real implementation.
 const TOOL_SPECS: Record<ToolKind, ToolSpec> = {
   "shelf-scan": {
     title: "Shelf Scanner",
-    blurb: "snap a shelf — Claude ranks every visible item by profit potential",
+    blurb: "(handled by dedicated sheet)",
     apiPath: "/api/shelf-scan",
     inputType: "image",
   },
@@ -578,7 +588,7 @@ function CameraGlyph() {
 function ResultBlock({ tool, data }: { tool: ToolKind; data: unknown }) {
   switch (tool) {
     case "shelf-scan":
-      return <ShelfScanResult data={data} />;
+      return <ShelfScanResult />;
     case "price-check":
       return <PriceCheckResult data={data} />;
     case "fake-check":
@@ -623,45 +633,13 @@ const rowValueStyle: React.CSSProperties = {
   fontWeight: 600,
 };
 
-function ShelfScanResult({ data }: { data: unknown }) {
-  const items = (asObject(data).items ?? []) as Array<Record<string, unknown>>;
-  if (items.length === 0) {
-    return <EmptyResult message="no recognizable items" />;
-  }
+// Defensive placeholder — shelf-scan has its own sheet, so this
+// branch is unreachable in practice. The case stays in the switch
+// purely so the ToolKind union remains exhaustive without a tsc
+// non-exhaustive-switch warning.
+function ShelfScanResult() {
   return (
-    <div style={sectionStyle}>
-      {items.map((it, idx) => {
-        const profit =
-          Number(it.estimated_resale_value ?? 0) -
-          Number(it.estimated_retail_value ?? 0);
-        return (
-          <div key={idx} style={resultCardStyle}>
-            <div style={{ ...rowValueStyle, marginBottom: 4 }}>
-              {String(it.name ?? "Unknown item")}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                color: "rgba(255,255,255,0.60)",
-              }}
-            >
-              <span>retail {fmtMoney(Number(it.estimated_retail_value ?? 0))}</span>
-              <span>resale {fmtMoney(Number(it.estimated_resale_value ?? 0))}</span>
-              <span style={{ color: profit > 0 ? "var(--money)" : undefined }}>
-                {profit >= 0 ? "+" : ""}
-                {fmtMoney(profit)}
-              </span>
-            </div>
-            {it.notes ? (
-              <div style={notesStyle}>{String(it.notes)}</div>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
+    <EmptyResult message="shelf scanner uses a dedicated sheet" />
   );
 }
 

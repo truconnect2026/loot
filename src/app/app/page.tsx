@@ -21,6 +21,7 @@ import SourcingCards from "@/components/dashboard/SourcingCards";
 import ToolSheet, {
   type ToolKind,
 } from "@/components/dashboard/ToolSheet";
+import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
@@ -711,12 +712,18 @@ export default function DashboardPage() {
   // own internal state (input value, status) cleans up on each
   // open via the effect inside ToolSheet itself.
   const [activeTool, setActiveTool] = useState<ToolKind | null>(null);
+  // Shelf Scanner has its own dedicated sheet (thumbnail, filter
+  // bar, expand-to-compare) so it lives outside the unified
+  // ToolSheet routing — the tile maps directly to this flag.
+  const [shelfOpen, setShelfOpen] = useState(false);
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
       haptic();
       if (tool.href) {
         router.push(tool.href);
+      } else if (tool.toolKind === "shelf-scan") {
+        setShelfOpen(true);
       } else if (tool.toolKind) {
         setActiveTool(tool.toolKind);
       }
@@ -1278,6 +1285,16 @@ export default function DashboardPage() {
         open={activeTool !== null}
         tool={activeTool}
         onClose={() => setActiveTool(null)}
+      />
+
+      <ShelfScanSheet
+        open={shelfOpen}
+        onClose={() => setShelfOpen(false)}
+        onPaywall={handlePaywall}
+        onScanned={() => {
+          void refreshStats();
+          void refreshScanCount();
+        }}
       />
 
       <PaywallSheet
