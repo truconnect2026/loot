@@ -34,8 +34,8 @@ function haptic(pattern: number | number[] = 10) {
   }
 }
 
-const FRAME_W = 280;
-const FRAME_H = 210; // 4:3 — most items people scan are wider than tall.
+// Viewfinder is sized via CSS (86vw, max 440px, aspect 4/3) instead
+// of fixed FRAME_W/FRAME_H now that the camera feed is full-bleed.
 
 type Phase =
   | { kind: "framing" }
@@ -46,14 +46,20 @@ type Phase =
 function CornerBracket({
   corner,
   color,
+  arm = 28,
+  stroke = 2,
+  inset = 4,
 }: {
   corner: "tl" | "tr" | "bl" | "br";
   color: string;
+  arm?: number;
+  stroke?: number;
+  inset?: number;
 }) {
-  // L-shape from two 28px arms, 2px stroke, 4px inset from each frame edge.
-  const ARM = 28;
-  const STROKE = 2;
-  const INSET = 4;
+  // L-shape from two `arm`px arms, 2px stroke, 4px inset from each frame edge.
+  const ARM = arm;
+  const STROKE = stroke;
+  const INSET = inset;
   const horizontal: React.CSSProperties = {
     position: "absolute",
     width: ARM,
@@ -369,57 +375,115 @@ export default function ScanOverlay({
           {sessionCount} {sessionCount === 1 ? "scan" : "scans"}
         </div>
 
-        {/* Scanner frame — 4:3 landscape */}
-        <div
+        {/* Full-bleed camera feed during framing — sits behind every
+            other element. Switches to display:none once the user
+            captures or transitions out of framing so the centered
+            phase-specific UI below dominates the screen. */}
+        <video
+          ref={videoRef}
+          playsInline
+          muted
           style={{
-            width: FRAME_W,
-            height: FRAME_H,
-            border: `1.5px solid rgba(${accent.rgb}, 0.40)`,
-            borderRadius: 16,
-            position: "relative",
-            overflow: "hidden",
-            // Soft frame glow — the viewfinder looks like it's projecting light.
-            boxShadow: `0 0 30px -5px rgba(${accent.rgb}, 0.12)`,
-            backgroundColor: "#000",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: phase.kind === "framing" ? "block" : "none",
+            opacity: cameraReady ? 1 : 0,
+            transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+            zIndex: 0,
           }}
-        >
-          {/* Camera loading state — Saturn spinner until stream resolves */}
-          {!cameraReady && phase.kind === "framing" && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <CoinMarkSpinner />
-            </div>
-          )}
+        />
 
-          <video
-            ref={videoRef}
-            playsInline
-            muted
+        {/* Camera-loading spinner — centered over the (still-black)
+            video element until the stream resolves. */}
+        {!cameraReady && phase.kind === "framing" && (
+          <div
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: phase.kind === "framing" ? "block" : "none",
-              opacity: cameraReady ? 1 : 0,
-              transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          >
+            <CoinMarkSpinner />
+          </div>
+        )}
+
+        {/* Vignette — radial dim outside the viewfinder so the corner
+            brackets read as the active region. Disabled during non-
+            framing phases (no video showing). */}
+        {phase.kind === "framing" && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              pointerEvents: "none",
+              background:
+                "radial-gradient(ellipse 60% 45% at 50% 45%, transparent 40%, rgba(0,0,0,0.55) 100%)",
             }}
           />
+        )}
 
-          {/* Corner brackets — L-shape, 28px arms, 4px inset */}
-          <CornerBracket corner="tl" color={accent.hex} />
-          <CornerBracket corner="tr" color={accent.hex} />
-          <CornerBracket corner="bl" color={accent.hex} />
-          <CornerBracket corner="br" color={accent.hex} />
-
+        {/* Viewfinder — sized to 86% of viewport width (capped at
+            440px for tablets), 4:3 aspect-ratio. Just corner brackets
+            on top of the full-bleed video — no border, no bg. The
+            zone defines where to point the camera; the dim vignette
+            outside it does the rest of the work. */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            width: "86vw",
+            maxWidth: 440,
+            aspectRatio: "4 / 3",
+            // Block-flow — the centered flex parent vertically
+            // centers the viewfinder + the phase-specific UI below.
+          }}
+        >
           {phase.kind === "framing" && (
             <>
+              {/* Corner brackets — bracket arm scaled up so the
+                  L-shape reads as deliberate framing at 300+ px
+                  width. */}
+              <CornerBracket
+                corner="tl"
+                color={accent.hex}
+                arm={48}
+                stroke={3}
+                inset={0}
+              />
+              <CornerBracket
+                corner="tr"
+                color={accent.hex}
+                arm={48}
+                stroke={3}
+                inset={0}
+              />
+              <CornerBracket
+                corner="bl"
+                color={accent.hex}
+                arm={48}
+                stroke={3}
+                inset={0}
+              />
+              <CornerBracket
+                corner="br"
+                color={accent.hex}
+                arm={48}
+                stroke={3}
+                inset={0}
+              />
+
               <div
                 style={{
                   position: "absolute",

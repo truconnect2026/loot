@@ -22,6 +22,7 @@ import ToolSheet, {
   type ToolKind,
 } from "@/components/dashboard/ToolSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
+import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { ScanCountResponse } from "@/app/api/scan-count/route";
@@ -1027,7 +1028,15 @@ export default function DashboardPage() {
             scrolls to the right element. overflow:hidden clamps each
             carousel's inner scroll-container so it can't push the page
             sideways. */}
-        {isNewUser ? (
+        {/* When BOTH feeds come back empty (typical for fresh users
+            without a zip, or zips with no Claude-generated coverage),
+            render a single consolidated empty card instead of two
+            stacked compact lines. The two-line stacked variant adds
+            ~80px of dead space; one card is ~140px and gives the user
+            an actionable CTA. */}
+        {!feedsLoading && nearbyDeals.length === 0 && freeDeals.length === 0 ? (
+          <FeedsEmptyCard />
+        ) : isNewUser ? (
           <>
             <div
               style={{
@@ -1043,13 +1052,13 @@ export default function DashboardPage() {
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
                 loading={feedsLoading}
-                emptyMessage="no free finds near you — try expanding your search radius"
+                emptyMessage="no free finds nearby — try expanding your radius"
               />
             </div>
             <div
               id="deals-near-you"
               style={{
-                marginTop: 20,
+                marginTop: 12,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "280ms",
@@ -1060,7 +1069,7 @@ export default function DashboardPage() {
                 deals={nearbyDeals}
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
-                emptyMessage="no deals found near you — try expanding your search radius"
+                emptyMessage="no deals nearby — try expanding your radius"
               />
             </div>
           </>
@@ -1081,12 +1090,12 @@ export default function DashboardPage() {
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
                 loading={feedsLoading}
-                emptyMessage="no deals found near you — try expanding your search radius"
+                emptyMessage="no deals nearby — try expanding your radius"
               />
             </div>
             <div
               style={{
-                marginTop: 20,
+                marginTop: 12,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "280ms",
@@ -1097,7 +1106,7 @@ export default function DashboardPage() {
                 deals={freeDeals}
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
-                emptyMessage="no free finds near you — try expanding your search radius"
+                emptyMessage="no free finds nearby — try expanding your radius"
               />
             </div>
           </>

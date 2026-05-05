@@ -173,51 +173,65 @@ export default function DealCarousel({
         </div>
       )}
 
-      <div style={{ position: "relative" }}>
+      {/* Empty: compact single-line state instead of a 164-tall hole.
+          Includes a subtle Account link so the user can take action
+          without leaving the dashboard manually. The full scroll
+          container is skipped entirely when empty so the section
+          collapses to ~36px instead of holding card-height space. */}
+      {isEmpty ? (
         <div
-          ref={scrollRef}
-          className="loot-carousel"
           style={{
-            display: "flex",
-            overflowX: "auto",
-            scrollSnapType: "x mandatory",
-            gap: 10,
             paddingLeft: 18,
             paddingRight: 18,
-            WebkitOverflowScrolling: "touch",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            height: 36,
+            fontFamily: "var(--font-body)",
+            fontSize: 12,
+            color: "rgba(255,255,255,0.45)",
+            lineHeight: 1.3,
           }}
         >
-          {loading
-            ? // Skeleton placeholders match the live cards' 232×164
-              // dimensions exactly so the layout doesn't shift when
-              // real data arrives.
-              Array.from({ length: 4 }).map((_, i) => (
-                <DealCardSkeleton key={`skel-${i}`} />
-              ))
-            : deals.map((deal) => (
-                <DealCard key={deal.id} deal={deal} onTap={onDealTap} />
-              ))}
-          {isEmpty && (
-            <div
-              style={{
-                width: "100%",
-                minHeight: 164,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingLeft: 12,
-                paddingRight: 12,
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                color: "rgba(255,255,255,0.45)",
-                textAlign: "center",
-                lineHeight: 1.4,
-              }}
-            >
-              {emptyMessage ?? "no deals found near you"}
-            </div>
-          )}
+          <span>{emptyMessage ?? "no deals found near you"}</span>
+          <a
+            href="/account"
+            style={{
+              color: "rgba(255,255,255,0.65)",
+              textDecoration: "underline",
+              textUnderlineOffset: 2,
+              textDecorationColor: "rgba(255,255,255,0.20)",
+            }}
+          >
+            settings
+          </a>
         </div>
+      ) : (
+        <div style={{ position: "relative" }}>
+          <div
+            ref={scrollRef}
+            className="loot-carousel"
+            style={{
+              display: "flex",
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              gap: 10,
+              paddingLeft: 18,
+              paddingRight: 18,
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {loading
+              ? // Skeleton placeholders match the live cards' 232×164
+                // dimensions exactly so the layout doesn't shift when
+                // real data arrives.
+                Array.from({ length: 4 }).map((_, i) => (
+                  <DealCardSkeleton key={`skel-${i}`} />
+                ))
+              : deals.map((deal) => (
+                  <DealCard key={deal.id} deal={deal} onTap={onDealTap} />
+                ))}
+          </div>
 
         {/* Left edge fade — appears once user scrolls past 10px */}
         <div
@@ -253,6 +267,7 @@ export default function DealCarousel({
           }}
         />
       </div>
+      )}
     </div>
   );
 }
