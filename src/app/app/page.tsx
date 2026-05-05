@@ -861,8 +861,13 @@ export default function DashboardPage() {
             WebkitBackdropFilter: scrolled
               ? "blur(12px) saturate(150%)"
               : "none",
+            // Always-on hairline below the header so the brand row
+            // visually separates from the stats card below, scrolled
+            // or not. The scrolled-state shadow stays as the
+            // additional depth cue when content sits underneath.
+            borderBottom: "1px solid rgba(255,255,255,0.04)",
             boxShadow: scrolled
-              ? "0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.3)"
+              ? "0 4px 16px rgba(0,0,0,0.3)"
               : "none",
             transition:
               "background-color 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 200ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -896,7 +901,12 @@ export default function DashboardPage() {
               backgroundColor: avatarPressed
                 ? "rgba(255,255,255,0.06)"
                 : "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)",
+              // Faint mint hairline so the avatar reads as an
+              // intentional brand element instead of a generic gray
+              // pill. 20% alpha is the minimum that registers
+              // against the dark surface without competing with the
+              // LOOT wordmark next to it.
+              border: "1px solid rgba(92, 224, 184, 0.20)",
               boxShadow:
                 "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3)",
               display: "flex",
@@ -986,13 +996,13 @@ export default function DashboardPage() {
 
         {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
             overflow:hidden clips those bleeds at the section box, which
-            matches the page wrapper / viewport edge. 10px from the hero
-            above: hero shows the "what" (sample/profit), scan is the
-            "how" (action) — same cluster, related-elements spacing. */}
+            matches the page wrapper / viewport edge. 24px from the hero
+            above per the dashboard spacing rhythm — major sections all
+            sit at exactly 24px from each other. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 10,
+            marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",
@@ -1005,24 +1015,47 @@ export default function DashboardPage() {
           />
           {/* Free-user quota counter — sits below the scan zone,
               hidden for Pro members and during the loading window
-              before the first /api/scan-count response. */}
+              before the first /api/scan-count response. Rendered as
+              a soft pill instead of plain text so it reads as a UI
+              element, not a floating annotation. Mint while the user
+              has runway (>2 left), red urgency once they're at 2 or
+              fewer free scans for the day. */}
           {scanCount && !scanCount.isPro && (
-            <div
-              style={{
-                marginTop: 10,
-                textAlign: "center",
-                fontFamily: "var(--font-body)",
-                fontWeight: 500,
-                fontSize: 11,
-                color:
-                  scanCount.remaining <= 1
-                    ? "rgba(232,99,107,0.85)"
-                    : "rgba(255,255,255,0.45)",
-                letterSpacing: "0.02em",
-              }}
-            >
-              {scanCount.used}/{scanCount.limit} free scans today
-            </div>
+            (() => {
+              const urgent = scanCount.remaining <= 2;
+              return (
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      padding: "6px 16px",
+                      borderRadius: 20,
+                      backgroundColor: urgent
+                        ? "rgba(232, 99, 107, 0.08)"
+                        : "rgba(92, 224, 184, 0.08)",
+                      border: urgent
+                        ? "1px solid rgba(232, 99, 107, 0.12)"
+                        : "1px solid rgba(92, 224, 184, 0.12)",
+                      fontFamily: "var(--font-body)",
+                      fontWeight: 500,
+                      fontSize: 11,
+                      color: urgent ? "#E8636B" : "#5CE0B8",
+                      letterSpacing: "0.02em",
+                      fontFeatureSettings: '"tnum"',
+                    }}
+                  >
+                    {scanCount.used}/{scanCount.limit} free scans today
+                  </span>
+                </div>
+              );
+            })()
           )}
         </div>
 
@@ -1055,7 +1088,7 @@ export default function DashboardPage() {
           <>
             <div
               style={{
-                marginTop: 18,
+                marginTop: 24,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -1073,7 +1106,7 @@ export default function DashboardPage() {
             <div
               id="deals-near-you"
               style={{
-                marginTop: 12,
+                marginTop: 24,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "280ms",
@@ -1093,7 +1126,7 @@ export default function DashboardPage() {
             <div
               id="deals-near-you"
               style={{
-                marginTop: 18,
+                marginTop: 24,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -1110,7 +1143,7 @@ export default function DashboardPage() {
             </div>
             <div
               style={{
-                marginTop: 12,
+                marginTop: 24,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "280ms",
@@ -1132,7 +1165,7 @@ export default function DashboardPage() {
         <div
           style={{
             padding: "0 18px",
-            marginTop: 20,
+            marginTop: 24,
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "360ms",
           }}
@@ -1151,7 +1184,7 @@ export default function DashboardPage() {
         <div
           style={{
             padding: "0 18px",
-            marginTop: 20,
+            marginTop: 24,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "420ms",

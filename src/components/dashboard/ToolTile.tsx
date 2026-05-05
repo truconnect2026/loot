@@ -50,18 +50,19 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
         // hierarchy (no glows, no gradients, no elevation), but they
         // need their own contrast against the opaque page bg now
         // that the grid no longer bleeds through to provide it.
-        // 13% white fill, 15% white 1px border, and a 5% white
+        // 13% white fill, 15% white 1px border, and a 3% white
         // top-edge inset highlight give each tile defined edges
         // and a hint of dimension without crossing into card-tier
-        // treatment. Press state nudges the fill to 17% so taps
-        // still feel acknowledged.
+        // treatment. Press state nudges the fill 2% toward white
+        // (0.13 → 0.15) — subtle enough that the rest state stays
+        // calm but strong enough that taps register.
         height: 58,
         backgroundColor: "#120e18",
         backgroundImage: pressed
-          ? "linear-gradient(rgba(255,255,255,0.17), rgba(255,255,255,0.17))"
+          ? "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))"
           : "linear-gradient(rgba(255,255,255,0.13), rgba(255,255,255,0.13))",
         border: "1px solid rgba(255,255,255,0.15)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.05)",
+        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
         borderRadius: 8,
         display: "flex",
         alignItems: "center",

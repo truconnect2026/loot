@@ -87,6 +87,18 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
   const fresh = freshnessFor(deal.postedAt);
   const timeShort = shortPostedAt(deal.postedAt);
 
+  // Left accent stripe — 2px ribbon graded by profit tier so a
+  // returning user can scan a carousel of cards and pattern-match
+  // "which one's worth driving for" before reading numbers. Tier
+  // breakpoints match the verdict-system cadence on the scan side
+  // (mint = strong, camel = decent, neutral = below threshold).
+  const accentColor =
+    profit >= 50
+      ? "#5CE0B8"
+      : profit >= 20
+        ? "#D4A574"
+        : "rgba(255,255,255,0.06)";
+
   return (
     <button
       type="button"
@@ -110,7 +122,13 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         backgroundColor: "#120e18",
         backgroundImage:
           "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
-        border: "1px solid rgba(255,255,255,0.06)",
+        // Per-side borders so the left edge can carry a thicker
+        // profit-tier accent without changing the card's outer
+        // dimensions. Top/right/bottom keep the original hairline.
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderLeft: `2px solid ${accentColor}`,
         borderRadius: 16,
         scrollSnapAlign: "start",
         padding: 14,

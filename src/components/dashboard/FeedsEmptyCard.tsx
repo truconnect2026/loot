@@ -20,7 +20,10 @@ export default function FeedsEmptyCard() {
   return (
     <div
       style={{
-        marginTop: 16,
+        // 24px gap from the scan zone above — matches the dashboard's
+        // major-section spacing rhythm so this empty card occupies the
+        // same slot a deals carousel would.
+        marginTop: 24,
         marginLeft: 18,
         marginRight: 18,
         backgroundColor: "#120e18",

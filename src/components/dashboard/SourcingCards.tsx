@@ -152,11 +152,11 @@ function Card({
   );
 }
 
-// Muted-plum count color — matches `--text-muted` semantically. Used
-// for zero-state counts so "0 sales near you" doesn't read as a
-// positive signal in mint. Mint stays reserved for money; an empty
-// count is a neutral fact, not a money outcome.
-const MUTED_COUNT_HEX = "#6B5F80";
+// Empty-state count color — deeper plum than --text-muted so the
+// "0 sales near you" / "0 items this week" reads as receded
+// background information rather than a styled callout. Same
+// treatment for both Penny Drops and Yard Sales empty states.
+const EMPTY_COUNT_HEX = "#3D2E55";
 
 export default function SourcingCards({
   pennyItemCount,
@@ -172,10 +172,10 @@ export default function SourcingCards({
         title="Penny Drops"
         subtitle="updated Tuesdays"
         count={`${pennyItemCount} items this week`}
-        // Camel for non-zero (positive count); muted plum at zero so
-        // an empty week reads as "nothing to act on yet" rather than
-        // as a styled callout.
-        countHex={pennyItemCount > 0 ? "#D4A574" : MUTED_COUNT_HEX}
+        // Mint when there's something to act on — sourcing intel that
+        // turns into money still earns the money color. Empty state
+        // recedes to deep plum.
+        countHex={pennyItemCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
         onTap={onPennyTap}
       />
       <Card
@@ -184,10 +184,10 @@ export default function SourcingCards({
         title="Yard Sales"
         subtitle="updates Saturdays"
         count={`${yardSaleTodayCount} sales near you`}
-        // Mint at non-zero (real money opportunity nearby); muted plum
-        // at zero so "0 sales near you" doesn't falsely read positive
-        // in the money color. Mint = money only, per the role system.
-        countHex={yardSaleTodayCount > 0 ? "#5CE0B8" : MUTED_COUNT_HEX}
+        // Mint at non-zero (real money opportunity nearby); deep
+        // plum at zero so "0 sales near you" reads as receded
+        // background fact.
+        countHex={yardSaleTodayCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
         onTap={onYardSaleTap}
       />
     </div>

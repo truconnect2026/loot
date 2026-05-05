@@ -284,7 +284,7 @@ export default function ScanButtons({
           marginTop: 20,
           display: "grid",
           gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-          gap: 8,
+          gap: 10,
           width: "100%",
         }}
       >

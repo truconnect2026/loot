@@ -302,7 +302,16 @@ export default function HeroProfit({
       </div>
 
       {/* Hero number — Outfit 300; in the empty state, the number sits inline
-          next to a one-line nudge so the whole card reads as a status bar. */}
+          next to a one-line nudge so the whole card reads as a status bar.
+          The number itself pulses opacity 0.3 ↔ 0.5 in empty mode so a
+          fresh-account "$0" reads as "waiting for data" rather than as
+          a flat tombstone. */}
+      <style>{`
+        @keyframes heroEmptyPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
       <div
         style={{
           marginTop: isEmpty ? 4 : 12,
@@ -315,7 +324,15 @@ export default function HeroProfit({
             "color 200ms cubic-bezier(0.16,1,0.3,1), text-shadow 200ms cubic-bezier(0.16,1,0.3,1)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "baseline" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            animation: isEmpty
+              ? "heroEmptyPulse 3s ease-in-out infinite"
+              : undefined,
+          }}
+        >
           {isNegative && (
             <span
               style={{
@@ -426,7 +443,13 @@ export default function HeroProfit({
                 color: "#5A4E70",
               }}
             >
-              tracking for {nonZeroDays} {nonZeroDays === 1 ? "day" : "days"}
+              {/* Zero-day case is actionable, not a status report —
+                  there's no profit history yet to "track." Once a
+                  single profitable scan exists this swaps to the
+                  "tracking for X days" label. */}
+              {nonZeroDays === 0
+                ? "start scanning to track profits"
+                : `tracking for ${nonZeroDays} ${nonZeroDays === 1 ? "day" : "days"}`}
             </div>
           ) : (
             <Sparkline history={dailyProfitHistory} />
