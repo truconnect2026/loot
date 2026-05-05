@@ -158,7 +158,9 @@ export default function DealCarousel({
           color: "#3D2E55",
           letterSpacing: "0.10em",
           paddingBottom: 6,
-          borderBottom: "1px solid rgba(255,255,255,0.03)",
+          // 0.05 (was 0.03) so the underline actually reads on
+          // OLED phone screens. Matches SECTION_LABEL in page.tsx.
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
           // Tighter bottom margin when liveSignal is rendered below
           // (the ticker reads as part of this header trio).
           marginBottom: liveSignal ? 6 : 10,

@@ -238,12 +238,15 @@ export default function HeroProfit({
   // row of dead $0 / $0 / $0 / $0 tabs.
   const showPills = nonZeroDays > 0;
 
-  // Bottom stat row hides only when ALL three numbers are zero.
-  // Once the user has a single scan, "Scans: 1" validates the action
-  // — don't strip it. It's the "Scans: 0 | Buys: 0 | Spent: $0"
-  // configuration that reads as demoralizing.
-  const showSecondaryRow =
-    todayScans > 0 || todayBuys > 0 || todaySpent > 0;
+  // Bottom stat row needs at LEAST two of the three numbers non-zero
+  // before it shows. "Scans: 1 | Buys: 0 | Spent: $0" is two zeros
+  // and reads worse than just hiding the row. The "only Scans>0"
+  // case gets a friendly one-liner ("1 scan so far — keep going")
+  // that validates the action without exposing the empty buys/spent.
+  const nonZeroSecondary = [todayScans > 0, todayBuys > 0, todaySpent > 0]
+    .filter(Boolean).length;
+  const showSecondaryRow = nonZeroSecondary >= 2;
+  const showOnlyScansLine = todayScans > 0 && nonZeroSecondary === 1;
 
   // Delta chip — only "today vs yesterday" is computable from current props.
   // Week/month deltas would need lastWeekProfit/lastMonthProfit; hidden until
@@ -396,13 +399,13 @@ export default function HeroProfit({
         )}
       </div>
 
-      {/* Realized profit — secondary metric. Tells the user how much of
-          their "found" potential has actually landed in the bank.
-          Stays at $0 until they mark something sold via Haul Log.
-          The hint copy on $0 reframes the void: it's not "you've earned
-          nothing", it's "you haven't sold yet" — an action gap, not a
-          failure. */}
-      {!isEmpty && (
+      {/* Realized profit — secondary metric. Only shown once the
+          user has actually sold something (realized > 0). The
+          previous "$0 realized · sell items to track" placeholder
+          duplicated the empty-state's "start scanning to track
+          profits" copy on the same card, so it's gone — show the
+          line only when there's a real number behind it. */}
+      {!isEmpty && realized > 0 && (
         <div
           style={{
             marginTop: 6,
@@ -412,19 +415,10 @@ export default function HeroProfit({
             fontFeatureSettings: '"tnum"',
           }}
         >
-          {realized > 0 ? (
-            <>
-              <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
-                ${realized}
-              </span>
-              <span> realized</span>
-            </>
-          ) : (
-            <>
-              <span style={{ fontWeight: 600 }}>$0</span>
-              <span> realized · sell items to track</span>
-            </>
-          )}
+          <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+            ${realized}
+          </span>
+          <span> realized</span>
         </div>
       )}
 
@@ -474,10 +468,34 @@ export default function HeroProfit({
         </div>
       )}
 
-      {/* Secondary stats — only renders when the user has actually
-          taken some action today. "Scans: 0 | Buys: 0 | Spent: $0"
-          on a fresh card reads as a flat-tire dashboard; better to
-          omit the row entirely until at least one number is real. */}
+      {/* Single-action one-liner — when only Scans is non-zero
+          (Buys + Spent both 0), show a brief encouraging line
+          instead of the full Scans|Buys|Spent grid. Two visible
+          zeros next to a single 1 reads worse than just the
+          headline. Once the user records a BUY (Buys/Spent become
+          non-zero), the full row below takes over. */}
+      {showOnlyScansLine && (
+        <div
+          style={{
+            marginTop: 8,
+            fontFamily: "var(--font-body)",
+            fontSize: 12,
+            color: "#5A4E70",
+            fontFeatureSettings: '"tnum"',
+          }}
+        >
+          <span style={{ color: "#5CE0B8", fontWeight: 600 }}>
+            {todayScans}
+          </span>{" "}
+          scan{todayScans === 1 ? "" : "s"} so far — keep going
+        </div>
+      )}
+
+      {/* Secondary stats — only renders when at least TWO of the
+          three numbers are non-zero. A single number with two zeros
+          beside it ("Scans: 1 | Buys: 0 | Spent: $0") reads worse
+          than the showOnlyScansLine above; the row earns its keep
+          once the user has actual breadth of activity. */}
       {showSecondaryRow && (
         <div
           style={{

@@ -96,29 +96,36 @@ export default function WinsTicker() {
         transition: `opacity ${FADE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
       }}
     >
-      {/* Tiny pulsing dot — signals "live" without claiming real-time */}
+      {/* Live indicator dot — pulses 0.4 → 1.0 over 2s for subtle
+          urgency. The pulse cadence is the rhythm of the ticker
+          itself: each rotation is 7s, so the dot breathes ~3.5
+          times per message. Mint at 70% alpha. */}
       <span
         aria-hidden="true"
         style={{
           width: 5,
           height: 5,
           borderRadius: "50%",
-          backgroundColor: "rgba(116, 182, 160, 0.7)",
+          backgroundColor: "rgba(92, 224, 184, 0.7)",
           flexShrink: 0,
-          animation: "winsTickerPulse 2.4s ease-in-out infinite",
+          animation: "winsTickerPulse 2s ease-in-out infinite",
         }}
       />
       <style>{`
         @keyframes winsTickerPulse {
           0%, 100% { opacity: 0.4; }
-          50% { opacity: 1; }
+          50%      { opacity: 1; }
         }
       `}</style>
       <span
         style={{
+          // Slightly brighter than the previous 50% white so the
+          // ticker reads at arm's length without competing with the
+          // section headers above. Stays secondary to the carousel
+          // cards below.
           fontFamily: "var(--font-body)",
-          fontSize: 11,
-          color: "rgba(255,255,255,0.50)",
+          fontSize: 12,
+          color: "#8A7FA0",
           letterSpacing: "0.01em",
           textAlign: "center",
           maxWidth: 320,
@@ -129,13 +136,12 @@ export default function WinsTicker() {
         {win.amount && (
           <span
             style={{
-              // Money number — JetBrains Mono 700 reinforces "this
-              // is a dollar amount" peripherally, parallel to how
-              // the rest of the app handles money in mono. The
-              // ticker prefix stays in Outfit (var(--font-body)
-              // inherited from the parent span).
+              // Money number — JBMono 13/700 mint. Slightly larger
+              // than the surrounding 12px prose so the dollar amount
+              // earns peripheral attention.
               fontFamily: "var(--font-jetbrains-mono)",
-              color: "var(--money)",
+              fontSize: 13,
+              color: "#5CE0B8",
               fontWeight: 700,
               fontFeatureSettings: '"tnum"',
             }}

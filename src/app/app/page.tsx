@@ -235,14 +235,15 @@ interface ScanRow {
 const SECTION_LABEL: React.CSSProperties = {
   // Uppercase category header (SOURCING / MORE TOOLS) — stays in
   // JetBrains Mono per the font role system. The hairline underline
-  // anchors each section visually without heavy dividers — at 0.03
-  // alpha it's barely there but it gives the page a readable rhythm.
+  // anchors each section visually without heavy dividers — bumped
+  // from 0.03 → 0.05 alpha so the line actually reads on OLED
+  // phone screens (0.03 was below the visibility threshold).
   fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "#3D2E55",
   letterSpacing: "0.10em",
   paddingBottom: 6,
-  borderBottom: "1px solid rgba(255,255,255,0.03)",
+  borderBottom: "1px solid rgba(255,255,255,0.05)",
   marginBottom: 10,
 };
 
@@ -971,13 +972,13 @@ export default function DashboardPage() {
 
         {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
             overflow:hidden clips those bleeds at the section box, which
-            matches the page wrapper / viewport edge. 20px from stats
-            card to scan zone per the spacing spec — tighter than the
-            previous 24 so the scan buttons sit closer to the action. */}
+            matches the page wrapper / viewport edge. 16px from stats
+            card to scan zone — the two together read as one "action
+            cluster" at the top of the dashboard, no dead air between. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 20,
+            marginTop: 16,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",

@@ -53,6 +53,10 @@ interface CardProps {
   subtitle: string;
   count: string;
   countHex: string;
+  /** True when the count is zero — dims the bg, switches the border
+   * to dashed so the empty state reads as "this slot is available
+   * but empty," like an outlined parking space. */
+  empty?: boolean;
   onTap: () => void;
 }
 
@@ -63,6 +67,7 @@ function Card({
   subtitle,
   count,
   countHex,
+  empty = false,
   onTap,
 }: CardProps) {
   const [pressed, setPressed] = useState(false);
@@ -73,7 +78,13 @@ function Card({
   // pattern can never bleed through the card surface.
   const accentRgb = variant === "mint" ? "92,224,184" : "212,165,116";
   const backgroundImage = `linear-gradient(180deg, rgba(${accentRgb},0.07) 0%, rgba(255,255,255,0.01) 100%)`;
-  const border = `1px solid rgba(${accentRgb},0.10)`;
+  // Empty cards swap the solid hairline for a dashed white outline
+  // so they read as "this slot is open / waiting for content"
+  // rather than as a styled callout. The dashed treatment is the
+  // standard empty-parking-space metaphor.
+  const border = empty
+    ? "1px dashed rgba(255,255,255,0.06)"
+    : `1px solid rgba(${accentRgb},0.10)`;
   const restShadow = `inset 0 1px 0 0 rgba(${accentRgb},0.08), 0 2px 8px rgba(0,0,0,0.15)`;
 
   return (
@@ -174,8 +185,9 @@ export default function SourcingCards({
         count={`${pennyItemCount} items this week`}
         // Mint when there's something to act on — sourcing intel that
         // turns into money still earns the money color. Empty state
-        // recedes to deep plum.
+        // recedes to deep plum + dashed border.
         countHex={pennyItemCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
+        empty={pennyItemCount === 0}
         onTap={onPennyTap}
       />
       <Card
@@ -186,8 +198,10 @@ export default function SourcingCards({
         count={`${yardSaleTodayCount} sales near you`}
         // Mint at non-zero (real money opportunity nearby); deep
         // plum at zero so "0 sales near you" reads as receded
-        // background fact.
+        // background fact, with a dashed border to signal the slot
+        // is empty rather than active.
         countHex={yardSaleTodayCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
+        empty={yardSaleTodayCount === 0}
         onTap={onYardSaleTap}
       />
     </div>

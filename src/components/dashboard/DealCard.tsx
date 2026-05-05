@@ -122,13 +122,10 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         backgroundColor: "#120e18",
         backgroundImage:
           "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
-        // Per-side borders so the left edge can carry a thicker
-        // profit-tier accent without changing the card's outer
-        // dimensions. Top/right/bottom keep the original hairline.
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        borderLeft: `2px solid ${accentColor}`,
+        // Uniform hairline on all four sides. The profit-tier accent
+        // moved to a child overlay (see <span> below) so border-
+        // radius can't clip it short on the rounded corners.
+        border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
         scrollSnapAlign: "start",
         padding: 14,
@@ -140,6 +137,27 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
       }}
     >
+      {/* Profit-tier accent stripe — absolute-positioned overlay so
+          the card's borderRadius doesn't clip it short on the rounded
+          top-left / bottom-left corners (which it does when the
+          accent is implemented as borderLeft). Inset 8px from top
+          and bottom so the bar reads as a deliberate ribbon, not a
+          full-height edge stroke. 3px width gives it visible weight
+          on phone screens. */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 8,
+          bottom: 8,
+          width: 3,
+          borderRadius: 2,
+          backgroundColor: accentColor,
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Header row — source pill (spelled out) on left, freshness signal
           on right. The freshness label tells the user whether to drive now
           or skip; the dot color encodes the same in <100ms scan time. */}
@@ -230,14 +248,19 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         }}
       >
         {deal.isFree ? (
+          // Extra-bold + faint mint halo — "FREE" is the most
+          // exciting word in reselling (highest possible margin),
+          // so the typography earns a slight glow that the priced
+          // listings don't get.
           <span
             style={{
               fontFamily: "var(--font-body)",
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 800,
               letterSpacing: "0.08em",
               color: "#5CE0B8",
               lineHeight: 1,
+              textShadow: "0 0 12px rgba(92, 224, 184, 0.2)",
             }}
           >
             FREE
