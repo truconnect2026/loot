@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 interface UpgradeCardProps {
   /** Stripe price IDs — pulled from the build-time
@@ -13,9 +13,19 @@ interface UpgradeCardProps {
 /**
  * Free-user variant of the plan card. Sits in the same slot as
  * ProfileCard's plan section; sells two prices side-by-side and
- * routes to /api/stripe/checkout via the parent's onSubscribe. The
- * mint border + crown match the Pro plan card's chrome so the slot
- * feels continuous before/after upgrade.
+ * routes to /api/stripe/checkout via the parent's onSubscribe.
+ *
+ * Visual treatment is intentionally premium — this is the revenue
+ * lever:
+ *   - 1.5px gradient border (mint → camel → periwinkle) painted via
+ *     a wrapping div with padding, instead of a CSS-mask trick. The
+ *     gradient slowly drifts across the border via a 6s background-
+ *     position shimmer.
+ *   - Inner card surface keeps an opaque #1E1838 base with a faint
+ *     mint radial wash from the top-center for a "lit from above"
+ *     feel.
+ *   - Monthly tile carries a tiny "POPULAR" badge in mint mono.
+ *   - Annual tile bolds the dollar savings in camel.
  */
 export default function UpgradeCard({
   monthlyPriceId,
@@ -25,123 +35,148 @@ export default function UpgradeCard({
   return (
     <>
       <style>{`
-        .upgrade-card-surface {
-          position: relative;
-        }
-        .upgrade-card-surface::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 1px;
-          background: linear-gradient(
-            135deg,
-            rgba(92,224,184,0.40) 0%,
-            rgba(92,224,184,0.10) 50%,
-            rgba(90,78,112,0.20) 100%
-          );
-          -webkit-mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
+        @keyframes upgradeBorderShimmer {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
       `}</style>
+      {/* Gradient border wrapper — the 1.5px padding becomes the
+          border width when the inner content paints its own bg.
+          Closing the gradient stop with the same mint as the start
+          makes the shimmer wrap-around seamless. */}
       <div
-        className="upgrade-card-surface"
         style={{
           marginTop: 16,
-          position: "relative",
-          backgroundColor: "#1E1838",
-          borderRadius: "4px 16px 16px 16px",
-          boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 4px 24px -4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)",
-          padding: 20,
-          overflow: "hidden",
+          padding: 1.5,
+          borderRadius: 16,
+          background:
+            "linear-gradient(135deg, " +
+            "rgba(92, 224, 184, 0.5), " +
+            "rgba(212, 165, 116, 0.4), " +
+            "rgba(123, 143, 255, 0.4), " +
+            "rgba(92, 224, 184, 0.5)" +
+            ")",
+          backgroundSize: "300% 300%",
+          animation: "upgradeBorderShimmer 6s ease-in-out infinite",
+          boxShadow: "0 4px 24px -4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)",
         }}
       >
-        {/* Crown — matches ProfileCard treatment */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 2,
-            background: "linear-gradient(to right, #5CE0B8, transparent)",
-            borderTopLeftRadius: 4,
-            borderTopRightRadius: 16,
-            pointerEvents: "none",
-          }}
-        />
-
         <div
           style={{
-            fontFamily: "var(--font-label)",
-            fontSize: 9,
-            fontWeight: 600,
-            color: "#5CE0B8",
-            letterSpacing: "0.14em",
-            marginBottom: 4,
+            position: "relative",
+            // Inner content card. 14.5 = 16 wrapper - 1.5 padding so
+            // the inner corner sits flush inside the gradient frame.
+            borderRadius: 14.5,
+            // Top-center mint wash over the opaque base creates a
+            // subtle "lit from above" highlight that sells the
+            // premium-tier feel without competing with the gradient
+            // border. backgroundImage paints over backgroundColor.
+            backgroundColor: "#1E1838",
+            backgroundImage:
+              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(92, 224, 184, 0.04) 0%, transparent 50%)",
+            padding: 20,
+            overflow: "hidden",
           }}
         >
-          UPGRADE TO PRO
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-body)",
-            fontWeight: 600,
-            fontSize: 17,
-            color: "var(--text-primary)",
-            marginBottom: 4,
-            lineHeight: 1.3,
-          }}
-        >
-          unlimited scans, unlocked feeds
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 13,
-            color: "rgba(255,255,255,0.62)",
-            lineHeight: 1.4,
-            marginBottom: 16,
-          }}
-        >
-          PRO members average{" "}
-          <span
+          {/* Section label — gold sparkle pip + mint header. The ✦
+              earns its color from the sparkle vocabulary the rest of
+              the app uses for premium / first-class moments. */}
+          <div
             style={{
-              color: "var(--money)",
-              fontWeight: 700,
-              fontFeatureSettings: '"tnum"',
+              fontFamily: "var(--font-label)",
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: "0.14em",
+              marginBottom: 4,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            $1,200/mo
-          </span>{" "}
-          in flips found
-        </div>
+            <span style={{ color: "#D4A574" }}>✦</span>
+            <span style={{ color: "#5CE0B8" }}>UPGRADE TO PRO</span>
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-body)",
+              fontWeight: 600,
+              fontSize: 17,
+              color: "var(--text-primary)",
+              marginBottom: 4,
+              lineHeight: 1.3,
+            }}
+          >
+            unlimited scans, unlocked feeds
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: 13,
+              color: "rgba(255,255,255,0.62)",
+              lineHeight: 1.4,
+              marginBottom: 16,
+            }}
+          >
+            PRO members average{" "}
+            {/* Hero price call-out — JBMono 18/700 mint number,
+                Outfit /mo suffix at 12/400 muted. The number is the
+                hook; the suffix recedes. */}
+            <span style={{ display: "inline-flex", alignItems: "baseline" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "#5CE0B8",
+                  fontFeatureSettings: '"tnum"',
+                }}
+              >
+                $1,200
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 12,
+                  fontWeight: 400,
+                  color: "#5A4E70",
+                }}
+              >
+                /mo
+              </span>
+            </span>{" "}
+            in flips found
+          </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <PriceOption
-            label="MONTHLY"
-            price="$9.99"
-            period="/mo"
-            note="cancel anytime"
-            disabled={!monthlyPriceId}
-            onTap={() => onSubscribe(monthlyPriceId)}
-            primary
-          />
-          <PriceOption
-            label="ANNUAL"
-            price="$89.99"
-            period="/yr"
-            note="save $30 — 2 months free"
-            disabled={!annualPriceId}
-            onTap={() => onSubscribe(annualPriceId)}
-            primary={false}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <PriceOption
+              label="MONTHLY"
+              price="$9.99"
+              period="/mo"
+              note="cancel anytime"
+              disabled={!monthlyPriceId}
+              onTap={() => onSubscribe(monthlyPriceId)}
+              primary
+              popular
+            />
+            <PriceOption
+              label="ANNUAL"
+              price="$89.99"
+              period="/yr"
+              note={
+                <>
+                  save{" "}
+                  <span style={{ color: "#D4A574", fontWeight: 600 }}>
+                    $30
+                  </span>{" "}
+                  — 2 months free
+                </>
+              }
+              disabled={!annualPriceId}
+              onTap={() => onSubscribe(annualPriceId)}
+              primary={false}
+            />
+          </div>
         </div>
       </div>
     </>
@@ -152,9 +187,10 @@ interface PriceOptionProps {
   label: string;
   price: string;
   period: string;
-  note: string;
+  note: ReactNode;
   disabled: boolean;
   primary: boolean;
+  popular?: boolean;
   onTap: () => void;
 }
 
@@ -165,6 +201,7 @@ function PriceOption({
   note,
   disabled,
   primary,
+  popular = false,
   onTap,
 }: PriceOptionProps) {
   const [pressed, setPressed] = useState(false);
@@ -180,6 +217,7 @@ function PriceOption({
         // Two-row plan tile: top row label + price, bottom row note.
         // The mint glow under the primary tile separates it from the
         // secondary annual option without using a different hue.
+        position: "relative",
         textAlign: "left",
         padding: "12px 14px",
         borderRadius: 12,
@@ -205,6 +243,30 @@ function PriceOption({
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      {/* "POPULAR" recommended indicator — top-right of the
+          monthly tile. Tiny mint mono pip; reads as a brand stamp,
+          not a sales banner. */}
+      {popular && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 10,
+            fontFamily: "var(--font-jetbrains-mono)",
+            fontSize: 7,
+            fontWeight: 700,
+            letterSpacing: "0.10em",
+            color: "#5CE0B8",
+            backgroundColor: "rgba(92,224,184,0.10)",
+            padding: "2px 6px",
+            borderRadius: 4,
+            textTransform: "uppercase",
+          }}
+        >
+          POPULAR
+        </span>
+      )}
       <div
         style={{
           display: "flex",

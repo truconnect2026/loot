@@ -180,16 +180,20 @@ function DoorIcon() {
   );
 }
 
-// Tile accent colors — each drives both its tile's left dot and its icon
-// tint. Per the role system (mint = money only), BOLO moved off mint to a
-// desaturated decor teal so the keyword/scope category no longer claims
-// the currency role.
-const ACCENT_ZIP = "#7B8FFF"; // periwinkle — location
+// Tile accent colors — each drives the icon tint inside SettingsTile.
+// Reassigned per the account-page polish spec: zip is now a warm
+// location red (pin color, not alarm), watch list takes mint as the
+// active engagement feature, push notifications take the alert
+// blue-purple. Mint earning a slot here is the deliberate exception
+// to the "mint = money only" rule — watch list IS the money-finding
+// feature, so mint signals "this is what fills your wallet."
+const ACCENT_ZIP = "#E8636B"; // pin red — location
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
-const ACCENT_BOLO = "#74B6A0"; // decor cool teal — keyword scope
-const ACCENT_NOTIF = "#B4A0D4"; // lavender — alerts
-const ACCENT_EXPORT = "#8A8A9A"; // neutral — utility
-const ACCENT_SIGNOUT = "#E8636B"; // coral — destructive
+const ACCENT_BOLO = "#5CE0B8"; // mint — active engagement (money finder)
+const ACCENT_NOTIF = "#7B8FFF"; // blue-purple — alerts
+const ACCENT_EXPORT = "#5A4E70"; // muted — utility action
+// Sign-out no longer uses SettingsTile (it's a centered link, not a
+// settings row), so ACCENT_SIGNOUT was retired with that change.
 
 // Watch list rows — paired (id, keyword) so we can delete by primary key
 // rather than positional index, which would silently break if the list
@@ -581,7 +585,7 @@ export default function AccountPage() {
   if (loading || !profile) {
     return (
       <>
-        <DotGridBackground />
+        <DotGridBackground variant="grid" />
         <div
           style={{
             position: "fixed",
@@ -602,7 +606,7 @@ export default function AccountPage() {
   if (view === "bolo") {
     return (
       <>
-        <DotGridBackground />
+        <DotGridBackground variant="grid" />
         <div
           style={{
             maxWidth: 480,
@@ -626,7 +630,7 @@ export default function AccountPage() {
   // Main account view
   return (
     <>
-      <DotGridBackground />
+      <DotGridBackground variant="grid" />
       {/* Ambient blue wash — sits between dot grid and content. The vault has
           its own color temperature: a barely-perceptible periwinkle glow
           centered behind the profile card area gives this page a cooler
@@ -782,23 +786,26 @@ export default function AccountPage() {
             >
               Search radius
             </span>
+            {/* Value chip — flat surface, JBMono 12/500. Same chip
+                shape used across all three settings rows (zip,
+                radius, watch list) so the right column reads as a
+                consistent ladder of badges. */}
             <div
               data-cell-flash=""
               style={{
-                backgroundColor: "var(--bg-recessed)",
-                borderRadius: "3px 8px 8px 8px",
-                padding: "6px 12px",
-                boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+                backgroundColor: "rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "4px 12px",
                 marginRight: 6,
                 transition: "background-color 120ms ease-out",
               }}
             >
               <span
                 style={{
-                  fontFamily: "var(--font-body)",
-                  fontWeight: 700,
-                  fontSize: 13,
-                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontWeight: 500,
+                  fontSize: 12,
+                  color: "#C8C0D8",
                   fontFeatureSettings: '"tnum"',
                 }}
               >
@@ -831,16 +838,29 @@ export default function AccountPage() {
             >
               Watch list
             </span>
-            <span
+            {/* Watch list count — same chip treatment as zip and
+                radius so the right column reads as a consistent
+                ladder of badges. */}
+            <div
               style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                color: "var(--text-muted)",
+                backgroundColor: "rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                padding: "4px 12px",
                 marginRight: 6,
               }}
             >
-              {watchRows.length} keywords
-            </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontWeight: 500,
+                  fontSize: 12,
+                  color: "#C8C0D8",
+                  fontFeatureSettings: '"tnum"',
+                }}
+              >
+                {watchRows.length} keywords
+              </span>
+            </div>
             <ChevronRight />
           </SettingsTile>
         </div>
@@ -942,33 +962,62 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 4: Sign out — 28px gap, more breathing room before the
-            destructive action */}
-        <div style={{ marginTop: 28 }}>
-          <SettingsTile
-            height={52}
-            variant="danger"
-            onClick={handleSignOut}
-            icon={<DoorIcon />}
-            accentColor={ACCENT_SIGNOUT}
-          >
-            <span
-              style={{
-                flex: 1,
-                fontFamily: "var(--font-body)",
-                fontWeight: 600,
-                fontSize: 13,
-                color: "var(--accent-red)",
-              }}
-            >
-              Sign out
-            </span>
-          </SettingsTile>
-        </div>
+        {/* Sign out — deliberately uncarded. Sits on the raw page
+            background as a quiet exit, separated from the functional
+            settings above by a 16px gap. Centered horizontally and
+            colored at 55% red so it reads as "available but not
+            urgent." Press state drops to 40% opacity for a clean
+            tactile cue without bouncing or scaling. */}
+        <SignOutLink onTap={handleSignOut} />
 
         {/* Bottom padding — 48px so the sign-out has air below it */}
         <div style={{ paddingBottom: 48 }} />
       </div>
     </>
+  );
+}
+
+interface SignOutLinkProps {
+  onTap: () => void;
+}
+
+function SignOutLink({ onTap }: SignOutLinkProps) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <div
+      style={{
+        marginTop: 16,
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <button
+        type="button"
+        onClick={onTap}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
+        style={{
+          background: "transparent",
+          border: "none",
+          padding: "10px 20px",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          fontFamily: "var(--font-body)",
+          fontWeight: 600,
+          fontSize: 13,
+          color: "rgba(232, 99, 107, 0.55)",
+          opacity: pressed ? 0.4 : 1,
+          cursor: "pointer",
+          transition: "opacity 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <span style={{ display: "inline-flex", alignItems: "center" }}>
+          <DoorIcon />
+        </span>
+        <span>Sign out</span>
+      </button>
+    </div>
   );
 }

@@ -154,16 +154,20 @@ export default function ZipInput({
           <CheckIcon />
         </span>
 
+        {/* Value chip — flat 0.06 white surface, 8px radius,
+            JBMono 12/500. Matches the radius + watch-list chips on
+            the same row column so the right side reads as a
+            consistent ladder of badges instead of a recessed-well
+            cluster. Editing state still adds a focus ring. */}
         <div
           data-cell-flash=""
           style={{
-            backgroundColor: "var(--bg-recessed)",
-            borderRadius: "3px 8px 8px 8px",
-            padding: "6px 12px",
+            backgroundColor: "rgba(255,255,255,0.06)",
+            borderRadius: 8,
+            padding: "4px 12px",
             border: editing
               ? "1px solid var(--ui-border-focus)"
               : "1px solid transparent",
-            boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
             transition:
               "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), background-color 120ms ease-out",
           }}
@@ -203,14 +207,15 @@ export default function ZipInput({
           ) : isEmpty ? (
             <span
               style={{
-                // Match the filled-state value font (13 / 700) so the empty
-                // "Add zip" chip looks like a value chip waiting to be filled,
-                // not a separate button-style affordance. Same chip language
-                // as the radius "15 mi" cell.
-                fontFamily: "var(--font-body)",
-                fontWeight: 700,
-                fontSize: 13,
-                color: "var(--ui-primary)",
+                // Empty-state placeholder uses the same chip text
+                // treatment as the filled state — JBMono 12/500/
+                // #C8C0D8 — so the empty chip reads as "value chip
+                // waiting for input" rather than a separate
+                // button-style affordance.
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontWeight: 500,
+                fontSize: 12,
+                color: "#C8C0D8",
               }}
             >
               Add zip
@@ -218,10 +223,10 @@ export default function ZipInput({
           ) : (
             <span
               style={{
-                fontFamily: "var(--font-body)",
-                fontWeight: 700,
-                fontSize: 13,
-                color: "var(--ui-primary)",
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontWeight: 500,
+                fontSize: 12,
+                color: "#C8C0D8",
                 fontFeatureSettings: '"tnum"',
               }}
             >
