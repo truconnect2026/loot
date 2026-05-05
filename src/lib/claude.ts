@@ -310,7 +310,7 @@ Return ONLY valid JSON — no markdown, no backticks, no explanation text. Retur
   confidence (string, one of HIGH/MEDIUM/LOW based on how clearly you can identify and price the item),
   description (string, brief note on condition, brand recognition, why it's worth grabbing or not).
 
-Rank the array by profit descending.`;
+Rank the array by profit descending. Limit your response to the 10 most profitable items only — never more — so the JSON fits in the response budget without truncation.`;
 
 export type ShelfScanPlatform = "FB Local" | "FB Shipped" | "eBay";
 
@@ -352,11 +352,132 @@ function normalizeShelfConfidence(raw: unknown): "HIGH" | "MEDIUM" | "LOW" {
   return "MEDIUM";
 }
 
+// Walks a (possibly truncated) shelf-scan response and salvages every
+// complete item object inside the `items` array. Brace-counts with
+// proper string-state tracking so a brace inside a name ("foo}bar")
+// doesn't fool it. Used as a fallback when JSON.parse fails on the
+// full response — a 10-item cap in the system prompt + max_tokens
+// 4096 should keep this rare, but Sonnet still occasionally over-runs.
+function recoverShelfItems(raw: string): unknown[] {
+  // Strip code-fence wrappers if the model added them despite the
+  // "no markdown" instruction.
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const text = (fenced ? fenced[1] : raw).trim();
+
+  // Locate the items array. Look for the literal `"items"` key first,
+  // then fall back to the first `[` if the model dropped the wrapper.
+  const itemsKey = text.indexOf('"items"');
+  let arrayStart = -1;
+  if (itemsKey !== -1) {
+    arrayStart = text.indexOf("[", itemsKey);
+  }
+  if (arrayStart === -1) {
+    arrayStart = text.indexOf("[");
+  }
+  if (arrayStart === -1) return [];
+
+  const items: unknown[] = [];
+  let i = arrayStart + 1;
+
+  while (i < text.length) {
+    // Skip whitespace + commas between objects.
+    while (i < text.length && /[\s,]/.test(text[i])) i++;
+    if (i >= text.length) break;
+    // End-of-array sentinel — not truncated, just done.
+    if (text[i] === "]") break;
+    if (text[i] !== "{") break;
+
+    // Walk this object, brace-counting while respecting strings + escapes.
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    const objStart = i;
+    let objEnd = -1;
+    for (let j = i; j < text.length; j++) {
+      const c = text[j];
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c === "\\") {
+        escape = true;
+        continue;
+      }
+      if (c === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (c === "{") depth++;
+      else if (c === "}") {
+        depth--;
+        if (depth === 0) {
+          objEnd = j;
+          break;
+        }
+      }
+    }
+    if (objEnd === -1) break; // Truncated mid-object — stop salvaging.
+
+    try {
+      items.push(JSON.parse(text.slice(objStart, objEnd + 1)));
+    } catch {
+      break; // Object looked closed but didn't parse; bail.
+    }
+    i = objEnd + 1;
+  }
+
+  return items;
+}
+
 export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
-  const raw = await callImageTool(imageBase64, SHELF_SCAN_SYSTEM);
-  const items = Array.isArray(raw.items) ? (raw.items as unknown[]) : [];
+  const stripped = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  // Inline SDK call (instead of callImageTool) so we can bump
+  // max_tokens to 4096 — the default 1024 was truncating mid-array
+  // on shelves with 8+ items — and run a recovery parser when the
+  // response still over-runs.
+  const message = await getClient().messages.create({
+    model: SONNET,
+    max_tokens: 4096,
+    system: SHELF_SCAN_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/jpeg",
+              data: stripped,
+            },
+          },
+          { type: "text", text: "Analyze the image." },
+        ],
+      },
+    ],
+  });
+  const text = extractText(message);
+
+  // Happy path first — parse the whole object. Falls through to the
+  // brace-counted salvage if the response was truncated and JSON.parse
+  // throws.
+  let rawItems: unknown[] = [];
+  try {
+    const parsed = parseJsonObject<{ items?: unknown }>(text);
+    if (Array.isArray(parsed.items)) rawItems = parsed.items;
+  } catch {
+    rawItems = recoverShelfItems(text);
+  }
+  if (rawItems.length === 0) {
+    // One last attempt: maybe parseJsonObject worked but items wasn't
+    // an array (e.g. the model returned a bare array). Try recovery
+    // either way before giving up.
+    rawItems = recoverShelfItems(text);
+  }
+
   return {
-    items: items.map((it) => {
+    items: rawItems.map((it) => {
       const obj = (it ?? {}) as Record<string, unknown>;
       const verdictRaw = obj.verdict;
       const verdict: Verdict =

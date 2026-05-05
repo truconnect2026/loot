@@ -360,6 +360,20 @@ export default function ShelfScanSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose} borderColor="#5CE0B8">
+      {/* Min-height shim — keeps the sheet from collapsing to a thin
+          strip when the content is short. Idle/loading/error states
+          have ~120px of intrinsic content, which left the "tap to
+          take photo" button hugging the bottom edge of a barely-
+          visible sheet on tall viewports. 40vh gives the camera
+          prompt room to breathe; 85vh on loaded fills the screen so
+          the cards have proper scroll territory (BottomSheet caps at
+          85vh anyway, so this just guarantees we hit the cap). */}
+      <div
+        style={{
+          minHeight:
+            status === "loaded" ? "85vh" : "40vh",
+        }}
+      >
       <div
         style={{
           padding: "12px 18px 0",
@@ -464,6 +478,7 @@ export default function ShelfScanSheet({
           onNewScan={handleNewScan}
         />
       )}
+      </div>
     </BottomSheet>
   );
 }
