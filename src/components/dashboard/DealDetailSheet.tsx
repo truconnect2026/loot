@@ -41,6 +41,19 @@ function sourceFullName(raw: string): string {
   return "Listing";
 }
 
+// Brand pip color for the primary CTA — matches the platform-color
+// system used on the shelf-scan platform comparison row, so the
+// user pattern-matches the destination platform peripherally
+// without reading the label. Defaults to neutral mint for unknown
+// sources so the dot still anchors visually.
+function sourceDotColor(raw: string): string {
+  const s = raw.toLowerCase();
+  if (s.includes("marketplace") || s.includes("fb")) return "#1877F2";
+  if (s.includes("craigslist")) return "#5C2A8C"; // Craigslist purple
+  if (s.includes("nextdoor")) return "#9CC43A"; // Nextdoor green
+  return "#5CE0B8";
+}
+
 export default function DealDetailSheet({
   open,
   deal,
@@ -71,6 +84,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
   const platform = sourceFullName(deal.source);
   const ctaLabel = sourceCtaLabel(deal.source);
   const tag = sourceTag(deal.source);
+  const dotColor = sourceDotColor(deal.source);
 
   function handlePrimary() {
     if (deal.url) {
@@ -119,16 +133,19 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           borderRadius: 12,
         }}
       >
+        {/* Lowercase prose, not a debug-style mono uppercase label.
+            The arrow stays — it's the visual cue that paints the
+            from→to relationship between the two prices below. */}
         <div
           style={{
             fontFamily: "var(--font-body)",
-            fontSize: 8,
+            fontSize: 11,
+            fontWeight: 500,
             color: "#5A4E70",
-            letterSpacing: "0.12em",
             marginBottom: 6,
           }}
         >
-          LISTED → ESTIMATED RESALE
+          listed → resale estimate
         </div>
         <div
           style={{
@@ -174,20 +191,41 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
 
         {profit > 0 && (
           <div style={{ marginTop: 10, display: "flex" }}>
+            {/* Profit chip — the visual hero. The dollar amount goes
+                JBMono 14/700 (tabular numbers, mint), and the
+                qualifier "profit" sits at 11/500 next to it so the
+                eye lands on the number first. */}
             <div
               style={{
                 backgroundColor: "rgba(92,224,184,0.10)",
                 border: "1px solid rgba(92,224,184,0.18)",
                 borderRadius: 8,
                 padding: "4px 10px",
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                fontWeight: 700,
                 color: "#5CE0B8",
-                letterSpacing: "0.04em",
+                display: "inline-flex",
+                alignItems: "baseline",
+                gap: 4,
               }}
             >
-              +${profit} profit
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  fontFeatureSettings: '"tnum"',
+                }}
+              >
+                +${profit}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  fontWeight: 500,
+                }}
+              >
+                profit
+              </span>
             </div>
           </div>
         )}
@@ -210,7 +248,10 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
         <span style={{ marginLeft: 8, opacity: 0.7 }}>· {tag}</span>
       </div>
 
-      {/* Primary CTA */}
+      {/* Primary CTA — 6px platform-color dot before the label so
+          the destination platform reads peripherally. Same pattern
+          as the shelf-scan SELL cell sublabel; consistent across
+          the app. */}
       <button
         type="button"
         onClick={handlePrimary}
@@ -229,12 +270,29 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           cursor: "pointer",
           boxShadow:
             "inset 0 1px 0 0 rgba(92,224,184,0.18), 0 1px 2px rgba(0,0,0,0.3)",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
         }}
       >
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-block",
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            backgroundColor: dotColor,
+            flexShrink: 0,
+          }}
+        />
         {ctaLabel}
       </button>
 
-      {/* Secondary text link — dismiss */}
+      {/* Secondary text link — dismiss. "pass" matches the scanner
+          verdict vocabulary so the user sees the same word for the
+          same intent across the app. */}
       <button
         type="button"
         onClick={onClose}
@@ -251,7 +309,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
           textAlign: "center",
         }}
       >
-        Not interested
+        pass
       </button>
     </div>
   );

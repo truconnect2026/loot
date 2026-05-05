@@ -170,7 +170,7 @@ export default function EmptyHero({ onScanTap }: EmptyHeroProps) {
             valueWeight={600}
           />
           <FlowRow
-            leftLabel="sold on eBay"
+            leftLabel="flipped online"
             rightValue="$45"
             rightColor="#5CE0B8"
             valueSize={18}

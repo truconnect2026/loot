@@ -110,7 +110,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         position: "relative",
         flexShrink: 0,
         width: 232,
-        // Bumped from 152 → 164 so the new "based on eBay sold" caption
+        // Bumped from 152 → 164 so the "estimated resale" caption
         // under the resale value has room without compressing the title.
         minHeight: 164,
         display: "flex",
@@ -215,9 +215,9 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.title}
       </div>
 
-      {/* Price row — listed price → estimated value, with the resale
-          value's data-source caption stacked underneath it so the user
-          knows the $45 isn't an asking price, it's eBay sold-comp data.
+      {/* Price row — listed price → estimated resale, with a caption
+          stacked underneath it so the user knows the $45 isn't an
+          asking price, it's a Claude-generated resale estimate.
           marginTop:auto pushes the row to the bottom of available space,
           just above the absolute distance/profit band. */}
       <div
@@ -294,7 +294,7 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
               lineHeight: 1,
             }}
           >
-            based on eBay sold
+            estimated resale
           </span>
         </div>
       </div>

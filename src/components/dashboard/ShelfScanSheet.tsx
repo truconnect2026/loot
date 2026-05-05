@@ -461,6 +461,22 @@ export default function ShelfScanSheet({
           >
             <CameraGlyph />
             <span>tap to take photo</span>
+            {/* Expectation-setting hint — sets the user up for a
+                successful first scan. Loose clothing or messy piles
+                give the model nothing to hook on; spines, tools, and
+                housewares all have crisp identifying features. */}
+            <span
+              style={{
+                marginTop: 8,
+                fontFamily: "var(--font-body)",
+                fontSize: 11,
+                fontWeight: 400,
+                color: "#3D2E55",
+                textAlign: "center",
+              }}
+            >
+              works best with book spines, tools, or housewares
+            </span>
           </button>
         )}
 
