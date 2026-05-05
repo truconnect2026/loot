@@ -91,6 +91,76 @@ function fmtMoney(n: number): string {
   return n % 1 === 0 ? `$${n.toFixed(0)}` : `$${n.toFixed(0)}`;
 }
 
+// ────────────────────────────────────────────────────────────────
+// localStorage cache — survives accidental sheet-close. The whole
+// payload (items + base64 image) goes in a single JSON blob so reads
+// are atomic. Quota errors (large images can blow past localStorage's
+// ~5MB ceiling) and private-mode setItem failures are swallowed; we
+// just won't cache that scan.
+// ────────────────────────────────────────────────────────────────
+
+const CACHE_KEY = "lastShelfScan";
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+interface CachedShelfScan {
+  items: ShelfScanItem[];
+  image: string | null;
+  timestamp: number;
+}
+
+function readShelfCache(): CachedShelfScan | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CachedShelfScan>;
+    if (
+      !Array.isArray(parsed.items) ||
+      typeof parsed.timestamp !== "number" ||
+      Date.now() - parsed.timestamp > CACHE_TTL_MS
+    ) {
+      // Stale or malformed — evict so next read short-circuits.
+      window.localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return {
+      items: parsed.items,
+      image: typeof parsed.image === "string" ? parsed.image : null,
+      timestamp: parsed.timestamp,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeShelfCache(
+  items: ShelfScanItem[],
+  image: string | null,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const payload: CachedShelfScan = {
+      items,
+      image,
+      timestamp: Date.now(),
+    };
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // QuotaExceededError on big images, or private mode — silent.
+    // The user still sees their scan; they just won't get the
+    // reopen-without-rescanning shortcut.
+  }
+}
+
+function clearShelfCache(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(CACHE_KEY);
+  } catch {
+    /* private mode — silent */
+  }
+}
+
 export default function ShelfScanSheet({
   open,
   onClose,
@@ -117,24 +187,32 @@ export default function ShelfScanSheet({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Reset everything every time the sheet opens — without this, a
-  // closed-then-reopened sheet would briefly flash the previous
-  // scan's results before the user picked a new photo. queueMicrotask
-  // satisfies react-hooks/set-state-in-effect by deferring the
-  // state writes past the synchronous effect body.
+  // Open hydration — check the 30-min localStorage cache first. If
+  // there's a recent scan, jump straight to the loaded results view
+  // (skipping the camera). Otherwise reset to idle. queueMicrotask
+  // satisfies react-hooks/set-state-in-effect by deferring the state
+  // writes past the synchronous effect body.
   useEffect(() => {
-    if (open) {
-      queueMicrotask(() => {
+    if (!open) return;
+    queueMicrotask(() => {
+      const cached = readShelfCache();
+      // Per-item / batch state is always reset on open regardless of
+      // cache hit — listings + expansion state are session-local.
+      setErrorMsg(null);
+      setFilter("ALL");
+      setExpanded(new Set());
+      setListings(new Map());
+      setBatchProgress(null);
+      if (cached) {
+        setStatus("loaded");
+        setResult({ items: cached.items });
+        setThumbnail(cached.image);
+      } else {
         setStatus("idle");
-        setErrorMsg(null);
         setResult(null);
         setThumbnail(null);
-        setFilter("ALL");
-        setExpanded(new Set());
-        setListings(new Map());
-        setBatchProgress(null);
-      });
-    }
+      }
+    });
   }, [open]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -180,8 +258,13 @@ export default function ShelfScanSheet({
         }
         throw new Error(err.error ?? `Request failed (${res.status})`);
       }
-      setResult(data as ShelfScanResult);
+      const fresh = data as ShelfScanResult;
+      setResult(fresh);
       setStatus("loaded");
+      // Persist so an accidental sheet-close doesn't burn the user's
+      // scan quota — they can reopen the sheet within 30 min and
+      // pick up where they left off.
+      writeShelfCache(fresh.items, dataUrl);
       onScanned?.();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Something went wrong");
@@ -196,6 +279,22 @@ export default function ShelfScanSheet({
       else next.add(idx);
       return next;
     });
+  }
+
+  // Discards the cached scan and bounces the sheet back to idle so
+  // the user can take a new photo. Doesn't auto-trigger the file
+  // picker — that would feel surprising; the next tap on "tap to
+  // take photo" stays explicit.
+  function handleNewScan() {
+    clearShelfCache();
+    setStatus("idle");
+    setErrorMsg(null);
+    setResult(null);
+    setThumbnail(null);
+    setFilter("ALL");
+    setExpanded(new Set());
+    setListings(new Map());
+    setBatchProgress(null);
   }
 
   async function generateListingFor(idx: number, item: ShelfScanItem) {
@@ -362,6 +461,7 @@ export default function ShelfScanSheet({
           onGenerate={generateListingFor}
           onBatch={batchGenerate}
           batchProgress={batchProgress}
+          onNewScan={handleNewScan}
         />
       )}
     </BottomSheet>
@@ -443,6 +543,8 @@ interface ResultsViewProps {
   onGenerate: (i: number, item: ShelfScanItem) => void;
   onBatch: () => void;
   batchProgress: { current: number; total: number } | null;
+  /** Discards the cached scan and bounces back to the camera prompt. */
+  onNewScan: () => void;
 }
 
 function ResultsView({
@@ -456,6 +558,7 @@ function ResultsView({
   onGenerate,
   onBatch,
   batchProgress,
+  onNewScan,
 }: ResultsViewProps) {
   const counts = {
     ALL: result.items.length,
@@ -486,6 +589,45 @@ function ResultsView({
           boxSizing: "border-box",
         }}
       >
+        {/* New-scan affordance — pinned above the thumbnail so it's
+            visible the moment the sheet opens (cached or fresh). Tap
+            evicts the localStorage cache and returns to the camera
+            prompt. The button stays even on a just-completed fresh
+            scan because the cache write happens immediately on
+            success — without this row, the next open would replay
+            the same scan instead of starting clean. */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: 10,
+          }}
+        >
+          <button
+            type="button"
+            onClick={onNewScan}
+            style={{
+              height: 28,
+              padding: "0 12px",
+              borderRadius: 8,
+              backgroundColor: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              color: "#C8C0D8",
+              fontFamily: "var(--font-label)",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.10em",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <RefreshGlyph />
+            NEW SCAN
+          </button>
+        </div>
+
         {/* Thumbnail — readonly reference photo. No bounding boxes
             because Claude vision doesn't return pixel coords. */}
         {thumbnail && (
@@ -1249,6 +1391,25 @@ function LightningBolt() {
       strokeLinejoin="round"
     >
       <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+function RefreshGlyph() {
+  return (
+    <svg
+      width={11}
+      height={11}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
     </svg>
   );
 }
