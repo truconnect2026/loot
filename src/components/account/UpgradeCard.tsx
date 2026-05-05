@@ -263,32 +263,45 @@ function PriceOption({
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* "POPULAR" recommended indicator — floats on the top-right
-          edge of the MONTHLY tile, breaking the border so it reads
-          as a clearly visible label rather than a chip competing
-          with the price text inside the row. top: -10 lifts it half
-          its own height above the tile's top edge. */}
+      {/* "POPULAR" recommended indicator — nested-span floating
+          label that sits ON the top-right edge of the MONTHLY row.
+          The outer span paints the card's inner-bg color (#1A1230)
+          so it "cuts" through the gradient border cleanly; the
+          inner span carries the mint tint that's the actual visual
+          badge. Without the cutout layer the badge would render
+          either inside the border (overlapping price text) or with
+          a weird transparent gap where the border passes through.
+          Anchored at top: -9 / right: 14 so half the badge height
+          sits above the tile edge. */}
       {popular && (
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: -10,
-            right: 12,
-            fontFamily: "var(--font-jetbrains-mono)",
-            fontSize: 8,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: "#5CE0B8",
-            backgroundColor: "rgba(92, 224, 184, 0.15)",
-            border: "1px solid rgba(92, 224, 184, 0.3)",
-            padding: "2px 8px",
-            borderRadius: 8,
-            textTransform: "uppercase",
-            lineHeight: 1.2,
+            top: -9,
+            right: 14,
+            backgroundColor: "#1A1230",
+            padding: "1px 8px",
+            lineHeight: 1,
           }}
         >
-          POPULAR
+          <span
+            style={{
+              display: "inline-block",
+              backgroundColor: "rgba(92, 224, 184, 0.15)",
+              padding: "2px 8px",
+              borderRadius: 6,
+              fontFamily: "var(--font-jetbrains-mono)",
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              color: "#5CE0B8",
+              textTransform: "uppercase",
+              lineHeight: 1.2,
+            }}
+          >
+            POPULAR
+          </span>
         </span>
       )}
       <div
