@@ -44,7 +44,7 @@ function haptic(ms?: number | number[]) {
 
 function ShelfIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <rect x={3} y={3} width={7} height={7} />
       <rect x={14} y={3} width={7} height={7} />
       <rect x={3} y={14} width={7} height={7} />
@@ -55,7 +55,7 @@ function ShelfIcon() {
 
 function DollarIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <line x1={12} y1={1} x2={12} y2={23} />
       <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
     </svg>
@@ -64,7 +64,7 @@ function DollarIcon() {
 
 function HomeIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
@@ -73,7 +73,7 @@ function HomeIcon() {
 
 function ClipboardIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
       <rect x={8} y={2} width={8} height={4} rx={1} />
     </svg>
@@ -83,7 +83,7 @@ function ClipboardIcon() {
 // Authenticate — checkmark inside a circle. Replaces the old shield Fake Checker.
 function CheckCircleIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <circle cx={12} cy={12} r={10} />
       <polyline points="8 12.5 11 15.5 16 9" />
     </svg>
@@ -92,7 +92,7 @@ function CheckCircleIcon() {
 
 function PackageIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <line x1={16.5} y1={9.4} x2={7.5} y2={4.21} />
       <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
       <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
@@ -103,7 +103,7 @@ function PackageIcon() {
 
 function RecycleIcon() {
   return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
@@ -121,21 +121,71 @@ interface Tool {
   toolKind?: ToolKind;
 }
 
+// Per-tool icon color so the four tiles read as four distinct
+// utilities at a glance instead of an undifferentiated gray grid.
+// Each color encodes a role: mint = AI/premium, camel = pricing/
+// money-related, blue-purple = data/tracking, red = trust/auth.
+// All wrapped at 0.6 opacity so the colors are present without
+// shouting — the tile chrome stays the dominant visual element.
+function ToolIcon({
+  color,
+  children,
+}: {
+  color: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        color,
+        opacity: 0.6,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 const TOP_TOOLS: Tool[] = [
-  { name: "Shelf Scanner", icon: <ShelfIcon />, toolKind: "shelf-scan" },
-  { name: "Price Check", icon: <DollarIcon />, toolKind: "price-check" },
-  { name: "Haul Log", icon: <ClipboardIcon />, href: "/app/haul" },
-  { name: "Authenticate", icon: <CheckCircleIcon />, toolKind: "fake-check" },
+  {
+    name: "Shelf Scanner",
+    icon: <ToolIcon color="#5CE0B8"><ShelfIcon /></ToolIcon>,
+    toolKind: "shelf-scan",
+  },
+  {
+    name: "Price Check",
+    icon: <ToolIcon color="#D4A574"><DollarIcon /></ToolIcon>,
+    toolKind: "price-check",
+  },
+  {
+    name: "Haul Log",
+    icon: <ToolIcon color="#7B8FFF"><ClipboardIcon /></ToolIcon>,
+    href: "/app/haul",
+  },
+  {
+    name: "Authenticate",
+    icon: <ToolIcon color="#E8636B"><CheckCircleIcon /></ToolIcon>,
+    toolKind: "fake-check",
+  },
 ];
 
 const EXTRA_TOOLS: Tool[] = [
-  { name: "Tag Decoder", icon: <HomeIcon />, toolKind: "tag-decode" },
+  {
+    name: "Tag Decoder",
+    icon: <ToolIcon color="#D4A574"><HomeIcon /></ToolIcon>,
+    toolKind: "tag-decode",
+  },
   {
     name: "Liquidation Analyzer",
-    icon: <PackageIcon />,
+    icon: <ToolIcon color="#5CE0B8"><PackageIcon /></ToolIcon>,
     toolKind: "liquidation",
   },
-  { name: "Scrap Finder", icon: <RecycleIcon />, toolKind: "scrap-id" },
+  {
+    name: "Scrap Finder",
+    icon: <ToolIcon color="#7B8FFF"><RecycleIcon /></ToolIcon>,
+    toolKind: "scrap-id",
+  },
 ];
 
 // Reverse-stagger exit timing for the tools drawer.
@@ -235,9 +285,7 @@ interface ScanRow {
 const SECTION_LABEL: React.CSSProperties = {
   // Uppercase category header (SOURCING / MORE TOOLS) — stays in
   // JetBrains Mono per the font role system. The hairline underline
-  // anchors each section visually without heavy dividers — bumped
-  // from 0.03 → 0.05 alpha so the line actually reads on OLED
-  // phone screens (0.03 was below the visibility threshold).
+  // anchors each section visually without heavy dividers.
   fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "#3D2E55",
@@ -245,7 +293,116 @@ const SECTION_LABEL: React.CSSProperties = {
   paddingBottom: 6,
   borderBottom: "1px solid rgba(255,255,255,0.05)",
   marginBottom: 10,
+  display: "flex",
+  alignItems: "center",
 };
+
+/**
+ * Per-section identity glyph rendered before the label text. 12px,
+ * 6px right margin, color encoded as the section's role:
+ *   🔥 deals    soft red — hot finds
+ *   🎁 free     mint     — pure profit
+ *   📍 sourcing camel    — where to hunt
+ *   🔧 tools    plum     — utility
+ * Renders inside the SECTION_LABEL flex row so it sits inline with
+ * the uppercase text, not floating above. Color targets glyph color
+ * via `color`, but emoji ignore color — the SVG variants below take
+ * stroke="currentColor" instead so the role color actually paints.
+ */
+function SectionIcon({
+  kind,
+}: {
+  kind: "deals" | "free" | "sourcing" | "tools";
+}) {
+  const color =
+    kind === "deals"
+      ? "rgba(232, 99, 107, 0.6)"
+      : kind === "free"
+        ? "#5CE0B8"
+        : kind === "sourcing"
+          ? "#D4A574"
+          : "#5A4E70";
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 12,
+        height: 12,
+        marginRight: 6,
+        color,
+        flexShrink: 0,
+      }}
+    >
+      {kind === "deals" && (
+        <svg
+          viewBox="0 0 24 24"
+          width={12}
+          height={12}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* Flame — hot finds */}
+          <path d="M12 2c1 4 4 5 4 9a4 4 0 11-8 0c0-2 1-3 2-4-2 4-4 5-4 9a6 6 0 1012 0c0-7-4-10-6-14z" />
+        </svg>
+      )}
+      {kind === "free" && (
+        <svg
+          viewBox="0 0 24 24"
+          width={12}
+          height={12}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* Gift — free / pure profit */}
+          <rect x={3} y={8} width={18} height={4} rx={1} />
+          <path d="M5 12v9h14v-9" />
+          <path d="M12 8v13" />
+          <path d="M12 8c-2-3-5-3-5-1 0 2 2 3 5 1zM12 8c2-3 5-3 5-1 0 2-2 3-5 1z" />
+        </svg>
+      )}
+      {kind === "sourcing" && (
+        <svg
+          viewBox="0 0 24 24"
+          width={12}
+          height={12}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* Map pin — where to hunt */}
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+          <circle cx={12} cy={10} r={3} />
+        </svg>
+      )}
+      {kind === "tools" && (
+        <svg
+          viewBox="0 0 24 24"
+          width={12}
+          height={12}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {/* Wrench — utility */}
+          <path d="M14.7 6.3a4 4 0 105.7 5.7l-9.4 9.4a2.8 2.8 0 11-4-4l9.4-9.4-1.7-1.7z" />
+        </svg>
+      )}
+    </span>
+  );
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -1101,6 +1258,7 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="FREE & CLEARANCE"
+                icon={<SectionIcon kind="free" />}
                 deals={freeDeals}
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
@@ -1119,6 +1277,7 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="DEALS NEAR YOU"
+                icon={<SectionIcon kind="deals" />}
                 deals={nearbyDeals}
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
@@ -1142,6 +1301,7 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="DEALS NEAR YOU"
+                icon={<SectionIcon kind="deals" />}
                 deals={nearbyDeals}
                 onDealTap={handleDealTap}
                 liveSignal={<WinsTicker />}
@@ -1159,6 +1319,7 @@ export default function DashboardPage() {
             >
               <DealCarousel
                 label="FREE & CLEARANCE"
+                icon={<SectionIcon kind="free" />}
                 deals={freeDeals}
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
@@ -1178,7 +1339,10 @@ export default function DashboardPage() {
             animationDelay: "360ms",
           }}
         >
-          <div style={SECTION_LABEL}>SOURCING</div>
+          <div style={SECTION_LABEL}>
+            <SectionIcon kind="sourcing" />
+            SOURCING
+          </div>
           <SourcingCards
             pennyItemCount={pennyCount}
             yardSaleTodayCount={0}
@@ -1202,7 +1366,10 @@ export default function DashboardPage() {
               as SOURCING and the carousel headers below. Replaces
               the previous flanking-hairlines variant so every
               section reads with the same visual rhythm. */}
-          <div style={SECTION_LABEL}>MORE TOOLS</div>
+          <div style={SECTION_LABEL}>
+            <SectionIcon kind="tools" />
+            MORE TOOLS
+          </div>
 
           {/* Top 4 tools */}
           <div
@@ -1270,11 +1437,23 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Bottom pad — 32px from "Show all tools" pill to viewport
-            bottom per the spacing spec. Just enough air for the
-            tools toggle to breathe without burning a full screen-
-            edge of dead space. */}
-        <div style={{ height: 32 }} />
+        {/* Bottom pad — 24px from "Show all tools" pill to the
+            tagline below, then the tagline acts as a satisfying
+            scroll-end bookend mirroring the splash screen's brand
+            signature. */}
+        <div style={{ height: 24 }} />
+        <div
+          style={{
+            paddingBottom: 40,
+            textAlign: "center",
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            color: "#3D2E55",
+            letterSpacing: "0.10em",
+          }}
+        >
+          scan. price. flip.
+        </div>
       </div>
 
       {/* Overlays */}

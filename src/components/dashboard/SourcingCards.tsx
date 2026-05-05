@@ -57,6 +57,14 @@ interface CardProps {
    * to dashed so the empty state reads as "this slot is available
    * but empty," like an outlined parking space. */
   empty?: boolean;
+  /** Optional second line under the count, used by empty-state cards
+   * to tell the user when content will arrive (e.g. "check back
+   * Saturday") rather than just saying it's empty. */
+  emptyHint?: string;
+  /** When true, paints a small mint dot in the top-right corner —
+   * notification-badge style. Used on Penny Drops when fresh items
+   * are available so the card peripherally signals "new activity." */
+  hasFresh?: boolean;
   onTap: () => void;
 }
 
@@ -68,6 +76,8 @@ function Card({
   count,
   countHex,
   empty = false,
+  emptyHint,
+  hasFresh = false,
   onTap,
 }: CardProps) {
   const [pressed, setPressed] = useState(false);
@@ -159,6 +169,39 @@ function Card({
       >
         {count}
       </div>
+      {/* Empty-state hint — sits under the count, even dimmer.
+          Tells the user WHEN content will arrive instead of just
+          saying it's empty. */}
+      {emptyHint && (
+        <div
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 10,
+            color: "#3D2E55",
+            lineHeight: 1.2,
+            marginTop: 2,
+          }}
+        >
+          {emptyHint}
+        </div>
+      )}
+      {/* Fresh-activity dot — top-right corner. Mint at 0.4 alpha
+          gives a notification-badge cue without competing with the
+          card's accent tint. */}
+      {hasFresh && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            backgroundColor: "rgba(92, 224, 184, 0.4)",
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -188,6 +231,13 @@ export default function SourcingCards({
         // recedes to deep plum + dashed border.
         countHex={pennyItemCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
         empty={pennyItemCount === 0}
+        emptyHint={
+          pennyItemCount === 0 ? "check back Tuesday" : undefined
+        }
+        // Notification-badge dot when fresh items are available so
+        // the card signals "new activity" peripherally without a
+        // text label.
+        hasFresh={pennyItemCount > 0}
         onTap={onPennyTap}
       />
       <Card
@@ -202,6 +252,10 @@ export default function SourcingCards({
         // is empty rather than active.
         countHex={yardSaleTodayCount > 0 ? "#5CE0B8" : EMPTY_COUNT_HEX}
         empty={yardSaleTodayCount === 0}
+        emptyHint={
+          yardSaleTodayCount === 0 ? "check back Saturday" : undefined
+        }
+        hasFresh={yardSaleTodayCount > 0}
         onTap={onYardSaleTap}
       />
     </div>

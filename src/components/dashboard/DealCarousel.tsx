@@ -85,6 +85,10 @@ interface DealCarouselProps {
   label: string;
   deals: Deal[];
   onDealTap: (deal: Deal) => void;
+  /** Optional 12px section icon rendered inline before the label
+   * text. Used to give each carousel its own identity — flame for
+   * DEALS NEAR YOU, gift for FREE & CLEARANCE. */
+  icon?: React.ReactNode;
   /** Optional live-activity element (e.g. WinsTicker) rendered
    * inline below the section label. Used for the first carousel
    * on the dashboard so the ticker reads as that section's
@@ -97,20 +101,20 @@ interface DealCarouselProps {
 }
 
 // Fade sits flush against the page bg (#120e18) so the carousel
-// edge dissolves rather than clipping. Strong end goes fully opaque
-// — at 0.95 the leftover 5% reads as a hairline rather than a fade,
-// especially against the dashboard's grid pattern. The mid-stop at
-// 50% with slight alpha softens the curve so the fade feels
-// continuous rather than linear.
+// edge dissolves rather than clipping. Solid #120e18 at the page-
+// side stop + transparent at the inner stop creates a clean
+// transparent-to-opaque wash that hints "swipe for more" without a
+// hard cut.
 const FADE_BG_LEFT =
-  "linear-gradient(to right, rgba(18,14,24,1) 0%, rgba(18,14,24,0.6) 50%, transparent 100%)";
+  "linear-gradient(to left, transparent 0%, #120e18 100%)";
 const FADE_BG_RIGHT =
-  "linear-gradient(to left, rgba(18,14,24,1) 0%, rgba(18,14,24,0.6) 50%, transparent 100%)";
+  "linear-gradient(to right, transparent 0%, #120e18 100%)";
 
 export default function DealCarousel({
   label,
   deals,
   onDealTap,
+  icon,
   liveSignal,
   loading,
   emptyMessage,
@@ -164,8 +168,11 @@ export default function DealCarousel({
           // Tighter bottom margin when liveSignal is rendered below
           // (the ticker reads as part of this header trio).
           marginBottom: liveSignal ? 6 : 10,
+          display: "flex",
+          alignItems: "center",
         }}
       >
+        {icon}
         {label}
       </div>
 
@@ -257,7 +264,7 @@ export default function DealCarousel({
             width: 48,
             background: FADE_BG_LEFT,
             pointerEvents: "none",
-            zIndex: 2,
+            zIndex: 5,
             opacity: showLeftFade ? 1 : 0,
             transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
@@ -274,7 +281,7 @@ export default function DealCarousel({
             width: 48,
             background: FADE_BG_RIGHT,
             pointerEvents: "none",
-            zIndex: 2,
+            zIndex: 5,
             opacity: showRightFade ? 1 : 0,
             transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
