@@ -10,15 +10,28 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
  * #120e18 so the transition INTO the app feels like lights coming on):
  *
  *   z 0  meshAtmosphere — three accent-tinted radial gradients (mint /
- *        periwinkle / camel) at low alpha. Slowly scales 1.00 → 1.05 as
- *        it fades in.
- *   z 1  DotGridBackground — the same grid the dashboard uses, faded in
- *        with a 0.3s delay so the atmosphere lands first.
- *   z 2  Film-grain noise — fractalNoise SVG at 0.015 opacity. Felt more
- *        than seen; gives the dark surface a brushed-metal feel.
- *   z 10 Logo group — soft mint glow ring → spinning Saturn → LOOT
+ *        periwinkle / camel) at low alpha. Subtle scale-up on entrance.
+ *   z 1  DotGridBackground — same grid the dashboard uses, faded in
+ *        tight behind the atmosphere.
+ *   z 2  Film-grain noise — fractalNoise SVG at 0.015 opacity. Felt
+ *        more than seen; gives the dark surface a brushed-metal feel.
+ *   z 10 Logo group — radial mint glow → spinning Saturn → LOOT
  *        wordmark → tagline → breathing dots. Staggered entrance, dots
- *        loop forever; entrances are one-shot (forwards fill-mode).
+ *        loop forever; one-shot entrances use fill-mode `both` so the
+ *        elements stay invisible until their delay elapses (no flash
+ *        of un-styled / fully-opaque content) and hold their final
+ *        state after the animation completes.
+ *
+ * Entrance schedule — the full sequence completes in ~1.4s so the
+ * splash feels like it lands quickly even on a 1.6s total visibility
+ * window:
+ *   0.00s  mesh atmosphere starts
+ *   0.10s  dot grid starts
+ *   0.15s  radial logo glow starts
+ *   0.25s  Saturn icon fades in
+ *   0.35s  LOOT wordmark fades in
+ *   0.65s  tagline fades in
+ *   0.90s  breathing dots fade in (then loop forever)
  *
  * `exiting` — when true, the whole shell fades out over 400ms. Caller
  * is responsible for unmounting after that animation completes.
@@ -37,21 +50,19 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
       <style>{`
         @keyframes splashMeshDrift {
           0% { opacity: 0; transform: scale(1.0); }
-          30% { opacity: 1; }
-          100% { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 1; transform: scale(1.04); }
         }
         @keyframes splashGridFadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes splashGlowPulse {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-          40% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+        @keyframes splashGlowExpand {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
           100% { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
         }
         @keyframes splashCoinFadeIn {
           from { opacity: 0; }
-          to { opacity: 0.7; }
+          to { opacity: 0.85; }
         }
         @keyframes splashCoinSpin {
           from { transform: rotate(0deg); }
@@ -63,7 +74,7 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
         }
         @keyframes splashTaglineFadeIn {
           from { opacity: 0; }
-          to { opacity: 0.4; }
+          to { opacity: 0.55; }
         }
         @keyframes splashDotsFadeIn {
           from { opacity: 0; }
@@ -71,14 +82,14 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
         }
         @keyframes splashDotBreathe {
           0%, 100% {
-            opacity: 0.1;
+            opacity: 0.12;
             transform: scale(0.7);
             box-shadow: 0 0 0px rgba(92, 224, 184, 0);
           }
           50% {
-            opacity: 0.6;
-            transform: scale(1.15);
-            box-shadow: 0 0 8px rgba(92, 224, 184, 0.3);
+            opacity: 0.65;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(92, 224, 184, 0.25);
           }
         }
         @keyframes splashExit {
@@ -109,9 +120,10 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
           pointerEvents: exiting ? "none" : "auto",
         }}
       >
-        {/* Layer 1 — mesh atmosphere. Three accent-tinted radials at
-            low alpha. The slow scale-up gives the dark surface a
-            sense of expanding rather than just sitting still. */}
+        {/* Layer 1 — mesh atmosphere. Three accent-tinted radials.
+            Alphas bumped from 0.04/0.03/0.02 → 0.07/0.06/0.05 so they
+            actually register on OLED phone screens — anything below
+            ~0.04 is invisible against near-black on those displays. */}
         <div
           aria-hidden="true"
           style={{
@@ -119,34 +131,34 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
             inset: 0,
             zIndex: 0,
             background:
-              "radial-gradient(ellipse 60% 50% at 30% 40%, rgba(92, 224, 184, 0.04) 0%, transparent 70%), " +
-              "radial-gradient(ellipse 50% 60% at 70% 60%, rgba(123, 143, 255, 0.03) 0%, transparent 70%), " +
-              "radial-gradient(ellipse 80% 40% at 50% 100%, rgba(212, 165, 116, 0.02) 0%, transparent 60%)",
-            animation: "splashMeshDrift 3s ease-out forwards",
+              "radial-gradient(ellipse 65% 55% at 25% 35%, rgba(92, 224, 184, 0.07) 0%, transparent 65%), " +
+              "radial-gradient(ellipse 55% 65% at 75% 65%, rgba(123, 143, 255, 0.06) 0%, transparent 65%), " +
+              "radial-gradient(ellipse 80% 45% at 50% 95%, rgba(212, 165, 116, 0.05) 0%, transparent 55%)",
+            animation:
+              "splashMeshDrift 1.5s ease-out 0s both",
             transformOrigin: "center",
           }}
         />
 
-        {/* Layer 2 — DotGridBackground in its grid variant, the same
-            quiet graph-paper the dashboard uses. Wrapped in a fader
-            div so the entrance is staggered behind the atmosphere. */}
+        {/* Layer 2 — DotGridBackground in its grid variant. Tight
+            entrance so the grid lands while the atmosphere is still
+            arriving — 0.1s delay just gives the mesh a one-frame
+            head start, not a long wait. */}
         <div
           aria-hidden="true"
           style={{
             position: "absolute",
             inset: 0,
             zIndex: 1,
-            opacity: 0,
             animation:
-              "splashGridFadeIn 1.5s ease-out 0.3s forwards",
+              "splashGridFadeIn 1.0s ease-out 0.1s both",
           }}
         >
           <DotGridBackground variant="grid" />
         </div>
 
         {/* Layer 3 — film grain. 0.015 opacity reads as physical
-            surface texture, not pattern. Sits above grid + below
-            logo so the logo stays crisp. */}
+            surface texture, not pattern. */}
         <div
           aria-hidden="true"
           style={{
@@ -182,47 +194,46 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
               position: "relative",
               display: "flex",
               alignItems: "center",
-              // The wordmark is taller than the icon at 42px / 48px;
-              // baseline-align so they sit visually balanced.
-              alignSelf: "center",
             }}
           >
-            {/* Radial glow — anchored behind the icon. Centered on
-                the icon's center via translate(-50%,-50%). The
-                animation interpolates the same translate so the
-                glow doesn't snap during the scale-in. */}
+            {/* Radial glow — anchored behind the icon. 340px halo
+                with a slow 4-stop falloff. Center alpha at 0.12 is
+                the threshold where the halo actually reads on OLED
+                phone screens against near-black; previous 0.07 was
+                literally invisible. The translate(-50%,-50%) on
+                both keyframe anchors keeps the scale-in centered
+                on the icon. */}
             <span
               aria-hidden="true"
               style={{
                 position: "absolute",
                 top: "50%",
-                left: 24, // center of the 48px icon
-                width: 280,
-                height: 280,
-                marginLeft: -140,
-                marginTop: 0,
+                // 26 = center of the 52px icon. The transform's
+                // translate(-50%) handles centering the 340px glow
+                // around that point, so no margin offset is needed.
+                left: 26,
+                width: 340,
+                height: 340,
                 transform: "translate(-50%, -50%)",
                 borderRadius: "50%",
                 pointerEvents: "none",
                 background:
-                  "radial-gradient(circle at center, rgba(92, 224, 184, 0.07) 0%, rgba(92, 224, 184, 0.03) 30%, rgba(92, 224, 184, 0.01) 50%, transparent 70%)",
-                opacity: 0,
-                animation: "splashGlowPulse 2s ease-out forwards",
+                  "radial-gradient(circle at center, rgba(92, 224, 184, 0.12) 0%, rgba(92, 224, 184, 0.06) 25%, rgba(92, 224, 184, 0.02) 45%, transparent 65%)",
+                animation:
+                  "splashGlowExpand 1.5s ease-out 0.15s both",
               }}
             />
 
-            {/* Spinning Saturn — 48px, 70% mint, 8s rotation. The
-                spin is slow enough that it reads as ambient life,
-                not a loading spinner. Wrapped in two divs so the
-                fade-in (opacity) and rotation (transform) live on
-                separate elements — one CSS animation per axis. */}
+            {/* Spinning Saturn — 52px, 85% mint. The fade and the
+                rotation live on separate elements so they don't
+                fight for `transform`. Outer span owns opacity
+                (entrance), inner span owns rotation (continuous). */}
             <span
               aria-hidden="true"
               style={{
                 display: "inline-block",
-                opacity: 0,
                 animation:
-                  "splashCoinFadeIn 800ms ease-out 200ms forwards",
+                  "splashCoinFadeIn 600ms ease-out 0.25s both",
               }}
             >
               <span
@@ -232,14 +243,17 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
                   willChange: "transform",
                 }}
               >
-                <CoinMark size={48} color="#5CE0B8" />
+                <CoinMark size={52} color="#5CE0B8" />
               </span>
             </span>
 
-            {/* LOOT wordmark — full-brightness mint, soft halo. */}
+            {/* LOOT wordmark — full-brightness mint, two-layer halo
+                (40px tight + 80px ambient) so the text reads as a
+                light source projecting outward, not paint on the
+                surface. */}
             <span
               style={{
-                marginLeft: 14,
+                marginLeft: 16,
                 fontFamily: "var(--font-jetbrains-mono)",
                 fontWeight: 700,
                 fontSize: 42,
@@ -247,17 +261,18 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
                 lineHeight: 1,
                 color: "#5CE0B8",
                 textShadow:
-                  "0 0 30px rgba(92, 224, 184, 0.15), 0 0 60px rgba(92, 224, 184, 0.05)",
-                opacity: 0,
+                  "0 0 40px rgba(92, 224, 184, 0.12), 0 0 80px rgba(92, 224, 184, 0.04)",
                 animation:
-                  "splashWordFadeIn 800ms ease-out 400ms forwards",
+                  "splashWordFadeIn 600ms ease-out 0.35s both",
               }}
             >
               LOOT
             </span>
           </div>
 
-          {/* Tagline — three-word whisper; barely visible. */}
+          {/* Tagline — three-word whisper. Bumped from 0.4 → 0.55
+              opacity so it reads at arm's length on a phone in
+              normal lighting. */}
           <div
             style={{
               marginTop: 12,
@@ -266,26 +281,27 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
               fontSize: 13,
               letterSpacing: "0.08em",
               color: "rgba(200, 192, 216, 1)",
-              opacity: 0,
               animation:
-                "splashTaglineFadeIn 600ms ease-out 800ms forwards",
+                "splashTaglineFadeIn 500ms ease-out 0.65s both",
             }}
           >
             scan. price. flip.
           </div>
 
           {/* Breathing dots — three mint dots that pulse on a wave.
-              Wrapper fades in last (1.2s delay); each dot then
-              breathes independently with a 0.25s stagger. */}
+              Wrapper fades in; each dot then breathes independently
+              with a 0.25s stagger. Peak opacity 0.65 + 10px / 0.25
+              alpha glow at 50% of the keyframe makes them visibly
+              register without competing with the wordmark. */}
           <div
             style={{
               marginTop: 28,
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 10,
-              opacity: 0,
               animation:
-                "splashDotsFadeIn 500ms ease-out 1200ms forwards",
+                "splashDotsFadeIn 400ms ease-out 0.9s both",
             }}
           >
             {[0, 0.25, 0.5].map((delay, i) => (
@@ -293,7 +309,7 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
                 key={i}
                 aria-hidden="true"
                 style={{
-                  display: "block",
+                  display: "inline-block",
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
