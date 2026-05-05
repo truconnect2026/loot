@@ -269,7 +269,7 @@ export default function ShelfScanSheet({
       if (!res.ok) {
         const err = data as ApiError;
         // 403 paywall — bubble up to the dashboard so it can swap in
-        // its PaywallSheet with the right "X/5 used" label.
+        // its PaywallSheet with the right "X/N used" label.
         if (
           res.status === 403 &&
           typeof err.scans_used === "number" &&

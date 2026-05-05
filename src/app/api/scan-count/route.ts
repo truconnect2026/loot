@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-
-export const FREE_DAILY_LIMIT = 5;
+import { FREE_DAILY_LIMIT } from "@/lib/limits";
 
 export interface ScanCountResponse {
   isPro: boolean;
@@ -12,9 +11,9 @@ export interface ScanCountResponse {
 
 /**
  * Lightweight read of the current user's scan-quota state.
- * Frontend uses this to render "X/5 free scans today" under the
- * ScanButtons row. Returns isPro: true / used: 0 / limit: Infinity-
- * shaped values for Pro users so the same UI logic can collapse
+ * Frontend uses this to render "X/N free scans" on the dashboard
+ * scan-count pill. Returns isPro: true / used: 0 / limit:
+ * MAX_SAFE_INTEGER for Pro users so the same UI logic can collapse
  * the counter for them with `isPro && hideCounter`.
  *
  * Anonymous calls (no session) get a permissive default — the

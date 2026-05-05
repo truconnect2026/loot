@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { shelfScan, type ShelfScanResult } from "@/lib/claude";
+import { FREE_DAILY_LIMIT } from "@/lib/limits";
 
 interface ShelfScanBody {
   image?: string;
@@ -10,12 +11,10 @@ interface ShelfScanBody {
 interface ShelfScanError {
   error: string;
   /** Set on 403 limit-exceeded responses so the paywall sheet can
-   * render an accurate "X/5 used" label. */
+   * render an accurate "X/N used" label. */
   scans_used?: number;
   scans_limit?: number;
 }
-
-const FREE_DAILY_LIMIT = 5;
 
 // Shelf scan counts as ONE scan against the daily limit even though
 // it returns N items. Same threshold the barcode/vision route uses;

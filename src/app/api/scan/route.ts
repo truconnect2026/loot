@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { lookupUpc } from "@/lib/upc";
 import { getVerdict, identifyFromImage } from "@/lib/claude";
+import { FREE_DAILY_LIMIT } from "@/lib/limits";
 
 interface ScanRequestBody {
   type: "barcode" | "vision";
@@ -30,12 +31,10 @@ export interface ScanResponse {
 interface ScanError {
   error: string;
   /** Set on 403 limit-exceeded responses so the paywall sheet can
-   * render an accurate "X/5 used" label. */
+   * render an accurate "X/N used" label. */
   scans_used?: number;
   scans_limit?: number;
 }
-
-const FREE_DAILY_LIMIT = 5;
 
 export async function POST(
   req: NextRequest
@@ -49,7 +48,8 @@ export async function POST(
 
   const cost = typeof body.cost === "number" && body.cost >= 0 ? body.cost : 0;
 
-  // Subscription gate — Pro users skip; free users capped at 5/day.
+  // Subscription gate — Pro users skip; free users capped at the
+  // FREE_DAILY_LIMIT centralized in lib/limits.ts.
   // Anonymous (logged-out) callers fall through with no gate; the
   // route does not insert a haul-log row for them either, so the
   // worst case is a free verdict to a non-user.

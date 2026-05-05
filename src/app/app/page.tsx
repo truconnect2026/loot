@@ -298,7 +298,7 @@ export default function DashboardPage() {
   // mount; SourcingCards reads the literal number for its callout.
   const [pennyCount, setPennyCount] = useState(0);
 
-  // Subscription / scan-count state — drives the X/5 counter under
+  // Subscription / scan-count state — drives the X/N counter under
   // the scan zone for free users and the PaywallSheet on 403.
   const [scanCount, setScanCount] = useState<ScanCountResponse | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -468,7 +468,7 @@ export default function DashboardPage() {
   }, [refreshStats]);
 
   // Scan-count — fetched on mount and after every successful scan
-  // so the X/5 counter under the ScanButtons reflects live state.
+  // so the X/N counter under the ScanButtons reflects live state.
   // Pro users get isPro: true and the counter hides. Wrapped in an
   // async IIFE for the function-boundary the
   // react-hooks/set-state-in-effect rule wants.
@@ -671,7 +671,7 @@ export default function DashboardPage() {
 
       // Pull fresh totals — the scan row was just inserted server-side.
       refreshStats();
-      // Re-fetch the daily-scan count too, so the X/5 counter ticks
+      // Re-fetch the daily-scan count too, so the X/N counter ticks
       // immediately for free users instead of waiting for next mount.
       void refreshScanCount();
     },
@@ -995,12 +995,19 @@ export default function DashboardPage() {
               hidden for Pro members and during the loading window
               before the first /api/scan-count response. Rendered as
               a soft pill instead of plain text so it reads as a UI
-              element, not a floating annotation. Mint while the user
-              has runway (>2 left), red urgency once they're at 2 or
-              fewer free scans for the day. */}
+              element, not a floating annotation.
+              Three states:
+                remaining > 1  → mint  "X/N free scans"
+                remaining = 1  → red   "X/N free scans" (running low)
+                remaining = 0  → red   "0 scans left" (saying X/X
+                  free scans implies "you have scans" which is the
+                  opposite of the actual state).
+              "today" dropped from the copy — it's implied by the
+              live counter and saves horizontal pill width. */}
           {scanCount && !scanCount.isPro && (
             (() => {
-              const urgent = scanCount.remaining <= 2;
+              const exhausted = scanCount.remaining <= 0;
+              const urgent = exhausted || scanCount.remaining === 1;
               return (
                 <div
                   style={{
@@ -1029,7 +1036,9 @@ export default function DashboardPage() {
                       fontFeatureSettings: '"tnum"',
                     }}
                   >
-                    {scanCount.used}/{scanCount.limit} free scans today
+                    {exhausted
+                      ? "0 scans left"
+                      : `${scanCount.used}/${scanCount.limit} free scans`}
                   </span>
                 </div>
               );

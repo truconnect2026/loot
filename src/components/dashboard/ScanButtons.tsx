@@ -167,7 +167,7 @@ function HeroButton({
       }}
     >
       {/* Per-button scan count badge removed — it duplicated the
-          "X/5 free scans today" pill that sits below the buttons,
+          "X/N free scans" pill that sits below the buttons,
           and a tiny number floating in the corner of each button
           read as visual noise without adding any signal the pill
           doesn't already provide. */}
