@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
 import type {
   ShelfScanItem,
@@ -82,6 +82,22 @@ function netForPlatform(item: ShelfScanItem, platform: ShelfScanPlatform): numbe
       return item.sellFBShipped * 0.9;
     case "eBay":
       return item.sellEbay * 0.8675 - 0.3;
+  }
+}
+
+// Brand colors for the destination-platform label under the SELL
+// cell. Using each platform's recognizable color (FB blue, eBay
+// red) means the user can scan vertically and pattern-match without
+// reading the label. The shipped variant is a lighter blue so the
+// two FB rows are still distinguishable side-by-side.
+function platformColor(p: ShelfScanPlatform): string {
+  switch (p) {
+    case "FB Local":
+      return "#1877F2";
+    case "FB Shipped":
+      return "#4A90D9";
+    case "eBay":
+      return "#E53238";
   }
 }
 
@@ -497,7 +513,7 @@ function LoadingView({ thumbnail }: { thumbnail: string | null }) {
           style={{
             position: "relative",
             width: "100%",
-            maxHeight: 200,
+            maxHeight: 130,
             borderRadius: 14,
             overflow: "hidden",
             marginBottom: 16,
@@ -509,7 +525,7 @@ function LoadingView({ thumbnail }: { thumbnail: string | null }) {
             alt="captured shelf"
             style={{
               width: "100%",
-              maxHeight: 200,
+              maxHeight: 130,
               objectFit: "cover",
               display: "block",
             }}
@@ -650,7 +666,7 @@ function ResultsView({
             style={{
               position: "relative",
               width: "100%",
-              maxHeight: 200,
+              maxHeight: 130,
               borderRadius: 14,
               overflow: "hidden",
               marginBottom: 16,
@@ -662,7 +678,7 @@ function ResultsView({
               alt="scanned shelf"
               style={{
                 width: "100%",
-                maxHeight: 200,
+                maxHeight: 130,
                 objectFit: "cover",
                 display: "block",
               }}
@@ -703,7 +719,11 @@ function ResultsView({
           ))}
         </div>
 
-        {/* Summary line */}
+        {/* Summary line — counts plus the headline profit number in
+            mint. Putting the dollar amount inline (vs. burying it in
+            the sticky bar only) lets the user clock the upside the
+            instant the results render, before the eye drops to the
+            cards. */}
         <div
           style={{
             fontFamily: "var(--font-body)",
@@ -712,11 +732,19 @@ function ResultsView({
             marginBottom: 12,
           }}
         >
-          Found {counts.ALL} item{counts.ALL === 1 ? "" : "s"}
+          {counts.ALL} item{counts.ALL === 1 ? "" : "s"}
           {" · "}
           <span style={{ color: counts.BUY > 0 ? "#5CE0B8" : "#5A4E70" }}>
-            {counts.BUY} worth grabbing
+            {counts.BUY} grab{counts.BUY === 1 ? "" : "s"}
           </span>
+          {counts.BUY > 0 && (
+            <>
+              {" · "}
+              <span style={{ color: "#5CE0B8" }}>
+                est. +{fmtMoney(buyTotal)} profit
+              </span>
+            </>
+          )}
         </div>
 
         {/* Item cards */}
@@ -784,6 +812,30 @@ function FilterPill({
     kind === "ALL"
       ? `All (${count})`
       : `${kind} (${count})`;
+
+  // The unselected BUY pill gets a subtle mint tint to draw the
+  // user's finger to the "show me what to grab" filter without
+  // demanding attention the way the active state does. Other
+  // unselected pills stay transparent / muted-text. Active state is
+  // identical across kinds (15% bg / 30% border / full text color).
+  const isUnselectedBuy = !active && kind === "BUY";
+
+  const bg = active
+    ? `rgba(${tint.rgba}, 0.15)`
+    : isUnselectedBuy
+      ? "rgba(92, 224, 184, 0.06)"
+      : "transparent";
+  const border = active
+    ? `1px solid rgba(${tint.rgba}, 0.30)`
+    : isUnselectedBuy
+      ? "1px solid rgba(92, 224, 184, 0.15)"
+      : "1px solid rgba(255,255,255,0.08)";
+  const color = active
+    ? tint.color
+    : isUnselectedBuy
+      ? "rgba(92, 224, 184, 0.60)"
+      : "#5A4E70";
+
   return (
     <button
       type="button"
@@ -793,11 +845,9 @@ function FilterPill({
         height: 28,
         padding: "0 14px",
         borderRadius: 20,
-        backgroundColor: active ? `rgba(${tint.rgba}, 0.15)` : "transparent",
-        border: active
-          ? `1px solid rgba(${tint.rgba}, 0.30)`
-          : "1px solid rgba(255,255,255,0.08)",
-        color: active ? tint.color : "#5A4E70",
+        backgroundColor: bg,
+        border,
+        color,
         fontFamily: "var(--font-label)",
         fontSize: 10,
         fontWeight: 700,
@@ -835,7 +885,33 @@ function ItemCard({
   onGenerate,
 }: ItemCardProps) {
   const tint = VERDICT_TINT[item.verdict];
-  const profitColor = item.profit >= 0 ? "#5CE0B8" : "#E8636B";
+  const isBuy = item.verdict === "BUY";
+  const isMaybe = item.verdict === "MAYBE";
+  const isPass = item.verdict === "PASS";
+
+  // Verdict-driven colors. PASS profit is no longer "red if negative"
+  // — it's red regardless, because the verdict itself already conveys
+  // "skip this." Decoupling color from sign keeps the visual language
+  // crisp: mint = grab, camel = consider, red = skip.
+  const profitColor = isBuy ? "#5CE0B8" : isMaybe ? "#D4A574" : "#E8636B";
+  const accentColor = isBuy ? "#5CE0B8" : isMaybe ? "#D4A574" : "#E8636B";
+
+  // PASS cards collapse to a single name+pill row by default — they
+  // recede so the user's eye lands on BUY/MAYBE first. The body
+  // border drops to a near-invisible hairline on PASS as part of
+  // the same recede.
+  const passCollapsed = isPass && !expanded;
+
+  // Per-side border styling: 3px accent stripe on the left (except
+  // PASS, which stays subtle), hairline on the other three sides.
+  // BUY bumps the body border from 0.15 → 0.2 for a touch more tint;
+  // PASS drops to 0.08 to fade.
+  const sideBorderColor = isPass
+    ? "rgba(232, 99, 107, 0.08)"
+    : isBuy
+      ? "rgba(92, 224, 184, 0.20)"
+      : tint.bg;
+
   const sellPrice =
     item.bestPlatform === "FB Local"
       ? item.sellFBLocal
@@ -848,9 +924,26 @@ function ItemCard({
       onClick={onToggle}
       style={{
         backgroundColor: "rgba(23, 18, 42, 0.8)",
-        border: `1px solid ${tint.bg}`,
+        borderTop: `1px solid ${sideBorderColor}`,
+        borderRight: `1px solid ${sideBorderColor}`,
+        borderBottom: `1px solid ${sideBorderColor}`,
+        // Left accent stripe — 3px solid for BUY/MAYBE so the verdict
+        // is readable peripherally; PASS keeps the same hairline as
+        // its other sides so it visually recedes.
+        borderLeft: isPass
+          ? `1px solid ${sideBorderColor}`
+          : `3px solid ${accentColor}`,
+        // Subtle mint glow on BUY only — at 0.06 it's barely
+        // perceptible against the dark surface, just enough to draw
+        // peripheral attention. Stronger on MAYBE/PASS would compete.
+        boxShadow: isBuy
+          ? "0 0 12px rgba(92, 224, 184, 0.06)"
+          : "none",
         borderRadius: 14,
-        padding: 14,
+        // Tighter vertical padding when PASS is collapsed (~48px row);
+        // standard padding 14 once expanded so the inner stats grid
+        // doesn't crowd.
+        padding: passCollapsed ? "12px 14px" : 14,
         marginBottom: 10,
         cursor: "pointer",
         transition: "border-color 150ms ease-out",
@@ -870,9 +963,11 @@ function ItemCard({
             flex: 1,
             minWidth: 0,
             fontFamily: "var(--font-body)",
-            fontSize: 15,
+            // PASS collapsed: smaller (13) and dimmed text so the
+            // whole row reads as receded. Expanded matches BUY/MAYBE.
+            fontSize: passCollapsed ? 13 : 15,
             fontWeight: 600,
-            color: "#C8C0D8",
+            color: passCollapsed ? "#5A4E70" : "#C8C0D8",
             lineHeight: 1.3,
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -901,7 +996,9 @@ function ItemCard({
         </div>
       </div>
 
-      {/* MIDDLE ROW — cost / sell / profit cells */}
+      {/* MIDDLE ROW — cost / sell / profit cells. Skipped on PASS
+          when collapsed so the row reads as a single 48px line. */}
+      {!passCollapsed && (
       <div
         style={{
           display: "flex",
@@ -918,17 +1015,21 @@ function ItemCard({
           label="SELL"
           value={fmtMoney(sellPrice)}
           color="#C8C0D8"
-          subLabel={`via ${item.bestPlatform}`}
+          subLabel={<PlatformLabel platform={item.bestPlatform} />}
         />
         <StatCell
           label="PROFIT"
           value={fmtMoney(item.profit)}
           color={profitColor}
+          emphasized={isBuy}
         />
       </div>
+      )}
 
-      {/* BOTTOM ROW — description (collapsed) */}
-      {!expanded && item.description && (
+      {/* BOTTOM ROW — description (collapsed). PASS hides this in
+          collapsed mode (no description on the 48px row); the full
+          description shows up inside the expansion below. */}
+      {!passCollapsed && !expanded && item.description && (
         <div
           style={{
             marginTop: 8,
@@ -1054,11 +1155,18 @@ function StatCell({
   value,
   color,
   subLabel,
+  emphasized,
 }: {
   label: string;
   value: string;
   color: string;
-  subLabel?: string;
+  /** Accepts a ReactNode so callers can pass styled platform labels
+   * (colored dot + brand-color text) and not just gray strings. */
+  subLabel?: ReactNode;
+  /** Bumps the value to 20px / 800 — used on the PROFIT cell of BUY
+   * cards so the profit number screams visually heavier than COST
+   * and SELL beside it. */
+  emphasized?: boolean;
 }) {
   return (
     <div
@@ -1084,8 +1192,8 @@ function StatCell({
       <div
         style={{
           fontFamily: "var(--font-label)",
-          fontSize: 16,
-          fontWeight: 700,
+          fontSize: emphasized ? 20 : 16,
+          fontWeight: emphasized ? 800 : 700,
           color,
           fontFeatureSettings: '"tnum"',
           marginTop: 2,
@@ -1106,6 +1214,36 @@ function StatCell({
         </div>
       )}
     </div>
+  );
+}
+
+// Colored platform pip + brand-color label. Renders inside the SELL
+// cell's subLabel slot so users can scan the bestPlatform column
+// vertically and pattern-match the destination platform without
+// reading text.
+function PlatformLabel({ platform }: { platform: ShelfScanPlatform }) {
+  const color = platformColor(platform);
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        color, // overrides the inherited #5A4E70 on the wrapper
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          backgroundColor: color,
+          flexShrink: 0,
+        }}
+      />
+      {platform}
+    </span>
   );
 }
 
