@@ -26,7 +26,7 @@ import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
-import type { ScanResponse } from "@/app/api/scan/route";
+import type { VerdictPayload } from "@/components/dashboard/ScanOverlay";
 import type { ScanCountResponse } from "@/app/api/scan-count/route";
 
 // Light haptic helper — Android Chrome only, iOS silently fails. Defaults to
@@ -248,7 +248,7 @@ export default function DashboardPage() {
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
-  const [verdictData, setVerdictData] = useState<ScanResponse | null>(null);
+  const [verdictData, setVerdictData] = useState<VerdictPayload | null>(null);
 
   // CoinRain state
   const [coinRainActive, setCoinRainActive] = useState(false);
@@ -649,7 +649,7 @@ export default function DashboardPage() {
   }, []);
 
   const handleScanResult = useCallback(
-    (result: ScanResponse) => {
+    (result: VerdictPayload) => {
       setScanOpen(false);
       setVerdictData(result);
       setVerdictOpen(true);

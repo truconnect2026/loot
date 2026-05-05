@@ -12,6 +12,14 @@ interface BottomSheetProps {
   onClose: () => void;
   borderColor: string;
   children: ReactNode;
+  /**
+   * When this value changes, the sheet's scroll container is reset to
+   * scrollTop = 0. Use it to bring fresh content into view — e.g.
+   * shelf-scan results landing into the sheet when the user is still
+   * scrolled to the bottom of an old empty state. The value itself is
+   * opaque (number / string / boolean); only its identity matters.
+   */
+  scrollResetKey?: unknown;
 }
 
 export default function BottomSheet({
@@ -19,6 +27,7 @@ export default function BottomSheet({
   onClose,
   borderColor,
   children,
+  scrollResetKey,
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -78,6 +87,16 @@ export default function BottomSheet({
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  // Scroll-reset hook — when consumers bump scrollResetKey, snap the
+  // panel's scroll to the top so freshly-rendered content is visible
+  // without the user having to scroll up manually. Skipped while the
+  // sheet is closed (no point) and on the very first render (the
+  // initial position is already 0).
+  useEffect(() => {
+    if (!open) return;
+    if (sheetRef.current) sheetRef.current.scrollTop = 0;
+  }, [open, scrollResetKey]);
 
   return (
     <>

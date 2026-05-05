@@ -5,8 +5,13 @@ import BottomSheet from "@/components/shared/BottomSheet";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { ListingResponse } from "@/app/api/listing/route";
 
-// Kept as an alias so existing imports keep working.
-export type VerdictData = ScanResponse;
+// VerdictData = API ScanResponse + the client-captured thumbnail.
+// The thumbnail is grabbed in ScanOverlay (UPC: at decode time;
+// AI Vision: at the user's shutter tap) and never round-trips
+// through /api/scan, so it lives on the client-side envelope only.
+export interface VerdictData extends ScanResponse {
+  capturedImage?: string | null;
+}
 
 // Whole numbers render as "$35"; fractional values keep two decimals.
 function fmt(n: number): string {
@@ -343,6 +348,34 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           overflow: "hidden",
         }}
       >
+        {/* Thumbnail — the frame the user actually scanned. Gives the
+            verdict a visual anchor instead of free-floating numbers.
+            Hidden when the scanner couldn't grab a frame (rare;
+            captureFrame failures are silenced upstream). */}
+        {data.capturedImage && (
+          <div
+            style={{
+              width: "100%",
+              maxHeight: 120,
+              borderRadius: 12,
+              overflow: "hidden",
+              marginBottom: 12,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.capturedImage}
+              alt="Scanned item"
+              style={{
+                width: "100%",
+                maxHeight: 120,
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </div>
+        )}
+
         {/* Method label */}
         <div
           style={{

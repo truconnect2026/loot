@@ -201,6 +201,13 @@ export default function ShelfScanSheet({
     total: number;
   } | null>(null);
 
+  // Bumped each time results render so BottomSheet snaps its scroll
+  // back to the top — without this, a long previous scan's scroll
+  // position leaks into the next results view (or the cached-on-open
+  // hydration), and the first card lands clipped under the drag
+  // handle.
+  const [scrollResetKey, setScrollResetKey] = useState(0);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Open hydration — check the 30-min localStorage cache first. If
@@ -223,6 +230,7 @@ export default function ShelfScanSheet({
         setStatus("loaded");
         setResult({ items: cached.items });
         setThumbnail(cached.image);
+        setScrollResetKey((k) => k + 1);
       } else {
         setStatus("idle");
         setResult(null);
@@ -277,6 +285,7 @@ export default function ShelfScanSheet({
       const fresh = data as ShelfScanResult;
       setResult(fresh);
       setStatus("loaded");
+      setScrollResetKey((k) => k + 1);
       // Persist so an accidental sheet-close doesn't burn the user's
       // scan quota — they can reopen the sheet within 30 min and
       // pick up where they left off.
@@ -375,7 +384,12 @@ export default function ShelfScanSheet({
   // ── Rendering ──────────────────────────────────────────────────
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#5CE0B8">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#5CE0B8"
+      scrollResetKey={scrollResetKey}
+    >
       {/* Min-height shim — keeps the sheet from collapsing to a thin
           strip when the content is short. Idle/loading/error states
           have ~120px of intrinsic content, which left the "tap to

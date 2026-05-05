@@ -310,7 +310,9 @@ Return ONLY valid JSON — no markdown, no backticks, no explanation text. Retur
   confidence (string, one of HIGH/MEDIUM/LOW based on how clearly you can identify and price the item),
   description (string, brief note on condition, brand recognition, why it's worth grabbing or not).
 
-Rank the array by profit descending. Limit your response to the 10 most profitable items only — never more — so the JSON fits in the response budget without truncation.`;
+Rank the array by profit descending. Limit your response to the 10 most profitable items only — never more — so the JSON fits in the response budget without truncation.
+
+Be conservative and realistic with pricing estimates. For thrift store cost, use typical Goodwill/Salvation Army prices in the Southeast US (books $1-3, clothing $3-8, housewares $3-10, furniture $15-50). For Facebook Marketplace resale, estimate what items ACTUALLY sell for locally, not aspirational listing prices. For eBay, estimate based on SOLD listings, not current listings. Account for the fact that most items at thrift stores are NOT worth reselling — be honest about PASS verdicts. Only mark BUY if you are genuinely confident someone could profit $15+ after the time investment of listing and selling.`;
 
 export type ShelfScanPlatform = "FB Local" | "FB Shipped" | "eBay";
 

@@ -12,10 +12,21 @@ import {
 } from "@/lib/scanner";
 import type { ScanResponse } from "@/app/api/scan/route";
 
+/**
+ * Verdict payload + the user-captured thumbnail. The thumbnail is
+ * grabbed client-side (UPC: at decode time; AI Vision: the user's
+ * shutter tap) and never round-trips through /api/scan, so it can't
+ * live on ScanResponse — it sits next to it on this client-only
+ * envelope.
+ */
+export interface VerdictPayload extends ScanResponse {
+  capturedImage?: string | null;
+}
+
 interface ScanOverlayProps {
   open: boolean;
   mode: "barcode" | "vision";
-  onResult: (verdict: ScanResponse) => void;
+  onResult: (verdict: VerdictPayload) => void;
   onCancel: () => void;
   /** Called when /api/scan returns 403 (free-user daily limit hit).
    * The dashboard closes the overlay and opens the PaywallSheet. */
@@ -39,9 +50,32 @@ function haptic(pattern: number | number[] = 10) {
 
 type Phase =
   | { kind: "framing" }
-  | { kind: "captured"; payload: { type: "barcode"; upc: string } | { type: "vision"; image: string } }
+  // Both payload variants carry a `capturedImage` (a JPEG dataURL of
+  // the video frame). For barcode mode we grab it the moment the UPC
+  // decodes — gives the verdict sheet a thumbnail of what was just
+  // scanned. For vision mode `image` is already the captured frame,
+  // so capturedImage just aliases it.
+  | {
+      kind: "captured";
+      payload:
+        | { type: "barcode"; upc: string; capturedImage: string | null }
+        | { type: "vision"; image: string };
+    }
   | { kind: "submitting"; progress: number }
   | { kind: "error"; message: string };
+
+/** Captures a JPEG dataURL of the current video frame. Wraps the lib
+ * helper in try/catch because thumbnail-grab failures must not block
+ * the scan flow — the verdict sheet just renders without a thumbnail
+ * if this returns null. */
+function safelyCaptureFrame(video: HTMLVideoElement | null): string | null {
+  if (!video) return null;
+  try {
+    return captureFrame(video);
+  } catch {
+    return null;
+  }
+}
 
 function CornerBracket({
   corner,
@@ -105,7 +139,19 @@ function CornerBracket({
   }
 }
 
-function CancelButton({ onCancel, label = "CANCEL" }: { onCancel: () => void; label?: string }) {
+function CancelButton({
+  onCancel,
+  label = "CANCEL",
+  marginTop = 24,
+}: {
+  onCancel: () => void;
+  label?: string;
+  /** Margin-top override — the vision capture flow wants tighter
+   * vertical spacing between the round CAPTURE button and the
+   * CANCEL pill below it than the barcode mode's "SCANNING UPC..."
+   * label-to-CANCEL gap. */
+  marginTop?: number;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -114,17 +160,19 @@ function CancelButton({ onCancel, label = "CANCEL" }: { onCancel: () => void; la
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
       style={{
-        marginTop: 24,
-        fontFamily: "var(--font-body)",
-        fontWeight: 500,
+        marginTop,
+        fontFamily: "var(--font-label)",
+        fontWeight: 600,
         fontSize: 11,
-        color: "rgba(255,255,255,0.4)",
+        letterSpacing: "0.10em",
+        textTransform: "uppercase",
+        color: "#5A4E70",
         backgroundColor: "transparent",
         border: hovered
-          ? "1px solid rgba(255,255,255,0.15)"
-          : "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 8,
-        padding: "9px 22px",
+          ? "1px solid rgba(255,255,255,0.18)"
+          : "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 10,
+        padding: "10px 24px",
         cursor: "pointer",
         transition: "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
@@ -207,12 +255,16 @@ export default function ScanOverlay({
               // silent everywhere else.
               haptic();
               scannerRef.current?.stop();
+              // Grab the frame BEFORE we stop the stream — once
+              // tracks are stopped, the video's currentSrc becomes
+              // black and captureFrame would return an empty image.
+              const capturedImage = safelyCaptureFrame(videoRef.current);
               stopStream(streamRef.current);
               streamRef.current = null;
               setInlineError(null);
               setPhase({
                 kind: "captured",
-                payload: { type: "barcode", upc },
+                payload: { type: "barcode", upc, capturedImage },
               });
             },
             // Per-decode error from the barcode lib. These were previously
@@ -322,7 +374,15 @@ export default function ScanOverlay({
 
       if (progressTimer.current) clearInterval(progressTimer.current);
       progressTimer.current = null;
-      onResult(data);
+      // Attach the frame the user actually captured so VerdictSheet
+      // can render it as a thumbnail. UPC mode supplies its grabbed
+      // frame via phase.payload.capturedImage; AI Vision mode reuses
+      // the same image it sent to the API.
+      const capturedImage =
+        phase.payload.type === "barcode"
+          ? phase.payload.capturedImage
+          : phase.payload.image;
+      onResult({ ...data, capturedImage });
     } catch (err) {
       if (progressTimer.current) clearInterval(progressTimer.current);
       progressTimer.current = null;
@@ -576,32 +636,51 @@ export default function ScanOverlay({
                 color: "var(--text-muted)",
               }}
             >
-              FRAME THE ITEM AND CAPTURE
+              FRAME THE ITEM AND TAP TO CAPTURE
             </div>
+            {/* Round shutter — 60px disc with a mint accent ring.
+                Mint (not the camel vision-mode accent) per the design
+                spec: the user is recognizing this as a shutter, not
+                an AI Vision label, so we pull the universal "go"
+                color rather than the mode-specific tint. */}
             <button
+              aria-label="Capture photo"
               onClick={handleCapture}
               disabled={!cameraReady}
               style={{
-                marginTop: 16,
-                width: 200,
-                height: 44,
-                borderRadius: 12,
-                background: `linear-gradient(180deg, rgba(${accent.rgb},0.12) 0%, rgba(${accent.rgb},0.05) 100%)`,
-                border: `1px solid rgba(${accent.rgb},0.25)`,
-                boxShadow: `inset 0 1px 0 0 rgba(${accent.rgb},0.20), 0 1px 2px rgba(0,0,0,0.3)`,
-                color: accent.hex,
-                // Uppercase action label — stays mono.
-                fontFamily: "var(--font-label)",
-                fontWeight: 700,
-                fontSize: 12,
-                letterSpacing: "0.12em",
+                marginTop: 20,
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                backgroundColor: "rgba(92,224,184,0.15)",
+                border: "3px solid #5CE0B8",
+                boxShadow: cameraReady
+                  ? "0 0 0 1px rgba(92,224,184,0.10), 0 0 24px -4px rgba(92,224,184,0.30)"
+                  : "none",
                 cursor: cameraReady ? "pointer" : "not-allowed",
                 opacity: cameraReady ? 1 : 0.5,
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1)",
               }}
             >
-              CAPTURE
+              {/* Inner solid disc — the classic camera-shutter look,
+                  visible against the recessed bg of the outer ring. */}
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "block",
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  backgroundColor: "#5CE0B8",
+                  boxShadow: "0 0 12px rgba(92,224,184,0.40)",
+                }}
+              />
             </button>
-            <CancelButton onCancel={onCancel} />
+            <CancelButton onCancel={onCancel} marginTop={16} />
           </>
         )}
 
