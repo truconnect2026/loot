@@ -4,12 +4,18 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * PWA install prompt — a designed-in bar pinned to the bottom of the
- * login page. NOT the browser's default banner.
+ * login page. NOT the browser's default banner. Single source of
+ * truth for the install message; LoginPage no longer renders any
+ * separate "add to home screen" hint.
  *
  * Platform paths:
- *   - iOS Safari (no programmatic install): show the bar, and on tap
- *     open a glass popover with manual share-sheet instructions.
+ *   - iOS Safari (no programmatic install): the bar reads "tap [share]
+ *     then Add to Home Screen" inline. No Install button, no popover —
+ *     iOS users can't be programmatically prompted, so the bar IS the
+ *     instruction. (We used to open a tooltip on tap; that produced a
+ *     three-banner stack on iOS.)
  *   - Android Chrome / supported browsers: capture beforeinstallprompt,
+ *     show "Install Loot for the full experience" + Install button,
  *     trigger the native dialog when the user taps Install.
  *   - Already installed (standalone display mode or navigator.standalone):
  *     never render.
@@ -93,8 +99,12 @@ type Platform = "ios" | "android" | "none";
 export default function PwaInstallBar() {
   const [shouldRender, setShouldRender] = useState(false);
   const [slideIn, setSlideIn] = useState(false);
-  const [showIosTip, setShowIosTip] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  // Platform mirrors platformRef so the render branch can switch
+  // between Android (Install button) and iOS (inline share-sheet
+  // instructions). Lives in state, not just the ref, because the
+  // ref doesn't trigger a re-render on its own.
+  const [platform, setPlatform] = useState<Platform>("none");
   const platformRef = useRef<Platform>("none");
   const promptEventRef = useRef<BeforeInstallPromptEvent | null>(null);
 
@@ -181,6 +191,7 @@ export default function PwaInstallBar() {
       );
       if (isIosSafari()) {
         platformRef.current = "ios";
+        setPlatform("ios");
         setShouldRender(true);
         log("platform: ios — rendering");
       } else {
@@ -196,6 +207,7 @@ export default function PwaInstallBar() {
       e.preventDefault();
       promptEventRef.current = e as BeforeInstallPromptEvent;
       platformRef.current = "android";
+      setPlatform("android");
       setShouldRender(true);
     };
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -233,11 +245,11 @@ export default function PwaInstallBar() {
     return () => window.clearTimeout(timer);
   }, [shouldRender, reducedMotion]);
 
+  // Android / Chromium only — iOS has no programmatic install path,
+  // so the iOS bar variant doesn't render an Install button at all
+  // (the share-icon instructions in the bar copy ARE the install
+  // affordance on iOS).
   function handleInstall() {
-    if (platformRef.current === "ios") {
-      setShowIosTip((v) => !v);
-      return;
-    }
     const event = promptEventRef.current;
     if (!event) return;
     event.prompt().catch(() => {
@@ -261,7 +273,6 @@ export default function PwaInstallBar() {
     safeSessionSet(STORAGE_SESSION_DISMISSED, "1");
     safeLocalSet(STORAGE_DISMISSED_AT, String(Date.now()));
     setSlideIn(false);
-    setShowIosTip(false);
     const exitMs = reducedMotion ? 0 : EXIT_MS;
     window.setTimeout(() => setShouldRender(false), exitMs);
   }
@@ -291,8 +302,6 @@ export default function PwaInstallBar() {
         pointerEvents: slideIn ? "auto" : "none",
       }}
     >
-      {showIosTip && <IosInstallTip onClose={() => setShowIosTip(false)} />}
-
       <div
         style={{
           backgroundColor: "rgba(255,255,255,0.04)",
@@ -302,15 +311,19 @@ export default function PwaInstallBar() {
           boxShadow:
             "inset 0 1px 0 0 rgba(255,255,255,0.04), 0 8px 32px -8px rgba(0,0,0,0.5)",
           borderRadius: 16,
-          height: 56,
+          // iOS variant grows to accommodate the 2-line share-sheet
+          // instruction; Android stays a tight 56px row.
+          minHeight: 56,
           display: "flex",
           alignItems: "center",
           paddingLeft: 14,
           paddingRight: 8,
+          paddingTop: platform === "ios" ? 10 : 0,
+          paddingBottom: platform === "ios" ? 10 : 0,
           gap: 10,
         }}
       >
-        <PhoneIcon />
+        {platform === "ios" ? <ShareIcon /> : <PhoneIcon />}
         <span
           style={{
             flex: 1,
@@ -319,32 +332,43 @@ export default function PwaInstallBar() {
             fontSize: 13,
             fontWeight: 500,
             color: "rgba(255,255,255,0.80)",
-            lineHeight: 1.3,
+            lineHeight: 1.35,
           }}
         >
-          Install Loot for the full experience
+          {platform === "ios" ? (
+            <>
+              tap the Safari share button <ShareIconInline /> then choose
+              &ldquo;Add to Home Screen&rdquo;
+            </>
+          ) : (
+            "Install Loot for the full experience"
+          )}
         </span>
-        <button
-          type="button"
-          onClick={handleInstall}
-          style={{
-            height: 32,
-            paddingLeft: 12,
-            paddingRight: 12,
-            borderRadius: 8,
-            background: "transparent",
-            border: "1px solid rgba(255,255,255,0.20)",
-            color: "var(--ui-primary)",
-            fontFamily: "var(--font-body)",
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: "0.02em",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-        >
-          Install
-        </button>
+        {/* Install button — Android only. iOS has no programmatic
+            install, so the bar copy itself IS the affordance there. */}
+        {platform === "android" && (
+          <button
+            type="button"
+            onClick={handleInstall}
+            style={{
+              height: 32,
+              paddingLeft: 12,
+              paddingRight: 12,
+              borderRadius: 8,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.20)",
+              color: "var(--ui-primary)",
+              fontFamily: "var(--font-body)",
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          >
+            Install
+          </button>
+        )}
         <button
           type="button"
           aria-label="Dismiss install prompt"
@@ -366,71 +390,6 @@ export default function PwaInstallBar() {
           <CloseIcon />
         </button>
       </div>
-    </div>
-  );
-}
-
-interface IosInstallTipProps {
-  onClose: () => void;
-}
-
-function IosInstallTip({ onClose }: IosInstallTipProps) {
-  return (
-    <div
-      role="dialog"
-      aria-label="iOS install instructions"
-      style={{
-        position: "absolute",
-        bottom: "calc(100% + 10px)",
-        left: 0,
-        right: 0,
-        backgroundColor: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        backdropFilter: "blur(20px) saturate(150%)",
-        WebkitBackdropFilter: "blur(20px) saturate(150%)",
-        boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.04), 0 8px 32px -8px rgba(0,0,0,0.5)",
-        borderRadius: 14,
-        padding: "12px 14px",
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-      }}
-    >
-      <ShareIcon />
-      <span
-        style={{
-          flex: 1,
-          fontFamily: "var(--font-body)",
-          fontSize: 12.5,
-          color: "rgba(255,255,255,0.85)",
-          lineHeight: 1.4,
-        }}
-      >
-        tap the Safari share button{" "}
-        <ShareIconInline />
-        {" "}then choose &ldquo;Add to Home Screen&rdquo;
-      </span>
-      <button
-        type="button"
-        aria-label="Close instructions"
-        onClick={onClose}
-        style={{
-          width: 24,
-          height: 24,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "var(--text-muted)",
-          padding: 0,
-          flexShrink: 0,
-        }}
-      >
-        <CloseIconSmall />
-      </button>
     </div>
   );
 }
@@ -468,24 +427,6 @@ function CloseIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <line x1={18} y1={6} x2={6} y2={18} />
-      <line x1={6} y1={6} x2={18} y2={18} />
-    </svg>
-  );
-}
-
-function CloseIconSmall() {
-  return (
-    <svg
-      width={12}
-      height={12}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.25}
       strokeLinecap="round"
       strokeLinejoin="round"
     >

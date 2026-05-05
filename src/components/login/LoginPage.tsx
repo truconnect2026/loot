@@ -488,69 +488,13 @@ export default function LoginPage() {
             scan thrift finds, check online prices, flip for profit
           </div>
 
-          {/* Home-screen install hint — moved out of fixed-position
-              and into the cluster's bottom edge so the gap to the
-              tagline is constant across viewports (was a "chasm" on
-              tall viewports with the previous fixed positioning).
-              Centered via the parent's alignItems on the outer flex
-              container — but this row is centered on its own to be
-              safe across any container alignment. 14px gap above
-              keeps the bottom group (social proof → tagline → hint)
-              reading as one tight cluster. */}
-          <div
-            style={{
-              marginTop: 14,
-              display: "flex",
-              justifyContent: "center",
-              animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-              animationDelay: "780ms",
-            }}
-          >
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                height: 36,
-                paddingLeft: 14,
-                paddingRight: 14,
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 18,
-                backdropFilter: "blur(12px) saturate(140%)",
-                WebkitBackdropFilter: "blur(12px) saturate(140%)",
-              }}
-            >
-              {/* Phone icon with downward arrow — same shape as the
-                  PwaInstallBar's primary phone glyph at smaller scale. */}
-              <svg
-                width={14}
-                height={14}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(255,255,255,0.40)"
-                strokeWidth={1.75}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x={5} y={2} width={14} height={20} rx={2.5} />
-                <path d="M12 8v6" />
-                <polyline points="9 11 12 14 15 11" />
-              </svg>
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontWeight: 500,
-                  fontSize: 12,
-                  color: "rgba(255,255,255,0.50)",
-                  letterSpacing: "0.01em",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                add to home screen
-              </span>
-            </div>
-          </div>
+          {/* The decorative "add to home screen" pill that used to
+              sit here was removed. It duplicated the install message
+              already shown by PwaInstallBar pinned to the viewport
+              bottom — three install affordances at once on iOS Safari
+              (pill + bar + share-button popover) was visual clutter,
+              not three useful signals. PwaInstallBar is now the
+              single source of truth for the install prompt. */}
         </div>
       </div>
 
