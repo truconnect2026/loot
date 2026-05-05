@@ -263,25 +263,29 @@ function PriceOption({
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* "POPULAR" recommended indicator — top-right of the
-          monthly tile. Tiny mint mono pip; reads as a brand stamp,
-          not a sales banner. */}
+      {/* "POPULAR" recommended indicator — floats on the top-right
+          edge of the MONTHLY tile, breaking the border so it reads
+          as a clearly visible label rather than a chip competing
+          with the price text inside the row. top: -10 lifts it half
+          its own height above the tile's top edge. */}
       {popular && (
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: 8,
-            right: 10,
+            top: -10,
+            right: 12,
             fontFamily: "var(--font-jetbrains-mono)",
-            fontSize: 7,
+            fontSize: 8,
             fontWeight: 700,
-            letterSpacing: "0.10em",
+            letterSpacing: "0.08em",
             color: "#5CE0B8",
-            backgroundColor: "rgba(92,224,184,0.10)",
-            padding: "2px 6px",
-            borderRadius: 4,
+            backgroundColor: "rgba(92, 224, 184, 0.15)",
+            border: "1px solid rgba(92, 224, 184, 0.3)",
+            padding: "2px 8px",
+            borderRadius: 8,
             textTransform: "uppercase",
+            lineHeight: 1.2,
           }}
         >
           POPULAR
