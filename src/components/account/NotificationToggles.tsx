@@ -182,13 +182,16 @@ export default function NotificationToggles({
 
       {/* Sub-toggle panel — sits 4px below the parent row, indented
           20px on the left so it visibly belongs to "Push notifications"
-          above. Light surface (0.02 white) + 10px corners reads as a
-          recessed sub-panel; row hairlines at 0.03 give the three
-          toggles individual rhythm without doubling up borders. */}
+          above. Surface bumped 0.02 → 0.04 white + a 0.03 hairline
+          border so the recessed-panel shape actually registers on
+          OLED — at 0.02 alone the bg was below the visibility
+          threshold against the page. Row hairlines at 0.03 give the
+          three toggles individual rhythm. */}
       {enabled && (
         <div
           style={{
-            backgroundColor: "rgba(255,255,255,0.02)",
+            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            border: "1px solid rgba(255, 255, 255, 0.03)",
             borderRadius: 10,
             marginTop: 4,
             marginLeft: 20,

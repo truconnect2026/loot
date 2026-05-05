@@ -41,26 +41,25 @@ export default function UpgradeCard({
           100% { background-position: 0% 50%; }
         }
       `}</style>
-      {/* Gradient border wrapper — the 2px padding becomes the
-          visible border width when the inner content paints its own
-          bg over it. Color stops bumped to 0.7 / 0.6 / 0.6 / 0.7 so
-          the mint→camel→periwinkle hand-off is actually distinct
-          (the previous 0.5/0.4 alphas blended into a single muted
-          lavender on most screens). 4-color gradient with mint at
-          both ends makes the shimmer wrap-around seamless; 400%
-          background-size + 4s loop creates a visible color drift
-          rather than a static halo. */}
+      {/* Gradient border wrapper — full-saturation hex stops at
+          0/30/60/100% so the mint→gold→periwinkle hand-off paints
+          three distinct color zones instead of muddying into a
+          single lavender. Only the 2px edge ever shows (the inner
+          card covers the rest), so saturation here is fine — the
+          card surface still reads dark. 145deg angle gives the top-
+          left mint zone visibility against the page; 400% bg-size +
+          4s shimmer keeps the colors drifting. */}
       <div
         style={{
           marginTop: 16,
           padding: 2,
           borderRadius: 16,
           background:
-            "linear-gradient(135deg, " +
-            "rgba(92, 224, 184, 0.7) 0%, " +
-            "rgba(212, 165, 116, 0.6) 35%, " +
-            "rgba(123, 143, 255, 0.6) 65%, " +
-            "rgba(92, 224, 184, 0.7) 100%" +
+            "linear-gradient(145deg, " +
+            "#5CE0B8 0%, " +
+            "#D4A574 30%, " +
+            "#7B8FFF 60%, " +
+            "#5CE0B8 100%" +
             ")",
           backgroundSize: "400% 400%",
           animation: "upgradeBorderShimmer 4s ease-in-out infinite",
@@ -75,14 +74,16 @@ export default function UpgradeCard({
             borderRadius: 14,
             // Inner glow — radial wash with origin just above the top
             // edge (50% -10%) creates a downward-facing "lit from
-            // above" highlight. 0.07 center alpha (up from 0.04) is
+            // above" highlight. 0.10 center alpha (up from 0.07) is
             // the threshold where the wash actually registers on
-            // OLED phone screens against the dark base. Base bg
-            // bumped to 0.9 alpha for a slightly more solid surface
-            // under the gradient frame.
+            // OLED phone screens against the dark base — 0.07 was
+            // close to invisible. Base bg stays 0.9 alpha for a
+            // solid surface under the gradient frame; the glow
+            // paints OVER the base via the comma-separated bg-image
+            // stack so it can't get clipped behind the card content.
             backgroundColor: "rgba(23, 18, 42, 0.9)",
             backgroundImage:
-              "radial-gradient(ellipse 90% 50% at 50% -10%, rgba(92, 224, 184, 0.07) 0%, transparent 60%)",
+              "radial-gradient(ellipse 90% 50% at 50% -10%, rgba(92, 224, 184, 0.10) 0%, transparent 55%)",
             padding: 20,
             overflow: "hidden",
           }}

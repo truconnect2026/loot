@@ -895,12 +895,15 @@ export default function AccountPage() {
           </SettingsTile>
         </div>
 
-        {/* Group 2: Notifications — 18px gap below the location group.
+        {/* Group 2: Notifications — 8px gap below the location group
+            (matches the gap-8 inside the location flex column above).
+            Every row in SETTINGS sits at uniform 8px from its
+            neighbor, regardless of which sub-group it belongs to.
             The master toggle subscribes via the browser Push API and
-            stores the endpoint in push_subscriptions. The sub-toggles
+            stores the endpoint in push_subscriptions; the sub-toggles
             persist to notification_prefs. notifError surfaces the
             most common failure (denied permission) inline. */}
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 8 }}>
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={handleTogglePushEnabled}
