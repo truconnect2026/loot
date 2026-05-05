@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import DotGridBackground from "@/components/shared/DotGridBackground";
@@ -17,6 +17,7 @@ interface ScanRow {
   verdict: "BUY" | "PASS" | "MAYBE" | null;
   platform: string | null;
   sold: boolean | null;
+  sold_price: number | null;
   created_at: string;
 }
 
@@ -74,7 +75,7 @@ export default function HaulLogPage() {
       const { data, error } = await supabase
         .from("scans")
         .select(
-          "id, method, item_name, cost, sell_price, profit, verdict, platform, sold, created_at"
+          "id, method, item_name, cost, sell_price, profit, verdict, platform, sold, sold_price, created_at"
         )
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false })
@@ -92,11 +93,72 @@ export default function HaulLogPage() {
     };
   }, [supabase]);
 
-  // Aggregate footer numbers — total profit on items marked sold.
+  // Mark-sold UI state. `markingId` selects which row is in input
+  // mode; `markDraft` holds the in-progress sell-price string. `saving`
+  // gates double-taps while the update is in flight.
+  const [markingId, setMarkingId] = useState<string | null>(null);
+  const [markDraft, setMarkDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const markInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (markingId && markInputRef.current) {
+      markInputRef.current.focus();
+      markInputRef.current.select();
+    }
+  }, [markingId]);
+
+  async function commitSold(row: ScanRow) {
+    if (saving) return;
+    const trimmed = markDraft.trim();
+    if (!trimmed) {
+      setMarkingId(null);
+      return;
+    }
+    const price = Number(trimmed);
+    if (!Number.isFinite(price) || price <= 0) {
+      setMarkingId(null);
+      return;
+    }
+    setSaving(true);
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      setSaving(false);
+      return;
+    }
+    const { error: updateErr } = await supabase
+      .from("scans")
+      .update({
+        sold: true,
+        sold_price: price,
+        sold_at: new Date().toISOString(),
+      })
+      .eq("id", row.id)
+      .eq("user_id", userData.user.id);
+    if (!updateErr) {
+      setRows((prev) =>
+        prev
+          ? prev.map((r) =>
+              r.id === row.id ? { ...r, sold: true, sold_price: price } : r,
+            )
+          : prev,
+      );
+    }
+    setMarkingId(null);
+    setMarkDraft("");
+    setSaving(false);
+  }
+
+  // Aggregate footer numbers. Realized = sold_price - cost on items
+  // marked sold (the actual money made, not the projected number from
+  // scan time). Projected = profit on un-sold BUY-verdict scans.
   const realized =
     rows
-      ?.filter((r) => r.sold && r.profit != null)
-      .reduce((sum, r) => sum + Number(r.profit), 0) ?? 0;
+      ?.filter((r) => r.sold && r.sold_price != null)
+      .reduce(
+        (sum, r) => sum + Number(r.sold_price) - Number(r.cost ?? 0),
+        0,
+      ) ?? 0;
   const projected =
     rows
       ?.filter((r) => !r.sold && r.verdict === "BUY" && r.profit != null)
@@ -329,6 +391,7 @@ export default function HaulLogPage() {
                       flexDirection: "column",
                       alignItems: "flex-end",
                       flexShrink: 0,
+                      gap: 4,
                     }}
                   >
                     {row.verdict && (
@@ -344,19 +407,124 @@ export default function HaulLogPage() {
                         {row.verdict}
                       </span>
                     )}
-                    {row.profit != null && (
+                    {row.profit != null && !row.sold && (
                       <span
                         style={{
                           fontFamily: "var(--font-body)",
                           fontWeight: 700,
                           fontSize: 14,
                           color: verdictColor,
-                          marginTop: 2,
                           fontFeatureSettings: '"tnum"',
                         }}
                       >
                         ${Number(row.profit).toFixed(0)}
                       </span>
+                    )}
+
+                    {/* Sold pill — once an item is marked sold the
+                        right column collapses to a single mint
+                        "SOLD — $X" label so flipped items read
+                        unambiguously vs. open haul. */}
+                    {row.sold && row.sold_price != null && (
+                      <span
+                        style={{
+                          fontFamily: "var(--font-body)",
+                          fontWeight: 700,
+                          fontSize: 11,
+                          color: "var(--accent-mint)",
+                          letterSpacing: "0.04em",
+                          fontFeatureSettings: '"tnum"',
+                          textShadow:
+                            "0 0 16px rgba(92,224,184,0.18)",
+                        }}
+                      >
+                        SOLD · ${Number(row.sold_price).toFixed(0)}
+                      </span>
+                    )}
+
+                    {/* Mark-sold input — appears when this row's
+                        "$" button is tapped. Numeric input with
+                        Enter/blur to commit, Escape to cancel. */}
+                    {!row.sold && markingId === row.id && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          marginTop: 2,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          $
+                        </span>
+                        <input
+                          ref={markInputRef}
+                          type="text"
+                          inputMode="decimal"
+                          value={markDraft}
+                          onChange={(e) => setMarkDraft(e.target.value)}
+                          onBlur={() => commitSold(row)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") commitSold(row);
+                            if (e.key === "Escape") {
+                              setMarkingId(null);
+                              setMarkDraft("");
+                            }
+                          }}
+                          placeholder="0"
+                          style={{
+                            width: 56,
+                            background: "var(--bg-recessed)",
+                            border: "1px solid var(--ui-border-focus)",
+                            outline: "none",
+                            borderRadius: 6,
+                            fontFamily: "var(--font-body)",
+                            fontWeight: 700,
+                            fontSize: 16,
+                            color: "var(--ui-primary)",
+                            textAlign: "right",
+                            padding: "2px 6px",
+                            fontFeatureSettings: '"tnum"',
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Mark-sold trigger — small "$" button on
+                        unsold rows. Tap → swap the right column to
+                        the input above. */}
+                    {!row.sold && markingId !== row.id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMarkingId(row.id);
+                          setMarkDraft(
+                            row.sell_price != null
+                              ? String(Number(row.sell_price).toFixed(0))
+                              : "",
+                          );
+                        }}
+                        style={{
+                          background: "rgba(92,224,184,0.06)",
+                          border: "1px solid rgba(92,224,184,0.18)",
+                          borderRadius: 6,
+                          padding: "2px 8px",
+                          cursor: "pointer",
+                          fontFamily: "var(--font-body)",
+                          fontWeight: 600,
+                          fontSize: 9,
+                          color: "var(--accent-mint)",
+                          letterSpacing: "0.08em",
+                        }}
+                      >
+                        MARK SOLD
+                      </button>
                     )}
                   </div>
                 </div>

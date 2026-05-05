@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import DotGridBackground from "@/components/shared/DotGridBackground";
@@ -191,8 +191,13 @@ const ACCENT_NOTIF = "#B4A0D4"; // lavender — alerts
 const ACCENT_EXPORT = "#8A8A9A"; // neutral — utility
 const ACCENT_SIGNOUT = "#E8636B"; // coral — destructive
 
-// ── Mock data (BOLO + notifications stay mock until those tables wire up) ──
-const MOCK_KEYWORDS = ["Nintendo", "KitchenAid", "Pyrex", "Le Creuset", "Dyson", "Vitamix"];
+// Watch list rows — paired (id, keyword) so we can delete by primary key
+// rather than positional index, which would silently break if the list
+// was refetched out of order.
+interface WatchRow {
+  id: string;
+  keyword: string;
+}
 
 type View = "main" | "bolo";
 
@@ -220,8 +225,12 @@ export default function AccountPage() {
 
   // Settings state
   const [radius, setRadius] = useState(15);
-  const [keywords, setKeywords] = useState(MOCK_KEYWORDS);
+  const [watchRows, setWatchRows] = useState<WatchRow[]>([]);
   const [radiusSheetOpen, setRadiusSheetOpen] = useState(false);
+  // Debounce radius writes — the slider's onChange fires on every
+  // step-tick (~10 stops between 5 and 50), so without a coalesce
+  // we'd post 10 updates during a single drag.
+  const radiusSaveTimer = useRef<number | null>(null);
 
   // Notifications. `notifEnabled` (the master switch) is derived
   // from the existence of a push_subscriptions row, NOT from a
@@ -278,22 +287,28 @@ export default function AccountPage() {
         zipCode = "";
       }
 
-      // Load notification_prefs + push subscription presence in
-      // parallel. Defaults stay true (matching initial state) when
-      // there's no row yet — the user-facing semantic is "on by
-      // default until you turn something off."
-      const [{ data: notifRow }, { data: pushRow }] = await Promise.all([
-        supabase
-          .from("notification_prefs")
-          .select("deals, bolo, pennies")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("push_subscriptions")
-          .select("user_id")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-      ]);
+      // Load notification_prefs + push subscription presence + watch
+      // list keywords in parallel. Defaults stay true (matching initial
+      // state) when there's no notif row yet — the user-facing semantic
+      // is "on by default until you turn something off."
+      const [{ data: notifRow }, { data: pushRow }, { data: kwRows }] =
+        await Promise.all([
+          supabase
+            .from("notification_prefs")
+            .select("deals, bolo, pennies")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("push_subscriptions")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+          supabase
+            .from("bolo_keywords")
+            .select("id, keyword")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true }),
+        ]);
 
       if (!cancelled) {
         setProfile({
@@ -317,6 +332,12 @@ export default function AccountPage() {
         }
         setNotifEnabled(!!pushRow);
         setRadius(profileRow?.search_radius_miles ?? 15);
+        setWatchRows(
+          (kwRows ?? []).map((r) => ({
+            id: r.id as string,
+            keyword: r.keyword as string,
+          })),
+        );
         setLoading(false);
       }
     }
@@ -339,14 +360,94 @@ export default function AccountPage() {
     [profile, supabase]
   );
 
-  const handleExport = useCallback(() => {
+  // Search radius — flips local state immediately (so the slider feels
+  // live) then debounces the DB write by 250ms. Without the debounce
+  // we'd post one update per slider step during a drag.
+  const updateRadius = useCallback(
+    (next: number) => {
+      setRadius(next);
+      if (!profile) return;
+      if (radiusSaveTimer.current !== null) {
+        window.clearTimeout(radiusSaveTimer.current);
+      }
+      radiusSaveTimer.current = window.setTimeout(() => {
+        radiusSaveTimer.current = null;
+        void supabase
+          .from("profiles")
+          .update({ search_radius_miles: next })
+          .eq("id", profile.id);
+      }, 250);
+    },
+    [profile, supabase],
+  );
+
+  // Watch list — insert a new keyword, then refetch so the row gets
+  // its server-assigned id (used for delete). Trims and short-circuits
+  // empty / duplicate inputs so the table doesn't accumulate noise.
+  const addKeyword = useCallback(
+    async (raw: string) => {
+      if (!profile) return;
+      const keyword = raw.trim();
+      if (!keyword) return;
+      if (watchRows.some((r) => r.keyword.toLowerCase() === keyword.toLowerCase())) {
+        return;
+      }
+      const { error } = await supabase
+        .from("bolo_keywords")
+        .insert({ user_id: profile.id, keyword });
+      if (error) return;
+      const { data } = await supabase
+        .from("bolo_keywords")
+        .select("id, keyword")
+        .eq("user_id", profile.id)
+        .order("created_at", { ascending: true });
+      setWatchRows(
+        (data ?? []).map((r) => ({
+          id: r.id as string,
+          keyword: r.keyword as string,
+        })),
+      );
+    },
+    [profile, supabase, watchRows],
+  );
+
+  const removeKeyword = useCallback(
+    async (index: number) => {
+      const target = watchRows[index];
+      if (!target) return;
+      // Optimistic — drop the row immediately so the X feels instant.
+      setWatchRows((prev) => prev.filter((_, i) => i !== index));
+      await supabase.from("bolo_keywords").delete().eq("id", target.id);
+    },
+    [supabase, watchRows],
+  );
+
+  const handleExport = useCallback(async () => {
     if (exportState !== "idle") return;
     setExportState("loading");
-    // Simulated export — real /api/export wiring will replace the timeout.
-    window.setTimeout(() => {
+    try {
+      const res = await fetch("/api/export", { method: "GET" });
+      if (!res.ok) {
+        setExportState("idle");
+        return;
+      }
+      const blob = await res.blob();
+      // Build a temporary blob URL, programmatically click an anchor
+      // to trigger the browser's native download flow, then revoke.
+      // The synthetic anchor avoids navigating the current tab.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "loot-haul-log.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
       setExportState("done");
       window.setTimeout(() => setExportState("idle"), 1500);
-    }, 1500);
+    } catch {
+      setExportState("idle");
+    }
   }, [exportState]);
 
   // Master push toggle. Turning ON: register the SW, request
@@ -512,9 +613,9 @@ export default function AccountPage() {
           }}
         >
           <BoloList
-            keywords={keywords}
-            onAdd={(kw) => setKeywords((prev) => [...prev, kw])}
-            onRemove={(i) => setKeywords((prev) => prev.filter((_, idx) => idx !== i))}
+            keywords={watchRows.map((r) => r.keyword)}
+            onAdd={addKeyword}
+            onRemove={removeKeyword}
             onBack={() => setView("main")}
           />
         </div>
@@ -545,7 +646,7 @@ export default function AccountPage() {
         open={radiusSheetOpen}
         onClose={() => setRadiusSheetOpen(false)}
         value={radius}
-        onChange={setRadius}
+        onChange={updateRadius}
       />
 
       <div
@@ -711,9 +812,9 @@ export default function AccountPage() {
               LookOut") is reseller jargon mainstream users don't know.
               "Watch list" reads instantly and matches familiar
               marketplace patterns (eBay watch list, Craigslist saved
-              searches). Internal model names (`view === "bolo"`,
-              MOCK_KEYWORDS, the bolo_keywords table) stay so the rename
-              is purely user-facing copy. */}
+              searches). Internal model names (`view === "bolo"`, the
+              bolo_keywords table) stay so the rename is purely
+              user-facing copy. */}
           <SettingsTile
             onClick={() => setView("bolo")}
             icon={<CrosshairsIcon />}
@@ -738,7 +839,7 @@ export default function AccountPage() {
                 marginRight: 6,
               }}
             >
-              {keywords.length} keywords
+              {watchRows.length} keywords
             </span>
             <ChevronRight />
           </SettingsTile>
