@@ -45,11 +45,16 @@ function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
   const thumbOffset = 2;
   const radius = isSmall ? 10 : 12;
 
-  // ON: off-white interactive track (--ui-secondary). OFF: recessed dark.
-  // Mint moved out of toggles entirely — toggles are interactive UI, not
-  // money. Track sits a touch dimmer than the white thumb so the thumb's
-  // drop-shadow halo gives clean separation when ON.
-  const trackBg = on ? "#E8E5F0" : "#2A2240";
+  // ON track tints mint at 0.7 — the active state earns the money
+  // color now that the rest of the app uses mint as a directional
+  // signal. OFF track sits at a faint white surface so the toggle
+  // reads as a recessed switch slot rather than a deep well. Thumb
+  // adapts: bright white when on (against mint), dim white when off
+  // (against the muted slot).
+  const trackBg = on
+    ? "rgba(92, 224, 184, 0.7)"
+    : "rgba(255, 255, 255, 0.08)";
+  const thumbBg = on ? "#FFFFFF" : "rgba(255, 255, 255, 0.3)";
 
   return (
     <div
@@ -65,25 +70,26 @@ function Toggle({ on, onToggle, size = "normal", stopBubble }: ToggleProps) {
         backgroundColor: trackBg,
         position: "relative",
         cursor: "pointer",
-        transition:
-          "background-color 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition: "background-color 200ms ease",
         flexShrink: 0,
       }}
     >
-      {/* Thumb — solid white pill with subtle inner shadow for 3D. Slides
-          on a slight overshoot/bounce so the toggle feels physical. */}
+      {/* Thumb — pill that adapts color so it stays readable in both
+          states. The slight overshoot easing on the slide keeps the
+          tactile "physical switch" feel. */}
       <div
         style={{
           width: thumbSize,
           height: thumbSize,
           borderRadius: "50%",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: thumbBg,
           boxShadow:
             "0 1px 3px rgba(0,0,0,0.4), inset 0 -1px 0 rgba(0,0,0,0.1)",
           position: "absolute",
           top: thumbOffset,
           left: on ? trackW - thumbSize - thumbOffset : thumbOffset,
-          transition: "left 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+          transition:
+            "left 200ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 200ms ease",
         }}
       />
     </div>
@@ -124,23 +130,19 @@ export default function NotificationToggles({
   ];
 
   return (
-    <div
-      style={{
-        position: "relative",
-        backgroundColor: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.04)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
-        borderRadius: "4px 16px 16px 16px",
-        overflow: "hidden",
-      }}
-    >
-      {/* Main toggle row — interior layout matches SettingsTile:
-          [14 pad] [18 BellIcon] [10 gap] [label]. Label starts at x=42,
-          which is what the sub-toggles indent to. Accent dot removed
-          to match the SettingsTile cleanup — the bell icon already
-          carries the per-tile color cue. */}
+    <>
+      {/* Main "Push notifications" row — its own SettingsTile-shaped
+          card. The sub-toggle panel below is a SEPARATE element (no
+          longer enclosed in this card) so it can carry its own
+          margins and hairline-separated row treatment. */}
       <div
         style={{
+          position: "relative",
+          backgroundColor: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+          borderRadius: "4px 16px 16px 16px",
+          overflow: "hidden",
           height: 52,
           display: "flex",
           alignItems: "center",
@@ -178,15 +180,21 @@ export default function NotificationToggles({
         <Toggle on={enabled} onToggle={onToggleEnabled} />
       </div>
 
-      {/* Sub-toggle panel — recessed into a darker surface than the page bg
-          (#0D0A14 vs #120e18). Bumped from #100C18 so the contrast between
-          the parent row and the sub-toggle pit is obvious at a glance.
-          Hairlines #1A1530 between rows. */}
+      {/* Sub-toggle panel — sits 4px below the parent row, indented
+          20px on the left so it visibly belongs to "Push notifications"
+          above. Light surface (0.02 white) + 10px corners reads as a
+          recessed sub-panel; row hairlines at 0.03 give the three
+          toggles individual rhythm without doubling up borders. */}
       {enabled && (
         <div
           style={{
-            backgroundColor: "#0D0A14",
-            boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderRadius: 10,
+            marginTop: 4,
+            marginLeft: 20,
+            marginRight: 0,
+            padding: 0,
+            overflow: "hidden",
           }}
         >
           {subs.map((sub, i) => (
@@ -196,13 +204,17 @@ export default function NotificationToggles({
               style={{
                 display: "flex",
                 alignItems: "center",
-                // 42px aligns with parent label start: pad 14 + icon 18
-                // + gap 10 = 42 (after the accent-dot removal).
-                paddingLeft: 42,
-                paddingRight: 16,
+                paddingLeft: 14,
+                paddingRight: 14,
                 height: 40,
                 cursor: "pointer",
-                borderTop: i === 0 ? "none" : "1px solid #1A1530",
+                // Bottom hairline on every row except the last so
+                // the panel reads as a stacked list rather than
+                // separate floating rows.
+                borderBottom:
+                  i === subs.length - 1
+                    ? "none"
+                    : "1px solid rgba(255,255,255,0.03)",
                 animation: `ntFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) ${i * 50}ms both`,
               }}
             >
@@ -234,6 +246,6 @@ export default function NotificationToggles({
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-    </div>
+    </>
   );
 }

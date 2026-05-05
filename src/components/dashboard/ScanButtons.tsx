@@ -68,7 +68,6 @@ interface HeroButtonProps {
   icon: React.ReactNode;
   label: string;
   subtitle: string;
-  todayScans: number;
   onTap: () => void;
   /** Run the slow border pulse — only used by the primary button in new-user mode. */
   pulse?: boolean;
@@ -79,7 +78,6 @@ function HeroButton({
   icon,
   label,
   subtitle,
-  todayScans,
   onTap,
   pulse,
 }: HeroButtonProps) {
@@ -118,10 +116,6 @@ function HeroButton({
     ` 0 0 0 1px rgba(${accent},${glowPrimary ? 0.22 : 0.14}),` +
     ` 0 12px 32px -4px rgba(${accent},${glowMid + 0.06}),` +
     ` 0 24px 48px -10px rgba(${accent},${glowFar + 0.04})`;
-
-  // Counter is dim when zero, mint-tinted at 0.5 alpha once it's been used.
-  const counterColor =
-    todayScans > 0 ? `rgba(${accent},0.5)` : "rgba(255,255,255,0.25)";
 
   return (
     <button
@@ -172,25 +166,11 @@ function HeroButton({
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Today's scan count — top-right corner. Hidden until there's
-          actually a count to show; a "0" in this position read as an
-          unread-notification badge and confused new users. */}
-      {todayScans > 0 && (
-        <span
-          style={{
-            position: "absolute",
-            top: 8,
-            right: 10,
-            fontFamily: "var(--font-body)",
-            fontSize: 9,
-            fontWeight: 500,
-            color: counterColor,
-            fontFeatureSettings: '"tnum"',
-          }}
-        >
-          {todayScans}
-        </span>
-      )}
+      {/* Per-button scan count badge removed — it duplicated the
+          "X/5 free scans today" pill that sits below the buttons,
+          and a tiny number floating in the corner of each button
+          read as visual noise without adding any signal the pill
+          doesn't already provide. */}
 
       {/* Top-edge shine */}
       <div
@@ -269,8 +249,10 @@ export default function ScanButtons({
 
   return (
     <>
-      {/* Top hairline — full-bleed channel framing the scan zone */}
-      <div style={{ ...hairlineEdgeBleed, marginTop: 16 }} />
+      {/* Top hairline removed — was adding visual mass between the
+          stats card and the scan grid that the user read as dead
+          air. The single 14px gap on the grid below is now the
+          only spacing source between the two. */}
 
       <div
         style={{
@@ -281,7 +263,7 @@ export default function ScanButtons({
           // pixels apart. minmax(0, 1fr) drops the floor and forces strictly
           // equal columns. This is the canonical Grid idiom for this exact
           // problem — do not change back to `1fr`.
-          marginTop: 20,
+          marginTop: 14,
           display: "grid",
           gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
           gap: 10,
@@ -293,7 +275,6 @@ export default function ScanButtons({
           icon={<BarcodeIcon />}
           label="SCAN UPC"
           subtitle="point at any barcode"
-          todayScans={todayScans}
           onTap={onScanUpc}
           pulse={pulsePrimary}
         />
@@ -302,7 +283,6 @@ export default function ScanButtons({
           icon={<CameraIcon />}
           label="AI VISION"
           subtitle="no barcode? snap a photo"
-          todayScans={todayScans}
           onTap={onAiVision}
         />
       </div>

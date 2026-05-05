@@ -970,15 +970,17 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
-            overflow:hidden clips those bleeds at the section box, which
-            matches the page wrapper / viewport edge. 16px from stats
-            card to scan zone — the two together read as one "action
-            cluster" at the top of the dashboard, no dead air between. */}
+        {/* 5. Scan zone — wrapper carries no marginTop. The single
+            source of vertical space between the stats card and the
+            scan-button grid is the 14px marginTop on the grid
+            inside ScanButtons; the scan zone's old top hairline +
+            wrapper margin both got stripped so the two read as one
+            connected action cluster instead of two separate
+            floating elements. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 16,
+            marginTop: 0,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",

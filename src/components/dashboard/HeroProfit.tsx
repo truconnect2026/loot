@@ -228,8 +228,12 @@ export default function HeroProfit({
         ? "0 0 32px rgba(232,99,107,0.15)"
         : "0 0 32px rgba(92,224,184,0.15)";
   // Empty hero shrinks to 28px so the card collapses to a status bar.
+  // Dollar sign now matches the number's font-size so they sit on
+  // the same baseline and feel like one currency-glyph unit; the
+  // visual hierarchy comes from the $'s opacity (rendered at 0.5
+  // on the JSX below) instead of a smaller font.
   const heroNumberSize = isEmpty ? 28 : 44;
-  const heroDollarSize = isEmpty ? 18 : 24;
+  const heroDollarSize = heroNumberSize;
 
   // Period pills are meaningless when every period reads $0. Hide
   // them whenever no day has nonzero data — that includes the
@@ -278,10 +282,13 @@ export default function HeroProfit({
         borderRadius: 20,
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-        // Empty state pads tighter (14 top / 16 bottom / 16 horiz)
-        // so the card reads as a compact status bar; the populated
-        // state stays at 20 all around for the sparkline + grid.
-        padding: isEmpty ? "14px 16px 16px" : 20,
+        // 12px top across both states so the section header
+        // (FOUND TODAY / PROFIT) sits close to the card's top edge
+        // instead of floating in dead space. Empty state still
+        // tighter on the sides + bottom for its compact status-bar
+        // shape; populated state keeps 20 horiz/bottom for the
+        // sparkline + secondary stats grid below.
+        padding: isEmpty ? "12px 16px 16px" : "12px 20px 20px",
         // ease-out-expo approximation for the state-change shape shifts.
         transition: "padding 200ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
@@ -371,6 +378,12 @@ export default function HeroProfit({
               fontWeight: 300,
               fontSize: heroDollarSize,
               lineHeight: 1,
+              // 0.5 opacity makes the $ visually lighter than the
+              // number while keeping the same physical font-size, so
+              // the two share a clean baseline and read as one
+              // currency-glyph unit instead of "small prefix sitting
+              // next to a big digit."
+              opacity: 0.5,
             }}
           >
             $
