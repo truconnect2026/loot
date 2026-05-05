@@ -129,6 +129,12 @@ export default function WinsTicker() {
         {win.amount && (
           <span
             style={{
+              // Money number — JetBrains Mono 700 reinforces "this
+              // is a dollar amount" peripherally, parallel to how
+              // the rest of the app handles money in mono. The
+              // ticker prefix stays in Outfit (var(--font-body)
+              // inherited from the parent span).
+              fontFamily: "var(--font-jetbrains-mono)",
               color: "var(--money)",
               fontWeight: 700,
               fontFeatureSettings: '"tnum"',

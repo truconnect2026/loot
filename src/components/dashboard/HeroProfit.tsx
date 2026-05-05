@@ -231,6 +231,20 @@ export default function HeroProfit({
   const heroNumberSize = isEmpty ? 28 : 44;
   const heroDollarSize = isEmpty ? 18 : 24;
 
+  // Period pills are meaningless when every period reads $0. Hide
+  // them whenever no day has nonzero data — that includes the
+  // pristine empty state AND the "scanned but only PASS verdicts"
+  // state (hasAnyData=true but nonZeroDays=0). User sees one less
+  // row of dead $0 / $0 / $0 / $0 tabs.
+  const showPills = nonZeroDays > 0;
+
+  // Bottom stat row hides only when ALL three numbers are zero.
+  // Once the user has a single scan, "Scans: 1" validates the action
+  // — don't strip it. It's the "Scans: 0 | Buys: 0 | Spent: $0"
+  // configuration that reads as demoralizing.
+  const showSecondaryRow =
+    todayScans > 0 || todayBuys > 0 || todaySpent > 0;
+
   // Delta chip — only "today vs yesterday" is computable from current props.
   // Week/month deltas would need lastWeekProfit/lastMonthProfit; hidden until
   // those props get added. Also hidden in the empty state.
@@ -261,7 +275,10 @@ export default function HeroProfit({
         borderRadius: 20,
         boxShadow:
           "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
-        padding: isEmpty ? 12 : 20,
+        // Empty state pads tighter (14 top / 16 bottom / 16 horiz)
+        // so the card reads as a compact status bar; the populated
+        // state stays at 20 all around for the sparkline + grid.
+        padding: isEmpty ? "14px 16px 16px" : 20,
         // ease-out-expo approximation for the state-change shape shifts.
         transition: "padding 200ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
@@ -287,7 +304,7 @@ export default function HeroProfit({
         >
           {isEmpty ? "PROFIT" : PERIOD_COPY[period].header}
         </div>
-        {!isEmpty && (
+        {showPills && (
           <div style={{ display: "flex", gap: 4 }}>
             {PERIODS.map((p) => (
               <Pill
@@ -457,36 +474,40 @@ export default function HeroProfit({
         </div>
       )}
 
-      {/* Secondary stats — always today's numbers; tightens to 9px and dims
-          to plum across the row in the empty state. */}
-      <div
-        style={{
-          marginTop: isEmpty ? 8 : 12,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          fontFamily: "var(--font-body)",
-          fontSize: isEmpty ? 9 : 10,
-        }}
-      >
-        <SecondaryStat
-          label="Scans"
-          value={`${todayScans}`}
-          valueColor={scansColor}
-        />
-        <StatDivider />
-        <SecondaryStat
-          label="Buys"
-          value={`${todayBuys}`}
-          valueColor={buysColor}
-        />
-        <StatDivider />
-        <SecondaryStat
-          label="Spent"
-          value={`$${todaySpent}`}
-          valueColor={spentColor}
-        />
-      </div>
+      {/* Secondary stats — only renders when the user has actually
+          taken some action today. "Scans: 0 | Buys: 0 | Spent: $0"
+          on a fresh card reads as a flat-tire dashboard; better to
+          omit the row entirely until at least one number is real. */}
+      {showSecondaryRow && (
+        <div
+          style={{
+            marginTop: isEmpty ? 8 : 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontFamily: "var(--font-body)",
+            fontSize: isEmpty ? 9 : 10,
+          }}
+        >
+          <SecondaryStat
+            label="Scans"
+            value={`${todayScans}`}
+            valueColor={scansColor}
+          />
+          <StatDivider />
+          <SecondaryStat
+            label="Buys"
+            value={`${todayBuys}`}
+            valueColor={buysColor}
+          />
+          <StatDivider />
+          <SecondaryStat
+            label="Spent"
+            value={`$${todaySpent}`}
+            valueColor={spentColor}
+          />
+        </div>
+      )}
     </div>
   );
 }

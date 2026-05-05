@@ -182,14 +182,17 @@ function ShowAllToolsButton({ expanded, onToggle }: ShowAllToolsButtonProps) {
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
+        // Pill shape with a slightly stronger border and a wider tap
+        // target. Centered horizontally below the tools grid; 16px
+        // gap from the last tool tile per the spacing spec.
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: 6,
-        margin: "8px auto 0",
-        padding: "10px 16px",
-        border: "1px solid rgba(255,255,255,0.04)",
-        borderRadius: 8,
+        margin: "16px auto 0",
+        padding: "10px 20px",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 20,
         backgroundColor: pressed ? "rgba(255,255,255,0.03)" : "transparent",
         cursor: "pointer",
         fontFamily: "var(--font-body)",
@@ -230,13 +233,17 @@ interface ScanRow {
 }
 
 const SECTION_LABEL: React.CSSProperties = {
-  // Uppercase category header (SOURCING) — stays in JetBrains Mono per
-  // the font role system.
+  // Uppercase category header (SOURCING / MORE TOOLS) — stays in
+  // JetBrains Mono per the font role system. The hairline underline
+  // anchors each section visually without heavy dividers — at 0.03
+  // alpha it's barely there but it gives the page a readable rhythm.
   fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "#3D2E55",
   letterSpacing: "0.10em",
-  marginBottom: 12,
+  paddingBottom: 6,
+  borderBottom: "1px solid rgba(255,255,255,0.03)",
+  marginBottom: 10,
 };
 
 export default function DashboardPage() {
@@ -964,13 +971,13 @@ export default function DashboardPage() {
 
         {/* 5. Scan zone — ScanButtons renders its own full-bleed hairlines.
             overflow:hidden clips those bleeds at the section box, which
-            matches the page wrapper / viewport edge. 24px from the hero
-            above per the dashboard spacing rhythm — major sections all
-            sit at exactly 24px from each other. */}
+            matches the page wrapper / viewport edge. 20px from stats
+            card to scan zone per the spacing spec — tighter than the
+            previous 24 so the scan buttons sit closer to the action. */}
         <div
           style={{
             padding: "0 18px",
-            marginTop: 24,
+            marginTop: 20,
             overflow: "hidden",
             animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
             animationDelay: "120ms",
@@ -994,7 +1001,7 @@ export default function DashboardPage() {
               return (
                 <div
                   style={{
-                    marginTop: 10,
+                    marginTop: 12,
                     display: "flex",
                     justifyContent: "center",
                   }}
@@ -1056,7 +1063,10 @@ export default function DashboardPage() {
           <>
             <div
               style={{
-                marginTop: 24,
+                // 20px from scan-count pill to first carousel header
+                // per the spacing spec — tighter than the 24 used
+                // for between-section gaps below.
+                marginTop: 20,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -1094,7 +1104,10 @@ export default function DashboardPage() {
             <div
               id="deals-near-you"
               style={{
-                marginTop: 24,
+                // 20px from scan-count pill to first carousel header
+                // per the spacing spec — tighter than the 24 used
+                // for between-section gaps below.
+                marginTop: 20,
                 overflow: "hidden",
                 animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 animationDelay: "200ms",
@@ -1158,46 +1171,11 @@ export default function DashboardPage() {
             animationDelay: "420ms",
           }}
         >
-          {/* "MORE TOOLS" label with full-bleed hairlines */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: 12,
-              marginLeft: -18,
-              marginRight: -18,
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                height: 0.5,
-                backgroundColor: "rgba(255,255,255,0.04)",
-              }}
-            />
-            <span
-              style={{
-                paddingLeft: 12,
-                paddingRight: 12,
-                // Uppercase category header — stays mono.
-                fontFamily: "var(--font-label)",
-                fontSize: 9,
-                color: "#3D2E55",
-                letterSpacing: "0.10em",
-                whiteSpace: "nowrap",
-                textTransform: "uppercase",
-              }}
-            >
-              MORE TOOLS
-            </span>
-            <div
-              style={{
-                flex: 1,
-                height: 0.5,
-                backgroundColor: "rgba(255,255,255,0.04)",
-              }}
-            />
-          </div>
+          {/* "MORE TOOLS" label — same anchored-underline treatment
+              as SOURCING and the carousel headers below. Replaces
+              the previous flanking-hairlines variant so every
+              section reads with the same visual rhythm. */}
+          <div style={SECTION_LABEL}>MORE TOOLS</div>
 
           {/* Top 4 tools */}
           <div
@@ -1265,8 +1243,11 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Bottom pad */}
-        <div style={{ height: 40 }} />
+        {/* Bottom pad — 32px from "Show all tools" pill to viewport
+            bottom per the spacing spec. Just enough air for the
+            tools toggle to breathe without burning a full screen-
+            edge of dead space. */}
+        <div style={{ height: 32 }} />
       </div>
 
       {/* Overlays */}

@@ -141,16 +141,27 @@ export default function DealCarousel({
 
   return (
     <div>
+      {/* Section header — anchored hairline underline matching the
+          SOURCING / MORE TOOLS treatment. paddingBottom + borderBottom
+          + marginBottom together create the same visual rhythm across
+          every section on the dashboard. The underline only spans the
+          inner content (paddingLeft 18 keeps it off the viewport edge)
+          so it reads as a section anchor, not a full-bleed divider. */}
       <div
         style={{
           paddingLeft: 18,
+          paddingRight: 18,
           // Uppercase carousel category — DEALS NEAR YOU / FREE & CLEARANCE.
           // Stays mono per the font role system.
           fontFamily: "var(--font-label)",
           fontSize: 9,
           color: "#3D2E55",
           letterSpacing: "0.10em",
-          marginBottom: liveSignal ? 6 : 12,
+          paddingBottom: 6,
+          borderBottom: "1px solid rgba(255,255,255,0.03)",
+          // Tighter bottom margin when liveSignal is rendered below
+          // (the ticker reads as part of this header trio).
+          marginBottom: liveSignal ? 6 : 10,
         }}
       >
         {label}
