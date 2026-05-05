@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import SplashGate from "@/components/shared/SplashGate";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -33,10 +34,14 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${outfit.variable} ${jetbrainsMono.variable}`}
-      style={{ backgroundColor: "#120e18" }}
+      // #0A0812 on html/body so there's no perceivable color flash
+      // before the splash mounts — the splash uses the same surface
+      // color, which then fades to reveal the app's content (which
+      // paints its own #120e18 / lighter card surfaces on top).
+      style={{ backgroundColor: "#0A0812" }}
     >
-      <body style={{ backgroundColor: "#120e18" }}>
-        {children}
+      <body style={{ backgroundColor: "#0A0812" }}>
+        <SplashGate>{children}</SplashGate>
         {/* Film-grain overlay — sits above all content but never intercepts pointer events. */}
         <div
           aria-hidden="true"

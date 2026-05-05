@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
+import SplashScreen from "@/components/shared/SplashScreen";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import WinsTicker from "@/components/dashboard/WinsTicker";
@@ -766,48 +767,15 @@ export default function DashboardPage() {
   }, [showAllTools]);
 
   // Splash gate — covers the brief async window between mount and the
-  // zip-code check resolving. Same bg as --bg-page so it visually
-  // continues from the login page; if the user gets redirected to
-  // /onboarding, the next page paints over a screen of identical color.
-  // The Saturn icon at 60% alpha gives a "loading" cue without spinning
-  // (a spinner would feel like an error state on a 200ms wait).
+  // zip-code check resolving. Reuses the layout-level SplashScreen so
+  // the dashboard auth wait visually continues the brand splash. In
+  // the common case (auth resolves in <1.2s), the layout splash is
+  // still up and this block never paints. On a slow auth, the layout
+  // splash has faded by the time we reach here and SplashScreen mounts
+  // with its entrance animations replaying — same identity, just a
+  // brief replay rather than the previous dim "broken" treatment.
   if (!gateChecked) {
-    return (
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "#120e18",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 100,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            opacity: 0.6,
-          }}
-        >
-          <CoinMark size={28} color="#5CE0B8" />
-          <span
-            style={{
-              fontFamily: "var(--font-label)",
-              fontWeight: 700,
-              fontSize: 36,
-              color: "#5CE0B8",
-              letterSpacing: "0.08em",
-              lineHeight: 1,
-            }}
-          >
-            LOOT
-          </span>
-        </div>
-      </div>
-    );
+    return <SplashScreen />;
   }
 
   return (
