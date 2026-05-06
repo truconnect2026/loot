@@ -19,6 +19,10 @@ interface ScanRow {
   sold: boolean | null;
   sold_price: number | null;
   created_at: string;
+  /** comps_data carries category + conditionGrade fields written by
+   * the verdict pipeline. Selected here so the mark-sold handler can
+   * forward those into the sold_comps row without an extra round-trip. */
+  comps_data: Record<string, unknown> | null;
 }
 
 const VERDICT_COLOR: Record<string, string> = {
@@ -75,7 +79,7 @@ export default function HaulLogPage() {
       const { data, error } = await supabase
         .from("scans")
         .select(
-          "id, method, item_name, cost, sell_price, profit, verdict, platform, sold, sold_price, created_at"
+          "id, method, item_name, cost, sell_price, profit, verdict, platform, sold, sold_price, created_at, comps_data"
         )
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false })
@@ -143,6 +147,59 @@ export default function HaulLogPage() {
             )
           : prev,
       );
+
+      // Crowdsource the comp — every successful mark-sold writes a
+      // row to sold_comps so future verdicts can ground on real sold
+      // prices. Wrapped in try/catch so a comps insert failure never
+      // blocks the user-facing mark-sold flow. user_id, sold_price,
+      // and item_name are required; everything else is best-effort.
+      try {
+        const itemName = row.item_name?.trim();
+        if (itemName) {
+          // Pull the user's zip lazily — only on the first mark-sold
+          // of the session. Skipping if the profile lookup fails is
+          // fine; the comp row just won't carry a zip.
+          let zip: string | null = null;
+          try {
+            const { data: profileRow } = await supabase
+              .from("profiles")
+              .select("zip_code")
+              .eq("id", userData.user.id)
+              .maybeSingle();
+            zip = profileRow?.zip_code ?? null;
+          } catch {
+            /* profile read can fail silently — zip stays null */
+          }
+
+          const comps = (row.comps_data ?? {}) as Record<string, unknown>;
+          const conditionGrade =
+            typeof comps.conditionGrade === "string"
+              ? comps.conditionGrade
+              : null;
+          const category =
+            typeof comps.category === "string" ? comps.category : null;
+
+          const createdMs = row.created_at
+            ? new Date(row.created_at).getTime()
+            : NaN;
+          const daysToSell = Number.isFinite(createdMs)
+            ? Math.max(0, Math.round((Date.now() - createdMs) / 86_400_000))
+            : null;
+
+          await supabase.from("sold_comps").insert({
+            user_id: userData.user.id,
+            item_name: itemName,
+            item_category: category,
+            platform: row.platform,
+            sold_price: price,
+            days_to_sell: daysToSell,
+            condition_grade: conditionGrade,
+            zip_code: zip,
+          });
+        }
+      } catch (compsErr) {
+        console.error("[haul] sold_comps insert failed:", compsErr);
+      }
     }
     setMarkingId(null);
     setMarkDraft("");
@@ -177,6 +234,24 @@ export default function HaulLogPage() {
           zIndex: 1,
         }}
       >
+        {/* Crowdsource banner — sits above the page title so the
+            "every sale helps" framing is the first thing users see
+            when they land on their haul. Quietly muted; it's a
+            value-prop note, not a CTA. */}
+        <div
+          style={{
+            paddingTop: 8,
+            marginBottom: 12,
+            padding: 8,
+            textAlign: "center",
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            color: "#5A4E70",
+          }}
+        >
+          every sale you log improves pricing for all Loot users 🤝
+        </div>
+
         {/* Back arrow + title */}
         <div
           style={{
