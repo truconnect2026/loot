@@ -6,6 +6,10 @@ interface ToolTileProps {
   name: string;
   icon: React.ReactNode;
   onTap: () => void;
+  /** Accent color used for the bottom hairline. Defaults to a
+   * neutral white when omitted so tiles without a clear identity
+   * (rare) still render. */
+  accent?: string;
 }
 
 function ChevronRight() {
@@ -28,8 +32,21 @@ function ChevronRight() {
   );
 }
 
-export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
+export default function ToolTile({
+  name,
+  icon,
+  onTap,
+  accent,
+}: ToolTileProps) {
   const [pressed, setPressed] = useState(false);
+
+  // Bottom hairline — accent color at 0.08 alpha. The accent prop is
+  // already an rgb hex (e.g. "#5CE0B8"); appending "14" gives ~0.08
+  // alpha in #RRGGBBAA form. Falls back to a neutral white when the
+  // caller doesn't pass an accent.
+  const bottomLine = accent
+    ? `1px solid ${accent}14`
+    : "1px solid rgba(255,255,255,0.06)";
 
   return (
     <div
@@ -62,6 +79,9 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
           ? "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))"
           : "linear-gradient(rgba(255,255,255,0.13), rgba(255,255,255,0.13))",
         border: "1px solid rgba(255,255,255,0.15)",
+        // Bottom edge replaced with the accent-tinted hairline — gives
+        // each tile a quiet identity stripe matching its icon color.
+        borderBottom: bottomLine,
         // Secondary card depth — softer drop than primary cards
         // (deals, sourcing) since tool tiles sit below them in the
         // visual hierarchy. Inset highlight stays for the lit edge.
@@ -79,7 +99,19 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
           "background-image 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      <div style={{ flexShrink: 0, display: "flex" }}>{icon}</div>
+      {/* Icon brightens from 0.6 → 1.0 on press — the tile's accent
+          color was already painted at 0.6 by ToolIcon; bumping to 1
+          on press feels like the icon "lights up" under the finger. */}
+      <div
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          opacity: pressed ? 1 : 0.85,
+          transition: "opacity 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        {icon}
+      </div>
       <div
         style={{
           flex: 1,
@@ -92,7 +124,16 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
       >
         {name}
       </div>
-      <div style={{ flexShrink: 0, display: "flex" }}>
+      <div
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          // Chevron nudges 3px right on press — micro "this opens
+          // something" cue mirroring iOS table-row tap feedback.
+          transform: pressed ? "translateX(3px)" : "translateX(0)",
+          transition: "transform 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
         <ChevronRight />
       </div>
     </div>

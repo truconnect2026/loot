@@ -26,6 +26,40 @@ export function sourceTag(raw: string): string {
   return raw;
 }
 
+// Brand-tinted pill colors for the source label. Each platform gets
+// its recognizable hue at low alpha so the pill reads as that brand
+// at a glance without the badge dominating the card. Free listings
+// override this and use the mint "FREE" tint regardless of source.
+function sourcePillTint(raw: string): { bg: string; border: string; color: string } {
+  const s = raw.toLowerCase();
+  if (s.includes("marketplace") || s.includes("fb")) {
+    return {
+      bg: "rgba(24,119,242,0.10)",
+      border: "rgba(24,119,242,0.15)",
+      color: "#4A9AF5",
+    };
+  }
+  if (s.includes("craigslist")) {
+    return {
+      bg: "rgba(92,44,140,0.10)",
+      border: "rgba(92,44,140,0.15)",
+      color: "#8B5FC7",
+    };
+  }
+  if (s.includes("nextdoor")) {
+    return {
+      bg: "rgba(0,165,80,0.10)",
+      border: "rgba(0,165,80,0.15)",
+      color: "#00C853",
+    };
+  }
+  return {
+    bg: "rgba(255,255,255,0.05)",
+    border: "rgba(255,255,255,0.08)",
+    color: "#C8C0D8",
+  };
+}
+
 // Map a raw source string to a "find on …" CTA label. Lowercase
 // per the voice rule; platform names are proper nouns and stay
 // capitalized. Wording shifted from "open on" to "find on" because
@@ -142,8 +176,12 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         // brightening is handled by the parent transform; bg stays
         // a stable opaque surface.
         backgroundColor: "#120e18",
+        // Directional 145deg light wash layered over the flat 3%
+        // tint — gives each card a subtle "lit from upper-left"
+        // gradient so they feel like physical surfaces under angled
+        // light rather than flat panels.
         backgroundImage:
-          "linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
+          "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, transparent 50%), linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03))",
         // Uniform hairline on all four sides. The profit-tier accent
         // moved to a child overlay (see <span> below) so border-
         // radius can't clip it short on the rounded corners.
@@ -195,27 +233,37 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
           gap: 8,
         }}
       >
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "3px 8px",
-            borderRadius: 6,
-            backgroundColor: deal.isFree
-              ? "rgba(92,224,184,0.18)"
-              : "rgba(255,255,255,0.05)",
-            border: deal.isFree
-              ? "1px solid rgba(92,224,184,0.30)"
-              : "1px solid rgba(255,255,255,0.08)",
-            fontFamily: "var(--font-body)",
-            fontSize: 10,
-            fontWeight: 600,
-            color: deal.isFree ? "#5CE0B8" : "#C8C0D8",
-            lineHeight: 1.2,
-          }}
-        >
-          {tag}
-        </span>
+        {(() => {
+          // Free listings keep the existing mint identity regardless
+          // of source; otherwise paint the platform's brand tint so
+          // Facebook reads blue, Craigslist purple, Nextdoor green.
+          const tint = deal.isFree
+            ? {
+                bg: "rgba(92,224,184,0.18)",
+                border: "rgba(92,224,184,0.30)",
+                color: "#5CE0B8",
+              }
+            : sourcePillTint(deal.source);
+          return (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "3px 8px",
+                borderRadius: 6,
+                backgroundColor: tint.bg,
+                border: `1px solid ${tint.border}`,
+                fontFamily: "var(--font-body)",
+                fontSize: 10,
+                fontWeight: 600,
+                color: tint.color,
+                lineHeight: 1.2,
+              }}
+            >
+              {tag}
+            </span>
+          );
+        })()}
         <span
           style={{
             display: "inline-flex",
@@ -382,11 +430,20 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             color: "#5CE0B8",
             fontFeatureSettings: '"tnum"',
             lineHeight: 1.2,
+            // Slow breath — money numbers should feel alive, not
+            // static. 2.5s ease-in-out keeps the pulse subliminal.
+            animation: "dealProfitBreath 2.5s ease-in-out infinite",
           }}
         >
           +${profit}
         </div>
       )}
+      <style>{`
+        @keyframes dealProfitBreath {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+        }
+      `}</style>
     </button>
   );
 }

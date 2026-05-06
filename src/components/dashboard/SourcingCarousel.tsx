@@ -374,6 +374,18 @@ function SourcingCard({
   const dim = spec.comingSoon ? 0.4 : 1;
   const statusColor = spec.active ? "#5CE0B8" : "#3D2E55";
 
+  // Active cards earn a colored top-edge inset glow keyed to the
+  // icon color — Penny Drops camel, Color Tags periwinkle, Target
+  // red. Combined with the global card-depth shadow so the glow
+  // adds without erasing the lift. Coming-soon cards skip the glow
+  // entirely; they recede.
+  const topGlow = spec.active
+    ? `, 0 -2px 8px ${spec.iconColor}1A inset`
+    : "";
+  const cardShadow =
+    "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset" +
+    topGlow;
+
   return (
     <div
       role="button"
@@ -397,11 +409,10 @@ function SourcingCard({
         borderRadius: 14,
         padding: 14,
         border,
-        // Primary card depth — same stack the deal cards and stats
-        // card use. Coming-soon cards still get the lift; the dashed
-        // border + 0.4 dim already separates them from active feeds.
-        boxShadow:
-          "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset",
+        // Primary card depth + optional colored top-edge glow on
+        // active cards (camel/periwinkle/red per icon color). See
+        // cardShadow construction above.
+        boxShadow: cardShadow,
         cursor: "pointer",
         userSelect: "none",
         transform: pressed ? "scale(0.98)" : "scale(1)",
@@ -453,7 +464,8 @@ function SourcingCard({
       </div>
 
       {/* Notification dot — lit when the feed has live content the
-          user hasn't engaged with yet. */}
+          user hasn't engaged with yet. Slow opacity pulse signals
+          "active" peripherally without dominating the card. */}
       {spec.active && (
         <span
           aria-hidden="true"
@@ -465,9 +477,16 @@ function SourcingCard({
             height: 8,
             borderRadius: "50%",
             backgroundColor: "rgba(92, 224, 184, 0.5)",
+            animation: "sourcingNotifPulse 2s ease-in-out infinite",
           }}
         />
       )}
+      <style>{`
+        @keyframes sourcingNotifPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
     </div>
   );
 }

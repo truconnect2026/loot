@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
@@ -146,6 +146,9 @@ function SaturnIcon() {
 interface Tool {
   name: string;
   icon: React.ReactNode;
+  /** Accent color for the tile's bottom hairline + the icon color
+   * inside the wrapper. Same hex passed to ToolIcon below. */
+  accent: string;
   /** Internal route — used by Haul Log, which opens the haul page. */
   href?: string;
   /** Tool sheet to open. Mutually exclusive with `href`. Tiles
@@ -183,31 +186,37 @@ const TOP_TOOLS: Tool[] = [
   {
     name: "Flip Coach",
     icon: <ToolIcon color="#5CE0B8"><SaturnIcon /></ToolIcon>,
+    accent: "#5CE0B8",
     toolKind: "flip-coach",
   },
   {
     name: "Shelf Scanner",
     icon: <ToolIcon color="#5CE0B8"><ShelfIcon /></ToolIcon>,
+    accent: "#5CE0B8",
     toolKind: "shelf-scan",
   },
   {
     name: "Price Check",
     icon: <ToolIcon color="#D4A574"><DollarIcon /></ToolIcon>,
+    accent: "#D4A574",
     toolKind: "price-check",
   },
   {
     name: "Haul Log",
     icon: <ToolIcon color="#7B8FFF"><ClipboardIcon /></ToolIcon>,
+    accent: "#7B8FFF",
     href: "/app/haul",
   },
   {
     name: "Authenticate",
     icon: <ToolIcon color="#E8636B"><CheckCircleIcon /></ToolIcon>,
+    accent: "#E8636B",
     toolKind: "fake-check",
   },
   {
     name: "Condition Grade",
     icon: <ToolIcon color="#D4A574"><CheckBoxIcon /></ToolIcon>,
+    accent: "#D4A574",
     toolKind: "condition-grade",
   },
 ];
@@ -216,16 +225,19 @@ const EXTRA_TOOLS: Tool[] = [
   {
     name: "Tag Decoder",
     icon: <ToolIcon color="#D4A574"><HomeIcon /></ToolIcon>,
+    accent: "#D4A574",
     toolKind: "tag-decode",
   },
   {
     name: "Liquidation Analyzer",
     icon: <ToolIcon color="#5CE0B8"><PackageIcon /></ToolIcon>,
+    accent: "#5CE0B8",
     toolKind: "liquidation",
   },
   {
     name: "Scrap Finder",
     icon: <ToolIcon color="#7B8FFF"><RecycleIcon /></ToolIcon>,
+    accent: "#7B8FFF",
     toolKind: "scrap-id",
   },
 ];
@@ -326,18 +338,175 @@ interface ScanRow {
 
 const SECTION_LABEL: React.CSSProperties = {
   // Uppercase category header (SOURCING / MORE TOOLS) — stays in
-  // JetBrains Mono per the font role system. The hairline underline
-  // anchors each section visually without heavy dividers.
+  // JetBrains Mono per the font role system. The directional gradient
+  // underline (paints via background-image rather than borderBottom)
+  // sweeps from a hairline rgba(255,255,255,0.07) on the left into
+  // transparent at 70%, anchoring the section without the heaviness
+  // of a flat full-width divider.
   fontFamily: "var(--font-label)",
   fontSize: 9,
   color: "#3D2E55",
   letterSpacing: "0.10em",
   paddingBottom: 6,
-  borderBottom: "1px solid rgba(255,255,255,0.05)",
   marginBottom: 10,
   display: "flex",
   alignItems: "center",
+  backgroundImage:
+    "linear-gradient(to right, rgba(255,255,255,0.07) 0%, transparent 70%)",
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "0 100%",
+  backgroundSize: "100% 1px",
 };
+
+function FlipCoachFab({ onTap }: { onTap: () => void }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
+        right: 16,
+        zIndex: 50,
+        width: 52,
+        height: 52,
+        // Outer wrapper carries the float animation so the sonar
+        // ring (a positioned sibling) stays anchored relative to
+        // the floating FAB instead of moving independently.
+        animation: "fabFloat 3s ease-in-out infinite",
+      }}
+    >
+      {/* Sonar pulse — expanding ring that fades out, repeating
+          every 2.5s. Sits behind the button so taps pass through. */}
+      <span
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "50%",
+          backgroundColor: "rgba(92,224,184,0.12)",
+          animation: "fabSonar 2.5s ease-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+      <button
+        type="button"
+        aria-label="Open Flip Coach"
+        onClick={() => {
+          haptic();
+          onTap();
+        }}
+        onPointerDown={() => setPressed(true)}
+        onPointerUp={() => setPressed(false)}
+        onPointerLeave={() => setPressed(false)}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "100%",
+          borderRadius: "50%",
+          background:
+            "linear-gradient(135deg, rgba(92,224,184,0.2), rgba(92,224,184,0.1))",
+          border: "1px solid rgba(92,224,184,0.2)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+          transform: pressed ? "scale(0.9)" : "scale(1)",
+          transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
+      >
+        <svg
+          width={24}
+          height={24}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#5CE0B8"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx={12} cy={12} r={5} />
+          <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/**
+ * StatsBorderWrap — 1px animated gradient border around the stats
+ * card. The gradient drifts slowly (8s alternate) through mint and
+ * periwinkle so the scoreboard feels alive even when the user is at
+ * $0. Padding-1px wrapper technique mirrors UpgradeCard's gradient
+ * border but at much lower saturation so it registers as ambient
+ * energy, not an attention grab.
+ */
+function StatsBorderWrap({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: 1,
+        borderRadius: 21,
+        backgroundImage:
+          "linear-gradient(135deg, rgba(92,224,184,0.08) 0%, rgba(123,143,255,0.06) 50%, rgba(92,224,184,0.08) 100%)",
+        backgroundSize: "300% 300%",
+        animation: "statsBorderDrift 8s ease-in-out infinite alternate",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * ScrollReveal — IntersectionObserver-driven entry animation. Wraps
+ * a section so it fades + lifts in when it enters the viewport, but
+ * only once. Sections above the fold (hero, scan buttons) render
+ * normally; this is for the lower carousels and tool grids that
+ * users scroll into.
+ */
+function ScrollReveal({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  const seen = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && !seen.current) {
+            seen.current = true;
+            setRevealed(true);
+            obs.disconnect();
+          }
+        }
+      },
+      { threshold: 0.1 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: revealed ? 1 : 0,
+        transform: revealed ? "translateY(0)" : "translateY(16px)",
+        transition:
+          "opacity 400ms ease-out, transform 400ms ease-out",
+        willChange: revealed ? "auto" : "transform, opacity",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 /**
  * Per-section identity glyph rendered before the label text. 12px,
@@ -1039,6 +1208,22 @@ export default function DashboardPage() {
         }
         .loot-carousel::-webkit-scrollbar { display: none; }
         .loot-carousel { scrollbar-width: none; }
+        @keyframes statsBorderDrift {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
+        }
+        @keyframes fabFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes fabSonar {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.4); opacity: 0; }
+        }
+        @keyframes notifPulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.8; }
+        }
       `}</style>
       {/* Dashboard background — quiet graph-paper grid + centered
           vignette. No blobs, no particles: the dashboard is a
@@ -1196,6 +1381,7 @@ export default function DashboardPage() {
           {!statsLoading && lifetimeScans === 0 ? (
             <EmptyHero onScanTap={() => startScan("barcode")} />
           ) : (
+            <StatsBorderWrap>
             <HeroProfit
               todayProfit={todayProfit}
               yesterdayProfit={yesterdayProfit}
@@ -1211,6 +1397,7 @@ export default function DashboardPage() {
               todaySpent={todaySpent}
               dailyProfitHistory={profitHistory}
             />
+            </StatsBorderWrap>
           )}
         </div>
 
@@ -1417,13 +1604,15 @@ export default function DashboardPage() {
         )}
 
         {/* 8. Sourcing intel — horizontal carousel of intel feeds.
-            Section break from the deals carousels above. */}
+            Wrapped in ScrollReveal so the section animates in only
+            when it enters the viewport (instead of running the
+            initial-mount fadeInUp invisibly while user is still up
+            top). */}
+        <ScrollReveal>
         <div
           style={{
             padding: "0 18px",
             marginTop: 24,
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "360ms",
           }}
         >
           <div style={SECTION_LABEL}>
@@ -1435,16 +1624,16 @@ export default function DashboardPage() {
             onTap={handleSourcingTap}
           />
         </div>
+        </ScrollReveal>
 
-        {/* 9. Tools drawer — overflow:hidden clips the MORE TOOLS hairline
-            bleeds at the section edge. Section break from sourcing. */}
+        {/* 9. Tools drawer — also wrapped in ScrollReveal for the
+            same scroll-triggered reveal as sourcing above. */}
+        <ScrollReveal>
         <div
           style={{
             padding: "0 18px",
             marginTop: 24,
             overflow: "hidden",
-            animation: "fadeInUp 400ms cubic-bezier(0.16, 1, 0.3, 1) both",
-            animationDelay: "420ms",
           }}
         >
           {/* "MORE TOOLS" label — same anchored-underline treatment
@@ -1469,6 +1658,7 @@ export default function DashboardPage() {
                 key={tool.name}
                 name={tool.name}
                 icon={tool.icon}
+                accent={tool.accent}
                 onTap={() => handleToolTap(tool)}
               />
             ))}
@@ -1521,6 +1711,7 @@ export default function DashboardPage() {
             onToggle={toggleTools}
           />
         </div>
+        </ScrollReveal>
 
         {/* Bottom pad — 24px from "Show all tools" pill to the
             tagline below, then the tagline acts as a satisfying
@@ -1541,52 +1732,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Flip Coach FAB — fixed bottom-right, sits above safe-area
-          insets on iOS. The Saturn glyph + mint gradient ring serves
-          as the coach's brand mark across the FAB and the MORE TOOLS
-          tile so users associate the icon with the feature. */}
-      <button
-        type="button"
-        aria-label="Open Flip Coach"
-        onClick={() => {
-          haptic();
-          setCoachOpen(true);
-        }}
-        style={{
-          position: "fixed",
-          bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
-          right: 16,
-          zIndex: 50,
-          width: 52,
-          height: 52,
-          borderRadius: "50%",
-          background:
-            "linear-gradient(135deg, rgba(92,224,184,0.2), rgba(92,224,184,0.1))",
-          border: "1px solid rgba(92,224,184,0.2)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          padding: 0,
-        }}
-      >
-        <svg
-          width={24}
-          height={24}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#5CE0B8"
-          strokeWidth={1.75}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx={12} cy={12} r={5} />
-          <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
-        </svg>
-      </button>
+      {/* Flip Coach FAB — fixed bottom-right with a slow idle float +
+          a sonar pulse ring expanding behind it. The Saturn glyph
+          serves as the coach's brand mark across the FAB and the
+          MORE TOOLS tile so users associate the icon with the
+          feature. */}
+      <FlipCoachFab onTap={() => setCoachOpen(true)} />
 
       {/* Overlays */}
       <ScanOverlay
