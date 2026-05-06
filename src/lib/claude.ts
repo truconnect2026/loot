@@ -36,6 +36,14 @@ export interface VerdictResult {
   daysToSell: number;
   sellSpeed: SellSpeed;
   platformRanking: PlatformRankEntry[];
+  /** Real take-home after platform fees + shipping. Falls back to
+   * 0.85 × gross profit when the model omits it (rough proxy for
+   * 15% combined fee/shipping drag). */
+  netProfit: number;
+  /** True when the item appears to be at retail price — buyer can
+   * just get a new one at the store, so flip potential is minimal.
+   * Used to render the warning banner and dim shelf-scan tiles. */
+  retailArbitrage: boolean;
 }
 
 const VERDICT_SYSTEM = `You are an expert reseller specializing in Facebook Marketplace flipping. Given an item name and purchase cost, estimate its realistic resale value on Facebook Marketplace sold locally (no shipping, no fees).
@@ -59,7 +67,53 @@ PASS = profit below 5 dollars or item is unlikely to sell locally.
 
 Also estimate how long this item will typically take to sell on the recommended platform. Return two additional fields: 'daysToSell' (number, your best estimate of median days from listing to sale — a popular children's book lot on FB Marketplace might be 2-4 days, a mid-range KitchenAid mixer on FB local might be 5-10 days, a niche vintage collectible on eBay might be 45-90 days, commodity electronics on FB usually 1-3 days) and 'sellSpeed' (string, one of 'FAST' if under 7 days, 'MODERATE' if 7-30 days, 'SLOW' if over 30 days). Be conservative and realistic.
 
-Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.`;
+Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.
+
+CRITICAL ACCURACY RULES — follow these strictly:
+
+PRICING REALISM:
+- If an item is CURRENTLY AVAILABLE at major retailers (Walmart, Target, Amazon, LEGO.com, etc.) at or near its retail price, the resale value is AT MOST retail price minus 10-20%. Nobody pays MORE than retail for something they can buy new at the store. The only exception is if the item is sold out everywhere, discontinued, or a limited/exclusive release.
+- For items found at thrift stores: estimate based on what similar items ACTUALLY SELL FOR on the recommended platform, not what they're listed at. Sold prices are typically 20-40% lower than asking prices.
+- For commodity items (common books, basic housewares, standard clothing): be honest that most have near-zero resale value. Don't inflate to make every scan look profitable.
+- If you're uncertain about an item's value, say so in the description and set confidence to LOW or MEDIUM. Never say HIGH confidence when guessing.
+
+NET PROFIT CALCULATION:
+- Return a field 'netProfit' (number) — this is the REAL take-home after ALL costs:
+  netProfit = sellPrice - platformFee - estimatedShipping - cost
+- Platform fees:
+  FB Local: 0% fee, $0 shipping
+  FB Shipped: 10% of sell price, shipping paid by buyer (but factor $0 seller cost)
+  eBay: 13.25% of sell price + $0.30 per order + estimated shipping cost to seller ($4-8 small, $8-15 medium, $15-30 large/heavy)
+  Poshmark: 20% of sell price or $2.95 flat under $15, shipping label provided ($7.67 standard)
+  Mercari: 10% of sell price + shipping label cost varies
+- The 'profit' field stays as gross (sell - cost) for display context
+- The 'netProfit' field is what the user actually pockets
+- If netProfit is under $5, the verdict should be PASS regardless of gross margin — it's not worth the time to photograph, list, pack, and ship for less than $5 take-home
+
+TIME-TO-SELL REALISM:
+- If the item is currently in production and available at retail, selling it used or even new on resale platforms takes LONGER because buyers compare to retail price. Estimate 14-30 days, not 3-5 days, unless it's sold out everywhere.
+- Seasonal items sell fast IN season and sit forever OUT of season. Christmas decor in January = SLOW (nobody wants it for 11 months). Christmas decor in November = FAST.
+- Large/heavy items (furniture, appliances) sell fast on FB Local (3-7 days) because shipping isn't an option — local buyers search for them specifically.
+- Niche collectibles (vintage pottery, specific LEGO retired sets, rare books) sell SLOW (30-90+ days) but at higher margins. Be honest about the wait.
+- Common items in oversaturated categories (basic men's dress shirts, Ikea furniture, mass-market books) take 14-30+ days because there's massive competition from other sellers.
+- Factor in the DAY OF WEEK: items listed Thursday-Saturday tend to sell faster because weekend buyers are browsing. This doesn't change your estimate but mention it in the description if relevant.
+
+RETAIL ARBITRAGE DETECTION:
+- If the scanned item appears to be at full retail price (not marked down, not thrift store, not clearance), flag it: add a field 'retailArbitrage' (boolean, true if the cost appears to be at or near retail). In the description, note: 'This item appears to be at retail price — resale profit is minimal unless discontinued or hard to find.'
+- If retailArbitrage is true AND the item is currently in production, the verdict should be PASS or MAYBE at most, never BUY. You cannot profitably flip a $10 retail item that anyone can buy at the store.
+
+CONDITION-ADJUSTED PRICING:
+- If the scanned photo shows visible wear, damage, open box, or missing packaging, reduce the sell estimate by:
+  Open box / no packaging: -20-30% from sealed price
+  Visible wear / scratches: -30-50% from like-new price
+  Missing parts or accessories: -50-70% from complete price
+  Damaged packaging (dented box, torn shrinkwrap): -10-15% from pristine sealed
+- Note the condition adjustment in the description: 'Price adjusted for open box condition' etc.
+
+SELL SPEED CATEGORIES (refined):
+- FAST (under 7 days): Only use for genuinely high-demand items with limited supply — discontinued toys, trending vintage items, free/very cheap large furniture on FB Local, popular brand clothing in perfect condition on Poshmark.
+- MODERATE (7-30 days): Most viable resale items fall here. Standard thrift finds, decent brand items, working electronics, complete board games.
+- SLOW (30+ days): Niche collectibles, seasonal items out of season, oversaturated categories, items requiring a specific buyer. Be honest — most items take longer to sell than beginners think.`;
 
 interface RawVerdictJson {
   verdict?: string;
@@ -72,6 +126,8 @@ interface RawVerdictJson {
   daysToSell?: number;
   sellSpeed?: string;
   platformRanking?: unknown;
+  netProfit?: number;
+  retailArbitrage?: unknown;
 }
 
 // Coerce a sellSpeed string to the strict union, defaulting to MODERATE.
@@ -155,10 +211,11 @@ Return the verdict JSON.`;
       ? raw.confidence
       : "medium";
 
+  const grossProfit = Number(raw.profit ?? 0);
   return {
     verdict,
     sellPrice: Number(raw.sellPrice ?? 0),
-    profit: Number(raw.profit ?? 0),
+    profit: grossProfit,
     platform: "FB Local",
     fee: 0,
     reasoning: String(raw.reasoning ?? ""),
@@ -168,6 +225,13 @@ Return the verdict JSON.`;
       : 14,
     sellSpeed: normalizeSellSpeed(raw.sellSpeed),
     platformRanking: normalizePlatformRanking(raw.platformRanking),
+    // 0.85 × gross is a rough fee/shipping drag estimate when the
+    // model omits the field — close enough to surface a "net" cell
+    // without showing the same number as gross.
+    netProfit: Number.isFinite(Number(raw.netProfit))
+      ? Number(raw.netProfit)
+      : Math.round(grossProfit * 0.85 * 100) / 100,
+    retailArbitrage: raw.retailArbitrage === true,
   };
 }
 
@@ -373,7 +437,37 @@ For each item, also estimate 'daysToSell' (number, median days from listing to s
 
 Adjust your verdict for sell speed: items that take 30+ days to sell need at least $25 profit to be a BUY (not $15). Items that sell in under 7 days can be BUY at $10+ profit since the capital turns over fast.
 
-Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.`;
+Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.
+
+PRICING REALISM:
+- If an item is CURRENTLY AVAILABLE at major retailers (Walmart, Target, Amazon, LEGO.com, etc.) at or near its retail price, the resale value is AT MOST retail price minus 10-20%. Nobody pays MORE than retail for something they can buy new at the store. The only exception is if the item is sold out everywhere, discontinued, or a limited/exclusive release.
+- For items found at thrift stores: estimate based on what similar items ACTUALLY SELL FOR on the recommended platform, not what they're listed at. Sold prices are typically 20-40% lower than asking prices.
+- For commodity items (common books, basic housewares, standard clothing): be honest that most have near-zero resale value. Don't inflate to make every scan look profitable.
+- If you're uncertain about an item's value, say so in the description and set confidence to LOW or MEDIUM. Never say HIGH confidence when guessing.
+
+NET PROFIT CALCULATION:
+- Return a field 'netProfit' (number) per item — this is the REAL take-home after ALL costs:
+  netProfit = sellPrice - platformFee - estimatedShipping - cost
+- Platform fees:
+  FB Local: 0% fee, $0 shipping
+  FB Shipped: 10% of sell price, shipping paid by buyer (but factor $0 seller cost)
+  eBay: 13.25% of sell price + $0.30 per order + estimated shipping cost to seller ($4-8 small, $8-15 medium, $15-30 large/heavy)
+  Poshmark: 20% of sell price or $2.95 flat under $15, shipping label provided ($7.67 standard)
+  Mercari: 10% of sell price + shipping label cost varies
+- The 'profit' field stays as gross (best sell price minus cost) for display context
+- The 'netProfit' field is what the user actually pockets after fees + shipping
+- If netProfit is under $5, the verdict should be PASS regardless of gross margin — it's not worth the time to photograph, list, pack, and ship for less than $5 take-home
+
+TIME-TO-SELL REALISM:
+- If the item is currently in production and available at retail, selling it used or even new on resale platforms takes LONGER because buyers compare to retail price. Estimate 14-30 days, not 3-5 days, unless it's sold out everywhere.
+- Seasonal items sell fast IN season and sit forever OUT of season. Christmas decor in January = SLOW (nobody wants it for 11 months). Christmas decor in November = FAST.
+- Large/heavy items (furniture, appliances) sell fast on FB Local (3-7 days) because shipping isn't an option — local buyers search for them specifically.
+- Niche collectibles (vintage pottery, specific LEGO retired sets, rare books) sell SLOW (30-90+ days) but at higher margins. Be honest about the wait.
+- Common items in oversaturated categories (basic men's dress shirts, Ikea furniture, mass-market books) take 14-30+ days because there's massive competition from other sellers.
+- Factor in the DAY OF WEEK: items listed Thursday-Saturday tend to sell faster because weekend buyers are browsing. This doesn't change your estimate but mention it in the description if relevant.
+
+RETAIL ARBITRAGE DETECTION:
+- For each item, return a 'retailArbitrage' field (boolean) — true if the item appears to be at full retail price (not marked down, not thrift store, not clearance). When true, the verdict should be PASS or MAYBE at most, never BUY, since the buyer can get the same item new at the store.`;
 
 export type ShelfScanPlatform = "FB Local" | "FB Shipped" | "eBay";
 
@@ -391,6 +485,12 @@ export interface ShelfScanItem {
   daysToSell: number;
   sellSpeed: SellSpeed;
   platformRanking: PlatformRankEntry[];
+  /** Real take-home after fees + shipping; falls back to 0.85 × gross. */
+  netProfit: number;
+  /** Item appears to be at retail price — flag the card with a
+   * camel border + RETAIL pill so the user knows the flip ceiling
+   * is capped. */
+  retailArbitrage: boolean;
 }
 
 export interface ShelfScanResult {
@@ -552,13 +652,14 @@ export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
         verdictRaw === "MAYBE"
           ? verdictRaw
           : "PASS";
+      const grossProfit = Number(obj.profit ?? 0);
       return {
         name: String(obj.name ?? "Unknown item"),
         cost: Number(obj.cost ?? 0),
         sellFBLocal: Number(obj.sellFBLocal ?? 0),
         sellFBShipped: Number(obj.sellFBShipped ?? 0),
         sellEbay: Number(obj.sellEbay ?? 0),
-        profit: Number(obj.profit ?? 0),
+        profit: grossProfit,
         bestPlatform: normalizePlatform(obj.bestPlatform),
         verdict,
         confidence: normalizeShelfConfidence(obj.confidence),
@@ -568,6 +669,10 @@ export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
           : 14,
         sellSpeed: normalizeSellSpeed(obj.sellSpeed),
         platformRanking: normalizePlatformRanking(obj.platformRanking),
+        netProfit: Number.isFinite(Number(obj.netProfit))
+          ? Number(obj.netProfit)
+          : Math.round(grossProfit * 0.85 * 100) / 100,
+        retailArbitrage: obj.retailArbitrage === true,
       };
     }),
   };

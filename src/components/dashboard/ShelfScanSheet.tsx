@@ -1035,12 +1035,16 @@ function ItemCard({
   // Per-side border styling: 3px accent stripe on the left (except
   // PASS, which stays subtle), hairline on the other three sides.
   // BUY bumps the body border from 0.15 → 0.2 for a touch more tint;
-  // PASS drops to 0.08 to fade.
-  const sideBorderColor = isPass
-    ? "rgba(232, 99, 107, 0.08)"
-    : isBuy
-      ? "rgba(92, 224, 184, 0.20)"
-      : tint.bg;
+  // PASS drops to 0.08 to fade. Retail-arbitrage items override
+  // everything with a dim camel border so the user reads the card
+  // as "limited flip potential" before scanning the prices.
+  const sideBorderColor = item.retailArbitrage
+    ? "rgba(212, 165, 116, 0.10)"
+    : isPass
+      ? "rgba(232, 99, 107, 0.08)"
+      : isBuy
+        ? "rgba(92, 224, 184, 0.20)"
+        : tint.bg;
 
   const sellPrice =
     item.bestPlatform === "FB Local"
@@ -1117,20 +1121,50 @@ function ItemCard({
         </div>
         <div
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
             flexShrink: 0,
-            padding: "4px 12px",
-            borderRadius: 20,
-            backgroundColor: tint.bg,
-            border: `1px solid ${tint.border}`,
-            color: tint.text,
-            fontFamily: "var(--font-label)",
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
           }}
         >
-          {item.verdict}
+          {/* Retail-arbitrage flag — small camel pill that sits
+              alongside the verdict badge so the user can scan a
+              column of cards and instantly skip the ones where the
+              flip ceiling is capped by retail availability. */}
+          {item.retailArbitrage && (
+            <span
+              style={{
+                padding: "3px 8px",
+                borderRadius: 20,
+                backgroundColor: "rgba(212,165,116,0.10)",
+                border: "1px solid rgba(212,165,116,0.20)",
+                color: "#D4A574",
+                fontFamily: "var(--font-label)",
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
+            >
+              RETAIL
+            </span>
+          )}
+          <div
+            style={{
+              padding: "4px 12px",
+              borderRadius: 20,
+              backgroundColor: tint.bg,
+              border: `1px solid ${tint.border}`,
+              color: tint.text,
+              fontFamily: "var(--font-label)",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            {item.verdict}
+          </div>
         </div>
       </div>
 
@@ -1157,10 +1191,22 @@ function ItemCard({
         />
         <StatCell
           label="PROFIT"
-          value={fmtMoney(item.profit)}
+          value={fmtMoney(item.netProfit)}
           color={profitColor}
           emphasized={isBuy}
           dotColor={SELL_SPEED_TINT[item.sellSpeed].text}
+          subLabel={
+            <span
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 7,
+                color: "#5A4E70",
+                letterSpacing: "0.06em",
+              }}
+            >
+              net
+            </span>
+          }
         />
       </div>
       )}

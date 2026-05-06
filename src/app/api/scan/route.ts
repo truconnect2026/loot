@@ -34,6 +34,11 @@ export interface ScanResponse {
   daysToSell: number;
   sellSpeed: SellSpeed;
   platformRanking: PlatformRankEntry[];
+  /** Real take-home after platform fees + shipping. */
+  netProfit: number;
+  /** Item appears to be at retail price — VerdictSheet renders a
+   * warning banner above the verdict pill when true. */
+  retailArbitrage: boolean;
 }
 
 interface ScanError {
@@ -208,6 +213,8 @@ export async function POST(
       daysToSell: verdict.daysToSell,
       sellSpeed: verdict.sellSpeed,
       platformRanking: verdict.platformRanking,
+      netProfit: verdict.netProfit,
+      retailArbitrage: verdict.retailArbitrage,
     };
 
     return NextResponse.json(response);

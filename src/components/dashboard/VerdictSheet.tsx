@@ -585,6 +585,29 @@ export default function VerdictSheet({
           {data.name}
         </div>
 
+        {/* Retail arbitrage warning — surfaced when Claude flags the
+            item as available at retail. Camel tint + warning glyph
+            sets expectations BEFORE the verdict pill so the user
+            doesn't read a MAYBE/PASS as a Claude failure. */}
+        {data.retailArbitrage && (
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 8,
+              padding: "6px 12px",
+              backgroundColor: "rgba(212,165,116,0.06)",
+              borderRadius: 8,
+              textAlign: "center",
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              color: "#D4A574",
+              lineHeight: 1.4,
+            }}
+          >
+            ⚠ available at retail — limited flip potential
+          </div>
+        )}
+
         {/* Verdict badge — bounce-in scale + opacity reveal so the
             verdict announces itself as a moment, not a static label.
             Animation runs on every sheet open via the data identity
@@ -669,7 +692,34 @@ export default function VerdictSheet({
                       : "none",
               }}
             >
-              {fmt(data.profit)}
+              {fmt(data.netProfit)}
+            </div>
+            {/* Net-profit context — "after fees + shipping" so the
+                user knows the headline number is take-home, plus a
+                very dim "gross $X" reference so they can still see
+                the un-discounted figure if they want it. */}
+            <div
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 7,
+                color: "#5A4E70",
+                letterSpacing: "0.06em",
+                marginTop: 2,
+              }}
+            >
+              after fees + shipping
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 7,
+                color: "#3D2E55",
+                letterSpacing: "0.06em",
+                marginTop: 1,
+                fontFeatureSettings: '"tnum"',
+              }}
+            >
+              gross {fmt(data.profit)}
             </div>
           </div>
         </div>
