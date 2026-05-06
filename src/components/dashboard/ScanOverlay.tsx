@@ -671,8 +671,11 @@ export default function ScanOverlay({
                   right: "10%",
                   height: 1,
                   background: `linear-gradient(90deg, transparent, ${accent.hex}, transparent)`,
-                  // Long glow trail — laser, not a bar.
-                  boxShadow: `0 0 16px rgba(${accent.rgb}, 0.3), 0 0 4px rgba(${accent.rgb}, 0.6)`,
+                  // Layered laser glow — tight inner halo + wider
+                  // soft outer wash so the line reads as a coherent
+                  // light beam, not just a thin gradient. Tuned to
+                  // the global scan-line spec.
+                  boxShadow: `0 0 12px rgba(${accent.rgb}, 0.3), 0 0 24px rgba(${accent.rgb}, 0.1)`,
                   animation:
                     "scanLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
                 }}

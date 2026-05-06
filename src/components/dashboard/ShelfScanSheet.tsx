@@ -1031,12 +1031,20 @@ function ItemCard({
         borderLeft: isPass
           ? `1px solid ${sideBorderColor}`
           : `3px solid ${accentColor}`,
-        // Subtle mint glow on BUY only — at 0.06 it's barely
-        // perceptible against the dark surface, just enough to draw
-        // peripheral attention. Stronger on MAYBE/PASS would compete.
+        // BUY cards earn a stronger mint glow + a base drop shadow
+        // so the "grab this" tier visually leads the stack. MAYBE
+        // and PASS cards get a quiet drop only.
         boxShadow: isBuy
-          ? "0 0 12px rgba(92, 224, 184, 0.06)"
-          : "none",
+          ? "0 0 16px rgba(92, 224, 184, 0.08), 0 2px 8px rgba(0,0,0,0.2)"
+          : "0 1px 4px rgba(0,0,0,0.15)",
+        // PASS cards in collapsed mode dim the whole tile to 0.65 so
+        // the eye lands on BUY/MAYBE first; expanding lifts back to
+        // full opacity. Smoothed transition so the change registers
+        // as a deliberate state shift, not a flicker.
+        opacity: isPass && !expanded ? 0.65 : 1,
+        transitionProperty: "opacity, border-color",
+        transitionDuration: "200ms",
+        transitionTimingFunction: "ease-out",
         borderRadius: 14,
         // Tighter vertical padding when PASS is collapsed (~48px row);
         // standard padding 14 once expanded so the inner stats grid

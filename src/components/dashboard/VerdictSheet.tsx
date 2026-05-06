@@ -259,6 +259,7 @@ function ListingCta({ data }: ListingCtaProps) {
         borderRadius: 12,
         padding: 14,
         position: "relative",
+        overflow: "hidden",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -269,6 +270,23 @@ function ListingCta({ data }: ListingCtaProps) {
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
+      {/* Premium shimmer sweep — translates a soft white gradient
+          across the button surface every 3s. overflow:hidden on the
+          parent clips it cleanly to the rounded edges. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: "30%",
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)",
+          animation: "ctaShimmer 3s ease-in-out infinite",
+          pointerEvents: "none",
+        }}
+      />
+
       {/* Top-edge shine — light catching the leading edge */}
       <div
         aria-hidden="true"
@@ -480,6 +498,20 @@ export default function VerdictSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose} borderColor={colors.borderSolid}>
+      <style>{`
+        @keyframes verdictPillIn {
+          from { transform: scale(0); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes verdictStatRise {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ctaShimmer {
+          0% { left: -30%; }
+          100% { left: 100%; }
+        }
+      `}</style>
       <div
         style={{
           padding: "12px 20px 28px",
@@ -501,6 +533,13 @@ export default function VerdictSheet({
               borderRadius: 12,
               overflow: "hidden",
               marginBottom: 12,
+              // "Printed photo" recess — outer drop + inset top
+              // shadow gives the thumbnail a subtly recessed feel
+              // against the sheet surface. The hairline border
+              // anchors the edges so the image doesn't float.
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow:
+                "0 2px 8px rgba(0,0,0,0.3), inset 0 1px 3px rgba(0,0,0,0.2)",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -545,7 +584,10 @@ export default function VerdictSheet({
           {data.name}
         </div>
 
-        {/* Verdict badge */}
+        {/* Verdict badge — bounce-in scale + opacity reveal so the
+            verdict announces itself as a moment, not a static label.
+            Animation runs on every sheet open via the data identity
+            keying the parent. */}
         <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
           <div
             style={{
@@ -557,6 +599,8 @@ export default function VerdictSheet({
               border: `1px solid ${colors.border}`,
               borderRadius: 8,
               padding: "6px 20px",
+              animation:
+                "verdictPillIn 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 200ms both",
             }}
           >
             {data.verdict}
@@ -564,7 +608,9 @@ export default function VerdictSheet({
         </div>
 
         {/* 3-col price grid — flex with min-width:0 so the cells can shrink
-            below their content width instead of forcing the row past 100% */}
+            below their content width instead of forcing the row past 100%.
+            The grid as a unit rises in from below 350ms after the verdict
+            pill kicks off, so the data cascade reads as a single reveal. */}
         <div
           style={{
             display: "flex",
@@ -573,6 +619,7 @@ export default function VerdictSheet({
             width: "100%",
             maxWidth: "100%",
             boxSizing: "border-box",
+            animation: "verdictStatRise 300ms ease-out 350ms both",
           }}
         >
           <div style={{ ...recessedCell, flex: 1, minWidth: 0 }}>
@@ -630,7 +677,8 @@ export default function VerdictSheet({
             spans row 2 as a hero cell, FEE/CONFIDENCE share row 3.
             SELLS IN gets the wide treatment because median days-to-sell
             is the new headline metric the user is most likely scanning
-            for after the verdict. */}
+            for after the verdict. Cascade-staggered behind the price
+            grid above (500ms vs 350ms) so the eye rolls down naturally. */}
         <div
           style={{
             display: "grid",
@@ -640,6 +688,7 @@ export default function VerdictSheet({
             width: "100%",
             maxWidth: "100%",
             boxSizing: "border-box",
+            animation: "verdictStatRise 300ms ease-out 500ms both",
           }}
         >
           <div style={smallRecessedCell}>
