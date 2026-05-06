@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SplashGate from "@/components/shared/SplashGate";
@@ -20,6 +20,17 @@ export const metadata: Metadata = {
   description:
     "Scan thrift store items, get instant profit estimates, condition grading, and listing generation. The AI-powered reselling toolkit.",
   icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
+};
+
+// Lock pinch-to-zoom — iOS auto-zoom on small inputs and accidental
+// pinch gestures both broke the fixed dashboard layout. Inputs are
+// already font-size 16+ to prevent the auto-zoom focus path; this
+// kills the pinch path too.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 // Film-grain SVG overlay — fractal noise desaturated to grayscale.

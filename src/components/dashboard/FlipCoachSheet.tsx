@@ -326,15 +326,24 @@ export default function FlipCoachSheet({
           {sending && <TypingBubble />}
         </div>
 
-        {/* Sticky input bar */}
+        {/* Sticky input bar — position sticky + bottom 0 + zIndex 10
+            so the bar pins to the visible viewport edge even when the
+            iOS keyboard slides in and the sheet content shifts. */}
         <div
           style={{
+            position: "sticky",
+            bottom: 0,
+            zIndex: 10,
             padding: "12px 16px",
             backgroundColor: "rgba(18,14,24,0.95)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
             borderTop: "1px solid rgba(255,255,255,0.04)",
-            paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+            // Home-indicator clearance on iPhone — env() is 0px on
+            // devices without one, so this is a no-op everywhere
+            // else. Padding-bottom keeps the input above the
+            // indicator's safe-area instead of sitting under it.
+            paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
           }}
         >
           {exhausted ? (
@@ -364,18 +373,31 @@ export default function FlipCoachSheet({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") sendMessage(input);
                 }}
+                onFocus={() => {
+                  // iOS keyboard takes ~300ms to fully open. Once it
+                  // settles, snap the chat scroll to the bottom so
+                  // the latest message stays visible above the bar
+                  // instead of being hidden behind the keyboard.
+                  window.setTimeout(() => {
+                    const el = scrollRef.current;
+                    if (el) el.scrollTop = el.scrollHeight;
+                  }, 300);
+                }}
                 placeholder="ask about flipping..."
                 disabled={sending}
                 style={{
                   flex: 1,
-                  height: 40,
+                  height: 44,
                   backgroundColor: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: 20,
+                  borderRadius: 22,
                   padding: "10px 16px",
                   outline: "none",
                   fontFamily: "var(--font-body)",
-                  fontSize: 13,
+                  // iOS auto-zooms text inputs below 16px on focus,
+                  // which broke the fixed dashboard layout. Bumped
+                  // from 13px → 16px to suppress that zoom path.
+                  fontSize: 16,
                   color: "#C8C0D8",
                 }}
               />
@@ -385,8 +407,14 @@ export default function FlipCoachSheet({
                 disabled={sending || !input.trim()}
                 aria-label="Send"
                 style={{
-                  width: 36,
-                  height: 36,
+                  // 44×44 minimum tap target per Apple HIG. The
+                  // visual circle is still 36×36 visually via the
+                  // border-radius — the extra padding turns the
+                  // hitbox into a proper touch area.
+                  minWidth: 44,
+                  minHeight: 44,
+                  width: 44,
+                  height: 44,
                   borderRadius: "50%",
                   border: "none",
                   backgroundColor: "rgba(92,224,184,0.15)",
@@ -396,6 +424,7 @@ export default function FlipCoachSheet({
                   cursor: sending || !input.trim() ? "default" : "pointer",
                   opacity: sending || !input.trim() ? 0.4 : 1,
                   flexShrink: 0,
+                  padding: 0,
                 }}
               >
                 <ArrowUpIcon />
