@@ -35,13 +35,23 @@ import BottomSheet from "@/components/shared/BottomSheet";
 // tries to set activeTool to "shelf-scan", tsc fails the build.
 export type ToolKind =
   | "shelf-scan"
+  | "condition-grade"
+  | "flip-coach"
   | "price-check"
   | "fake-check"
   | "tag-decode"
   | "scrap-id"
   | "liquidation";
 
-export type ToolSheetTool = Exclude<ToolKind, "shelf-scan">;
+// Tools with their own dedicated sheets (custom UX) are excluded from
+// ToolSheetTool so the type system itself prevents them from ever
+// being routed through the generic ToolSheet. The dashboard's
+// handleToolTap branches on tool.toolKind and routes these to their
+// own sheet open-state setter instead.
+export type ToolSheetTool = Exclude<
+  ToolKind,
+  "shelf-scan" | "condition-grade" | "flip-coach"
+>;
 
 interface ToolSpec {
   title: string;

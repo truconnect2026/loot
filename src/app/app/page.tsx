@@ -27,6 +27,8 @@ import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import PennyDropsSheet from "@/components/dashboard/PennyDropsSheet";
 import YardSalesSheet from "@/components/dashboard/YardSalesSheet";
+import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
+import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
 import type { VerdictPayload } from "@/components/dashboard/ScanOverlay";
@@ -113,6 +115,29 @@ function RecycleIcon() {
   );
 }
 
+// Condition Grade — checkbox-style check distinct from the
+// CheckCircleIcon Authenticate uses, so the two tools don't read as
+// duplicates in the MORE TOOLS grid.
+function CheckBoxIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+    </svg>
+  );
+}
+
+// Flip Coach — Saturn (planet with ring) per the spec; reads as the
+// coach's "brand" mark across the FAB and tile.
+function SaturnIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx={12} cy={12} r={5} />
+      <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
+    </svg>
+  );
+}
+
 interface Tool {
   name: string;
   icon: React.ReactNode;
@@ -151,6 +176,11 @@ function ToolIcon({
 
 const TOP_TOOLS: Tool[] = [
   {
+    name: "Flip Coach",
+    icon: <ToolIcon color="#5CE0B8"><SaturnIcon /></ToolIcon>,
+    toolKind: "flip-coach",
+  },
+  {
     name: "Shelf Scanner",
     icon: <ToolIcon color="#5CE0B8"><ShelfIcon /></ToolIcon>,
     toolKind: "shelf-scan",
@@ -169,6 +199,11 @@ const TOP_TOOLS: Tool[] = [
     name: "Authenticate",
     icon: <ToolIcon color="#E8636B"><CheckCircleIcon /></ToolIcon>,
     toolKind: "fake-check",
+  },
+  {
+    name: "Condition Grade",
+    icon: <ToolIcon color="#D4A574"><CheckBoxIcon /></ToolIcon>,
+    toolKind: "condition-grade",
   },
 ];
 
@@ -886,6 +921,8 @@ export default function DashboardPage() {
   const [shelfOpen, setShelfOpen] = useState(false);
   const [pennyOpen, setPennyOpen] = useState(false);
   const [yardOpen, setYardOpen] = useState(false);
+  const [conditionOpen, setConditionOpen] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
@@ -900,9 +937,18 @@ export default function DashboardPage() {
         setShelfOpen(true);
         return;
       }
+      if (tool.toolKind === "condition-grade") {
+        setConditionOpen(true);
+        return;
+      }
+      if (tool.toolKind === "flip-coach") {
+        setCoachOpen(true);
+        return;
+      }
       if (tool.toolKind) {
-        // Explicit narrowing — ToolKind includes "shelf-scan" (which
-        // we already returned on above) but ToolSheetTool does not.
+        // Explicit narrowing — ToolKind includes the dedicated-sheet
+        // kinds (shelf-scan / condition-grade / flip-coach) which
+        // we already returned on above; ToolSheetTool excludes them.
         setActiveTool(tool.toolKind as ToolSheetTool);
       }
     },
@@ -1460,6 +1506,53 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Flip Coach FAB — fixed bottom-right, sits above safe-area
+          insets on iOS. The Saturn glyph + mint gradient ring serves
+          as the coach's brand mark across the FAB and the MORE TOOLS
+          tile so users associate the icon with the feature. */}
+      <button
+        type="button"
+        aria-label="Open Flip Coach"
+        onClick={() => {
+          haptic();
+          setCoachOpen(true);
+        }}
+        style={{
+          position: "fixed",
+          bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
+          right: 16,
+          zIndex: 50,
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background:
+            "linear-gradient(135deg, rgba(92,224,184,0.2), rgba(92,224,184,0.1))",
+          border: "1px solid rgba(92,224,184,0.2)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
+        <svg
+          width={24}
+          height={24}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#5CE0B8"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx={12} cy={12} r={5} />
+          <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
+        </svg>
+      </button>
+
       {/* Overlays */}
       <ScanOverlay
         open={scanOpen}
@@ -1473,6 +1566,10 @@ export default function DashboardPage() {
         open={verdictOpen}
         onClose={() => setVerdictOpen(false)}
         data={verdictData}
+        onGradeCondition={() => {
+          setVerdictOpen(false);
+          setConditionOpen(true);
+        }}
       />
 
       <DealDetailSheet
@@ -1515,6 +1612,33 @@ export default function DashboardPage() {
       <YardSalesSheet
         open={yardOpen}
         onClose={() => setYardOpen(false)}
+      />
+
+      <ConditionGradeSheet
+        open={conditionOpen}
+        onClose={() => setConditionOpen(false)}
+        onPaywall={() => {
+          // Forward 403 from the condition-grade route into the
+          // shared PaywallSheet so the user lands in the same upgrade
+          // flow they'd see from a daily-limit hit.
+          setPaywallInfo({
+            used: scanCount?.used ?? 0,
+            limit: scanCount?.limit ?? 5,
+          });
+          setPaywallOpen(true);
+        }}
+      />
+
+      <FlipCoachSheet
+        open={coachOpen}
+        onClose={() => setCoachOpen(false)}
+        onPaywall={() => {
+          setPaywallInfo({
+            used: scanCount?.used ?? 0,
+            limit: scanCount?.limit ?? 5,
+          });
+          setPaywallOpen(true);
+        }}
       />
     </>
   );

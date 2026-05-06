@@ -778,6 +778,164 @@ export async function liquidationAnalyze(
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Condition grading — Pro-only multi-image tool. Claude looks at up
+// to 6 photos of one item and returns a 5-tier grade plus flaws,
+// positives, price impact, and a one-line summary. The route gate
+// (api/condition-grade) handles the Pro check; this just runs the
+// model call.
+// ──────────────────────────────────────────────────────────────────
+
+const CONDITION_GRADE_SYSTEM = `You are an expert condition grader for resale items. Grade on a 5-tier scale:
+MINT (A): No visible flaws. Appears new/near-new.
+EXCELLENT (B): Minimal wear, 1-2 uses. No stains/pilling/scratches.
+GOOD (C): Light wear, minor imperfections. Most resale items fall here.
+FAIR (D): Obvious wear, stains, damage. Price 40-60% below GOOD comps.
+POOR (F): Heavy wear/damage. Only worth selling if rare.
+
+Examine every photo. Look for: stains, pilling, fading, scratches, chips, cracks, missing parts, broken zippers, yellowing, wear patterns, sole wear, spine creasing, surface damage.
+
+Return ONLY JSON: { "grade": "MINT"|"EXCELLENT"|"GOOD"|"FAIR"|"POOR", "gradeLabel": "A"|"B"|"C"|"D"|"F", "confidence": number (0-100), "flaws": string[], "positives": string[], "priceImpact": string, "summary": string }`;
+
+export type ConditionGrade =
+  | "MINT"
+  | "EXCELLENT"
+  | "GOOD"
+  | "FAIR"
+  | "POOR";
+export type ConditionGradeLabel = "A" | "B" | "C" | "D" | "F";
+
+export interface ConditionGradeResult {
+  grade: ConditionGrade;
+  gradeLabel: ConditionGradeLabel;
+  confidence: number;
+  flaws: string[];
+  positives: string[];
+  priceImpact: string;
+  summary: string;
+}
+
+function normalizeGrade(raw: unknown): ConditionGrade {
+  if (
+    raw === "MINT" ||
+    raw === "EXCELLENT" ||
+    raw === "GOOD" ||
+    raw === "FAIR" ||
+    raw === "POOR"
+  )
+    return raw;
+  if (typeof raw === "string") {
+    const s = raw.toUpperCase();
+    if (s === "MINT" || s === "EXCELLENT" || s === "GOOD" || s === "FAIR" || s === "POOR")
+      return s;
+  }
+  return "GOOD";
+}
+
+function normalizeGradeLabel(raw: unknown): ConditionGradeLabel {
+  if (raw === "A" || raw === "B" || raw === "C" || raw === "D" || raw === "F")
+    return raw;
+  return "C";
+}
+
+export async function conditionGrade(
+  imagesBase64: string[],
+): Promise<ConditionGradeResult> {
+  // Cap at 6 images; the system prompt promises that ceiling.
+  const images = imagesBase64.slice(0, 6).map((img) =>
+    img.replace(/^data:image\/\w+;base64,/, ""),
+  );
+  const content: Anthropic.Messages.ContentBlockParam[] = images.map((data) => ({
+    type: "image",
+    source: {
+      type: "base64",
+      media_type: "image/jpeg",
+      data,
+    },
+  }));
+  content.push({
+    type: "text",
+    text:
+      images.length === 1
+        ? "Grade this item's condition based on the photo."
+        : `Grade this item's condition based on all ${images.length} photos.`,
+  });
+
+  const message = await getClient().messages.create({
+    model: SONNET,
+    max_tokens: 1024,
+    system: CONDITION_GRADE_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content,
+      },
+    ],
+  });
+  const raw = parseJsonObject<{
+    grade?: unknown;
+    gradeLabel?: unknown;
+    confidence?: unknown;
+    flaws?: unknown;
+    positives?: unknown;
+    priceImpact?: unknown;
+    summary?: unknown;
+  }>(extractText(message));
+
+  return {
+    grade: normalizeGrade(raw.grade),
+    gradeLabel: normalizeGradeLabel(raw.gradeLabel),
+    confidence: Math.max(0, Math.min(100, Number(raw.confidence ?? 0))),
+    flaws: Array.isArray(raw.flaws) ? (raw.flaws as unknown[]).map(String) : [],
+    positives: Array.isArray(raw.positives)
+      ? (raw.positives as unknown[]).map(String)
+      : [],
+    priceImpact: String(raw.priceImpact ?? ""),
+    summary: String(raw.summary ?? ""),
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Flip Coach — chat helper. Trims history to the last 20 turns
+// before the API call so a long-running conversation never blows
+// the token budget. The route handler does the localStorage-based
+// daily limit check on the client; the server is stateless.
+// ──────────────────────────────────────────────────────────────────
+
+const FLIP_COACH_SYSTEM = `You are Flip Coach, an expert reselling advisor inside the Loot app. You help users make money flipping thrift store finds. You know pricing strategies, platform fees, what to look for at thrift stores, condition grading, shipping optimization, listing best practices, beginner mistakes, and seasonal trends. Keep responses concise (2-4 sentences for simple questions, 1-2 short paragraphs for complex ones). Be practical and specific. Use real dollar amounts. Never be vague.`;
+
+export interface FlipCoachTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function flipCoach(args: {
+  message: string;
+  history: FlipCoachTurn[];
+}): Promise<string> {
+  // Trim to the last 20 turns to cap token spend on long
+  // conversations. The active message is appended below.
+  const trimmed = args.history.slice(-20);
+  const messages: Anthropic.Messages.MessageParam[] = [
+    ...trimmed.map((t) => ({
+      role: t.role,
+      content: t.content,
+    })),
+    {
+      role: "user" as const,
+      content: args.message,
+    },
+  ];
+
+  const message = await getClient().messages.create({
+    model: HAIKU,
+    max_tokens: 512,
+    system: FLIP_COACH_SYSTEM,
+    messages,
+  });
+  return extractText(message).trim();
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Feed generators — Claude-as-search for the dashboard carousels
 // and sourcing cards. Each function asks Haiku to imagine a
 // realistic feed of listings for the user's zip + radius (or for

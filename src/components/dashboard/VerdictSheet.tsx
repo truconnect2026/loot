@@ -22,6 +22,10 @@ interface VerdictSheetProps {
   open: boolean;
   onClose: () => void;
   data: VerdictData | null;
+  /** Optional callback fired by the inline "GRADE CONDITION" button —
+   * the parent (dashboard) opens ConditionGradeSheet with this. Left
+   * undefined keeps the button hidden. */
+  onGradeCondition?: () => void;
 }
 
 const VERDICT_COLORS = {
@@ -464,7 +468,12 @@ function PlatformRanking({
   );
 }
 
-export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps) {
+export default function VerdictSheet({
+  open,
+  onClose,
+  data,
+  onGradeCondition,
+}: VerdictSheetProps) {
   if (!data) return null;
 
   const colors = VERDICT_COLORS[data.verdict];
@@ -777,6 +786,33 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
 
         {/* CTA — hero button with top-edge shine + glow on press */}
         <ListingCta data={data} />
+
+        {/* Secondary CTA — Pro condition grading. Outline style so it
+            sits below the listing button as a quieter "go deeper"
+            option rather than competing with the primary action. */}
+        {onGradeCondition && (
+          <button
+            type="button"
+            onClick={onGradeCondition}
+            style={{
+              marginTop: 10,
+              width: "100%",
+              padding: 10,
+              borderRadius: 8,
+              backgroundColor: "transparent",
+              border: "1px solid rgba(212,165,116,0.20)",
+              color: "#D4A574",
+              fontFamily: "var(--font-jetbrains-mono)",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.10em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            grade condition
+          </button>
+        )}
       </div>
     </BottomSheet>
   );
