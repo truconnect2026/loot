@@ -182,8 +182,15 @@ export default function HaulLogPage() {
           const createdMs = row.created_at
             ? new Date(row.created_at).getTime()
             : NaN;
+          // Date.now() inside an async event handler is fine; the
+          // react-hooks/purity rule fires on the literal call site
+          // because `commitSold` is declared inside the component
+          // body. Disabled rather than refactored — the function
+          // is only ever called via user tap, never during render.
+          // eslint-disable-next-line react-hooks/purity
+          const nowMs = Date.now();
           const daysToSell = Number.isFinite(createdMs)
-            ? Math.max(0, Math.round((Date.now() - createdMs) / 86_400_000))
+            ? Math.max(0, Math.round((nowMs - createdMs) / 86_400_000))
             : null;
 
           await supabase.from("sold_comps").insert({
@@ -415,18 +422,36 @@ export default function HaulLogPage() {
               const verdictColor = row.verdict
                 ? VERDICT_COLOR[row.verdict]
                 : "var(--text-muted)";
+              // Profit-tier accent ribbon — same color cadence as
+              // deal cards and shelf scanner. Mint above $20, camel
+              // $5-$20, red on negative, hairline 0-$5.
+              const profitVal = Number(row.profit ?? 0);
+              const accent =
+                profitVal < 0
+                  ? "#E8636B"
+                  : profitVal > 20
+                    ? "#5CE0B8"
+                    : profitVal >= 5
+                      ? "#D4A574"
+                      : "rgba(255,255,255,0.06)";
               return (
                 <div
                   key={row.id}
                   style={{
+                    position: "relative",
                     backgroundColor: "rgba(255,255,255,0.02)",
                     border: "1px solid rgba(255,255,255,0.04)",
-                    boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+                    // Elevated card stack to match the rest of the
+                    // app's primary-card depth.
+                    boxShadow:
+                      "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset, inset 0 1px 0 0 rgba(255,255,255,0.04)",
                     borderRadius: "4px 14px 14px 14px",
                     padding: 14,
+                    paddingLeft: 16,
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
+                    borderLeft: `2px solid ${accent}`,
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -496,21 +521,28 @@ export default function HaulLogPage() {
                       </span>
                     )}
 
-                    {/* Sold pill — once an item is marked sold the
-                        right column collapses to a single mint
-                        "SOLD — $X" label so flipped items read
-                        unambiguously vs. open haul. */}
+                    {/* Sold pill — proper mono-uppercase badge with
+                        a tinted surface + border so it reads as a
+                        deliberate state badge instead of inline
+                        prose. Sale price stays inline so the user
+                        still sees what the item went for. */}
                     {row.sold && row.sold_price != null && (
                       <span
                         style={{
-                          fontFamily: "var(--font-body)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontFamily: "var(--font-jetbrains-mono)",
                           fontWeight: 700,
-                          fontSize: 11,
-                          color: "var(--accent-mint)",
-                          letterSpacing: "0.04em",
+                          fontSize: 8,
+                          letterSpacing: "0.10em",
+                          textTransform: "uppercase",
+                          color: "#5CE0B8",
+                          backgroundColor: "rgba(92,224,184,0.10)",
+                          border: "1px solid rgba(92,224,184,0.20)",
+                          padding: "2px 8px",
+                          borderRadius: 6,
                           fontFeatureSettings: '"tnum"',
-                          textShadow:
-                            "0 0 16px rgba(92,224,184,0.18)",
                         }}
                       >
                         SOLD · ${Number(row.sold_price).toFixed(0)}

@@ -308,30 +308,7 @@ export default function FlipCoachSheet({
             ),
           )}
 
-          {sending && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginLeft: 28,
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                color: "#5A4E70",
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  backgroundColor: "#5CE0B8",
-                  animation: "coachPulse 1s ease-in-out infinite",
-                }}
-              />
-              thinking…
-            </div>
-          )}
+          {sending && <TypingBubble />}
         </div>
 
         {/* Sticky input bar */}
@@ -434,6 +411,11 @@ function CoachBubble({ content }: { content: string }) {
         style={{
           backgroundColor: "rgba(92,224,184,0.05)",
           borderRadius: "14px 14px 14px 4px",
+          // Mint left rule = "quoted reply" feel; matches the coach
+          // identity color. Drop shadow gives bubbles physical lift
+          // off the chat surface.
+          borderLeft: "2px solid rgba(92,224,184,0.15)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
           padding: 12,
           fontFamily: "var(--font-body)",
           fontSize: 13,
@@ -456,6 +438,10 @@ function UserBubble({ content }: { content: string }) {
         maxWidth: "85%",
         backgroundColor: "rgba(123,143,255,0.10)",
         borderRadius: "14px 14px 4px 14px",
+        // Periwinkle right rule mirrors the coach's left rule but in
+        // the user's identity color.
+        borderRight: "2px solid rgba(123,143,255,0.15)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
         padding: 12,
         fontFamily: "var(--font-body)",
         fontSize: 13,
@@ -465,6 +451,60 @@ function UserBubble({ content }: { content: string }) {
       }}
     >
       {content}
+    </div>
+  );
+}
+
+// Typing indicator — same bubble shape as a coach message but with
+// three pulsing mint dots instead of text. The stagger (0/0.2/0.4s)
+// matches the splash loading dots so the loading vocabulary stays
+// consistent across the app.
+function TypingBubble() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 8,
+        maxWidth: "85%",
+      }}
+    >
+      <span style={{ flexShrink: 0, marginTop: 2 }}>
+        <SaturnGlyph size={20} opacity={0.5} />
+      </span>
+      <div
+        style={{
+          backgroundColor: "rgba(92,224,184,0.05)",
+          borderRadius: "14px 14px 14px 4px",
+          borderLeft: "2px solid rgba(92,224,184,0.15)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+          padding: "14px 14px",
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        {[0, 0.2, 0.4].map((d, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              backgroundColor: "#5CE0B8",
+              animation: `typingDotPulse 1.4s ease-in-out infinite`,
+              animationDelay: `${d}s`,
+            }}
+          />
+        ))}
+      </div>
+      <style>{`
+        @keyframes typingDotPulse {
+          0%, 60%, 100% { opacity: 0.15; }
+          30% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 }

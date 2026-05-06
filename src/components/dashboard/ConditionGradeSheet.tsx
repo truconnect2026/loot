@@ -366,14 +366,54 @@ function ResultView({
   const color = GRADE_COLOR[result.grade];
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ textAlign: "center", marginTop: 12 }}>
+      <style>{`
+        @keyframes gradeLetterIn {
+          from { transform: scale(2); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes gradeBurst {
+          from { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+          to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+      `}</style>
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: 12,
+          position: "relative",
+        }}
+      >
+        {/* Color burst — radial bloom of the grade color, fired
+            simultaneously with the letter scale-in so the reveal
+            feels like a stamp landing. */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 32,
+            left: "50%",
+            width: 120,
+            height: 120,
+            borderRadius: "50%",
+            backgroundColor: color,
+            opacity: 0.15,
+            transform: "translate(-50%, -50%) scale(0)",
+            animation: "gradeBurst 600ms ease-out both",
+            pointerEvents: "none",
+          }}
+        />
         <div
           style={{
+            position: "relative",
             fontFamily: "var(--font-jetbrains-mono)",
             fontSize: 64,
             fontWeight: 800,
             color,
             lineHeight: 1,
+            // Bounce overshoot — the letter pops in from 2x scale
+            // down to 1x, mirroring the verdict-pill reveal.
+            animation:
+              "gradeLetterIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
           }}
         >
           {result.gradeLabel}
