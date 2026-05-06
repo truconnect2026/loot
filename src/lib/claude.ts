@@ -17,6 +17,13 @@ const SONNET = "claude-sonnet-4-6";
 
 export type Verdict = "BUY" | "PASS" | "MAYBE";
 export type Confidence = "high" | "medium" | "low";
+export type SellSpeed = "FAST" | "MODERATE" | "SLOW";
+
+export interface PlatformRankEntry {
+  platform: string;
+  estimatedNetProfit: number;
+  reasoning: string;
+}
 
 export interface VerdictResult {
   verdict: Verdict;
@@ -26,6 +33,9 @@ export interface VerdictResult {
   fee: 0;
   reasoning: string;
   confidence: Confidence;
+  daysToSell: number;
+  sellSpeed: SellSpeed;
+  platformRanking: PlatformRankEntry[];
 }
 
 const VERDICT_SYSTEM = `You are an expert reseller specializing in Facebook Marketplace flipping. Given an item name and purchase cost, estimate its realistic resale value on Facebook Marketplace sold locally (no shipping, no fees).
@@ -45,7 +55,11 @@ Respond ONLY with valid JSON, no markdown, no backticks, no explanation outside 
 
 BUY = profit above 15 dollars or ROI above 100 percent.
 MAYBE = profit 5 to 15 dollars.
-PASS = profit below 5 dollars or item is unlikely to sell locally.`;
+PASS = profit below 5 dollars or item is unlikely to sell locally.
+
+Also estimate how long this item will typically take to sell on the recommended platform. Return two additional fields: 'daysToSell' (number, your best estimate of median days from listing to sale — a popular children's book lot on FB Marketplace might be 2-4 days, a mid-range KitchenAid mixer on FB local might be 5-10 days, a niche vintage collectible on eBay might be 45-90 days, commodity electronics on FB usually 1-3 days) and 'sellSpeed' (string, one of 'FAST' if under 7 days, 'MODERATE' if 7-30 days, 'SLOW' if over 30 days). Be conservative and realistic.
+
+Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.`;
 
 interface RawVerdictJson {
   verdict?: string;
@@ -55,6 +69,42 @@ interface RawVerdictJson {
   fee?: number;
   reasoning?: string;
   confidence?: string;
+  daysToSell?: number;
+  sellSpeed?: string;
+  platformRanking?: unknown;
+}
+
+// Coerce a sellSpeed string to the strict union, defaulting to MODERATE.
+// MODERATE is the safe fallback because most resale items take 7-30 days
+// — coloring an unknown speed as FAST/SLOW would mislead the user.
+function normalizeSellSpeed(raw: unknown): SellSpeed {
+  if (raw === "FAST" || raw === "MODERATE" || raw === "SLOW") return raw;
+  if (typeof raw === "string") {
+    const s = raw.toUpperCase();
+    if (s === "FAST" || s === "MODERATE" || s === "SLOW") return s;
+  }
+  return "MODERATE";
+}
+
+// Walks Claude's platformRanking array and shapes each entry into a
+// PlatformRankEntry. Rejects entries without a platform string so the
+// UI never renders an empty row. Caps at 3 entries — the prompt asks
+// for top-3 but the model occasionally over-runs.
+function normalizePlatformRanking(raw: unknown): PlatformRankEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((it) => {
+      const obj = (it ?? {}) as Record<string, unknown>;
+      const platform = String(obj.platform ?? "").trim();
+      if (!platform) return null;
+      return {
+        platform,
+        estimatedNetProfit: Number(obj.estimatedNetProfit ?? 0),
+        reasoning: String(obj.reasoning ?? ""),
+      };
+    })
+    .filter((e): e is PlatformRankEntry => e !== null)
+    .slice(0, 3);
 }
 
 function extractText(message: Anthropic.Messages.Message): string {
@@ -113,6 +163,11 @@ Return the verdict JSON.`;
     fee: 0,
     reasoning: String(raw.reasoning ?? ""),
     confidence,
+    daysToSell: Number.isFinite(Number(raw.daysToSell))
+      ? Number(raw.daysToSell)
+      : 14,
+    sellSpeed: normalizeSellSpeed(raw.sellSpeed),
+    platformRanking: normalizePlatformRanking(raw.platformRanking),
   };
 }
 
@@ -312,7 +367,13 @@ Return ONLY valid JSON — no markdown, no backticks, no explanation text. Retur
 
 Rank the array by profit descending. Limit your response to the 10 most profitable items only — never more — so the JSON fits in the response budget without truncation.
 
-Be conservative and realistic with pricing estimates. For thrift store cost, use typical Goodwill/Salvation Army prices in the Southeast US (books $1-3, clothing $3-8, housewares $3-10, furniture $15-50). For Facebook Marketplace resale, estimate what items ACTUALLY sell for locally, not aspirational listing prices. For eBay, estimate based on SOLD listings, not current listings. Account for the fact that most items at thrift stores are NOT worth reselling — be honest about PASS verdicts. Only mark BUY if you are genuinely confident someone could profit $15+ after the time investment of listing and selling.`;
+Be conservative and realistic with pricing estimates. For thrift store cost, use typical Goodwill/Salvation Army prices in the Southeast US (books $1-3, clothing $3-8, housewares $3-10, furniture $15-50). For Facebook Marketplace resale, estimate what items ACTUALLY sell for locally, not aspirational listing prices. For eBay, estimate based on SOLD listings, not current listings. Account for the fact that most items at thrift stores are NOT worth reselling — be honest about PASS verdicts. Only mark BUY if you are genuinely confident someone could profit $15+ after the time investment of listing and selling.
+
+For each item, also estimate 'daysToSell' (number, median days from listing to sale on the best platform) and 'sellSpeed' (string: 'FAST' under 7 days, 'MODERATE' 7-30 days, 'SLOW' over 30 days). Be realistic about sell-through times.
+
+Adjust your verdict for sell speed: items that take 30+ days to sell need at least $25 profit to be a BUY (not $15). Items that sell in under 7 days can be BUY at $10+ profit since the capital turns over fast.
+
+Also return a field 'platformRanking' as an array of the top 3 selling platforms, each with: platform (string — one of 'Facebook Local', 'Facebook Shipped', 'eBay', 'Poshmark', 'Mercari'), estimatedNetProfit (number, after platform fees: FB Local 0%, FB Shipped 10%, eBay 13.25%+$0.30, Poshmark 20% or $2.95 flat under $15, Mercari 10%), reasoning (string, one sentence). Rank by estimatedNetProfit descending. Consider item type: furniture/heavy items best on FB Local, clothing/shoes on Poshmark, collectibles/niche on eBay, general merchandise on Mercari.`;
 
 export type ShelfScanPlatform = "FB Local" | "FB Shipped" | "eBay";
 
@@ -327,6 +388,9 @@ export interface ShelfScanItem {
   verdict: Verdict;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   description: string;
+  daysToSell: number;
+  sellSpeed: SellSpeed;
+  platformRanking: PlatformRankEntry[];
 }
 
 export interface ShelfScanResult {
@@ -499,6 +563,11 @@ export async function shelfScan(imageBase64: string): Promise<ShelfScanResult> {
         verdict,
         confidence: normalizeShelfConfidence(obj.confidence),
         description: String(obj.description ?? ""),
+        daysToSell: Number.isFinite(Number(obj.daysToSell))
+          ? Number(obj.daysToSell)
+          : 14,
+        sellSpeed: normalizeSellSpeed(obj.sellSpeed),
+        platformRanking: normalizePlatformRanking(obj.platformRanking),
       };
     }),
   };

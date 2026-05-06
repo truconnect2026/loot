@@ -332,6 +332,138 @@ function ListingCta({ data }: ListingCtaProps) {
   );
 }
 
+// Platform-name → brand color for the leading dot on each WHERE TO
+// SELL row. Falls back to plum if Claude returns a platform we don't
+// have a brand color for (e.g. local OfferUp variants).
+function brandDot(platform: string): string {
+  const p = platform.toLowerCase();
+  if (p.includes("facebook") || p.includes("fb")) return "#1877F2";
+  if (p.includes("ebay")) return "#E53238";
+  if (p.includes("poshmark")) return "#C83271";
+  if (p.includes("mercari")) return "#4DC0E8";
+  return "#5A4E70";
+}
+
+function PlatformRanking({
+  entries,
+}: {
+  entries: Array<{
+    platform: string;
+    estimatedNetProfit: number;
+    reasoning: string;
+  }>;
+}) {
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div
+        style={{
+          fontFamily: "var(--font-label)",
+          fontSize: 9,
+          color: "#5A4E70",
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          marginBottom: 8,
+        }}
+      >
+        WHERE TO SELL
+      </div>
+      {entries.map((e, idx) => {
+        const isBest = idx === 0;
+        const dotColor = brandDot(e.platform);
+        return (
+          <div
+            key={`${e.platform}-${idx}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              minHeight: 44,
+              padding: "8px 12px",
+              borderRadius: 10,
+              marginBottom: 6,
+              backgroundColor: isBest
+                ? "rgba(92,224,184,0.06)"
+                : "rgba(255,255,255,0.02)",
+              border: isBest
+                ? "1px solid rgba(92,224,184,0.10)"
+                : "1px solid rgba(255,255,255,0.04)",
+              gap: 10,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                backgroundColor: dotColor,
+                flexShrink: 0,
+              }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontFamily: "var(--font-body)",
+                  fontSize: 13,
+                  color: "#C8C0D8",
+                  lineHeight: 1.2,
+                }}
+              >
+                {e.platform}
+                {isBest && (
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontSize: 7,
+                      fontWeight: 700,
+                      letterSpacing: "0.10em",
+                      color: "#5CE0B8",
+                      backgroundColor: "rgba(92,224,184,0.10)",
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    BEST
+                  </span>
+                )}
+              </div>
+              {e.reasoning && (
+                <div
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 10,
+                    color: "#5A4E70",
+                    marginTop: 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {e.reasoning}
+                </div>
+              )}
+            </div>
+            <span
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 13,
+                fontWeight: 700,
+                color: isBest ? "#5CE0B8" : "#C8C0D8",
+                fontFeatureSettings: '"tnum"',
+                flexShrink: 0,
+              }}
+            >
+              {fmt(e.estimatedNetProfit)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps) {
   if (!data) return null;
 
@@ -485,7 +617,11 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
           </div>
         </div>
 
-        {/* 2×2 detail grid */}
+        {/* Detail grid — 5 cells. ROI/PLATFORM share row 1, SELLS IN
+            spans row 2 as a hero cell, FEE/CONFIDENCE share row 3.
+            SELLS IN gets the wide treatment because median days-to-sell
+            is the new headline metric the user is most likely scanning
+            for after the verdict. */}
         <div
           style={{
             display: "grid",
@@ -522,6 +658,46 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
               {data.platform}
             </div>
           </div>
+          {/* SELLS IN — verdict-colored ~Xd hero number. Mint = FAST,
+              camel = MODERATE, red = SLOW so the user can scan the cell
+              against the BUY/PASS verdict above and immediately see
+              whether profitability is also fast-turn. */}
+          <div style={{ ...smallRecessedCell, gridColumn: "1 / -1" }}>
+            <div style={cellLabel}>SELLS IN</div>
+            <div
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 16,
+                fontWeight: 700,
+                color:
+                  data.sellSpeed === "FAST"
+                    ? "#5CE0B8"
+                    : data.sellSpeed === "SLOW"
+                      ? "#E8636B"
+                      : "#D4A574",
+                fontFeatureSettings: '"tnum"',
+              }}
+            >
+              ~{data.daysToSell}d
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 8,
+                fontWeight: 700,
+                letterSpacing: "0.10em",
+                marginTop: 2,
+                color:
+                  data.sellSpeed === "FAST"
+                    ? "rgba(92,224,184,0.6)"
+                    : data.sellSpeed === "SLOW"
+                      ? "rgba(232,99,107,0.6)"
+                      : "rgba(212,165,116,0.6)",
+              }}
+            >
+              {data.sellSpeed}
+            </div>
+          </div>
           <div style={smallRecessedCell}>
             <div style={cellLabel}>FEE</div>
             <div
@@ -554,6 +730,15 @@ export default function VerdictSheet({ open, onClose, data }: VerdictSheetProps)
             </div>
           </div>
         </div>
+
+        {/* WHERE TO SELL — top-3 platform ranking from Claude. The
+            best row gets a mint-tinted surface + "BEST" tag so the
+            highest-net option reads at a glance; the other two sit on
+            a quiet white-tinted base. Skipped entirely when Claude
+            omits platformRanking (older verdicts cached pre-feature). */}
+        {data.platformRanking && data.platformRanking.length > 0 && (
+          <PlatformRanking entries={data.platformRanking} />
+        )}
 
         {/* Platform pills — display-only for now; tapping will recompute fees later */}
         <div

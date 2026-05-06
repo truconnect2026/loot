@@ -2,7 +2,12 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { lookupUpc } from "@/lib/upc";
-import { getVerdict, identifyFromImage } from "@/lib/claude";
+import {
+  getVerdict,
+  identifyFromImage,
+  type PlatformRankEntry,
+  type SellSpeed,
+} from "@/lib/claude";
 import { FREE_DAILY_LIMIT } from "@/lib/limits";
 
 interface ScanRequestBody {
@@ -26,6 +31,9 @@ export interface ScanResponse {
   roi: number;
   reasoning: string;
   imageUrl: string | null;
+  daysToSell: number;
+  sellSpeed: SellSpeed;
+  platformRanking: PlatformRankEntry[];
 }
 
 interface ScanError {
@@ -197,6 +205,9 @@ export async function POST(
       roi,
       reasoning: verdict.reasoning,
       imageUrl,
+      daysToSell: verdict.daysToSell,
+      sellSpeed: verdict.sellSpeed,
+      platformRanking: verdict.platformRanking,
     };
 
     return NextResponse.json(response);

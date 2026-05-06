@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
 import type {
   ShelfScanItem,
@@ -100,6 +100,56 @@ function platformColor(p: ShelfScanPlatform): string {
       return "#E53238";
   }
 }
+
+// Brand color for any platform string (used by the Best summary line
+// in expanded cards, where Claude returns free-form platform names
+// that may include Poshmark / Mercari beyond the ShelfScanPlatform
+// enum). Falls back to plum when unrecognized.
+function platformColorByName(name: string): string {
+  const p = name.toLowerCase();
+  if (p.includes("facebook") || p.includes("fb")) return "#1877F2";
+  if (p.includes("ebay")) return "#E53238";
+  if (p.includes("poshmark")) return "#C83271";
+  if (p.includes("mercari")) return "#4DC0E8";
+  return "#5A4E70";
+}
+
+const SELL_SPEED_TINT: Record<
+  "FAST" | "MODERATE" | "SLOW",
+  { bg: string; border: string; text: string; label: string }
+> = {
+  FAST: {
+    bg: "rgba(92,224,184,0.1)",
+    border: "rgba(92,224,184,0.2)",
+    text: "#5CE0B8",
+    label: "FAST",
+  },
+  MODERATE: {
+    bg: "rgba(212,165,116,0.1)",
+    border: "rgba(212,165,116,0.2)",
+    text: "#D4A574",
+    label: "MOD",
+  },
+  SLOW: {
+    bg: "rgba(232,99,107,0.1)",
+    border: "rgba(232,99,107,0.2)",
+    text: "#E8636B",
+    label: "SLOW",
+  },
+};
+
+// Verdict ordering so the sort comparator can map BUY/MAYBE/PASS to
+// 0/1/2 without per-call ternaries. Same idea for sellSpeed below.
+const VERDICT_ORDER: Record<"BUY" | "MAYBE" | "PASS", number> = {
+  BUY: 0,
+  MAYBE: 1,
+  PASS: 2,
+};
+const SPEED_ORDER: Record<"FAST" | "MODERATE" | "SLOW", number> = {
+  FAST: 0,
+  MODERATE: 1,
+  SLOW: 2,
+};
 
 function fmtMoney(n: number): string {
   if (!Number.isFinite(n)) return "—";
@@ -621,19 +671,37 @@ function ResultsView({
   batchProgress,
   onNewScan,
 }: ResultsViewProps) {
+  // Sort: verdict BUY > MAYBE > PASS, then sellSpeed FAST > MOD > SLOW,
+  // then profit desc. memoized on the input array so re-renders during
+  // expand/filter changes don't redo the comparator pass. Sorted view
+  // is the source of truth for both counts and rendering — counts on
+  // the unsorted array would be identical, but using the sorted array
+  // keeps every downstream index reference consistent.
+  const sortedItems = useMemo(() => {
+    return [...result.items].sort((a, b) => {
+      const va = VERDICT_ORDER[a.verdict];
+      const vb = VERDICT_ORDER[b.verdict];
+      if (va !== vb) return va - vb;
+      const sa = SPEED_ORDER[a.sellSpeed];
+      const sb = SPEED_ORDER[b.sellSpeed];
+      if (sa !== sb) return sa - sb;
+      return b.profit - a.profit;
+    });
+  }, [result.items]);
+
   const counts = {
-    ALL: result.items.length,
-    BUY: result.items.filter((i) => i.verdict === "BUY").length,
-    MAYBE: result.items.filter((i) => i.verdict === "MAYBE").length,
-    PASS: result.items.filter((i) => i.verdict === "PASS").length,
+    ALL: sortedItems.length,
+    BUY: sortedItems.filter((i) => i.verdict === "BUY").length,
+    MAYBE: sortedItems.filter((i) => i.verdict === "MAYBE").length,
+    PASS: sortedItems.filter((i) => i.verdict === "PASS").length,
   };
 
   const visible =
     filter === "ALL"
-      ? result.items
-      : result.items.filter((i) => i.verdict === filter);
+      ? sortedItems
+      : sortedItems.filter((i) => i.verdict === filter);
 
-  const buyTotal = result.items
+  const buyTotal = sortedItems
     .filter((i) => i.verdict === "BUY")
     .reduce((s, i) => s + i.profit, 0);
 
@@ -1052,6 +1120,7 @@ function ItemCard({
           value={fmtMoney(item.profit)}
           color={profitColor}
           emphasized={isBuy}
+          dotColor={SELL_SPEED_TINT[item.sellSpeed].text}
         />
       </div>
       )}
@@ -1132,7 +1201,7 @@ function ItemCard({
               />
             </div>
 
-            {/* Confidence + listing CTA row */}
+            {/* Confidence + sell-speed pill + listing CTA row */}
             <div
               style={{
                 display: "flex",
@@ -1141,7 +1210,17 @@ function ItemCard({
                 gap: 8,
               }}
             >
-              <ConfidenceBadge level={item.confidence} />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <ConfidenceBadge level={item.confidence} />
+                <SellSpeedPill speed={item.sellSpeed} days={item.daysToSell} />
+              </div>
               {!listing && item.verdict !== "PASS" && (
                 <button
                   type="button"
@@ -1168,6 +1247,54 @@ function ItemCard({
               )}
             </div>
 
+            {/* Best platform + net summary — single compact line so
+                expanded cards don't grow another full ranking block.
+                Skipped when Claude omits the platformRanking (older
+                cached scans pre-feature). */}
+            {item.platformRanking && item.platformRanking.length > 0 && (
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11,
+                  color: "#C8C0D8",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    backgroundColor: platformColorByName(
+                      item.platformRanking[0].platform,
+                    ),
+                    flexShrink: 0,
+                  }}
+                />
+                <span>
+                  Best:{" "}
+                  <span style={{ color: "#5CE0B8", fontWeight: 600 }}>
+                    {item.platformRanking[0].platform}
+                  </span>
+                  {" · net "}
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontWeight: 700,
+                      color: "#5CE0B8",
+                      fontFeatureSettings: '"tnum"',
+                    }}
+                  >
+                    {fmtMoney(item.platformRanking[0].estimatedNetProfit)}
+                  </span>
+                </span>
+              </div>
+            )}
+
             {/* Per-item listing panel — copy-clipboard, no fancy
                 accordion. Mirrors the VerdictSheet listing panel. */}
             {listing && (
@@ -1186,6 +1313,7 @@ function StatCell({
   color,
   subLabel,
   emphasized,
+  dotColor,
 }: {
   label: string;
   value: string;
@@ -1197,6 +1325,10 @@ function StatCell({
    * cards so the profit number screams visually heavier than COST
    * and SELL beside it. */
   emphasized?: boolean;
+  /** Optional 6px dot rendered to the right of the value — used by
+   * the PROFIT cell on collapsed cards to encode sellSpeed peripherally
+   * (mint/camel/red) without taking up label real estate. */
+  dotColor?: string;
 }) {
   return (
     <div
@@ -1227,9 +1359,26 @@ function StatCell({
           color,
           fontFeatureSettings: '"tnum"',
           marginTop: 2,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         {value}
+        {dotColor && (
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              backgroundColor: dotColor,
+              marginLeft: 4,
+              flexShrink: 0,
+            }}
+          />
+        )}
       </div>
       {subLabel && (
         <div
@@ -1322,6 +1471,41 @@ function PlatformCell({
         {fmtMoney(value)}
       </div>
     </div>
+  );
+}
+
+// Sell-speed pill — sits next to the CONFIDENCE badge in the expanded
+// card. Three colors mirror the verdict accent system: mint (FAST),
+// camel (MODERATE), red (SLOW). Days appear inline so the pill reads
+// "FAST ~3d" / "MOD ~12d" / "SLOW ~45d" at a glance.
+function SellSpeedPill({
+  speed,
+  days,
+}: {
+  speed: "FAST" | "MODERATE" | "SLOW";
+  days: number;
+}) {
+  const tint = SELL_SPEED_TINT[speed];
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "3px 8px",
+        borderRadius: 6,
+        backgroundColor: tint.bg,
+        border: `1px solid ${tint.border}`,
+        color: tint.text,
+        fontFamily: "var(--font-jetbrains-mono)",
+        fontSize: 8,
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+        flexShrink: 0,
+      }}
+    >
+      {tint.label} ~{days}d
+    </span>
   );
 }
 
