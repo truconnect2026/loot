@@ -297,7 +297,11 @@ function PriceOption({
             top: -9,
             right: 14,
             backgroundColor: "#1A1230",
-            padding: "1px 8px",
+            // Thin horizontal-only padding — just enough background
+            // bleed to mask the gradient border behind the badge,
+            // without painting a visible vertical box around the
+            // pill. Earlier "1px 8px" left a faint container outline.
+            padding: "0px 4px",
             lineHeight: 1,
           }}
         >
