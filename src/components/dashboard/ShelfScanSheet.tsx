@@ -8,6 +8,7 @@ import type {
   ShelfScanPlatform,
 } from "@/lib/claude";
 import type { ListingResponse } from "@/app/api/listing/route";
+import { formatErrorMessage } from "@/lib/formatError";
 
 /**
  * Shelf Scanner sheet — one photo in, ranked items out.
@@ -539,13 +540,44 @@ export default function ShelfScanSheet({
             role="alert"
             style={{
               marginTop: 16,
-              fontFamily: "var(--font-body)",
-              fontSize: 12,
-              color: "rgba(232,99,107,0.85)",
-              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 16,
             }}
           >
-            {errorMsg}
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 14,
+                color: "#D4A574",
+                textAlign: "center",
+              }}
+            >
+              {formatErrorMessage(errorMsg)}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("idle");
+                setErrorMsg(null);
+              }}
+              style={{
+                padding: "10px 20px",
+                borderRadius: 8,
+                backgroundColor: "rgba(92,224,184,0.08)",
+                border: "1px solid rgba(92,224,184,0.15)",
+                color: "#5CE0B8",
+                fontFamily: "var(--font-jetbrains-mono)",
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              try again
+            </button>
           </div>
         )}
 

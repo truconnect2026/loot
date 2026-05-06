@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
+import { formatErrorMessage } from "@/lib/formatError";
 
 /**
  * Flip Coach — Claude-backed chat advisor for resellers. Lives in an
@@ -201,8 +202,8 @@ export default function FlipCoachSheet({
         role: "assistant",
         content:
           err instanceof Error
-            ? `Sorry — ${err.message}`
-            : "Sorry, something went wrong. Try again?",
+            ? formatErrorMessage(err.message)
+            : "something went wrong — try again",
       };
       setMessages((prev) => [...prev, errMsg]);
     } finally {

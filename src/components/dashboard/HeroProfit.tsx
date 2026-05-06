@@ -33,9 +33,9 @@ const PERIODS: Period[] = ["today", "week", "month", "all"];
 // underneath as a secondary line.
 const PERIOD_COPY: Record<Period, { pill: string; header: string }> = {
   today: { pill: "Today", header: "FOUND TODAY" },
-  week: { pill: "Week", header: "FOUND THIS WEEK" },
-  month: { pill: "Month", header: "FOUND THIS MONTH" },
-  all: { pill: "All", header: "FOUND ALL TIME" },
+  week: { pill: "Week", header: "THIS WEEK" },
+  month: { pill: "Month", header: "THIS MONTH" },
+  all: { pill: "All", header: "ALL TIME" },
 };
 
 interface PillProps {
@@ -327,7 +327,11 @@ export default function HeroProfit({
             letterSpacing: "0.12em",
           }}
         >
-          {isEmpty ? "PROFIT" : PERIOD_COPY[period].header}
+          {/* Empty state shows the same "FOUND TODAY" header as a
+              fresh user with their first scan — keeps the label
+              consistent with the default selected period rather
+              than swapping in a generic "PROFIT" word. */}
+          {isEmpty ? "FOUND TODAY" : PERIOD_COPY[period].header}
         </div>
         {showPills && (
           <div style={{ display: "flex", gap: 4 }}>

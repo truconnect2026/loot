@@ -6,6 +6,7 @@ import type {
   ConditionGrade,
   ConditionGradeResult,
 } from "@/lib/claude";
+import { formatErrorMessage } from "@/lib/formatError";
 
 /**
  * Condition Grade sheet — Pro-only multi-image AI grading. Capture
@@ -210,12 +211,12 @@ export default function ConditionGradeSheet({
             style={{
               marginTop: 12,
               fontFamily: "var(--font-body)",
-              fontSize: 12,
-              color: "rgba(232,99,107,0.85)",
+              fontSize: 14,
+              color: "#D4A574",
               textAlign: "center",
             }}
           >
-            {errorMsg}
+            {formatErrorMessage(errorMsg)}
           </div>
         )}
 

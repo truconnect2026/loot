@@ -4,6 +4,7 @@ import { useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { ListingResponse } from "@/app/api/listing/route";
+import { formatErrorMessage } from "@/lib/formatError";
 
 // VerdictData = API ScanResponse + the client-captured thumbnail.
 // The thumbnail is grabbed in ScanOverlay (UPC: at decode time;
@@ -347,7 +348,7 @@ function ListingCta({ data }: ListingCtaProps) {
             color: "var(--accent-red)",
           }}
         >
-          {error}
+          {formatErrorMessage(error)}
         </span>
       )}
     </button>

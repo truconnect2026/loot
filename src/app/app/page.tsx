@@ -1484,7 +1484,7 @@ export default function DashboardPage() {
                   >
                     {exhausted
                       ? "upgrade for unlimited"
-                      : `${scanCount.used}/${scanCount.limit} free scans`}
+                      : `${scanCount.remaining}/${scanCount.limit} free scans`}
                   </button>
                 </div>
               );

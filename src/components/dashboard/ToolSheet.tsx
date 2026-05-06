@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
+import { formatErrorMessage } from "@/lib/formatError";
 
 /**
  * Unified bottom sheet for the More-Tools tile suite. Each tool maps
@@ -301,12 +302,12 @@ export default function ToolSheet({
             style={{
               marginTop: 16,
               fontFamily: "var(--font-body)",
-              fontSize: 12,
-              color: "rgba(232,99,107,0.85)",
+              fontSize: 14,
+              color: "#D4A574",
               textAlign: "center",
             }}
           >
-            {errorMsg}
+            {formatErrorMessage(errorMsg)}
           </div>
         )}
 
