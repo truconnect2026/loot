@@ -171,7 +171,7 @@ export default function UpgradeCard({
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <PriceOption
               label="MONTHLY"
-              price="$9.99"
+              price="$14.99"
               period="/mo"
               note="cancel anytime"
               disabled={!monthlyPriceId}
@@ -181,21 +181,37 @@ export default function UpgradeCard({
             />
             <PriceOption
               label="ANNUAL"
-              price="$89.99"
+              price="$99.99"
               period="/yr"
               note={
                 <>
                   save{" "}
                   <span style={{ color: "#D4A574", fontWeight: 600 }}>
-                    $30
+                    $80
                   </span>{" "}
-                  — 2 months free
+                  — 5 months free
                 </>
               }
               disabled={!annualPriceId}
               onTap={() => onSubscribe(annualPriceId)}
               primary={false}
             />
+          </div>
+          {/* Feature list — sits beneath the price tiles. The four
+              checkmarks read as the value bundle the user gets for
+              the price above; mono checks + Outfit body keeps the row
+              quiet but legible. */}
+          <div
+            style={{
+              marginTop: 12,
+              fontFamily: "var(--font-body)",
+              fontSize: 11,
+              color: "#5A4E70",
+              textAlign: "center",
+              lineHeight: 1.8,
+            }}
+          >
+            ✓ unlimited scans &nbsp;✓ condition grading &nbsp;✓ flip coach &nbsp;✓ batch listings
           </div>
         </div>
       </div>

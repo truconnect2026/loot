@@ -721,7 +721,7 @@ export default function AccountPage() {
               email={profile.email}
               initials={profile.initials}
               isPro={true}
-              price={profile.planType === "annual" ? "$89.99" : "$9.99"}
+              price={profile.planType === "annual" ? "$99.99" : "$14.99"}
               period={profile.planType === "annual" ? "/yr" : "/mo"}
               renewsDate={formatRenewsDate(profile.subscriptionRenewsAt)}
               scansLabel="unlimited"

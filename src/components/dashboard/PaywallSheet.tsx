@@ -68,23 +68,14 @@ export default function PaywallSheet({
             marginBottom: 18,
           }}
         >
-          PRO members average{" "}
-          <span
-            style={{
-              color: "var(--money)",
-              fontWeight: 700,
-              fontFeatureSettings: '"tnum"',
-            }}
-          >
-            $1,200/mo
-          </span>{" "}
-          in flips found — unlock unlimited scans + unlocked feeds.
+          Pro members scan unlimited and get AI condition grading,
+          flip coaching, and batch listing generation.
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <PlanButton
             label="MONTHLY"
-            price="$9.99"
+            price="$14.99"
             period="/mo"
             note="cancel anytime"
             disabled={!monthlyPriceId}
@@ -93,9 +84,9 @@ export default function PaywallSheet({
           />
           <PlanButton
             label="ANNUAL"
-            price="$89.99"
+            price="$99.99"
             period="/yr"
-            note="save $30 — 2 months free"
+            note="save $80 — 5 months free"
             disabled={!annualPriceId}
             primary={false}
             onTap={() => onSubscribe(annualPriceId)}

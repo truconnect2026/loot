@@ -16,8 +16,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LOOT",
-  description: "Scan. Identify. Profit.",
+  title: "Loot — AI Thrift Store Scanner",
+  description:
+    "Scan thrift store items, get instant profit estimates, condition grading, and listing generation. The AI-powered reselling toolkit.",
   icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
 };
 
