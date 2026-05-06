@@ -18,7 +18,9 @@ import type { Deal } from "@/components/dashboard/DealCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
-import SourcingCards from "@/components/dashboard/SourcingCards";
+import SourcingCarousel, {
+  type SourcingFeed,
+} from "@/components/dashboard/SourcingCarousel";
 import ToolSheet, {
   type ToolKind,
   type ToolSheetTool,
@@ -27,6 +29,9 @@ import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import PennyDropsSheet from "@/components/dashboard/PennyDropsSheet";
 import YardSalesSheet from "@/components/dashboard/YardSalesSheet";
+import GoodwillColorSheet from "@/components/dashboard/GoodwillColorSheet";
+import TargetMarkdownsSheet from "@/components/dashboard/TargetMarkdownsSheet";
+import ComingSoonSheet from "@/components/dashboard/ComingSoonSheet";
 import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
 import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
@@ -488,8 +493,8 @@ export default function DashboardPage() {
   const [nearbyDeals, setNearbyDeals] = useState<Deal[]>([]);
   const [freeDeals, setFreeDeals] = useState<Deal[]>([]);
   const [feedsLoading, setFeedsLoading] = useState(true);
-  // Penny count for SourcingCards. Derived from /api/feeds/pennies on
-  // mount; SourcingCards reads the literal number for its callout.
+  // Penny count for SourcingCarousel. Derived from /api/feeds/pennies
+  // on mount; the carousel reads the literal number for its callout.
   const [pennyCount, setPennyCount] = useState(0);
 
   // Subscription / scan-count state — drives the X/N counter under
@@ -921,8 +926,40 @@ export default function DashboardPage() {
   const [shelfOpen, setShelfOpen] = useState(false);
   const [pennyOpen, setPennyOpen] = useState(false);
   const [yardOpen, setYardOpen] = useState(false);
+  const [goodwillOpen, setGoodwillOpen] = useState(false);
+  const [targetOpen, setTargetOpen] = useState(false);
+  // The coming-soon variants share a single sheet component; storing
+  // which feed triggered it lets the sheet swap title/description
+  // without us mounting one component per placeholder.
+  const [comingSoonFeed, setComingSoonFeed] = useState<
+    null | "restock-days" | "estate-sales" | "bolo-alerts" | "seasonal-flips"
+  >(null);
   const [conditionOpen, setConditionOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
+
+  const handleSourcingTap = useCallback((feed: SourcingFeed) => {
+    haptic();
+    switch (feed) {
+      case "penny":
+        setPennyOpen(true);
+        return;
+      case "goodwill-colors":
+        setGoodwillOpen(true);
+        return;
+      case "target-markdowns":
+        setTargetOpen(true);
+        return;
+      case "yard-sales":
+        setYardOpen(true);
+        return;
+      case "restock-days":
+      case "estate-sales":
+      case "bolo-alerts":
+      case "seasonal-flips":
+        setComingSoonFeed(feed);
+        return;
+    }
+  }, []);
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
@@ -1379,7 +1416,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* 8. Sourcing intel — uses the polished SourcingCards component.
+        {/* 8. Sourcing intel — horizontal carousel of intel feeds.
             Section break from the deals carousels above. */}
         <div
           style={{
@@ -1393,11 +1430,9 @@ export default function DashboardPage() {
             <SectionIcon kind="sourcing" />
             SOURCING
           </div>
-          <SourcingCards
+          <SourcingCarousel
             pennyItemCount={pennyCount}
-            yardSaleTodayCount={0}
-            onPennyTap={() => setPennyOpen(true)}
-            onYardSaleTap={() => setYardOpen(true)}
+            onTap={handleSourcingTap}
           />
         </div>
 
@@ -1612,6 +1647,114 @@ export default function DashboardPage() {
       <YardSalesSheet
         open={yardOpen}
         onClose={() => setYardOpen(false)}
+      />
+
+      <GoodwillColorSheet
+        open={goodwillOpen}
+        onClose={() => setGoodwillOpen(false)}
+      />
+
+      <TargetMarkdownsSheet
+        open={targetOpen}
+        onClose={() => setTargetOpen(false)}
+      />
+
+      {/* Coming-soon variants share one sheet component; the active
+          feed key drives the title + description swap. Mounting a
+          single sheet keeps state simple and animations consistent. */}
+      <ComingSoonSheet
+        open={comingSoonFeed === "restock-days"}
+        onClose={() => setComingSoonFeed(null)}
+        accent="#5CE0B8"
+        title="restock day tracking"
+        description="we're mapping when your local thrift stores put out new inventory so you can be first to the racks"
+        icon={
+          <svg
+            width={36}
+            height={36}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+          </svg>
+        }
+      />
+
+      <ComingSoonSheet
+        open={comingSoonFeed === "estate-sales"}
+        onClose={() => setComingSoonFeed(null)}
+        accent="#D4A574"
+        title="estate sale finder"
+        description="AI-ranked estate sales near you with preview photo analysis — see what's worth driving to before you go"
+        icon={
+          <svg
+            width={36}
+            height={36}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        }
+      />
+
+      <ComingSoonSheet
+        open={comingSoonFeed === "bolo-alerts"}
+        onClose={() => setComingSoonFeed(null)}
+        accent="#E8636B"
+        title="BOLO alerts"
+        description="community-powered trending items — get notified when something starts spiking in value before everyone else catches on"
+        icon={
+          <svg
+            width={36}
+            height={36}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" />
+          </svg>
+        }
+      />
+
+      <ComingSoonSheet
+        open={comingSoonFeed === "seasonal-flips"}
+        onClose={() => setComingSoonFeed(null)}
+        accent="#D4A574"
+        title="seasonal flip calendar"
+        description="know what to buy NOW to sell later — Christmas decor in January, AC units in October, winter coats in March"
+        icon={
+          <svg
+            width={36}
+            height={36}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x={3} y={4} width={18} height={18} rx={2} />
+            <line x1={16} y1={2} x2={16} y2={6} />
+            <line x1={8} y1={2} x2={8} y2={6} />
+            <line x1={3} y1={10} x2={21} y2={10} />
+          </svg>
+        }
       />
 
       <ConditionGradeSheet
