@@ -26,15 +26,37 @@ export function sourceTag(raw: string): string {
   return raw;
 }
 
-// Map a raw source string to an "open on …" CTA label. Lowercase
+// Map a raw source string to a "find on …" CTA label. Lowercase
 // per the voice rule; platform names are proper nouns and stay
-// capitalized.
+// capitalized. Wording shifted from "open on" to "find on" because
+// the CTA now opens a platform search for the deal title rather
+// than the (synthetic) original listing URL.
 export function sourceCtaLabel(raw: string): string {
   const s = raw.toLowerCase();
-  if (s.includes("marketplace") || s.includes("fb")) return "open on Facebook";
-  if (s.includes("craigslist")) return "open on Craigslist";
-  if (s.includes("nextdoor")) return "open on Nextdoor";
-  return "open listing";
+  if (s.includes("marketplace") || s.includes("fb")) return "find on Facebook";
+  if (s.includes("craigslist")) return "find on Craigslist";
+  if (s.includes("nextdoor")) return "browse Nextdoor";
+  return "find listing";
+}
+
+// Build the platform-specific search URL the deal CTA should open.
+// Synthetic deals (Claude-generated) carry a `url` field that's not
+// a real listing, so the CTA falls back to the platform's own search
+// surface. Nextdoor doesn't expose a public search URL — link to
+// the homepage instead so the user can pivot manually.
+export function dealSearchUrl(deal: Deal): string {
+  const s = deal.source.toLowerCase();
+  const q = encodeURIComponent(deal.title);
+  if (s.includes("marketplace") || s.includes("fb")) {
+    return `https://www.facebook.com/marketplace/search/?query=${q}`;
+  }
+  if (s.includes("craigslist")) {
+    return `https://craigslist.org/search/?query=${q}`;
+  }
+  if (s.includes("nextdoor")) {
+    return "https://nextdoor.com";
+  }
+  return deal.url || "#";
 }
 
 export function dealProfit(deal: Deal): number {

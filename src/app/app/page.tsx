@@ -25,6 +25,8 @@ import ToolSheet, {
 } from "@/components/dashboard/ToolSheet";
 import ShelfScanSheet from "@/components/dashboard/ShelfScanSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
+import PennyDropsSheet from "@/components/dashboard/PennyDropsSheet";
+import YardSalesSheet from "@/components/dashboard/YardSalesSheet";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
 import type { VerdictPayload } from "@/components/dashboard/ScanOverlay";
@@ -882,6 +884,8 @@ export default function DashboardPage() {
   // (thumbnail, filter bar, expand-to-compare).
   const [activeTool, setActiveTool] = useState<ToolSheetTool | null>(null);
   const [shelfOpen, setShelfOpen] = useState(false);
+  const [pennyOpen, setPennyOpen] = useState(false);
+  const [yardOpen, setYardOpen] = useState(false);
 
   const handleToolTap = useCallback(
     (tool: Tool) => {
@@ -1346,8 +1350,8 @@ export default function DashboardPage() {
           <SourcingCards
             pennyItemCount={pennyCount}
             yardSaleTodayCount={0}
-            onPennyTap={() => console.log("penny drops tap")}
-            onYardSaleTap={() => console.log("yard sale tap")}
+            onPennyTap={() => setPennyOpen(true)}
+            onYardSaleTap={() => setYardOpen(true)}
           />
         </div>
 
@@ -1501,6 +1505,16 @@ export default function DashboardPage() {
         annualPriceId={process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""}
         onSubscribe={handleSubscribe}
         onClose={() => setPaywallOpen(false)}
+      />
+
+      <PennyDropsSheet
+        open={pennyOpen}
+        onClose={() => setPennyOpen(false)}
+      />
+
+      <YardSalesSheet
+        open={yardOpen}
+        onClose={() => setYardOpen(false)}
       />
     </>
   );

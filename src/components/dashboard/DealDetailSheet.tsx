@@ -6,6 +6,7 @@ import {
   sourceCtaLabel,
   sourceTag,
   dealProfit,
+  dealSearchUrl,
 } from "@/components/dashboard/DealCard";
 
 interface DealDetailSheetProps {
@@ -87,11 +88,13 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
   const dotColor = sourceDotColor(deal.source);
 
   function handlePrimary() {
-    if (deal.url) {
-      window.open(deal.url, "_blank", "noopener,noreferrer");
-    } else {
-      // Mock data has no real URL yet — log for now.
-      console.log(`open listing: ${deal.id}`);
+    // Open a platform-specific search for the deal title. Claude-
+    // generated feeds don't carry real listing URLs, so jumping the
+    // user to a marketplace search is the closest approximation —
+    // they land on the platform with a query already populated.
+    const target = dealSearchUrl(deal);
+    if (target && target !== "#") {
+      window.open(target, "_blank", "noopener,noreferrer");
     }
   }
 
