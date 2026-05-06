@@ -217,8 +217,14 @@ export default function FlipCoachSheet({
         style={{
           display: "flex",
           flexDirection: "column",
-          minHeight: "85vh",
-          maxHeight: "85vh",
+          // Fixed 78vh — sits within BottomSheet's 85vh panel cap
+          // even after subtracting ~30px for the drag handle and
+          // the sheet's own borders, so the input bar at the bottom
+          // of this container always renders inside the visible
+          // viewport instead of getting clipped under the keyboard
+          // safe-area on shorter devices. Flex children below
+          // (header / chat / input) flex against this fixed height.
+          height: "78vh",
         }}
       >
         {/* Header */}
@@ -251,15 +257,23 @@ export default function FlipCoachSheet({
           </div>
         </div>
 
-        {/* Chat scroll area */}
+        {/* Chat scroll area — flex: 1 with min-height: 0 so the
+            container can actually shrink below its content height
+            and scroll. Without min-height: 0, flexbox treats the
+            content as the floor and overflow:auto never engages.
+            justifyContent: flex-start keeps messages anchored at
+            the top so empty space falls naturally below them
+            within the scroll viewport, never above the input bar. */}
         <div
           ref={scrollRef}
           style={{
             flex: 1,
+            minHeight: 0,
             overflowY: "auto",
             padding: "12px 16px 16px",
             display: "flex",
             flexDirection: "column",
+            justifyContent: "flex-start",
             gap: 10,
           }}
           className="loot-carousel"

@@ -1356,7 +1356,7 @@ export default function DashboardPage() {
             todayScans={todayScans}
             unsoldOldItems={0}
             hotDealsCount={0}
-            userZip={null}
+            userZip={userZip}
             dayOfWeek={dayOfWeek}
             hour={hour}
           />
