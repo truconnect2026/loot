@@ -327,6 +327,10 @@ export default function SourcingCarousel({
             overflowX: "auto",
             paddingRight: 48,
             WebkitOverflowScrolling: "touch",
+            // Card-by-card snap so the carousel feels physical
+            // instead of free-scrolling. `start` alignment lands
+            // each tile flush against the left padding column.
+            scrollSnapType: "x mandatory",
           }}
         >
           {cards.map((c) => (
@@ -405,6 +409,7 @@ function SourcingCard({
         flexShrink: 0,
         width: 155,
         minHeight: 140,
+        scrollSnapAlign: "start",
         backgroundColor: "rgba(23, 18, 42, 0.6)",
         borderRadius: 14,
         padding: 14,

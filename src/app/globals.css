@@ -155,6 +155,10 @@ body {
   color: var(--text-primary);
   font-family: var(--font-outfit), sans-serif;
   font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Tabular figures everywhere — numbers must not shift width during AnimNum

@@ -376,9 +376,23 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
               fontFamily: "var(--font-body)",
               fontSize: 15,
               fontWeight: 700,
-              color: "#5CE0B8",
               lineHeight: 1,
               fontFeatureSettings: '"tnum"',
+              // High-value finds ($200+) get a mint gradient text
+              // treatment so the eye lands on the biggest wins
+              // before reading the dollar amount. Lower-value deals
+              // keep the flat mint — gradient on every card would
+              // dilute the cue.
+              ...(profit >= 200
+                ? {
+                    backgroundImage:
+                      "linear-gradient(135deg, #5CE0B8 0%, #8BFFD4 100%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    color: "transparent",
+                  }
+                : { color: "#5CE0B8" }),
             }}
           >
             ${deal.estimatedValue}
