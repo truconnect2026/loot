@@ -366,7 +366,11 @@ function FlipCoachFab({ onTap }: { onTap: () => void }) {
         position: "fixed",
         bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
         right: 16,
-        zIndex: 50,
+        // zIndex 30 sits BELOW the BottomSheet backdrop (zIndex 40)
+        // and panel (zIndex 41) — when any sheet opens, its dark
+        // overlay covers the FAB so the floating button doesn't
+        // bleed through on top of sheet content.
+        zIndex: 30,
         width: 52,
         height: 52,
         // Outer wrapper carries the float animation so the sonar

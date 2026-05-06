@@ -121,7 +121,12 @@ export default function ConditionGradeSheet({
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#D4A574">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#D4A574"
+      minHeight="60vh"
+    >
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{

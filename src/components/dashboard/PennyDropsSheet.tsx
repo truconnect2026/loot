@@ -159,7 +159,12 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
   }, 0);
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#D4A574">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#D4A574"
+      minHeight="55vh"
+    >
       <div style={{ padding: "16px 18px 28px" }}>
         {/* Header — tag glyph + PENNY DROPS, two-line subtitle */}
         <div

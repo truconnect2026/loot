@@ -20,6 +20,14 @@ interface BottomSheetProps {
    * opaque (number / string / boolean); only its identity matters.
    */
   scrollResetKey?: unknown;
+  /**
+   * Minimum visible height for the content wrapper. Defaults to
+   * `auto` (the sheet hugs its content). Sheets with sparse idle
+   * content — a header + a single input + lots of empty space —
+   * pass a viewport height (e.g. "45vh") so the body sits centered
+   * on screen instead of clinging to the bottom edge.
+   */
+  minHeight?: string;
 }
 
 export default function BottomSheet({
@@ -28,6 +36,7 @@ export default function BottomSheet({
   borderColor,
   children,
   scrollResetKey,
+  minHeight,
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -228,6 +237,7 @@ export default function BottomSheet({
           style={{
             position: "relative",
             zIndex: 1,
+            minHeight,
             animation: open
               ? "bsContentFade 200ms ease-out 150ms both"
               : "none",

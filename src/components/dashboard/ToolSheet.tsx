@@ -211,8 +211,19 @@ export default function ToolSheet({
     );
   }
 
+  // Idle/loading/error states are sparse (header + single input);
+  // the loaded result block adds plenty of content of its own.
+  // Using 45vh as the floor pushes the input states to the upper-
+  // middle of the screen instead of hugging the bottom edge.
+  const minHeight = status === "loaded" ? undefined : "45vh";
+
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#2D2845">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#2D2845"
+      minHeight={minHeight}
+    >
       <div style={{ padding: "20px 20px 32px" }}>
         <div
           style={{

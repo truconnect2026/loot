@@ -63,7 +63,12 @@ export default function TargetMarkdownsSheet({
   }, [open]);
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#E8636B">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#E8636B"
+      minHeight="55vh"
+    >
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{

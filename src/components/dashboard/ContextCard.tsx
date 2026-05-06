@@ -323,9 +323,15 @@ export default function ContextCard({
           onClick={handleDismiss}
           aria-label="Dismiss"
           style={{
+            // 44×44 invisible tap target meeting Apple's HIG minimum
+            // (and Material's 48dp). Negative margin pulls the
+            // expanded hitbox in so the visible icon still aligns
+            // with the previous 20×20 layout, but the tappable area
+            // covers the full corner of the card.
             flexShrink: 0,
-            width: 20,
-            height: 20,
+            minWidth: 44,
+            minHeight: 44,
+            margin: -12,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

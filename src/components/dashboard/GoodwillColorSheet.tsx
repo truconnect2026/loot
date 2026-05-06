@@ -56,7 +56,12 @@ export default function GoodwillColorSheet({
   }, [open]);
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#7B8FFF">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#7B8FFF"
+      minHeight="55vh"
+    >
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{
@@ -135,13 +140,16 @@ export default function GoodwillColorSheet({
                       letterSpacing: "0.08em",
                       padding: "4px 10px",
                       borderRadius: 6,
+                      // 75% off uses camel/gold so the deeper
+                      // discount visually pops over the standard
+                      // mint 50% off treatment.
                       backgroundColor: isSeventyFive
-                        ? "rgba(212,165,116,0.12)"
+                        ? "rgba(212,165,116,0.15)"
                         : "rgba(92,224,184,0.10)",
                       color: isSeventyFive ? "#D4A574" : "#5CE0B8",
                       border: isSeventyFive
-                        ? "1px solid rgba(212,165,116,0.24)"
-                        : "1px solid rgba(92,224,184,0.22)",
+                        ? "1px solid rgba(212,165,116,0.30)"
+                        : "1px solid rgba(92,224,184,0.20)",
                     }}
                   >
                     {c.discount}
