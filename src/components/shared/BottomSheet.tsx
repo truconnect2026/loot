@@ -117,26 +117,39 @@ export default function BottomSheet({
           from { transform: translateY(0); }
           to { transform: translateY(100%); }
         }
+        /* Sheet content fade-in — body fades in 150ms after the sheet
+           starts opening, so the slide-up reveal feels like a physical
+           panel arriving with its content. The header and drag handle
+           render immediately (outside this animation). */
+        @keyframes bsContentFade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
       `}</style>
 
-      {/* Backdrop — heavy blur + saturate so the mesh stays faintly visible */}
+      {/* Backdrop — radial vignette over the existing blur fill so the
+          corners darken more than the center, focusing the eye on the
+          rising sheet panel. */}
       <div
         style={{
           position: "fixed",
           inset: 0,
           zIndex: 40,
-          backgroundColor: "rgba(10, 8, 14, 0.85)",
+          background:
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%)",
           backdropFilter: "blur(20px) saturate(150%)",
           WebkitBackdropFilter: "blur(20px) saturate(150%)",
           animation: open
-            ? "bsBackdropIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
-            : "bsBackdropOut 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            ? "bsBackdropIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            : "bsBackdropOut 250ms ease-in forwards",
           pointerEvents: open ? "auto" : "none",
         }}
         onClick={onClose}
       />
 
-      {/* Sheet — lit-from-above panel sliding up from below */}
+      {/* Sheet — glass-morphism panel: 0.92-alpha base + heavy backdrop
+          blur so the dashboard bleeds through faintly behind it. The
+          mint border + inset-top highlight still anchor the top edge. */}
       <div
         ref={sheetRef}
         onTouchStart={handleTouchStart}
@@ -148,17 +161,20 @@ export default function BottomSheet({
           right: 0,
           bottom: 0,
           zIndex: 41,
-          backgroundColor: "var(--bg-surface)",
+          backgroundColor: "rgba(18, 14, 24, 0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           borderTop: `2px solid ${borderColor}`,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          // Inset highlight on the top edge + outer shadow ABOVE the sheet
-          // (negative Y offset because the sheet rises from the bottom).
+          // Elevated-card stack: outer drop shadow above the sheet
+          // (negative Y because it rises from the bottom) + inner
+          // highlight on the top edge + a faint hairline inset.
           boxShadow:
-            "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 -8px 40px -4px rgba(0,0,0,0.5)",
+            "0 -8px 40px -4px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.04) inset, inset 0 1px 0 0 rgba(255,255,255,0.08)",
           animation: open
-            ? "bsSlideUp 400ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
-            : "bsSlideDown 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            ? "bsSlideUp 350ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
+            : "bsSlideDown 250ms ease-in forwards",
           pointerEvents: open ? "auto" : "none",
           maxHeight: "85vh",
           overflowY: "auto",
@@ -181,20 +197,21 @@ export default function BottomSheet({
           }}
         />
 
-        {/* Drag handle */}
+        {/* Drag handle — 36×4 pill, 16px gap to content. Standardized
+            across every sheet so the affordance is the same everywhere. */}
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             paddingTop: 10,
-            paddingBottom: 4,
+            marginBottom: 16,
             position: "relative",
             zIndex: 1,
           }}
         >
           <div
             style={{
-              width: 40,
+              width: 36,
               height: 4,
               backgroundColor: "rgba(255,255,255,0.15)",
               borderRadius: 2,
@@ -202,7 +219,22 @@ export default function BottomSheet({
           />
         </div>
 
-        <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+        {/* Content fade-in wrapper — opacity 0 → 1 over 200ms with
+            150ms delay so children animate in slightly after the
+            slide-up starts. Keyed on `open` so the animation replays
+            every open. */}
+        <div
+          key={open ? "open" : "closed"}
+          style={{
+            position: "relative",
+            zIndex: 1,
+            animation: open
+              ? "bsContentFade 200ms ease-out 150ms both"
+              : "none",
+          }}
+        >
+          {children}
+        </div>
       </div>
     </>
   );

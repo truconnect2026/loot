@@ -156,7 +156,11 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         transform: pressed ? "scale(0.98)" : "scale(1)",
         transition:
           "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background-color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+        // Primary card depth — soft drop + a faint inset hairline so
+        // every deal card lifts off the dashboard with the same
+        // weight as the stats card and sourcing tiles.
+        boxShadow:
+          "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset, inset 0 1px 0 0 rgba(255,255,255,0.04)",
       }}
     >
       {/* Profit-tier accent stripe — absolute-positioned overlay so

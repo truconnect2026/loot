@@ -290,8 +290,13 @@ export default function HeroProfit({
           : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 20,
+        // Primary card depth — soft drop + a 1px inset hairline that
+        // catches light along the top edge, giving the surface a lit
+        // bevel. The previous deeper stack got reduced as part of the
+        // global card-depth pass (cards now read consistent across
+        // the app instead of HeroProfit floating with extra weight).
         boxShadow:
-          "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 2px 4px rgba(0,0,0,0.2), 0 8px 24px -4px rgba(0,0,0,0.3)",
+          "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset, inset 0 1px 0 0 rgba(255,255,255,0.06)",
         // 12px top across both states so the section header
         // (FOUND TODAY / PROFIT) sits close to the card's top edge
         // instead of floating in dead space. Empty state still

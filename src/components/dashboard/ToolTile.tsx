@@ -62,7 +62,11 @@ export default function ToolTile({ name, icon, onTap }: ToolTileProps) {
           ? "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))"
           : "linear-gradient(rgba(255,255,255,0.13), rgba(255,255,255,0.13))",
         border: "1px solid rgba(255,255,255,0.15)",
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.03)",
+        // Secondary card depth — softer drop than primary cards
+        // (deals, sourcing) since tool tiles sit below them in the
+        // visual hierarchy. Inset highlight stays for the lit edge.
+        boxShadow:
+          "0 1px 4px rgba(0,0,0,0.15), inset 0 1px 0 0 rgba(255,255,255,0.03)",
         borderRadius: 8,
         display: "flex",
         alignItems: "center",

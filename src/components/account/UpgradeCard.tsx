@@ -63,7 +63,11 @@ export default function UpgradeCard({
             ")",
           backgroundSize: "400% 400%",
           animation: "upgradeBorderShimmer 4s ease-in-out infinite",
-          boxShadow: "0 4px 24px -4px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)",
+          // Elevated card depth — UpgradeCard sits one layer above
+          // the rest of the account page surfaces, matching the
+          // weight of an open BottomSheet panel.
+          boxShadow:
+            "0 4px 16px rgba(0,0,0,0.3), 0 0 1px rgba(255,255,255,0.04) inset",
         }}
       >
         <div

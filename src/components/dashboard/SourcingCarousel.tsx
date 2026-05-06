@@ -397,6 +397,11 @@ function SourcingCard({
         borderRadius: 14,
         padding: 14,
         border,
+        // Primary card depth — same stack the deal cards and stats
+        // card use. Coming-soon cards still get the lift; the dashed
+        // border + 0.4 dim already separates them from active feeds.
+        boxShadow:
+          "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset",
         cursor: "pointer",
         userSelect: "none",
         transform: pressed ? "scale(0.98)" : "scale(1)",
