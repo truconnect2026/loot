@@ -233,7 +233,13 @@ export async function POST(req: NextRequest): Promise<Response> {
   // Tag every mutation with payment_source so the Stripe webhook
   // knows to skip this user and the UI can route Manage-plan to
   // Digistore's order portal instead of Stripe's billing portal.
+  //
+  // Event names: live IPN sends `on_*` prefixes (on_payment,
+  // on_refund, …); some docs and the test/IPN-replay tool send the
+  // bare names. Match both so a single payload shape change at
+  // Digistore's end can't silently brick provisioning.
   switch (event) {
+    case "on_payment":
     case "payment": {
       const expires = new Date(now);
       if (planType === "annual") {
@@ -254,6 +260,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       };
       break;
     }
+    case "on_payment_missed":
     case "payment_missed": {
       updates = {
         ...updates,
@@ -262,6 +269,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       };
       break;
     }
+    case "on_rebill_cancelled":
     case "last_paid_day": {
       updates = {
         ...updates,
@@ -271,6 +279,8 @@ export async function POST(req: NextRequest): Promise<Response> {
       };
       break;
     }
+    case "on_refund":
+    case "on_chargeback":
     case "refund":
     case "chargeback": {
       updates = {
@@ -282,9 +292,13 @@ export async function POST(req: NextRequest): Promise<Response> {
       break;
     }
     default: {
-      // Unknown event — log + 200 OK so Digistore stops retrying.
-      // Don't mutate the profile.
-      console.warn("[digistore-webhook] unhandled event", event);
+      // Unknown event — log raw event string + order so future name
+      // drift surfaces in logs immediately. Return 200 OK so
+      // Digistore stops retrying; we don't mutate the profile.
+      console.warn(
+        "[digistore-webhook] unhandled event",
+        JSON.stringify({ event, order_id: orderId, mode }),
+      );
       return ok();
     }
   }

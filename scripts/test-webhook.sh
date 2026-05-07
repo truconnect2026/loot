@@ -36,17 +36,21 @@ fi
 
 # Sample payload — payment event for a test purchase. Fields chosen to
 # match what Digistore actually POSTs in production for a payment IPN.
+#
+# Override the event name with EVENT=... (e.g. on_payment, on_refund,
+# bogus_xyz) and the mode with MODE=... (test = no profile mutation,
+# live = exercise the switch). Defaults are backward-compatible.
 declare -A FIELDS=(
-  [event]=payment
-  [order_id]=TEST123
-  [transaction_id]=TXN-TEST-001
+  [event]="${EVENT:-payment}"
+  [order_id]="${ORDER_ID:-TEST123}"
+  [transaction_id]="${TX_ID:-TXN-TEST-001}"
   [pay_sequence_no]=1
-  [buyer_email]=test@example.com
+  [buyer_email]="${BUYER_EMAIL:-test@example.com}"
   [product_id]=691098
   [product_name]="Loot Pro Monthly"
   [amount_brutto]=14.99
   [currency]=USD
-  [mode]=test
+  [mode]="${MODE:-test}"
   [billing_type]=subscription
 )
 
