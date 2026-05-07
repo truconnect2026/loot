@@ -32,6 +32,50 @@ interface ProfileUpdate {
   stripe_subscription_status?: string;
   subscription_renews_at?: string | null;
   plan_type?: "monthly" | "annual" | null;
+  payment_source?: "stripe" | "digistore";
+}
+
+/**
+ * Read the dual-rail guard fields off a profile by user id.
+ * Returns null if no row (brand-new user mid-checkout).
+ */
+async function fetchGuardById(userId: string): Promise<{
+  payment_source: string | null;
+  is_pro: boolean | null;
+  digistore_order_id: string | null;
+} | null> {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("profiles")
+    .select("payment_source, is_pro, digistore_order_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!data) return null;
+  return data as {
+    payment_source: string | null;
+    is_pro: boolean | null;
+    digistore_order_id: string | null;
+  };
+}
+
+/** Same as fetchGuardById but keyed off the Stripe customer id. */
+async function fetchGuardByCustomer(customerId: string): Promise<{
+  payment_source: string | null;
+  is_pro: boolean | null;
+  digistore_order_id: string | null;
+} | null> {
+  const admin = getSupabaseAdmin();
+  const { data } = await admin
+    .from("profiles")
+    .select("payment_source, is_pro, digistore_order_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+  if (!data) return null;
+  return data as {
+    payment_source: string | null;
+    is_pro: boolean | null;
+    digistore_order_id: string | null;
+  };
 }
 
 // The supabase-js v2 client without a generated Database<T> generic
@@ -82,6 +126,26 @@ async function handleCheckoutCompleted(
     typeof session.subscription === "string" ? session.subscription : null;
   if (!userId || !customerId || !subscriptionId) return;
 
+  // Dual-rail guard. If the buyer is already paying through Digistore,
+  // a Stripe checkout completing means they double-purchased — keep
+  // Digistore as the active rail and don't trample its state.
+  const guard = await fetchGuardById(userId);
+  if (
+    guard &&
+    guard.payment_source === "digistore" &&
+    guard.is_pro === true
+  ) {
+    console.warn(
+      "[stripe-webhook] conflict: user has active Digistore sub, skipping",
+      {
+        user_id: userId,
+        digistore_order_id: guard.digistore_order_id,
+        stripe_customer_id: customerId,
+      },
+    );
+    return;
+  }
+
   // Fetch the subscription so we have current_period_end + the
   // line-item price (for plan_type). The session itself doesn't
   // carry the period end on the parent object.
@@ -101,6 +165,7 @@ async function handleCheckoutCompleted(
     stripe_subscription_status: sub.status,
     subscription_renews_at: unixToIso(periodEnd),
     plan_type: priceToPlanType(priceId),
+    payment_source: "stripe",
   });
 }
 
@@ -109,6 +174,23 @@ async function handleSubscriptionUpdated(
 ): Promise<void> {
   const customerId = typeof sub.customer === "string" ? sub.customer : null;
   if (!customerId) return;
+
+  const guard = await fetchGuardByCustomer(customerId);
+  if (
+    guard &&
+    guard.payment_source === "digistore" &&
+    guard.is_pro === true
+  ) {
+    console.warn(
+      "[stripe-webhook] conflict: user has active Digistore sub, skipping",
+      {
+        digistore_order_id: guard.digistore_order_id,
+        stripe_customer_id: customerId,
+      },
+    );
+    return;
+  }
+
   const priceId = sub.items.data[0]?.price?.id ?? "";
   const periodEnd =
     (sub as unknown as { current_period_end?: number }).current_period_end ??
@@ -120,6 +202,7 @@ async function handleSubscriptionUpdated(
     stripe_subscription_status: sub.status,
     subscription_renews_at: unixToIso(periodEnd),
     plan_type: priceToPlanType(priceId),
+    payment_source: "stripe",
   });
 }
 
@@ -128,6 +211,30 @@ async function handleSubscriptionDeleted(
 ): Promise<void> {
   const customerId = typeof sub.customer === "string" ? sub.customer : null;
   if (!customerId) return;
+
+  // Only clear is_pro if Stripe is the source of truth for this user.
+  // A Digistore-active user might still have a stale Stripe record
+  // (e.g. they cancelled their old Stripe sub and re-subscribed
+  // through a Digistore affiliate); deleting the Stripe sub on
+  // Stripe's side shouldn't revoke their Pro status here.
+  const guard = await fetchGuardByCustomer(customerId);
+  if (guard && guard.payment_source !== "stripe") {
+    console.warn(
+      "[stripe-webhook] subscription.deleted ignored: payment_source is not stripe",
+      {
+        payment_source: guard.payment_source,
+        stripe_customer_id: customerId,
+      },
+    );
+    // Still record the cancellation status on the Stripe-side fields
+    // so support can see what Stripe thinks, but leave is_pro alone.
+    await updateProfileByCustomer(customerId, {
+      stripe_subscription_status: "canceled",
+      subscription_renews_at: null,
+    });
+    return;
+  }
+
   await updateProfileByCustomer(customerId, {
     is_pro: false,
     stripe_subscription_status: "canceled",

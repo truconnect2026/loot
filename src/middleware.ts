@@ -2,11 +2,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 /**
- * Auth middleware:
+ * Auth + affiliate middleware:
  * - Authed users hitting / → redirect to /app (the dashboard then
  *   bounces them to /onboarding if they haven't set a zip yet).
  * - Unauthed users hitting /app, /account, or /onboarding → /
  * - Always refreshes the session so cookies stay valid.
+ * - If the URL carries ?aff=... or ?ref=..., stamp the loot_aff_*
+ *   cookies so the upgrade UI knows to route checkout through the
+ *   Digistore affiliate funnel instead of Stripe (higher payout for
+ *   the affiliate, slightly higher fee for us — only used when an
+ *   affiliate sent the traffic).
  *
  * The onboarding gate (zip-required-before-dashboard) lives in the
  * dashboard component itself, not here, because that check needs a
@@ -15,8 +20,38 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED = ["/app", "/account", "/onboarding"];
 
+const AFF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days in seconds
+
+function setAffCookies(
+  response: NextResponse,
+  affId: string,
+): void {
+  const opts = {
+    maxAge: AFF_COOKIE_MAX_AGE,
+    sameSite: "lax" as const,
+    // httpOnly: false — the upgrade UI reads these client-side to
+    // build the Digistore checkout URL with the right aff/campaign
+    // params. They aren't auth-bearing, so client read is fine.
+    httpOnly: false,
+    path: "/",
+  };
+  response.cookies.set("loot_aff_source", "digistore", opts);
+  response.cookies.set("loot_aff_id", affId, opts);
+  response.cookies.set("loot_aff_campaign", affId, opts);
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
+
+  // Stamp affiliate cookies before any redirect: if we redirect, we
+  // copy the cookies onto the redirect response below so they survive.
+  const affId =
+    request.nextUrl.searchParams.get("aff") ||
+    request.nextUrl.searchParams.get("ref") ||
+    null;
+  if (affId) {
+    setAffCookies(response, affId);
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -57,14 +92,18 @@ export async function middleware(request: NextRequest) {
   if (user && pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/app";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    if (affId) setAffCookies(redirect, affId);
+    return redirect;
   }
 
   // Unauthed user on protected page → go to login
   if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    if (affId) setAffCookies(redirect, affId);
+    return redirect;
   }
 
   return response;

@@ -1,7 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
+import {
+  buildDigistoreCheckoutUrl,
+  readAffiliateCookies,
+} from "@/lib/digistore-affiliate";
 
 /**
  * Paywall — slides up when /api/scan returns 403 (free-user daily
@@ -33,6 +37,30 @@ export default function PaywallSheet({
   onSubscribe,
   onClose,
 }: PaywallSheetProps) {
+  // If the user landed via an affiliate (?aff=...), the middleware
+  // stamped a digistore cookie. We re-route both CTAs to the
+  // Digistore-hosted checkout so the affiliate gets credit.
+  const [digistoreUrl, setDigistoreUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const aff = readAffiliateCookies();
+    if (aff.source === "digistore") {
+      setDigistoreUrl(
+        buildDigistoreCheckoutUrl({
+          affId: aff.id,
+          campaign: aff.campaign,
+        }),
+      );
+    }
+  }, []);
+
+  const handleTap = (priceId: string) => {
+    if (digistoreUrl) {
+      window.location.href = digistoreUrl;
+      return;
+    }
+    onSubscribe(priceId);
+  };
+
   return (
     <BottomSheet open={open} onClose={onClose} borderColor="#5CE0B8">
       <div style={{ padding: "20px 20px 32px" }}>
@@ -78,18 +106,18 @@ export default function PaywallSheet({
             price="$14.99"
             period="/mo"
             note="cancel anytime"
-            disabled={!monthlyPriceId}
+            disabled={!digistoreUrl && !monthlyPriceId}
             primary
-            onTap={() => onSubscribe(monthlyPriceId)}
+            onTap={() => handleTap(monthlyPriceId)}
           />
           <PlanButton
             label="ANNUAL"
             price="$99.99"
             period="/yr"
             note="save $80 — 5 months free"
-            disabled={!annualPriceId}
+            disabled={!digistoreUrl && !annualPriceId}
             primary={false}
-            onTap={() => onSubscribe(annualPriceId)}
+            onTap={() => handleTap(annualPriceId)}
           />
         </div>
 

@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  buildDigistoreCheckoutUrl,
+  readAffiliateCookies,
+} from "@/lib/digistore-affiliate";
 
 interface UpgradeCardProps {
   /** Stripe price IDs — pulled from the build-time
@@ -32,6 +36,34 @@ export default function UpgradeCard({
   annualPriceId,
   onSubscribe,
 }: UpgradeCardProps) {
+  // Hydration: cookies are only readable client-side, so resolve the
+  // affiliate state after mount. Until then we render the Stripe
+  // path; that's a graceful default — Stripe is the lower-fee rail.
+  const [digistoreUrl, setDigistoreUrl] = useState<string | null>(null);
+  useEffect(() => {
+    const aff = readAffiliateCookies();
+    if (aff.source === "digistore") {
+      setDigistoreUrl(
+        buildDigistoreCheckoutUrl({
+          affId: aff.id,
+          campaign: aff.campaign,
+        }),
+      );
+    }
+  }, []);
+
+  // When the affiliate cookie is set, both plan tiles route to the
+  // same Digistore checkout (the user picks monthly/annual on
+  // Digistore's hosted checkout page, where both are configured as
+  // payment plans under product 691098).
+  const handleTap = (priceId: string) => {
+    if (digistoreUrl) {
+      window.location.href = digistoreUrl;
+      return;
+    }
+    onSubscribe(priceId);
+  };
+
   return (
     <>
       <style>{`
@@ -178,8 +210,8 @@ export default function UpgradeCard({
               price="$14.99"
               period="/mo"
               note="cancel anytime"
-              disabled={!monthlyPriceId}
-              onTap={() => onSubscribe(monthlyPriceId)}
+              disabled={!digistoreUrl && !monthlyPriceId}
+              onTap={() => handleTap(monthlyPriceId)}
               primary
               popular
             />
@@ -196,8 +228,8 @@ export default function UpgradeCard({
                   — 5 months free
                 </>
               }
-              disabled={!annualPriceId}
-              onTap={() => onSubscribe(annualPriceId)}
+              disabled={!digistoreUrl && !annualPriceId}
+              onTap={() => handleTap(annualPriceId)}
               primary={false}
             />
           </div>

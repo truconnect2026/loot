@@ -16,6 +16,7 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from "@/lib/push-client";
+import { DIGISTORE_FIND_ORDER_URL } from "@/lib/digistore-affiliate";
 
 function deriveInitials(name: string | null, email: string): string {
   if (name) {
@@ -214,6 +215,7 @@ interface UserProfile {
   isPro: boolean;
   subscriptionRenewsAt: string | null;
   planType: "monthly" | "annual" | null;
+  paymentSource: "stripe" | "digistore" | null;
 }
 
 export default function AccountPage() {
@@ -278,7 +280,7 @@ export default function AccountPage() {
       const { data: profileRow } = await supabase
         .from("profiles")
         .select(
-          "id, zip_code, search_radius_miles, is_pro, subscription_renews_at, plan_type",
+          "id, zip_code, search_radius_miles, is_pro, subscription_renews_at, plan_type, payment_source",
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -327,6 +329,11 @@ export default function AccountPage() {
             profileRow?.plan_type === "monthly" ||
             profileRow?.plan_type === "annual"
               ? profileRow.plan_type
+              : null,
+          paymentSource:
+            profileRow?.payment_source === "stripe" ||
+            profileRow?.payment_source === "digistore"
+              ? profileRow.payment_source
               : null,
         });
         if (notifRow) {
@@ -539,6 +546,17 @@ export default function AccountPage() {
   // strips the Referer header from the outbound request.
   const handleManagePlan = useCallback(async () => {
     if (typeof window === "undefined") return;
+    // Digistore-paid users don't have a Stripe customer to portal
+    // into — route them to Digistore's "find my order" page where
+    // they can manage / cancel their subscription with their email.
+    if (profile?.paymentSource === "digistore") {
+      window.open(
+        DIGISTORE_FIND_ORDER_URL,
+        "_blank",
+        "noopener,noreferrer",
+      );
+      return;
+    }
     try {
       const res = await fetch("/api/stripe/portal", { method: "POST" });
       if (!res.ok) {
@@ -550,7 +568,7 @@ export default function AccountPage() {
     } catch (err) {
       console.error("[account] Portal session error:", err);
     }
-  }, []);
+  }, [profile?.paymentSource]);
 
   // Subscribe — POSTs to /api/stripe/checkout with the chosen
   // priceId, then redirects in-tab to the Stripe-hosted checkout
@@ -726,6 +744,11 @@ export default function AccountPage() {
               renewsDate={formatRenewsDate(profile.subscriptionRenewsAt)}
               scansLabel="unlimited"
               onCancel={handleManagePlan}
+              manageLabel={
+                profile.paymentSource === "digistore"
+                  ? "Manage via Digistore"
+                  : "Manage plan"
+              }
             />
           ) : (
             <UpgradeCard

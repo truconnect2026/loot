@@ -12,6 +12,10 @@ interface ProfileCardProps {
   renewsDate: string;
   scansLabel: string;
   onCancel: () => void;
+  /** Override label on the manage-plan button. Used so Digistore-paid
+   * users see "Manage via Digistore" instead of "Manage plan",
+   * matching the rail their subscription actually lives on. */
+  manageLabel?: string;
 }
 
 // Cool blue-purple, zero red, zero green warmth — OLED can't shift this
@@ -53,6 +57,7 @@ export default function ProfileCard({
   renewsDate,
   scansLabel,
   onCancel,
+  manageLabel = "Manage plan",
 }: ProfileCardProps) {
   const { local, domain } = splitEmail(email);
 
@@ -448,7 +453,7 @@ export default function ProfileCard({
             sessions return on close to a configured return_url; that
             return_url should also point back to /account so the loop
             completes cleanly even if the user navigates within Stripe. */}
-        <ManagePlanButton onTap={onCancel} />
+        <ManagePlanButton onTap={onCancel} label={manageLabel} />
       </div>
       </div>
     </>
@@ -457,6 +462,7 @@ export default function ProfileCard({
 
 interface ManagePlanButtonProps {
   onTap: () => void;
+  label: string;
 }
 
 // Full-width bordered pill, white text, subtle white-alpha edge — same
@@ -466,7 +472,7 @@ interface ManagePlanButtonProps {
 // taps feel acknowledged without being theatrical. Retention/upsell
 // surface, so it carries a faint mint under-glow (8% money color)
 // that ties the action to the value system without tinting the chrome.
-function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
+function ManagePlanButton({ onTap, label }: ManagePlanButtonProps) {
   const [pressed, setPressed] = useState(false);
   return (
     <button
@@ -511,7 +517,7 @@ function ManagePlanButton({ onTap }: ManagePlanButtonProps) {
           letterSpacing: "0.01em",
         }}
       >
-        Manage plan
+        {label}
       </span>
       {/* External-link cue — inline SVG instead of the Unicode ↗
           glyph. iOS Safari renders U+2197 as a colored emoji
