@@ -129,12 +129,38 @@ export async function POST(req: NextRequest): Promise<Response> {
     return ok();
   }
 
-  // Determine plan_type from amount. $14.99 ≈ monthly, $99.99 ≈ annual.
-  // Use a 50¢ tolerance so a coupon or rounding edge doesn't misclassify.
-  let planType: "monthly" | "annual" | null = null;
-  if (amount !== null) {
-    if (Math.abs(amount - 14.99) < 0.5) planType = "monthly";
-    else if (Math.abs(amount - 99.99) < 0.5) planType = "annual";
+  // Classify plan by product_id first (stable across tax zones,
+  // coupons, price changes). Fall back to amount_netto (pre-tax) if
+  // product_id is unmapped — amount_brutto includes VAT/sales tax
+  // which varies by buyer location and breaks tight tolerance windows
+  // (we saw $16.19 brutto on a $14.99 product, classifier returned
+  // NULL).
+  const PLAN_BY_PRODUCT: Record<string, "monthly" | "annual"> = {
+    "691098": "monthly",
+    // TODO: add annual product_id once configured in Digistore
+  };
+
+  let planType: "monthly" | "annual" | null =
+    PLAN_BY_PRODUCT[productId] ?? null;
+
+  if (!planType) {
+    const netto = params.amount_netto ? Number(params.amount_netto) : amount;
+    if (netto !== null) {
+      if (Math.abs(netto - 14.99) < 0.5) planType = "monthly";
+      else if (Math.abs(netto - 99.99) < 0.5) planType = "annual";
+    }
+  }
+
+  if (!planType) {
+    console.warn(
+      "[digistore-webhook] could not classify plan",
+      JSON.stringify({
+        product_id: productId,
+        amount_brutto: amount,
+        amount_netto: params.amount_netto,
+        order_id: orderId,
+      }),
+    );
   }
 
   // 1. Find user by buyer_email via the admin listUsers API.

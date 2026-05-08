@@ -37,18 +37,23 @@ fi
 # Sample payload — payment event for a test purchase. Fields chosen to
 # match what Digistore actually POSTs in production for a payment IPN.
 #
-# Override the event name with EVENT=... (e.g. on_payment, on_refund,
-# bogus_xyz) and the mode with MODE=... (test = no profile mutation,
-# live = exercise the switch). Defaults are backward-compatible.
+# Override per env var:
+#   EVENT          on_payment, on_refund, bogus_xyz, …
+#   MODE           test (default; no profile mutation) | live (exercise switch)
+#   PRODUCT_ID     digistore product id (drives plan classifier)
+#   AMOUNT_BRUTTO  gross (incl. tax)
+#   AMOUNT_NETTO   net (pre-tax) — what the classifier prefers
+#   ORDER_ID, TX_ID, BUYER_EMAIL  identity overrides
 declare -A FIELDS=(
   [event]="${EVENT:-payment}"
   [order_id]="${ORDER_ID:-TEST123}"
   [transaction_id]="${TX_ID:-TXN-TEST-001}"
   [pay_sequence_no]=1
   [buyer_email]="${BUYER_EMAIL:-test@example.com}"
-  [product_id]=691098
+  [product_id]="${PRODUCT_ID:-691098}"
   [product_name]="Loot Pro Monthly"
-  [amount_brutto]=14.99
+  [amount_brutto]="${AMOUNT_BRUTTO:-14.99}"
+  [amount_netto]="${AMOUNT_NETTO:-14.99}"
   [currency]=USD
   [mode]="${MODE:-test}"
   [billing_type]=subscription
