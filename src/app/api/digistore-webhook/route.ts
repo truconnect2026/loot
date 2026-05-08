@@ -129,27 +129,29 @@ export async function POST(req: NextRequest): Promise<Response> {
     return ok();
   }
 
-  // Classify plan by product_id first (stable across tax zones,
-  // coupons, price changes). Fall back to amount_netto (pre-tax) if
-  // product_id is unmapped — amount_brutto includes VAT/sales tax
-  // which varies by buyer location and breaks tight tolerance windows
-  // (we saw $16.19 brutto on a $14.99 product, classifier returned
-  // NULL).
+  // Classify plan by amount_netto first (pre-tax — stable across
+  // buyer tax zones unlike amount_brutto, which includes VAT/sales
+  // tax and tipped a $14.99 monthly into $16.19 brutto, blowing
+  // through the tolerance window). product_id is intentionally NOT
+  // primary: Digistore product 691098 serves BOTH the monthly and
+  // annual payment plans, so a product_id lookup would always
+  // resolve "monthly" and silently mis-tag annual buyers.
+  // PLAN_BY_PRODUCT remains as a defensive fallback for IPNs that
+  // somehow arrive without amount_netto.
   const PLAN_BY_PRODUCT: Record<string, "monthly" | "annual"> = {
-    "691098": "monthly",
-    // TODO: add annual product_id once configured in Digistore
+    // Only used when amount_netto absent (defensive fallback).
+    // 691098 serves both plans, so it's intentionally NOT mapped here.
   };
 
-  let planType: "monthly" | "annual" | null =
-    PLAN_BY_PRODUCT[productId] ?? null;
+  let planType: "monthly" | "annual" | null = null;
 
-  if (!planType) {
-    const netto = params.amount_netto ? Number(params.amount_netto) : amount;
-    if (netto !== null) {
-      if (Math.abs(netto - 14.99) < 0.5) planType = "monthly";
-      else if (Math.abs(netto - 99.99) < 0.5) planType = "annual";
-    }
+  const netto = params.amount_netto ? Number(params.amount_netto) : amount;
+  if (netto !== null) {
+    if (Math.abs(netto - 14.99) < 0.5) planType = "monthly";
+    else if (Math.abs(netto - 99.99) < 0.5) planType = "annual";
   }
+
+  if (!planType) planType = PLAN_BY_PRODUCT[productId] ?? null;
 
   if (!planType) {
     console.warn(
