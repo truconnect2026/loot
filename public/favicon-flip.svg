@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Saturn ring -->
+  <ellipse cx="16" cy="18" rx="14" ry="4.2" fill="none" stroke="#5CE0B8" stroke-width="1.6" transform="rotate(-23 16 18)"/>
+  <!-- Coyote ears poking up through the ring -->
+  <path d="M 11 16 L 9 6 L 14.5 13 Z" fill="#5CE0B8"/>
+  <path d="M 21 16 L 23 6 L 17.5 13 Z" fill="#5CE0B8"/>
+</svg>
