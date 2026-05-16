@@ -238,7 +238,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       type: "magiclink",
       email: buyerEmail,
       options: {
-        redirectTo: "https://loot.works/welcome?order_id=" + orderId,
+        redirectTo: "https://loot.works/thanks?order_id=" + orderId,
       },
     });
     if (linkErr) {
