@@ -149,6 +149,23 @@ export default function BottomSheet({
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        /* Desktop layout — at ≥768px the sheet caps at 540px wide and
+           centers horizontally with auto margins, instead of stretching
+           edge-to-edge. Corners tighten from 24px (full-width feel) to
+           16px (card feel). The auto margins work alongside the
+           position: fixed + left:0/right:0 base because max-width caps
+           how wide the box grows before the auto margins distribute the
+           remainder evenly — no transform conflict with the slide-up
+           animation. */
+        @media (min-width: 768px) {
+          .loot-bottom-sheet-panel {
+            max-width: 540px;
+            margin-left: auto;
+            margin-right: auto;
+            border-top-left-radius: 16px !important;
+            border-top-right-radius: 16px !important;
+          }
+        }
       `}</style>
 
       {/* Backdrop — radial vignette over the existing blur fill so the
@@ -179,6 +196,7 @@ export default function BottomSheet({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        className="loot-bottom-sheet-panel"
         style={{
           position: "fixed",
           left: 0,
