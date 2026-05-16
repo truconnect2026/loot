@@ -234,11 +234,20 @@ export async function POST(req: NextRequest): Promise<Response> {
     }
     userId = created.user.id;
 
+    // Route the magic link through /auth/callback so the Supabase
+    // code-exchange happens before the buyer lands on a page. The
+    // callback honors ?next= (allowlist enforced server-side) and
+    // forwards any remaining query params (here, order_id) to the
+    // destination, so the buyer arrives at /thanks?order_id=... with
+    // a live session.
+    const callbackUrl = new URL("https://loot.works/auth/callback");
+    callbackUrl.searchParams.set("next", "/thanks");
+    callbackUrl.searchParams.set("order_id", orderId);
     const { error: linkErr } = await supabase.auth.admin.generateLink({
       type: "magiclink",
       email: buyerEmail,
       options: {
-        redirectTo: "https://loot.works/thanks?order_id=" + orderId,
+        redirectTo: callbackUrl.toString(),
       },
     });
     if (linkErr) {
