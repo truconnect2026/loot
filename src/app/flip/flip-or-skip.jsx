@@ -212,7 +212,7 @@ export default function FlipOrSkip() {
       guesses: saved.guesses,
       closingLine: saved.closingLine,
     });
-    const moodMap = { WOLF: 'hyped', SOLID: 'smirk', MID: 'sideEye', RIP: 'dead' };
+    const moodMap = { WOLF: 'hyped', SOLID: 'smirk', MID: 'sideeye', RIP: 'dead' };
     setMood(moodMap[saved.tier] || 'smirk');
     if (saved.closingLine) {
       setBubbleText(saved.closingLine);
@@ -258,7 +258,7 @@ export default function FlipOrSkip() {
       setValidationMsg(err);
       setBubbleText(err);
       setBubbleVisible(true);
-      setMood('sideEye');
+      setMood('sideeye');
       setTimeout(() => setMood('smirk'), 1800);
       return;
     }
@@ -274,7 +274,7 @@ export default function FlipOrSkip() {
     let tier, lineKey, newMood;
     if (score === 3) { tier = 'WOLF'; lineKey = 'wolf'; newMood = 'hyped'; }
     else if (score === 2) { tier = 'SOLID'; lineKey = 'solid'; newMood = 'smirk'; }
-    else if (score === 1) { tier = 'MID'; lineKey = 'mid'; newMood = 'sideEye'; }
+    else if (score === 1) { tier = 'MID'; lineKey = 'mid'; newMood = 'sideeye'; }
     else { tier = 'RIP'; lineKey = 'rip'; newMood = 'dead'; }
 
     const closingLine = pick(LINES[lineKey]);

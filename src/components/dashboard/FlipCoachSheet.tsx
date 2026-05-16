@@ -167,7 +167,7 @@ function detectMood(messages: ChatMessage[]): FlipCoyoteMood {
   if (
     /\b(maybe|depends|careful|skip|watch|risky|mid|meh)\b/i.test(lastAssistant)
   ) {
-    return "sideEye";
+    return "sideeye";
   }
   return "smirk";
 }
