@@ -28,6 +28,19 @@ interface BottomSheetProps {
    * on screen instead of clinging to the bottom edge.
    */
   minHeight?: string;
+  /**
+   * Drag-handle background color. Defaults to rgba(255,255,255,0.15),
+   * the standard quiet-pill treatment used by every sheet in the app.
+   * Override for character-led sheets that want to tie the handle
+   * into their identity color — e.g. mint for Flip Coach.
+   */
+  handleColor?: string;
+  /**
+   * Drag-handle width in px. Defaults to 36, the standard size.
+   * Pair with handleColor for sheets that lean into the handle as
+   * a brand accent rather than a quiet affordance.
+   */
+  handleWidth?: number;
 }
 
 export default function BottomSheet({
@@ -37,6 +50,8 @@ export default function BottomSheet({
   children,
   scrollResetKey,
   minHeight,
+  handleColor = "rgba(255,255,255,0.15)",
+  handleWidth = 36,
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -134,6 +149,23 @@ export default function BottomSheet({
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        /* Desktop layout — at ≥768px the sheet caps at 540px wide and
+           centers horizontally with auto margins, instead of stretching
+           edge-to-edge. Corners tighten from 24px (full-width feel) to
+           16px (card feel). The auto margins work alongside the
+           position: fixed + left:0/right:0 base because max-width caps
+           how wide the box grows before the auto margins distribute the
+           remainder evenly — no transform conflict with the slide-up
+           animation. */
+        @media (min-width: 768px) {
+          .loot-bottom-sheet-panel {
+            max-width: 540px;
+            margin-left: auto;
+            margin-right: auto;
+            border-top-left-radius: 16px !important;
+            border-top-right-radius: 16px !important;
+          }
+        }
       `}</style>
 
       {/* Backdrop — radial vignette over the existing blur fill so the
@@ -164,6 +196,7 @@ export default function BottomSheet({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        className="loot-bottom-sheet-panel"
         style={{
           position: "fixed",
           left: 0,
@@ -206,8 +239,11 @@ export default function BottomSheet({
           }}
         />
 
-        {/* Drag handle — 36×4 pill, 16px gap to content. Standardized
-            across every sheet so the affordance is the same everywhere. */}
+        {/* Drag handle — pill, 16px gap to content. Default 36×4
+            white/15 is the standard quiet affordance; consumers can
+            override via handleColor + handleWidth props to lean into
+            the handle as a brand accent (e.g. Flip Coach uses 40×4
+            mint to tie into the character-led identity). */}
         <div
           style={{
             display: "flex",
@@ -220,9 +256,9 @@ export default function BottomSheet({
         >
           <div
             style={{
-              width: 36,
+              width: handleWidth,
               height: 4,
-              backgroundColor: "rgba(255,255,255,0.15)",
+              backgroundColor: handleColor,
               borderRadius: 2,
             }}
           />

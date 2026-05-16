@@ -2,17 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
+import FlipCoyote, { type FlipCoyoteMood } from "@/components/shared/FlipCoyote";
 import { formatErrorMessage } from "@/lib/formatError";
 
 /**
- * Flip Coach — Claude-backed chat advisor for resellers. Lives in an
- * 85vh BottomSheet with a sticky input bar at the foot. Free tier is
+ * Flip Coach — Claude-backed chat advisor for resellers. Lives in a
+ * BottomSheet anchored at the dashboard bottom edge. Free tier is
  * capped at 3 messages per local day via localStorage; the server is
  * stateless (no counter table).
  *
- * The initial assistant turn + suggested prompts render on mount —
- * they're never sent to the API. Users tapping a suggestion routes
- * through sendMessage() the same as a typed prompt.
+ * Character-led redesign:
+ *   - Header: FlipCoyote 60px + "FLIP COACH" wordmark + close X
+ *   - Coach bubbles: black/85 bg, full mint border, JBMono 13px mint
+ *     text (matches the /flip game's SpeechBubble aesthetic); a small
+ *     FlipCoyote 28px sits as the avatar
+ *   - User bubbles: white/10 bg, Outfit 14px white text, no border
+ *     ornament (their messages are interjections, not statements)
+ *   - Drag handle: mint #5CE0B8 at 40×4 via BottomSheet's handleColor
+ *     + handleWidth props
+ *   - Mood state: detectMood() runs on every message change, header
+ *     + every bubble avatar sync to the same mood (the latest
+ *     conversation state)
+ *   - Persistence: chat history hydrates from localStorage on open,
+ *     appends on each message exchange, capped at 20 turns. Replaces
+ *     the prior reset-on-open behavior so users return to where they
+ *     left off
+ *
+ * Initial greeting + suggested prompts render on mount when the
+ * persisted history is empty — they're never sent to the API. Users
+ * tapping a suggestion routes through sendMessage() the same as a
+ * typed prompt.
  */
 
 interface FlipCoachSheetProps {
@@ -40,6 +59,14 @@ const SUGGESTED_PROMPTS = [
 
 const INITIAL_GREETING =
   "Hey! I'm your flip coach. I can help with pricing, sourcing, spotting fakes, and anything about reselling. What are you working on?";
+
+// localStorage key for persisted chat history. Single global key
+// (not per-user) — the dashboard already gates access behind an
+// authed session, so the only person who sees this history is its
+// owner. Cap of 20 turns matches the server-side history limit in
+// /api/flip-coach so we never persist more than we can send.
+const HISTORY_KEY = "flipCoach_history";
+const HISTORY_CAP = 20;
 
 function todayKey(): string {
   const d = new Date();
@@ -73,45 +100,110 @@ function bumpUsedCount(): number {
   }
 }
 
-function SaturnGlyph({
-  size = 20,
-  opacity = 0.5,
-}: {
-  size?: number;
-  opacity?: number;
-}) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#5CE0B8"
-      strokeOpacity={opacity}
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx={12} cy={12} r={5} />
-      <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
-    </svg>
-  );
+function readHistory(): ChatMessage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !Array.isArray((parsed as { messages?: unknown }).messages)
+    ) {
+      return [];
+    }
+    return ((parsed as { messages: ChatMessage[] }).messages).slice(
+      -HISTORY_CAP,
+    );
+  } catch {
+    return [];
+  }
 }
 
-function ArrowUpIcon() {
+function writeHistory(messages: ChatMessage[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const capped = messages.slice(-HISTORY_CAP);
+    window.localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify({ messages: capped }),
+    );
+  } catch {
+    /* private mode or quota exceeded — best effort */
+  }
+}
+
+// Pure mood detection. Runs on every message change to drive the
+// header + bubble avatar mood. Default smirk when there are no
+// messages yet (fresh open with no history). Regexes are
+// case-insensitive and word-bounded so partial matches inside other
+// words don't trigger ("printer" won't fire on the "print" keyword).
+function detectMood(messages: ChatMessage[]): FlipCoyoteMood {
+  if (messages.length === 0) return "smirk";
+
+  // Walk from newest backward to pick up the most recent
+  // user/assistant pair. Either may be missing if the conversation
+  // is mid-flight.
+  let lastUser = "";
+  let lastAssistant = "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (!lastAssistant && m.role === "assistant") lastAssistant = m.content;
+    if (!lastUser && m.role === "user") lastUser = m.content;
+    if (lastUser && lastAssistant) break;
+  }
+
+  if (/\b(idk|wyd|lol|hi|test|hello|sup)\b/i.test(lastUser)) return "dead";
+  if (/\b(can't help|off topic|not sure|try again)\b/i.test(lastAssistant)) {
+    return "dead";
+  }
+  if (
+    /\b(wolf|fire|grail|ship it|print|cook|stack|bag)\b/i.test(lastAssistant) ||
+    lastAssistant.includes("🐺")
+  ) {
+    return "hyped";
+  }
+  if (
+    /\b(maybe|depends|careful|skip|watch|risky|mid|meh)\b/i.test(lastAssistant)
+  ) {
+    return "sideeye";
+  }
+  return "smirk";
+}
+
+function ArrowUpIcon({ color = "#000" }: { color?: string }) {
   return (
     <svg
       width={16}
       height={16}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5CE0B8"
-      strokeWidth={2}
+      stroke={color}
+      strokeWidth={2.4}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
       <line x1={12} y1={19} x2={12} y2={5} />
       <polyline points="5 12 12 5 19 12" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <line x1={18} y1={6} x2={6} y2={18} />
+      <line x1={6} y1={6} x2={18} y2={18} />
     </svg>
   );
 }
@@ -125,24 +217,48 @@ export default function FlipCoachSheet({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [usedToday, setUsedToday] = useState(0);
+  // Hydration gate — prevents the persist effect below from
+  // overwriting localStorage with the initial empty messages array
+  // during the brief window between component mount and the
+  // queueMicrotask hydration callback. Reset on close so each open
+  // re-hydrates fresh.
+  const [hydrated, setHydrated] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Monotonic counter for chat-message IDs. Refs are pure under the
   // react-hooks/purity rule, while Date.now()/randomUUID() get
   // flagged. Bumped on every send.
   const msgIdRef = useRef(0);
 
-  // Reset on every open — chat history is session-local. Each open
-  // is a fresh conversation; the cross-session limit is the only
-  // state that persists.
+  // Hydrate persisted chat history on every open. Replaces the prior
+  // reset-on-open behavior — users return to whatever conversation
+  // they last had. The 3/day count is also re-read here in case
+  // they sent messages from a different tab or the day rolled over.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setHydrated(false);
+      return;
+    }
     queueMicrotask(() => {
-      setMessages([]);
+      const hist = readHistory();
+      setMessages(hist);
+      // Seed the ID counter past the highest persisted ID so new
+      // appends never collide with hydrated messages on React keys.
+      msgIdRef.current = hist.length;
       setInput("");
       setSending(false);
       setUsedToday(readUsedCount());
+      setHydrated(true);
     });
   }, [open]);
+
+  // Persist on every message-list change (after hydration completes).
+  // The writeHistory call caps to HISTORY_CAP internally so the
+  // localStorage footprint stays bounded regardless of how many turns
+  // the user has sent.
+  useEffect(() => {
+    if (!open || !hydrated) return;
+    writeHistory(messages);
+  }, [messages, open, hydrated]);
 
   // Auto-scroll the chat to the bottom whenever messages change so
   // the user always sees the latest reply without manually scrolling.
@@ -153,6 +269,10 @@ export default function FlipCoachSheet({
   }, [messages, sending]);
 
   const exhausted = usedToday >= FREE_DAILY_LIMIT;
+  // Mood derives from the current message list — recomputed on every
+  // render. detectMood is a pure pass over the last user + assistant
+  // messages and runs in O(n) over the (small, capped at 20) list.
+  const mood = detectMood(messages);
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -212,7 +332,13 @@ export default function FlipCoachSheet({
   }
 
   return (
-    <BottomSheet open={open} onClose={onClose} borderColor="#5CE0B8">
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      borderColor="#5CE0B8"
+      handleColor="#5CE0B8"
+      handleWidth={40}
+    >
       <div
         style={{
           display: "flex",
@@ -222,48 +348,76 @@ export default function FlipCoachSheet({
           // the sheet's own borders, so the input bar at the bottom
           // of this container always renders inside the visible
           // viewport instead of getting clipped under the keyboard
-          // safe-area on shorter devices. Flex children below
-          // (header / chat / input) flex against this fixed height.
+          // safe-area on shorter devices.
           height: "78vh",
         }}
       >
-        {/* Header */}
+        {/* Header — character + wordmark + close. The FlipCoyote
+            mood here syncs with the bubble avatars so the entire
+            sheet reads as one creature reacting to the conversation. */}
         <div
           style={{
-            padding: "16px 18px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "8px 18px 12px",
             borderBottom: "1px solid rgba(255,255,255,0.04)",
           }}
         >
-          <div
+          <FlipCoyote mood={mood} size={60} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontWeight: 600,
+                fontSize: 16,
+                color: "#5CE0B8",
+                letterSpacing: "0.15em",
+                lineHeight: 1,
+              }}
+            >
+              FLIP COACH
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                color: "#5A4E70",
+                marginTop: 6,
+              }}
+            >
+              your AI reselling expert
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close Flip Coach"
             style={{
-              fontFamily: "var(--font-jetbrains-mono)",
-              fontSize: 10,
-              color: "#5CE0B8",
-              letterSpacing: "0.10em",
-              textTransform: "uppercase",
+              width: 36,
+              height: 36,
+              minWidth: 36,
+              minHeight: 36,
+              borderRadius: "50%",
+              border: "none",
+              background: "rgba(255,255,255,0.04)",
+              color: "rgba(255,255,255,0.55)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              padding: 0,
             }}
           >
-            FLIP COACH
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 13,
-              color: "#5A4E70",
-              marginTop: 2,
-            }}
-          >
-            your AI reselling expert
-          </div>
+            <CloseIcon />
+          </button>
         </div>
 
         {/* Chat scroll area — flex: 1 with min-height: 0 so the
             container can actually shrink below its content height
             and scroll. Without min-height: 0, flexbox treats the
-            content as the floor and overflow:auto never engages.
-            justifyContent: flex-start keeps messages anchored at
-            the top so empty space falls naturally below them
-            within the scroll viewport, never above the input bar. */}
+            content as the floor and overflow:auto never engages. */}
         <div
           ref={scrollRef}
           style={{
@@ -279,12 +433,14 @@ export default function FlipCoachSheet({
           className="loot-carousel"
         >
           {/* Initial greeting + suggested prompts — always rendered
-              first; never sent to the API. */}
-          <CoachBubble content={INITIAL_GREETING} />
+              first; never sent to the API. Suggested prompts only
+              when there's no persisted history (otherwise the user
+              is mid-conversation and a chip row would be noise). */}
+          <CoachBubble content={INITIAL_GREETING} mood={mood} />
           {messages.length === 0 && (
             <div
               style={{
-                marginLeft: 28,
+                marginLeft: 36,
                 display: "flex",
                 flexWrap: "wrap",
                 gap: 6,
@@ -319,11 +475,11 @@ export default function FlipCoachSheet({
             m.role === "user" ? (
               <UserBubble key={m.id} content={m.content} />
             ) : (
-              <CoachBubble key={m.id} content={m.content} />
+              <CoachBubble key={m.id} content={m.content} mood={mood} />
             ),
           )}
 
-          {sending && <TypingBubble />}
+          {sending && <TypingBubble mood={mood} />}
         </div>
 
         {/* Sticky input bar — position sticky + bottom 0 + zIndex 10
@@ -395,29 +551,30 @@ export default function FlipCoachSheet({
                   outline: "none",
                   fontFamily: "var(--font-body)",
                   // iOS auto-zooms text inputs below 16px on focus,
-                  // which broke the fixed dashboard layout. Bumped
-                  // from 13px → 16px to suppress that zoom path.
+                  // which broke the fixed dashboard layout. 16px
+                  // suppresses that zoom path.
                   fontSize: 16,
                   color: "#C8C0D8",
                 }}
               />
+              {/* Send button — full mint bg + black icon, matching
+                  the /flip CTA aesthetic (mint surface, black ink).
+                  Disabled-or-empty drops to 40% opacity for the
+                  obvious affordance state. */}
               <button
                 type="button"
                 onClick={() => sendMessage(input)}
                 disabled={sending || !input.trim()}
                 aria-label="Send"
                 style={{
-                  // 44×44 minimum tap target per Apple HIG. The
-                  // visual circle is still 36×36 visually via the
-                  // border-radius — the extra padding turns the
-                  // hitbox into a proper touch area.
+                  // 44×44 minimum tap target per Apple HIG.
                   minWidth: 44,
                   minHeight: 44,
                   width: 44,
                   height: 44,
                   borderRadius: "50%",
                   border: "none",
-                  backgroundColor: "rgba(92,224,184,0.15)",
+                  backgroundColor: "#5CE0B8",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -427,18 +584,28 @@ export default function FlipCoachSheet({
                   padding: 0,
                 }}
               >
-                <ArrowUpIcon />
+                <ArrowUpIcon color="#000" />
               </button>
             </div>
           )}
-          <style>{`@keyframes coachPulse { 0%,100% { opacity: 0.4 } 50% { opacity: 1 } }`}</style>
         </div>
       </div>
     </BottomSheet>
   );
 }
 
-function CoachBubble({ content }: { content: string }) {
+// Coach bubble — black/85 surface, full mint border, mint JBMono
+// text. Matches the /flip game's SpeechBubble aesthetic so a player
+// arriving at coach from /flip recognizes the voice. FlipCoyote
+// avatar at 28px on the left, mood-synced to the sheet's current
+// state.
+function CoachBubble({
+  content,
+  mood,
+}: {
+  content: string;
+  mood: FlipCoyoteMood;
+}) {
   return (
     <div
       style={{
@@ -449,22 +616,19 @@ function CoachBubble({ content }: { content: string }) {
       }}
     >
       <span style={{ flexShrink: 0, marginTop: 2 }}>
-        <SaturnGlyph size={20} opacity={0.5} />
+        <FlipCoyote mood={mood} size={28} />
       </span>
       <div
         style={{
-          backgroundColor: "rgba(92,224,184,0.05)",
-          borderRadius: "14px 14px 14px 4px",
-          // Mint left rule = "quoted reply" feel; matches the coach
-          // identity color. Drop shadow gives bubbles physical lift
-          // off the chat surface.
-          borderLeft: "2px solid rgba(92,224,184,0.15)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-          padding: 12,
-          fontFamily: "var(--font-body)",
+          backgroundColor: "rgba(0,0,0,0.85)",
+          border: "1px solid #5CE0B8",
+          borderRadius: "10px 10px 10px 2px",
+          padding: "10px 12px",
+          fontFamily: "var(--font-jetbrains-mono)",
           fontSize: 13,
-          color: "#C8C0D8",
-          lineHeight: 1.6,
+          color: "#5CE0B8",
+          lineHeight: 1.4,
+          letterSpacing: "0.01em",
           whiteSpace: "pre-wrap",
         }}
       >
@@ -474,22 +638,21 @@ function CoachBubble({ content }: { content: string }) {
   );
 }
 
+// User bubble — white/10 glass, Outfit 14px white text, no border
+// decoration. The user's voice is a quiet interjection in Flip's
+// conversation, not a stylized statement of its own.
 function UserBubble({ content }: { content: string }) {
   return (
     <div
       style={{
         alignSelf: "flex-end",
         maxWidth: "85%",
-        backgroundColor: "rgba(123,143,255,0.10)",
+        backgroundColor: "rgba(255,255,255,0.10)",
         borderRadius: "14px 14px 4px 14px",
-        // Periwinkle right rule mirrors the coach's left rule but in
-        // the user's identity color.
-        borderRight: "2px solid rgba(123,143,255,0.15)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
         padding: 12,
         fontFamily: "var(--font-body)",
-        fontSize: 13,
-        color: "#C8C0D8",
+        fontSize: 14,
+        color: "rgba(255,255,255,0.95)",
         lineHeight: 1.5,
         whiteSpace: "pre-wrap",
       }}
@@ -499,11 +662,12 @@ function UserBubble({ content }: { content: string }) {
   );
 }
 
-// Typing indicator — same bubble shape as a coach message but with
-// three pulsing mint dots instead of text. The stagger (0/0.2/0.4s)
-// matches the splash loading dots so the loading vocabulary stays
-// consistent across the app.
-function TypingBubble() {
+// Typing indicator — same shape as a coach message but three pulsing
+// mint dots instead of text. The stagger (0/0.2/0.4s) matches the
+// splash loading dots so the loading vocabulary stays consistent
+// across the app. FlipCoyote avatar uses the same current mood so
+// the visual identity stays coherent during the wait.
+function TypingBubble({ mood }: { mood: FlipCoyoteMood }) {
   return (
     <div
       style={{
@@ -514,14 +678,13 @@ function TypingBubble() {
       }}
     >
       <span style={{ flexShrink: 0, marginTop: 2 }}>
-        <SaturnGlyph size={20} opacity={0.5} />
+        <FlipCoyote mood={mood} size={28} />
       </span>
       <div
         style={{
-          backgroundColor: "rgba(92,224,184,0.05)",
-          borderRadius: "14px 14px 14px 4px",
-          borderLeft: "2px solid rgba(92,224,184,0.15)",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+          backgroundColor: "rgba(0,0,0,0.85)",
+          border: "1px solid #5CE0B8",
+          borderRadius: "10px 10px 10px 2px",
           padding: "14px 14px",
           display: "flex",
           alignItems: "center",
