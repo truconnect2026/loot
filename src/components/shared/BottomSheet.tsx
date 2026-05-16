@@ -84,6 +84,13 @@ export default function BottomSheet({
         "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
     }
     if (currentTranslateY.current > 100) {
+      // Zero the inline transform before handing off to onClose so
+      // the unmount-side bsSlideDown keyframe (which starts at
+      // translateY(0)) doesn't snap-jump from the dragged offset
+      // back to 0 at frame 0 of its animation.
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = "translateY(0)";
+      }
       onClose();
     } else if (sheetRef.current) {
       sheetRef.current.style.transform = "translateY(0)";
