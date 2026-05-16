@@ -268,7 +268,7 @@ export default function OnboardingPage() {
                 lineHeight: 1,
               }}
             >
-              LOOT
+              LOOT.WORKS
             </span>
           </div>
 

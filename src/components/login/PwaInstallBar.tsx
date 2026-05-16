@@ -282,7 +282,7 @@ export default function PwaInstallBar() {
   return (
     <div
       role="region"
-      aria-label="Install Loot"
+      aria-label="Install loot.works"
       style={{
         position: "fixed",
         // Inset 16px from the viewport edges; never narrower than the auth
@@ -341,7 +341,7 @@ export default function PwaInstallBar() {
               &ldquo;Add to Home Screen&rdquo;
             </>
           ) : (
-            "Install Loot for the full experience"
+            "Install loot.works for the full experience"
           )}
         </span>
         {/* Install button — Android only. iOS has no programmatic

@@ -19,10 +19,10 @@ self.addEventListener("push", function (event) {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "LOOT", body: event.data.text() };
+    payload = { title: "loot.works", body: event.data.text() };
   }
 
-  const title = payload.title || "LOOT";
+  const title = payload.title || "loot.works";
   const options = {
     body: payload.body || "",
     icon: payload.icon || "/icon-192.png",

@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://loot.works"),
-  title: "Loot — AI Thrift Store Scanner",
+  title: "loot.works — AI Thrift Store Scanner",
   description:
     "Scan thrift store items, get instant profit estimates, condition grading, and listing generation. The AI-powered reselling toolkit.",
   icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],

@@ -1,4 +1,4 @@
-# Loot Marketing Assets
+# loot.works Marketing Assets
 
 Output folder for all Claude Design exports. Each numbered subfolder corresponds to a single asset project. See brand-kit/ for the source materials Claude Design uses to maintain brand consistency across all assets.
 
