@@ -142,6 +142,19 @@ const PAGE_STYLES = `
       transition-duration: 0.01ms !important;
     }
   }
+  /* Legal footer links — Privacy/Terms/copyright row at the bottom
+     of the page. Class instead of inline style so the :hover state
+     works (inline styles can't carry pseudo-class transitions). */
+  .pro-legal-link {
+    font: 500 10px/1 var(--font-jetbrains-mono), monospace;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.4);
+    text-decoration: none;
+    transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  a.pro-legal-link:hover {
+    color: rgba(255,255,255,0.7);
+  }
 `;
 
 // ─── Saturn coin mark ──────────────────────────────────────────────────────
@@ -1776,22 +1789,6 @@ function SocialProofSection() {
 
 // ─── Digistore-mandatory footer ──────────────────────────────────────────
 function FooterSection() {
-  const linkStyle: CSSProperties = {
-    font: `500 11px/1 ${FONT_MONO}`,
-    color: "#5A4E70",
-    textDecoration: "none",
-  };
-  const dotSep = (
-    <span
-      style={{
-        width: 3,
-        height: 3,
-        borderRadius: "50%",
-        background: "#5CE0B8",
-        opacity: 0.5,
-      }}
-    />
-  );
   return (
     <footer style={{ position: "relative", padding: "80px 0 0", overflow: "hidden" }}>
       <div
@@ -1886,38 +1883,48 @@ function FooterSection() {
         </Reveal>
       </div>
 
+      {/* Legal footer row — Privacy/Terms/copyright in a single
+          centered line. Stuck at the bottom hairline; the imprint
+          paragraph above carries the operated-by line, this row
+          carries the click-through links Digistore requires for
+          marketplace approval. */}
       <div
         style={{
           marginTop: 56,
           padding: "20px 24px",
           borderTop: "1px solid rgba(255,255,255,0.04)",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "center",
           alignItems: "center",
+          gap: 8,
           maxWidth: 1200,
           margin: "56px auto 0",
           position: "relative",
           zIndex: 2,
           flexWrap: "wrap",
-          gap: 12,
         }}
       >
-        <span style={{ font: `500 11px/1 ${FONT_MONO}`, color: "#5A4E70" }}>
-          &copy; 2026 loot.works
+        <a href="/privacy" className="pro-legal-link">
+          Privacy
+        </a>
+        <span
+          aria-hidden="true"
+          className="pro-legal-link"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          ·
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <a href="/privacy" style={linkStyle}>
-            Privacy Policy
-          </a>
-          {dotSep}
-          <a href="/terms" style={linkStyle}>
-            Terms
-          </a>
-          {dotSep}
-          <a href="mailto:support@loot.works" style={linkStyle}>
-            Contact
-          </a>
-        </div>
+        <a href="/terms" className="pro-legal-link">
+          Terms
+        </a>
+        <span
+          aria-hidden="true"
+          className="pro-legal-link"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          ·
+        </span>
+        <span className="pro-legal-link">&copy; 2026 loot.works</span>
       </div>
 
       <div style={{ height: 20 }} />
