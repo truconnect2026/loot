@@ -193,9 +193,6 @@ export default function BottomSheet({
           mint border + inset-top highlight still anchor the top edge. */}
       <div
         ref={sheetRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         className="loot-bottom-sheet-panel"
         style={{
           position: "fixed",
@@ -239,19 +236,35 @@ export default function BottomSheet({
           }}
         />
 
-        {/* Drag handle — pill, 16px gap to content. Default 36×4
-            white/15 is the standard quiet affordance; consumers can
-            override via handleColor + handleWidth props to lean into
-            the handle as a brand accent (e.g. Flip Coach uses 40×4
-            mint to tie into the character-led identity). */}
+        {/* Drag handle hit area — ~40px tall full-width strip at the
+            top of the sheet. The visual pill (handleWidth × 4 mint
+            by default) sits centered horizontally and top-aligned to
+            the strip so it looks identical to the prior 30px-tall
+            wrapper. What changed is that the touch listeners now
+            live HERE rather than on the sheet root — content area
+            below scrolls natively without firing the dismiss path.
+            touchAction: none opts this strip out of the browser's
+            default scroll-on-touch so our handlers get clean control;
+            cursor: grab gives desktop users the same affordance.
+
+            Default handle remains 36×4 white/15 across the app;
+            consumers can override via handleColor + handleWidth
+            props to lean into the handle as a brand accent (e.g.
+            Flip Coach uses 40×4 mint). */}
         <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           style={{
             display: "flex",
             justifyContent: "center",
+            alignItems: "flex-start",
             paddingTop: 10,
-            marginBottom: 16,
+            paddingBottom: 26,
             position: "relative",
-            zIndex: 1,
+            zIndex: 2,
+            touchAction: "none",
+            cursor: "grab",
           }}
         >
           <div
