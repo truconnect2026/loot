@@ -247,26 +247,52 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
               </span>
             </span>
 
-            {/* LOOT wordmark — full-brightness mint, two-layer halo
-                (40px tight + 80px ambient) so the text reads as a
-                light source projecting outward, not paint on the
-                surface. */}
+            {/* LOOT wordmark + loot.works domain stamp — wordmark
+                stays the 4-letter logotype with the two-layer halo so
+                the text reads as a light source. The domain stamp
+                directly beneath is JBMono / 500 / 0.4 opacity, sized
+                so its full width roughly matches the LOOT wordmark.
+                Both fade in together via the wrapping span's
+                animation. */}
             <span
               style={{
                 marginLeft: 16,
-                fontFamily: "var(--font-jetbrains-mono)",
-                fontWeight: 700,
-                fontSize: 42,
-                letterSpacing: "0.15em",
-                lineHeight: 1,
-                color: "#5CE0B8",
-                textShadow:
-                  "0 0 40px rgba(92, 224, 184, 0.12), 0 0 80px rgba(92, 224, 184, 0.04)",
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "center",
                 animation:
                   "splashWordFadeIn 600ms ease-out 0.35s both",
               }}
             >
-              LOOT
+              <span
+                style={{
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontWeight: 700,
+                  fontSize: 42,
+                  letterSpacing: "0.15em",
+                  lineHeight: 1,
+                  color: "#5CE0B8",
+                  textShadow:
+                    "0 0 40px rgba(92, 224, 184, 0.12), 0 0 80px rgba(92, 224, 184, 0.04)",
+                }}
+              >
+                LOOT
+              </span>
+              <span
+                aria-hidden="true"
+                style={{
+                  marginTop: 4,
+                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontWeight: 500,
+                  fontSize: 15,
+                  letterSpacing: "0.2em",
+                  lineHeight: 1,
+                  color: "#5CE0B8",
+                  opacity: 0.4,
+                }}
+              >
+                loot.works
+              </span>
             </span>
           </div>
 

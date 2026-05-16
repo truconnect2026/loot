@@ -35,7 +35,7 @@ export default function WelcomeClient() {
               className="text-base font-[300] text-[var(--text-muted)]"
               style={{ fontFamily: "var(--font-body)" }}
             >
-              Welcome to Loot Pro. Check your email for sign-in instructions.
+              Welcome to Pro. Check your email for sign-in instructions.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function WelcomeClient() {
             className="w-full text-center bg-[var(--money)] text-black rounded-full py-4 px-6 text-base font-[500] hover:bg-[var(--money-dim)] transition"
             style={{ fontFamily: "var(--font-body)" }}
           >
-            Open Loot &rarr;
+            Open loot.works &rarr;
           </Link>
 
           <p

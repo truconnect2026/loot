@@ -299,14 +299,21 @@ export default function LoginPage() {
                 position: "relative",
                 fontFamily: "var(--font-label)",
                 fontWeight: 700,
-                fontSize: 44,
+                // 44 → 36 (−18%) so the 10-char LOOT.WORKS wordmark
+                // fits the 292px auth-column inner width at 375px
+                // (iPhone SE). At 44 the wordmark alone computed to
+                // ~296px in JBMono + 0.08em tracking, overflowing the
+                // column. Reducing font-size preserves JBMono glyph
+                // integrity better than negative letter-spacing on a
+                // monospace logotype would.
+                fontSize: 36,
                 color: "#5CE0B8",
                 letterSpacing: "0.08em",
                 lineHeight: 1,
                 display: "inline-block",
               }}
             >
-              LOOT
+              LOOT.WORKS
               {/* Glow layer — transparent text, all the visible mass is in
                   the text-shadow. Opacity-only animation = compositor only. */}
               <span
@@ -324,7 +331,7 @@ export default function LoginPage() {
                   willChange: "opacity",
                 }}
               >
-                LOOT
+                LOOT.WORKS
               </span>
             </span>
           </div>

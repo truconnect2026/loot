@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import WelcomeClient from "./welcome-client";
 
 export const metadata = {
-  title: "Welcome to Loot Pro",
+  title: "Welcome to Pro",
   description: "You're in.",
 };
 

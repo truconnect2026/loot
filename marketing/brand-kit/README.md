@@ -1,4 +1,4 @@
-# Loot Brand Kit
+# loot.works Brand Kit
 
 Drop the following files here before starting any Claude Design session:
 
@@ -7,4 +7,4 @@ Drop the following files here before starting any Claude Design session:
 - `screenshots/` — folder of live app screenshots (login, dashboard, scan result, deal feed, yard sale map, haul log)
 - `live-url.txt` — current Vercel deployment URL for web capture
 
-This folder is the source of truth that Claude Design ingests to build the Loot design system.
+This folder is the source of truth that Claude Design ingests to build the loot.works design system.

@@ -1,6 +1,6 @@
 {
-  "name": "Loot",
-  "short_name": "Loot",
+  "name": "loot.works",
+  "short_name": "loot.works",
   "description": "AI-powered thrift store scanner",
   "start_url": "/",
   "display": "standalone",

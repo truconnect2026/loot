@@ -1294,7 +1294,7 @@ export default function DashboardPage() {
                 lineHeight: 1,
               }}
             >
-              LOOT
+              LOOT.WORKS
             </span>
           </div>
 
