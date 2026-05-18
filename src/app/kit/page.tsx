@@ -651,12 +651,12 @@ If you cover reselling, thrifting, or side hustles — your audience will thank 
 → TRY LOOT FREE AT LOOT.WORKS`;
 
 const SHOTS = [
-  { src: "shots/scan.png", alt: "Scan screen", label: "SCAN" },
-  { src: "shots/verdict-flip.png", alt: "Verdict — Flip screen", label: "VERDICT — FLIP" },
-  { src: "shots/verdict-skip.png", alt: "Verdict — Skip screen", label: "VERDICT — SKIP" },
-  { src: "shots/deal-feed.png", alt: "Deal Feed screen", label: "DEAL FEED" },
-  { src: "shots/map.png", alt: "Yard Sale Map screen", label: "YARD SALE MAP" },
-  { src: "shots/flip-or-skip-game.png", alt: "Flip or Skip Game screen", label: "FLIP OR SKIP GAME" },
+  { src: "/brand-kit/shots/scan.png", alt: "Scan screen", label: "SCAN" },
+  { src: "/brand-kit/shots/verdict-flip.png", alt: "Verdict — Flip screen", label: "VERDICT — FLIP" },
+  { src: "/brand-kit/shots/verdict-skip.png", alt: "Verdict — Skip screen", label: "VERDICT — SKIP" },
+  { src: "/brand-kit/shots/deal-feed.png", alt: "Deal Feed screen", label: "DEAL FEED" },
+  { src: "/brand-kit/shots/map.png", alt: "Yard Sale Map screen", label: "YARD SALE MAP" },
+  { src: "/brand-kit/shots/flip-or-skip-game.png", alt: "Flip or Skip Game screen", label: "FLIP OR SKIP GAME" },
 ];
 
 const SWATCHES: Array<{ hex: string; role: string; bg: string; text: string }> = [
@@ -957,7 +957,7 @@ export default function KitPage() {
                   style={{ position: "relative" }}
                 >
                   <img
-                    src="flip-smirk.png"
+                    src="/brand-kit/flip/flip-smirk.png"
                     alt="Flip mascot — smirk mood"
                     width={200}
                     height={200}
@@ -1238,7 +1238,7 @@ export default function KitPage() {
                   style={{ position: "relative" }}
                 >
                   <img
-                    src="flip-smirk.png"
+                    src="/brand-kit/flip/flip-smirk.png"
                     alt="Flip mascot — smirk mood"
                     style={{
                       display: "block",
@@ -1288,7 +1288,7 @@ export default function KitPage() {
                   <div className="moods-row">
                     <div className="mood-item">
                       <img
-                        src="flip-smirk.png"
+                        src="/brand-kit/flip/flip-smirk.png"
                         alt="Flip — smirk mood"
                         width={80}
                         height={80}
@@ -1298,7 +1298,7 @@ export default function KitPage() {
                     </div>
                     <div className="mood-item">
                       <img
-                        src="flip-hyped.png"
+                        src="/brand-kit/flip/flip-hyped.png"
                         alt="Flip — hyped mood"
                         width={80}
                         height={80}
@@ -1308,7 +1308,7 @@ export default function KitPage() {
                     </div>
                     <div className="mood-item">
                       <img
-                        src="flip-sideEye.png"
+                        src="/brand-kit/flip/flip-sideeye.png"
                         alt="Flip — side-eye mood"
                         width={80}
                         height={80}
@@ -1318,7 +1318,7 @@ export default function KitPage() {
                     </div>
                     <div className="mood-item">
                       <img
-                        src="flip-dead.png"
+                        src="/brand-kit/flip/flip-dead.png"
                         alt="Flip — dead mood"
                         width={80}
                         height={80}
