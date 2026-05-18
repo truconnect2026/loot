@@ -70,7 +70,7 @@ export default function VerdictFlipScreen() {
           zIndex: 6,
         }}
       >
-        <FlipCoyote mood="hyped" size={56} />
+        <FlipCoyote mood="hyped" size={72} />
       </div>
 
       {/* Item Card */}

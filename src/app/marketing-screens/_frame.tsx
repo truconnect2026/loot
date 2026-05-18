@@ -336,13 +336,13 @@ export function PyrexBowl({ size = 180 }: { size?: number }) {
 }
 
 /**
- * Vector cartoon kitschy ceramic bird statue.
- * 3 colors: cream body, brown accents, beak/eye black.
+ * Vector ceramic bird figurine — deliberately generic.
+ * Two flat colors, two overlapping shapes, no detail. Reads as
+ * "kitschy mass-produced thing" at thumbnail size.
  */
 export function CeramicBird({ size = 180 }: { size?: number }) {
-  const CREAM = "#E8D6B8";
-  const BROWN = "#8A6440";
-  const DARK = "#3a2a1c";
+  const BROWN = "#8B6F4E";
+  const CREAM = "#E8D4B8";
   return (
     <svg
       width={size}
@@ -350,94 +350,13 @@ export function CeramicBird({ size = 180 }: { size?: number }) {
       viewBox="0 0 200 200"
       style={{ display: "block" }}
     >
-      {/* Base pedestal */}
-      <ellipse
-        cx="100"
-        cy="178"
-        rx="42"
-        ry="8"
+      {/* Body silhouette — squat bird shape, brown */}
+      <path
+        d="M 60 78 Q 60 50 88 50 Q 110 50 116 70 Q 158 78 158 132 Q 158 168 100 168 Q 42 168 42 132 Q 42 102 60 86 Z"
         fill={BROWN}
-        stroke={DARK}
-        strokeWidth="1.4"
       />
-      <rect
-        x="68"
-        y="158"
-        width="64"
-        height="18"
-        rx="2"
-        fill={CREAM}
-        stroke={DARK}
-        strokeWidth="1.4"
-      />
-      {/* Body (egg-shaped) */}
-      <ellipse
-        cx="100"
-        cy="120"
-        rx="42"
-        ry="48"
-        fill={CREAM}
-        stroke={DARK}
-        strokeWidth="1.6"
-      />
-      {/* Wing */}
-      <path
-        d="M 100 96 Q 132 110 124 150 Q 108 144 96 134 Z"
-        fill={BROWN}
-        stroke={DARK}
-        strokeWidth="1.4"
-      />
-      {/* Wing detail lines */}
-      <path
-        d="M 104 110 Q 118 122 116 140"
-        fill="none"
-        stroke={DARK}
-        strokeWidth="1"
-        opacity="0.6"
-      />
-      <path
-        d="M 110 116 Q 122 128 120 144"
-        fill="none"
-        stroke={DARK}
-        strokeWidth="1"
-        opacity="0.6"
-      />
-      {/* Head */}
-      <circle
-        cx="86"
-        cy="74"
-        r="22"
-        fill={CREAM}
-        stroke={DARK}
-        strokeWidth="1.6"
-      />
-      {/* Beak */}
-      <path
-        d="M 64 76 L 50 80 L 64 84 Z"
-        fill={BROWN}
-        stroke={DARK}
-        strokeWidth="1.4"
-      />
-      {/* Eye */}
-      <circle cx="80" cy="70" r="2.4" fill={DARK} />
-      <circle cx="80.7" cy="69.3" r="0.7" fill="#ffffff" />
-      {/* Cheek blush */}
-      <ellipse cx="78" cy="80" rx="4" ry="2" fill="#d49a8a" opacity="0.55" />
-      {/* Tail feather */}
-      <path
-        d="M 142 132 Q 162 124 158 148 Q 148 142 138 138 Z"
-        fill={BROWN}
-        stroke={DARK}
-        strokeWidth="1.4"
-      />
-      {/* Crest */}
-      <path
-        d="M 90 52 L 92 42 L 96 50 L 100 40 L 102 52"
-        fill="none"
-        stroke={DARK}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-      />
+      {/* Cream belly highlight — overlaps the body */}
+      <ellipse cx="96" cy="126" rx="34" ry="32" fill={CREAM} />
     </svg>
   );
 }

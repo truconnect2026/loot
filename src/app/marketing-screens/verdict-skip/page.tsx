@@ -70,7 +70,7 @@ export default function VerdictSkipScreen() {
           zIndex: 6,
         }}
       >
-        <FlipCoyote mood="dead" size={56} />
+        <FlipCoyote mood="dead" size={72} />
       </div>
 
       {/* Item Card */}
@@ -116,7 +116,7 @@ export default function VerdictSkipScreen() {
             height: 170,
           }}
         >
-          <CeramicBird size={180} />
+          <CeramicBird size={153} />
         </div>
       </div>
 
