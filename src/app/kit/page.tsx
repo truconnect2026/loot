@@ -1693,8 +1693,7 @@ export default function KitPage() {
                 </div>
                 <div className="press-row">
                   <span className="press-key">Founder</span>
-                  {/* TODO(deploy): swap with founder last name */}
-                  <span className="press-val">David [LAST NAME]</span>
+                  <span className="press-val">David Jones</span>
                 </div>
                 <div className="press-row">
                   <span className="press-key">Product</span>
@@ -1814,10 +1813,8 @@ export default function KitPage() {
               </div>
             </div>
             <div className="footer-bottom">
-              {/* TODO(deploy): swap [BUSINESS NAME] with legal business entity */}
-              {/* TODO(deploy): swap [ADDRESS] with legal business address */}
               <p className="footer-biz">
-                Loot — operated by [BUSINESS NAME], [ADDRESS]
+                Loot — operated by Loot.works, Locust Grove, Georgia
               </p>
               <div id="digistore-trust-badge"></div>
               <p className="footer-tagline">

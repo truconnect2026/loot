@@ -956,10 +956,8 @@ export default function PartnersPage() {
               <a href="/pro">Pro</a>
               <a href="mailto:support@loot.works">Contact</a>
             </div>
-            {/* TODO(deploy): swap [BUSINESS NAME] with legal business entity */}
-            {/* TODO(deploy): swap [ADDRESS] with legal business address */}
             <p className="ft-biz">
-              Loot — operated by [BUSINESS NAME], [ADDRESS]
+              Loot — operated by Loot.works, Locust Grove, Georgia
             </p>
             <div id="digistore-trust-badge"></div>
             <p className="ft-copy">© 2026 Loot</p>
