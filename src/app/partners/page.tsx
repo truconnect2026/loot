@@ -380,47 +380,6 @@ const PAGE_STYLES = `
 .partners-page .ft-biz { font: 400 12px/1.5 var(--ff-body); color: var(--text-ghost); margin-bottom: 6px; }
 .partners-page .ft-copy { font: 400 12px/1 var(--ff-body); color: var(--text-ghost); }
 
-/* ═══ FOUNDER VIDEO ═══ */
-.partners-page .founder-video {
-  max-width: 720px; margin: 0 auto; padding: 24px;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(92,224,184,0.06), transparent 65%),
-    var(--bg-page);
-  border: 1px solid rgba(92,224,184,0.3);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3), var(--shadow-card);
-}
-.partners-page .fv-eyebrow { font: 500 11px/1 var(--ff-mono); letter-spacing: 0.28em; color: var(--mint); text-transform: uppercase; }
-.partners-page .fv-title { font: 700 24px/1.15 var(--ff-body); color: #fff; margin: 8px 0 6px; }
-.partners-page .fv-dek { font: 400 14px/1.5 var(--ff-body); color: var(--text-2); margin-bottom: 20px; }
-.partners-page .fv-frame {
-  position: relative; width: 100%; aspect-ratio: 16 / 9;
-  border: 1px solid rgba(92,224,184,0.4); border-radius: 10px;
-  overflow: hidden; background: #000;
-}
-.partners-page .fv-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
-.partners-page .fv-thumb {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 12px;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(92,224,184,0.12), transparent 60%),
-    #0a0a0a;
-  cursor: pointer; border: none; color: #fff;
-}
-.partners-page .fv-thumb img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 0 24px rgba(92,224,184,0.25)); }
-.partners-page .fv-play {
-  font: 700 13px/1 var(--ff-mono); letter-spacing: 0.18em; color: var(--mint);
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 12px 22px; border: 1px solid var(--mint); border-radius: 999px;
-  background: rgba(0,0,0,0.4);
-  transition: background 150ms ease, transform 150ms ease;
-}
-.partners-page .fv-thumb:hover .fv-play { background: var(--mint); color: var(--bg-darker); transform: scale(1.03); }
-.partners-page .fv-caption {
-  margin-top: 14px; text-align: center;
-  font: 500 11px/1.4 var(--ff-mono); color: rgba(255,255,255,0.55);
-}
-
 /* ═══ EARNINGS CALCULATOR ═══ */
 .partners-page .earnings-calculator {
   padding: 40px 24px; margin: 24px auto 0;
@@ -511,36 +470,6 @@ const PAGE_STYLES = `
   }
 }
 `;
-
-// TODO(deploy): replace PLACEHOLDER_LOOM_ID with the real Loom video id once
-// David records the founder intro. See marketing/founder-loom-script.md.
-const FOUNDER_LOOM_ID = "PLACEHOLDER_LOOM_ID";
-
-function FounderVideo() {
-  const [playing, setPlaying] = useState(false);
-  return (
-    <div className="fv-frame">
-      {playing ? (
-        <iframe
-          src={`https://www.loom.com/embed/${FOUNDER_LOOM_ID}?autoplay=1`}
-          allow="fullscreen; picture-in-picture"
-          allowFullScreen
-          title="David — founder intro"
-        />
-      ) : (
-        <button
-          type="button"
-          className="fv-thumb"
-          onClick={() => setPlaying(true)}
-          aria-label="Play founder video"
-        >
-          <img src="/brand-kit/flip/flip-smirk.png" alt="" />
-          <span className="fv-play">▷ HEAR FROM DAVID</span>
-        </button>
-      )}
-    </div>
-  );
-}
 
 const FAQS = [
   {
@@ -937,24 +866,6 @@ export default function PartnersPage() {
             <p className="your-spot">
               <span>→</span> your spot is here
             </p>
-          </section>
-
-          <div className="divider"></div>
-
-          {/* ═══ 6.5 · FOUNDER VIDEO ═══ */}
-          <section className="wrap" style={{ padding: "40px 20px" }}>
-            <div className="founder-video">
-              <div className="fv-eyebrow">FROM THE FOUNDER</div>
-              <h2 className="fv-title">
-                Why we built Loot — and why this affiliate program is
-                different.
-              </h2>
-              <p className="fv-dek">60 seconds. No deck. No music. Just the thing.</p>
-              <FounderVideo />
-              <p className="fv-caption">
-                david jones · founder · locust grove, ga
-              </p>
-            </div>
           </section>
 
           <div className="divider"></div>
