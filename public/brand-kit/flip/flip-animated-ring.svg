@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <g transform-origin="80 80">
+    <animateTransform attributeName="transform" attributeType="XML" type="rotate"
+                      from="0 80 80" to="360 80 80" dur="4s" repeatCount="indefinite"/>
+    <ellipse cx="80" cy="80" rx="70" ry="20" fill="none" stroke="#5CE0B8"
+             stroke-width="1.5" opacity="0.85" transform="rotate(-23 80 80)"/>
+    <ellipse cx="80" cy="80" rx="70" ry="20" fill="none" stroke="#000"
+             stroke-width="2.5" stroke-dasharray="6 50 4 80" transform="rotate(-23 80 80)"/>
+  </g>
+</svg>

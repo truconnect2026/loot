@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import KitToc from "@/components/kit/KitToc";
 
 /**
  * /kit — public Loot Brand & Partner Kit.
@@ -53,6 +54,61 @@ const PAGE_STYLES = `
 }
 
 html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+/* ═══ TABLE OF CONTENTS ═══ */
+.kit-page .kit-toc { display: none; }
+.kit-page .kit-toc-btn {
+  position: fixed; bottom: 24px; right: 24px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--mint); color: var(--bg);
+  border: none; cursor: pointer; z-index: 45;
+  font-size: 26px; line-height: 1;
+  box-shadow: 0 0 24px rgba(92,224,184,0.4), 0 8px 24px rgba(0,0,0,0.4);
+  transition: transform 150ms var(--ease);
+}
+.kit-page .kit-toc-btn:hover, .kit-page .kit-toc-btn:focus-visible { transform: scale(1.05); outline: none; }
+.kit-page .kit-toc-btn:active { transform: scale(0.95); }
+.kit-page .kit-toc-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 49;
+}
+.kit-page .kit-toc-panel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: #0a0a0a; border-top: 1px solid rgba(92,224,184,0.4);
+  padding: 24px; max-height: 70vh; overflow-y: auto;
+  animation: kit-toc-slide-in 280ms cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes kit-toc-slide-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.kit-page .kit-toc-label { font: 500 10px/1 var(--mono); letter-spacing: 0.24em; color: var(--mint); margin-bottom: 14px; text-transform: uppercase; }
+.kit-page .kit-toc ul, .kit-page .kit-toc-panel ul { list-style: none; margin: 0; padding: 0; }
+.kit-page .kit-toc li, .kit-page .kit-toc-panel li { margin: 0; }
+.kit-page .kit-toc a, .kit-page .kit-toc-panel a {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; min-height: 44px;
+  color: rgba(255,255,255,0.75); text-decoration: none;
+  border-left: 2px solid transparent;
+  transition: all 180ms var(--ease);
+}
+.kit-page .kit-toc a:hover, .kit-page .kit-toc-panel a:hover { color: #fff; background: rgba(255,255,255,0.03); }
+.kit-page .kit-toc a.active, .kit-page .kit-toc-panel a.active {
+  color: var(--mint); border-left-color: var(--mint);
+  background: rgba(92,224,184,0.06);
+}
+.kit-page .kit-toc-n { font: 500 10px/1 var(--mono); color: rgba(255,255,255,0.35); width: 18px; }
+.kit-page .kit-toc-text { font: 500 13px/1 var(--display); }
+.kit-page .kit-toc a.active .kit-toc-n, .kit-page .kit-toc-panel a.active .kit-toc-n { color: var(--mint); }
+@media (min-width: 1024px) {
+  .kit-page .kit-toc {
+    display: block; position: fixed; top: 96px; left: 24px;
+    width: 200px; max-height: 70vh; overflow-y: auto; z-index: 40;
+    background: rgba(10,22,18,0.6); backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(92,224,184,0.25);
+    padding: 20px 0;
+  }
+  .kit-page .kit-toc-label { padding: 0 16px; }
+  .kit-page .kit-toc-btn, .kit-page .kit-toc-panel, .kit-page .kit-toc-overlay { display: none; }
+}
 
 /* Dot grid overlay */
 .kit-page::before {
@@ -303,13 +359,13 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
 @media (min-width: 768px) { .kit-page .logo-grid { grid-template-columns: repeat(3, 1fr); } }
 .kit-page .logo-tile {
   aspect-ratio: 1; position: relative; display: flex;
-  align-items: center; justify-content: center; overflow: hidden;
+  flex-direction: column; overflow: hidden;
   border-radius: 16px; background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(92,224,184,0.25);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
   transition: border-color 0.2s var(--ease);
 }
-.kit-page .logo-tile:hover { border-color: rgba(92,224,184,0.3); }
+.kit-page .logo-tile:hover { border-color: rgba(92,224,184,0.5); }
 .kit-page .logo-tile .tile-bg-grid {
   position: absolute; inset: 0;
   background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
@@ -335,21 +391,31 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
   letter-spacing: 0.1em; color: rgba(255,255,255,0.4);
 }
 .kit-page .tile-actions {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  display: flex; gap: 0; opacity: 0; transform: translateY(4px);
-  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  display: flex; gap: 0; min-height: 40px;
+  border-top: 1px solid rgba(92,224,184,0.2);
+  background: rgba(0,0,0,0.2);
 }
-.kit-page .logo-tile:hover .tile-actions { opacity: 1; transform: translateY(0); }
 .kit-page .tile-actions a {
-  flex: 1; text-align: center; padding: 10px;
-  font-family: var(--mono); font-size: 9px; font-weight: 700;
-  letter-spacing: 0.08em; color: var(--bg); background: var(--mint);
-  text-decoration: none; transition: background 0.15s var(--ease);
+  flex: 1; text-align: center; padding: 12px 8px;
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; color: var(--mint); background: transparent;
+  text-decoration: none; transition: background 0.15s var(--ease), color 0.15s var(--ease);
+  display: flex; align-items: center; justify-content: center;
+  min-height: 44px;
 }
-.kit-page .tile-actions a:first-child { border-bottom-left-radius: 15px; }
-.kit-page .tile-actions a:last-child { border-bottom-right-radius: 15px; }
-.kit-page .tile-actions a:hover { background: #4dc9a3; }
-.kit-page .logo-tile .tile-asset { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; }
+.kit-page .tile-actions a + a { border-left: 1px solid rgba(92,224,184,0.2); }
+.kit-page .tile-actions a:hover, .kit-page .tile-actions a:focus-visible {
+  background: var(--mint); color: var(--bg); outline: none;
+}
+.kit-page .logo-tile .tile-asset {
+  flex: 1; position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; min-height: 0;
+}
+.kit-page .logo-tile .tile-asset img {
+  max-width: 70%; max-height: 70%; width: auto; height: auto;
+  object-fit: contain; display: block;
+}
 .kit-page .logo-tile .tile-asset svg { width: 72px; height: 72px; }
 @media (min-width: 768px) { .kit-page .logo-tile .tile-asset svg { width: 96px; height: 96px; } }
 
@@ -448,8 +514,7 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
   border-radius: 20px; object-fit: cover; object-position: top center;
 }
 .kit-page .shot-label { font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.08em; color: rgba(255,255,255,0.5); }
-.kit-page .shot-dl { opacity: 0; transition: opacity 0.2s var(--ease); }
-.kit-page .shot-tile:hover .shot-dl { opacity: 1; }
+.kit-page .shot-dl { transition: opacity 0.2s var(--ease); }
 
 /* ═══ POST KIT ═══ */
 .kit-page .accordion { display: flex; flex-direction: column; gap: 16px; }
@@ -481,6 +546,11 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 12px; padding: 20px;
+}
+.kit-page .script-card .script-fmt {
+  font-family: var(--mono); font-weight: 500; font-size: 10px;
+  letter-spacing: 0.04em; color: rgba(255,255,255,0.45);
+  margin-bottom: 12px; margin-top: -4px;
 }
 .kit-page .script-card h4 {
   font-family: var(--mono); font-weight: 700; font-size: 12px;
@@ -617,6 +687,48 @@ BUILD (2-8s): [two items side by side, zoom on stitching/labels]
 PROOF (8-15s): [Loot scan comparison, highlight authentication signals]
 REVEAL (15-25s): [dramatic reveal — which is real, show resale value]
 CTA (25-30s): "Loot caught it in 2 seconds. loot.works"`;
+
+const SCRIPT_4 = `HOOK (0-3s): "ranking thrift store brands from 'sprint to checkout' to 'leave it on the shelf' — agree or fight me"
+BUILD (3-12s): [show S/A/B/C/D tier list graphic, drag brand logos one by one]
+  S TIER: Polo RL Stadium · Le Creuset · Big E Levi's
+  A TIER: Carhartt · Pendleton · Pyrex Butterprint
+  B TIER: Lodge · Coach USA · 90s Nike single-stitch
+  C TIER: Mass-produced ceramic figurines · Y2K Mudd (unless flared)
+  D TIER: anything with "vintage style" on the tag
+PAYOFF (12-22s): [show Loot scanning an S-tier item, verdict reveal: $4 → $400 Polo Stadium]
+CTA (22-30s): "scanner that called this is at loot.works — link in bio"`;
+
+const SCRIPT_5 = `HOOK (0-2s): "duet me if you can guess what this sold for"
+BUILD (2-8s): [show item rotating on table — Coleman 200A lantern in red enamel]
+  Text overlay: "i paid $6 at an estate sale"
+PROOF (8-14s): [show 3 ebay sold comps stacking on screen, prices blurred]
+REVEAL (14-22s): [unblur the comps, biggest sold price animates: $90]
+  Voice: "comments below — what would YOU have priced it at?"
+CTA (22-30s): "scanner that knew before i did: loot.works"`;
+
+const SCRIPT_6 = `HOOK (0-3s): [text on dark background, large white]
+  "i almost walked past this at goodwill"
+BUILD (3-10s): [ASMR-style close-ups — Pyrex Butterprint 403 bowl from multiple angles]
+  Text overlay (one line at a time, paced):
+  "turquoise farm scene pattern"
+  "cinderella handles"
+  "no chips. tagged $3.99"
+PROOF (10-18s): [show Loot app scan in progress, then the verdict screen]
+  Text: "loot said BUY → $85 average sold"
+REVEAL (18-25s): [show ebay listing live, then "SOLD" stamp animation]
+  Text: "sold in 4 days. $87 + shipping."
+CTA (25-30s): [Loot wordmark + URL]
+  Text: "scanner that found it: loot.works"`;
+
+const SCRIPT_7 = `HOOK (0-3s): "POV: you're at the bins and you find this for $1"
+  [show the item in hand — 90s Nike single-stitch tee]
+BUILD (3-10s): [first-person camera angle, inspecting the tag, the stitching]
+  Voice (calm, deliberate): "single-stitch sleeve. made in usa tag. faded just right."
+PROOF (10-18s): [pull out phone, scan with Loot, show verdict]
+  Voice: "loot says $65 average. let's see."
+REVEAL (18-26s): [time-cut to laptop, ebay listing, then sold notification animation]
+  Voice: "sold for $72. paid for the whole haul."
+CTA (26-30s): "scanner that called it: loot.works — link in bio"`;
 
 const IG_REEL =
   "Loot called this flip in 2 seconds. The bin scan is undefeated. → loot.works 🪐 #thriftflip #resellercommunity #vintagefinds";
@@ -846,6 +958,7 @@ export default function KitPage() {
       <style dangerouslySetInnerHTML={{ __html: PAGE_STYLES }} />
 
       <div className="kit-page">
+        <KitToc />
         <div id="cursor-dot" ref={cursorDotRef}></div>
         <div
           id="aria-live"
@@ -1095,45 +1208,34 @@ export default function KitPage() {
               <span className="sec-num">02 / 13</span>
             </div>
             <p className="sec-sub">
-              All assets are SVG + PNG @ 2x. Click any tile to preview,
-              hover to reveal downloads.
+              All assets are SVG + PNG @ 2x. Tap any button to download.
             </p>
             <div className="logo-grid">
               <div className="logo-tile">
                 <div className="tile-bg-grid"></div>
                 <div className="tile-asset">
-                  <span
-                    style={{
-                      fontFamily: "var(--display)",
-                      fontWeight: 700,
-                      fontSize: "38px",
-                      letterSpacing: "0.1em",
-                      color: "#5CE0B8",
-                    }}
-                  >
-                    LOOT
-                  </span>
+                  <img
+                    src="/brand-kit/logos/wordmark-mint-on-black.svg"
+                    alt="Loot wordmark, mint on black"
+                  />
                 </div>
                 <span className="tile-label">WORDMARK — MINT ON BLACK</span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a href="/brand-kit/logos/wordmark-mint-on-black.svg" download>
+                    SVG
+                  </a>
+                  <a href="/brand-kit/logos/wordmark-mint-on-black.png" download>
+                    PNG
+                  </a>
                 </div>
               </div>
               <div className="logo-tile" style={{ background: "#5CE0B8" }}>
                 <div className="tile-bg-grid" style={{ opacity: 0.3 }}></div>
                 <div className="tile-asset">
-                  <span
-                    style={{
-                      fontFamily: "var(--display)",
-                      fontWeight: 700,
-                      fontSize: "38px",
-                      letterSpacing: "0.1em",
-                      color: "#0a0a0a",
-                    }}
-                  >
-                    LOOT
-                  </span>
+                  <img
+                    src="/brand-kit/logos/wordmark-black-on-mint.svg"
+                    alt="Loot wordmark, black on mint"
+                  />
                 </div>
                 <span
                   className="tile-label"
@@ -1142,79 +1244,101 @@ export default function KitPage() {
                   WORDMARK — BLACK ON MINT
                 </span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a href="/brand-kit/logos/wordmark-black-on-mint.svg" download>
+                    SVG
+                  </a>
+                  <a href="/brand-kit/logos/wordmark-black-on-mint.png" download>
+                    PNG
+                  </a>
                 </div>
               </div>
               <div className="logo-tile logo-tile--checker">
                 <div className="tile-bg-grid"></div>
                 <div className="tile-asset">
-                  <span
-                    style={{
-                      fontFamily: "var(--display)",
-                      fontWeight: 700,
-                      fontSize: "38px",
-                      letterSpacing: "0.1em",
-                      color: "#fff",
-                    }}
-                  >
-                    LOOT
-                  </span>
+                  <img
+                    src="/brand-kit/logos/wordmark-white-on-transparent.svg"
+                    alt="Loot wordmark, white on transparent"
+                  />
                 </div>
                 <span className="tile-label">
                   WORDMARK — WHITE ON TRANSPARENT
                 </span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a
+                    href="/brand-kit/logos/wordmark-white-on-transparent.svg"
+                    download
+                  >
+                    SVG
+                  </a>
+                  <a
+                    href="/brand-kit/logos/wordmark-white-on-transparent.png"
+                    download
+                  >
+                    PNG
+                  </a>
                 </div>
               </div>
               <div className="logo-tile">
                 <div className="tile-bg-grid"></div>
                 <div className="tile-asset">
-                  <svg style={{ color: "#5CE0B8" }}>
-                    <use href="#sym-coinmark" />
-                  </svg>
+                  <img
+                    src="/brand-kit/logos/coinmark-mint.svg"
+                    alt="Loot CoinMark icon, mint"
+                  />
                 </div>
                 <span className="tile-label">COINMARK — PRIMARY ICON</span>
                 <span className="tile-subtitle">
                   App icon, social, favicons
                 </span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a href="/brand-kit/logos/coinmark-mint.svg" download>
+                    SVG
+                  </a>
+                  <a href="/brand-kit/logos/coinmark-mint.png" download>
+                    PNG
+                  </a>
                 </div>
               </div>
               <div className="logo-tile">
                 <div className="tile-bg-grid"></div>
                 <div className="tile-asset">
-                  <svg style={{ color: "#fff" }}>
-                    <use href="#sym-coinmark" />
-                  </svg>
+                  <img
+                    src="/brand-kit/logos/coinmark-white.svg"
+                    alt="Loot CoinMark icon, white"
+                  />
                 </div>
                 <span className="tile-label">COINMARK — INVERSE</span>
                 <span className="tile-subtitle">
                   Light backgrounds, print
                 </span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a href="/brand-kit/logos/coinmark-white.svg" download>
+                    SVG
+                  </a>
+                  <a href="/brand-kit/logos/coinmark-white.png" download>
+                    PNG
+                  </a>
                 </div>
               </div>
               <div className="logo-tile">
                 <div className="tile-bg-grid"></div>
                 <div className="tile-asset">
-                  <svg style={{ color: "#5CE0B8" }}>
-                    <use href="#sym-saturn" />
-                  </svg>
+                  <img
+                    src="/brand-kit/logos/saturn-glyph-mint.svg"
+                    alt="Loot Saturn glyph, mint"
+                  />
                 </div>
                 <span className="tile-label">SATURN GLYPH — INLINE USE</span>
                 <span className="tile-subtitle">
                   Body text, captions, UI chrome
                 </span>
                 <div className="tile-actions">
-                  <a href="#">SVG</a>
-                  <a href="#">PNG</a>
+                  <a href="/brand-kit/logos/saturn-glyph-mint.svg" download>
+                    SVG
+                  </a>
+                  <a href="/brand-kit/logos/saturn-glyph-mint.png" download>
+                    PNG
+                  </a>
                 </div>
               </div>
             </div>
@@ -1328,13 +1452,25 @@ export default function KitPage() {
                     </div>
                   </div>
                   <div className="flip-downloads">
-                    <a href="#" className="btn-dl">
+                    <a
+                      href="/brand-kit/flip/flip-sprite-sheet.png"
+                      className="btn-dl"
+                      download
+                    >
                       SPRITE SHEET (PNG)
                     </a>
-                    <a href="#" className="btn-dl">
+                    <a
+                      href="/brand-kit/flip/flip-moods.zip"
+                      className="btn-dl"
+                      download="flip-moods.zip"
+                    >
                       MOODS (ZIP)
                     </a>
-                    <a href="#" className="btn-dl">
+                    <a
+                      href="/brand-kit/flip/flip-animated-ring.svg"
+                      className="btn-dl"
+                      download
+                    >
                       ANIMATED RING (SVG)
                     </a>
                   </div>
@@ -1459,7 +1595,7 @@ export default function KitPage() {
                   </div>
                   <span className="shot-label">{s.label}</span>
                   <div className="shot-dl">
-                    <a href="#" className="btn-dl">
+                    <a href={s.src} className="btn-dl" download>
                       DOWNLOAD PNG
                     </a>
                   </div>
@@ -1553,6 +1689,107 @@ export default function KitPage() {
                     <strong>Hashtags:</strong> #reseller #authenticvsreplica
                     #thriftflip #realvsfake #vintagefinds #designerresale
                     #resellertips
+                  </div>
+                </div>
+
+                <div className="script-card">
+                  <h4>SCRIPT 04 — TIER LIST RANKING</h4>
+                  <div className="script-fmt">
+                    format: tier list · engagement-bait · 30s
+                  </div>
+                  <div className="code-block">
+                    <button
+                      className={copyClass("s4-beats")}
+                      onClick={() => copy("s4-beats", SCRIPT_4)}
+                    >
+                      {copyLabel("s4-beats")}
+                    </button>
+                    <span>{SCRIPT_4}</span>
+                  </div>
+                  <div className="caption-block">
+                    <strong>Caption:</strong> 🪐 thrift brand tier list.
+                    fight me in the comments. #thriftflip #reseller
+                    #goodwillfinds
+                  </div>
+                  <div className="caption-block">
+                    <strong>Hashtags:</strong> #reseller #thriftflip
+                    #goodwillfinds #tierlist #vintageclothing #vintagefinds
+                    #brandranking #flippingforprofit
+                  </div>
+                </div>
+
+                <div className="script-card">
+                  <h4>SCRIPT 05 — DUET BAIT</h4>
+                  <div className="script-fmt">
+                    format: duet bait · 30s · works best at &lt;50k followers
+                  </div>
+                  <div className="code-block">
+                    <button
+                      className={copyClass("s5-beats")}
+                      onClick={() => copy("s5-beats", SCRIPT_5)}
+                    >
+                      {copyLabel("s5-beats")}
+                    </button>
+                    <span>{SCRIPT_5}</span>
+                  </div>
+                  <div className="caption-block">
+                    <strong>Caption:</strong> duet me with YOUR guess
+                    before the reveal 👇 #thriftflip #duetme
+                  </div>
+                  <div className="caption-block">
+                    <strong>Hashtags:</strong> #reseller #duetme
+                    #thriftfinds #ebayreseller #estatesale #flipchallenge
+                    #vintagefinds #resellercommunity
+                  </div>
+                </div>
+
+                <div className="script-card">
+                  <h4>SCRIPT 06 — STORY TIME (faceless)</h4>
+                  <div className="script-fmt">
+                    format: faceless story · text-only · ASMR vibe · 30s
+                  </div>
+                  <div className="code-block">
+                    <button
+                      className={copyClass("s6-beats")}
+                      onClick={() => copy("s6-beats", SCRIPT_6)}
+                    >
+                      {copyLabel("s6-beats")}
+                    </button>
+                    <span>{SCRIPT_6}</span>
+                  </div>
+                  <div className="caption-block">
+                    <strong>Caption:</strong> $4 → $87 in 4 days. loot
+                    called it 🪐 #thriftflip #goodwillfinds #faceless
+                  </div>
+                  <div className="caption-block">
+                    <strong>Hashtags:</strong> #reseller #thriftflip
+                    #goodwillfinds #facelesscreator #thrifting
+                    #ebayreseller #pyrex #vintagepyrex
+                  </div>
+                </div>
+
+                <div className="script-card">
+                  <h4>SCRIPT 07 — POV NARRATIVE</h4>
+                  <div className="script-fmt">
+                    format: POV narrative · first-person · 30s
+                  </div>
+                  <div className="code-block">
+                    <button
+                      className={copyClass("s7-beats")}
+                      onClick={() => copy("s7-beats", SCRIPT_7)}
+                    >
+                      {copyLabel("s7-beats")}
+                    </button>
+                    <span>{SCRIPT_7}</span>
+                  </div>
+                  <div className="caption-block">
+                    <strong>Caption:</strong> $1 → $72. POV: you stopped
+                    scrolling and checked the tag 🪐 #thriftflip #POV
+                  </div>
+                  <div className="caption-block">
+                    <strong>Hashtags:</strong> #reseller #thriftflip #pov
+                    #thriftpov #nikevintage #binshunting #goodwillfinds
+                    #ebayreseller
                   </div>
                 </div>
               </AccordionItem>

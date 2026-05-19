@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import CountUp from "@/components/partners/CountUp";
+import EarningsCalculator from "@/components/partners/EarningsCalculator";
+
+// MANUAL UPDATE: change LAST_CLAIMED_AT when a new founding spot fills.
+const LAST_CLAIMED_AT = "2 hours ago";
+const CLAIMED_SPOTS = 3;
+const TOTAL_FOUNDING_SPOTS = 20;
 
 /**
  * /partners — partner / affiliate landing page.
@@ -106,12 +113,57 @@ const PAGE_STYLES = `
 }
 .partners-page .pulse-dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: var(--mint); box-shadow: 0 0 8px var(--mint);
-  animation: partners-pulse 2.5s ease-in-out infinite;
+  background: var(--mint); box-shadow: 0 0 8px rgba(92,224,184,0.6);
+  animation: partners-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 @keyframes partners-pulse {
-  0%,100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.75); }
+  0%, 70% { opacity: 1; transform: scale(1); box-shadow: 0 0 8px rgba(92,224,184,0.6); }
+  72% { opacity: 0.2; transform: scale(0.85); box-shadow: 0 0 4px rgba(92,224,184,0.3); }
+  74% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(92,224,184,0.8); }
+  78% { opacity: 0.2; transform: scale(0.85); box-shadow: 0 0 4px rgba(92,224,184,0.3); }
+  80%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 16px rgba(92,224,184,0.8); }
+}
+.partners-page .scarcity-stack {
+  display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px;
+}
+.partners-page .scarcity-stack .scarcity { margin-bottom: 0; }
+.partners-page .last-claimed {
+  font: 500 10px/1.4 var(--ff-mono);
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.4);
+  padding-left: 16px;
+}
+.partners-page .sticky-pill {
+  position: fixed; bottom: 24px; right: 24px;
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 10px 18px;
+  background: rgba(10,22,18,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(92,224,184,0.35);
+  border-radius: 999px;
+  font: 500 11px/1 var(--ff-mono); letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.85);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0; transform: translateY(20px); pointer-events: none;
+  transition: opacity 280ms cubic-bezier(0.4,0,0.2,1), transform 280ms cubic-bezier(0.4,0,0.2,1);
+  z-index: 50;
+}
+.partners-page .sticky-pill.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.partners-page .sticky-pill button {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font: 500 14px/1 var(--ff-mono); color: rgba(92,224,184,0.5);
+  width: 16px; height: 16px;
+  transition: color 150ms ease;
+}
+.partners-page .sticky-pill button:hover { color: var(--mint); }
+@media (max-width: 639px) {
+  .partners-page .sticky-pill {
+    bottom: 0; right: 0; left: 0;
+    border-radius: 12px 12px 0 0;
+    padding: 14px 20px;
+    justify-content: space-between;
+  }
 }
 .partners-page .cta {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -285,8 +337,20 @@ const PAGE_STYLES = `
   font: 500 16px/1 var(--ff-body); color: var(--text-1); outline: none;
   transition: border-color 150ms ease;
 }
-.partners-page .fi:focus { border-color: rgba(255,255,255,0.18); }
+.partners-page .fi { transition: border-color 200ms cubic-bezier(0.4,0,0.2,1), box-shadow 200ms cubic-bezier(0.4,0,0.2,1), background 200ms ease; }
+.partners-page .fi:hover { border-color: rgba(92,224,184,0.4); }
+.partners-page .fi:focus, .partners-page .fi:focus-visible {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 3px rgba(92,224,184,0.12);
+  background: rgba(255,255,255,0.03);
+  outline: none;
+}
 .partners-page .fi::placeholder { color: var(--text-ghost); }
+.partners-page .fhelp {
+  display: block; margin-top: 6px;
+  font: 500 10px/1.4 var(--ff-mono); letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.45);
+}
 .partners-page textarea.fi { height: 96px; padding: 12px 14px; resize: none; line-height: 1.45; }
 .partners-page select.fi {
   appearance: none;
@@ -316,6 +380,116 @@ const PAGE_STYLES = `
 .partners-page .ft-biz { font: 400 12px/1.5 var(--ff-body); color: var(--text-ghost); margin-bottom: 6px; }
 .partners-page .ft-copy { font: 400 12px/1 var(--ff-body); color: var(--text-ghost); }
 
+/* ═══ FOUNDER VIDEO ═══ */
+.partners-page .founder-video {
+  max-width: 720px; margin: 0 auto; padding: 24px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(92,224,184,0.06), transparent 65%),
+    var(--bg-page);
+  border: 1px solid rgba(92,224,184,0.3);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), var(--shadow-card);
+}
+.partners-page .fv-eyebrow { font: 500 11px/1 var(--ff-mono); letter-spacing: 0.28em; color: var(--mint); text-transform: uppercase; }
+.partners-page .fv-title { font: 700 24px/1.15 var(--ff-body); color: #fff; margin: 8px 0 6px; }
+.partners-page .fv-dek { font: 400 14px/1.5 var(--ff-body); color: var(--text-2); margin-bottom: 20px; }
+.partners-page .fv-frame {
+  position: relative; width: 100%; aspect-ratio: 16 / 9;
+  border: 1px solid rgba(92,224,184,0.4); border-radius: 10px;
+  overflow: hidden; background: #000;
+}
+.partners-page .fv-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.partners-page .fv-thumb {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(92,224,184,0.12), transparent 60%),
+    #0a0a0a;
+  cursor: pointer; border: none; color: #fff;
+}
+.partners-page .fv-thumb img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 0 24px rgba(92,224,184,0.25)); }
+.partners-page .fv-play {
+  font: 700 13px/1 var(--ff-mono); letter-spacing: 0.18em; color: var(--mint);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border: 1px solid var(--mint); border-radius: 999px;
+  background: rgba(0,0,0,0.4);
+  transition: background 150ms ease, transform 150ms ease;
+}
+.partners-page .fv-thumb:hover .fv-play { background: var(--mint); color: var(--bg-darker); transform: scale(1.03); }
+.partners-page .fv-caption {
+  margin-top: 14px; text-align: center;
+  font: 500 11px/1.4 var(--ff-mono); color: rgba(255,255,255,0.55);
+}
+
+/* ═══ EARNINGS CALCULATOR ═══ */
+.partners-page .earnings-calculator {
+  padding: 40px 24px; margin: 24px auto 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(92,224,184,0.06), transparent 65%),
+    var(--bg-page);
+  border: 1px solid rgba(92,224,184,0.3);
+  border-radius: 18px;
+  box-shadow: 0 0 60px rgba(92,224,184,0.05), var(--shadow-card);
+}
+.partners-page .ec-title { font: 700 28px/1.1 var(--ff-body); color: #fff; margin: 6px 0 6px; }
+.partners-page .ec-dek { font: 400 14px/1.5 var(--ff-body); color: var(--text-2); margin-bottom: 24px; }
+.partners-page .ec-grid {
+  display: grid; gap: 28px;
+  grid-template-columns: 1fr;
+}
+.partners-page .ec-sliders { display: flex; flex-direction: column; gap: 22px; }
+.partners-page .ec-slider-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.partners-page .ec-slider-label { font: 500 11px/1 var(--ff-mono); letter-spacing: 0.2em; color: var(--mint); text-transform: uppercase; }
+.partners-page .ec-slider-value { font: 700 18px/1 var(--ff-mono); color: var(--mint); }
+.partners-page .ec-slider input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px;
+  background: linear-gradient(to right, rgba(92,224,184,0.6) 0%, rgba(92,224,184,0.6) var(--filled, 50%), rgba(255,255,255,0.06) var(--filled, 50%), rgba(255,255,255,0.06) 100%);
+  border: 1px solid rgba(92,224,184,0.25); border-radius: 999px; outline: none; cursor: pointer;
+}
+.partners-page .ec-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--mint); border: 2px solid var(--bg-page);
+  box-shadow: 0 0 12px rgba(92,224,184,0.6); cursor: grab;
+  transition: transform 120ms ease;
+}
+.partners-page .ec-slider input[type="range"]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--mint); border: 2px solid var(--bg-page);
+  box-shadow: 0 0 12px rgba(92,224,184,0.6); cursor: grab;
+}
+.partners-page .ec-slider input[type="range"]:hover::-webkit-slider-thumb,
+.partners-page .ec-slider input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.15); }
+.partners-page .ec-slider-range { display: flex; justify-content: space-between; margin-top: 8px; font: 500 10px/1 var(--ff-mono); color: rgba(255,255,255,0.35); }
+.partners-page .ec-helper { margin-top: 8px; font: 500 10px/1.4 var(--ff-mono); color: rgba(255,255,255,0.45); }
+.partners-page .ec-outputs { display: flex; flex-direction: column; gap: 16px; padding-top: 24px; border-top: 1px solid rgba(92,224,184,0.15); }
+.partners-page .ec-out {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 16px; border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-hair);
+}
+.partners-page .ec-out-hero {
+  border-top: 1px dashed rgba(92,224,184,0.45);
+  border-bottom: 1px dashed rgba(92,224,184,0.45);
+  border-left: 1px solid rgba(92,224,184,0.25);
+  border-right: 1px solid rgba(92,224,184,0.25);
+  background: rgba(92,224,184,0.04);
+  padding: 18px 16px;
+}
+.partners-page .ec-out-label { font: 500 11px/1 var(--ff-mono); letter-spacing: 0.16em; color: var(--text-dim); text-transform: uppercase; }
+.partners-page .ec-out-value { font: 700 28px/1 var(--ff-body); color: var(--mint); font-variant-numeric: tabular-nums; }
+.partners-page .ec-out-value-hero { font-size: 48px; text-shadow: 0 0 24px rgba(92,224,184,0.25); }
+.partners-page .ec-out-value-sm { font: 700 18px/1 var(--ff-mono); }
+.partners-page .ec-out-sub { font: 400 12px/1.4 var(--ff-body); color: var(--text-dim); }
+.partners-page .ec-footnote { margin-top: 18px; text-align: center; font: 500 11px/1.4 var(--ff-mono); color: rgba(255,255,255,0.4); }
+@media (min-width: 768px) {
+  .partners-page .earnings-calculator { padding: 40px; }
+  .partners-page .ec-grid { grid-template-columns: 0.85fr 1fr; gap: 48px; }
+  .partners-page .ec-outputs { padding-top: 0; border-top: none; }
+}
+
 /* ═══ RESPONSIVE ═══ */
 @media (min-width: 640px) {
   .partners-page .hero h1 { font-size: 40px; }
@@ -337,6 +511,36 @@ const PAGE_STYLES = `
   }
 }
 `;
+
+// TODO(deploy): replace PLACEHOLDER_LOOM_ID with the real Loom video id once
+// David records the founder intro. See marketing/founder-loom-script.md.
+const FOUNDER_LOOM_ID = "PLACEHOLDER_LOOM_ID";
+
+function FounderVideo() {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div className="fv-frame">
+      {playing ? (
+        <iframe
+          src={`https://www.loom.com/embed/${FOUNDER_LOOM_ID}?autoplay=1`}
+          allow="fullscreen; picture-in-picture"
+          allowFullScreen
+          title="David — founder intro"
+        />
+      ) : (
+        <button
+          type="button"
+          className="fv-thumb"
+          onClick={() => setPlaying(true)}
+          aria-label="Play founder video"
+        >
+          <img src="/brand-kit/flip/flip-smirk.png" alt="" />
+          <span className="fv-play">▷ HEAR FROM DAVID</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 const FAQS = [
   {
@@ -371,8 +575,28 @@ export default function PartnersPage() {
   const [email, setEmail] = useState("");
   const [platform, setPlatform] = useState("");
   const [followers, setFollowers] = useState("");
+  const [handle, setHandle] = useState("");
   const [url, setUrl] = useState("");
   const [why, setWhy] = useState("");
+  const [showStickyPill, setShowStickyPill] = useState(false);
+  const [pillDismissed, setPillDismissed] = useState(false);
+  const commissionsRef = useRef<HTMLElement | null>(null);
+  const applyRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (!commissionsRef.current || !applyRef.current) return;
+      const commissionsBottom =
+        commissionsRef.current.getBoundingClientRect().bottom;
+      const applyTop = applyRef.current.getBoundingClientRect().top;
+      const pastCommissions = commissionsBottom < window.innerHeight * 0.3;
+      const beforeApply = applyTop > window.innerHeight * 0.8;
+      setShowStickyPill(pastCommissions && beforeApply);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function toggleFaq(idx: number) {
     setOpenFaq((cur) => (cur === idx ? null : idx));
@@ -439,21 +663,34 @@ export default function PartnersPage() {
             <h1>Flip pays better than your last 3 affiliate programs</h1>
 
             <p className="sub">
-              <em>Founding 20</em> creators get{" "}
-              <b>60% setup + 40% recurring</b>. For life.
+              <em>Founding{" "}
+              <CountUp value={TOTAL_FOUNDING_SPOTS} duration={1000} />
+              </em>{" "}creators get{" "}
+              <b>
+                <CountUp value={60} suffix="%" duration={1100} /> setup +{" "}
+                <CountUp value={40} suffix="%" duration={1100} delay={200} />{" "}
+                recurring
+              </b>
+              . For life.
             </p>
 
-            <div className="scarcity">
-              <span className="pulse-dot"></span>
-              3 of 20 founding spots claimed
+            <div className="scarcity-stack">
+              <div className="scarcity">
+                <span className="pulse-dot" aria-hidden="true"></span>
+                <CountUp value={CLAIMED_SPOTS} duration={800} /> of{" "}
+                <CountUp value={TOTAL_FOUNDING_SPOTS} duration={1000} delay={200} />{" "}
+                founding spots claimed
+              </div>
+              <div className="last-claimed">
+                last spot claimed {LAST_CLAIMED_AT}
+              </div>
             </div>
-            <br />
             <a
               className="cta"
               href="#apply"
               onClick={handleScrollToApply}
             >
-              APPLY → 60 SECONDS
+              CLAIM A SPOT →
             </a>
           </header>
 
@@ -461,23 +698,34 @@ export default function PartnersPage() {
           <section className="who-for wrap">
             <div className="section-label">WHO THIS IS FOR</div>
             <div className="callout">
-              <span className="arrow">→</span> you make thrift / resale /
-              sneaker / vintage content
+              <span className="arrow">→</span> you make videos about
+              thrift, resale, sneakers, vintage, or any combo
             </div>
             <div className="callout">
-              <span className="arrow">→</span> your audience already buys
-              flipping tools
+              <span className="arrow">→</span> your audience already pays
+              for flipping tools — Vendoo, LP, Whatnot, take your pick
             </div>
             <div className="callout">
-              <span className="arrow">→</span> you&apos;re tired of 20%
-              lifetime caps from List Perfectly and Vendoo
+              <span className="arrow">→</span> you&apos;ve seen what 20%
+              lifetime caps look like. you deserve different math.
+            </div>
+            <div
+              className="callout"
+              style={{
+                color: "rgba(255,255,255,0.55)",
+                marginTop: "8px",
+                fontStyle: "italic",
+              }}
+            >
+              not for: dropshippers, mass-affiliate aggregators, anyone
+              with bought followers. we check.
             </div>
           </section>
 
           <div className="divider"></div>
 
           {/* ═══ 3 · THE COMMISSION TABLE ═══ */}
-          <section className="commissions wrap wrap--wide">
+          <section className="commissions wrap wrap--wide" ref={commissionsRef}>
             <div className="section-label">THE DEAL</div>
 
             <div className="comm-cards">
@@ -540,6 +788,11 @@ export default function PartnersPage() {
               PrimeLister (30%)
             </p>
           </section>
+
+          <div className="divider"></div>
+
+          {/* ═══ 3.5 · EARNINGS CALCULATOR ═══ */}
+          <EarningsCalculator />
 
           <div className="divider"></div>
 
@@ -652,12 +905,17 @@ export default function PartnersPage() {
             <div className="lb-strip">
               <div className="lb-title">MONTHLY LEADERBOARD</div>
               <div className="lb-prizes">
-                $500 · $300 · $200 · $100 · $100
+                <CountUp value={500} prefix="$" duration={900} /> ·{" "}
+                <CountUp value={300} prefix="$" duration={900} delay={100} /> ·{" "}
+                <CountUp value={200} prefix="$" duration={900} delay={200} /> ·{" "}
+                <CountUp value={100} prefix="$" duration={900} delay={300} /> ·{" "}
+                <CountUp value={100} prefix="$" duration={900} delay={400} />
               </div>
               <div className="lb-bonus">
-                first to 100 paid signups →{" "}
+                first to <CountUp value={100} duration={900} /> paid signups →{" "}
                 <strong>
-                  $2,500 bonus + Flip merch drop + Coach Pick feature
+                  <CountUp value={2500} prefix="$" duration={1200} delay={300} />{" "}
+                  bonus + Flip merch drop + Coach Pick feature
                 </strong>
               </div>
             </div>
@@ -683,6 +941,24 @@ export default function PartnersPage() {
 
           <div className="divider"></div>
 
+          {/* ═══ 6.5 · FOUNDER VIDEO ═══ */}
+          <section className="wrap" style={{ padding: "40px 20px" }}>
+            <div className="founder-video">
+              <div className="fv-eyebrow">FROM THE FOUNDER</div>
+              <h2 className="fv-title">
+                Why we built Loot — and why this affiliate program is
+                different.
+              </h2>
+              <p className="fv-dek">60 seconds. No deck. No music. Just the thing.</p>
+              <FounderVideo />
+              <p className="fv-caption">
+                david jones · founder · locust grove, ga
+              </p>
+            </div>
+          </section>
+
+          <div className="divider"></div>
+
           {/* ═══ 7 · HOW IT WORKS ═══ */}
           <section className="how wrap">
             <div className="section-label">HOW IT WORKS</div>
@@ -691,21 +967,27 @@ export default function PartnersPage() {
                 <div className="step-n">1</div>
                 <div>
                   <h3>APPLY</h3>
-                  <p>60-second form, no pitch deck</p>
+                  <p>60-second form. we read it the same day.</p>
                 </div>
               </div>
               <div className="step">
                 <div className="step-n">2</div>
                 <div>
                   <h3>GET YOUR KIT</h3>
-                  <p>assets + physical pack ships in 5 days</p>
+                  <p>
+                    digital assets land same-day. physical kit ships in 5
+                    days.
+                  </p>
                 </div>
               </div>
               <div className="step">
                 <div className="step-n">3</div>
                 <div>
-                  <h3>POST + PROFIT</h3>
-                  <p>your audience scans, you collect for life</p>
+                  <h3>POST ONCE, PAID FOREVER</h3>
+                  <p>
+                    your audience scans loot. you collect on every
+                    recurring month, forever.
+                  </p>
                 </div>
               </div>
             </div>
@@ -755,10 +1037,10 @@ export default function PartnersPage() {
           <div className="divider"></div>
 
           {/* ═══ 9 · APPLICATION CTA ═══ */}
-          <section className="apply" id="apply">
+          <section className="apply" id="apply" ref={applyRef}>
             <div className="apply-hd">claim your spot</div>
             <div className="apply-sub">
-              60 seconds, we reply within 24 hours
+              60 seconds. we reply same day, every day, no ghosting.
             </div>
 
             {!submitted && (
@@ -850,14 +1132,34 @@ export default function PartnersPage() {
                   </div>
 
                   <div className="fg">
+                    <label className="fl" htmlFor="f-handle">
+                      Handle
+                    </label>
+                    <input
+                      className="fi"
+                      id="f-handle"
+                      type="text"
+                      placeholder="@yourhandle"
+                      required
+                      pattern="^@[a-zA-Z0-9_.]{1,29}$"
+                      value={handle}
+                      onChange={(e) => setHandle(e.target.value)}
+                      aria-describedby="f-handle-help"
+                    />
+                    <span className="fhelp" id="f-handle-help">
+                      the @username on your primary platform
+                    </span>
+                  </div>
+
+                  <div className="fg">
                     <label className="fl" htmlFor="f-url">
-                      Channel URL
+                      Channel URL (optional)
                     </label>
                     <input
                       className="fi"
                       id="f-url"
                       type="url"
-                      placeholder="https://tiktok.com/@yourhandle"
+                      placeholder="https://tiktok.com/@yourhandle (skip if obvious from your @)"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
                     />
@@ -865,13 +1167,16 @@ export default function PartnersPage() {
 
                   <div className="fg">
                     <label className="fl" htmlFor="f-why">
-                      Why your audience fits Loot
+                      Anything we should know?
                     </label>
+                    <span className="fhelp" style={{ marginTop: 0, marginBottom: 6 }}>
+                      totally optional. one line about you, your audience, or a recent flip.
+                    </span>
                     <textarea
                       className="fi"
                       id="f-why"
                       maxLength={FORM_MAX_WHY}
-                      placeholder="250 characters max"
+                      placeholder="skip this if you're in a hurry — we'll figure it out from your @"
                       value={why}
                       onChange={(e) => setWhy(e.target.value)}
                     />
@@ -915,7 +1220,8 @@ export default function PartnersPage() {
                 </svg>
                 <h3>you&apos;re in the queue</h3>
                 <p>
-                  we&apos;ll hit you back within 24 hours with next steps
+                  decision same day (we promise). check your @ — we DM
+                  from @loot.works.
                 </p>
               </div>
             )}
@@ -957,11 +1263,27 @@ export default function PartnersPage() {
               <a href="mailto:support@loot.works">Contact</a>
             </div>
             <p className="ft-biz">
-              Loot — operated by Loot.works, Locust Grove, Georgia
+              © 2026 Loot · loot.works · built in Locust Grove, GA
             </p>
             <div id="digistore-trust-badge"></div>
-            <p className="ft-copy">© 2026 Loot</p>
           </footer>
+
+          {/* Sticky reassurance pill — appears past commissions, fades by form. */}
+          <div
+            className={`sticky-pill ${
+              showStickyPill && !pillDismissed ? "visible" : ""
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <span>// no contract · no quota · drop anytime</span>
+            <button
+              onClick={() => setPillDismissed(true)}
+              aria-label="Dismiss this notice"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
     </>

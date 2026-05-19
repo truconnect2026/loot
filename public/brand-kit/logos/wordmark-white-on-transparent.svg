@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700&amp;display=swap');
+      .wm { font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; font-size: 200px; letter-spacing: 8px; }
+    </style>
+  </defs>
+  
+  <text x="400" y="200" text-anchor="middle" dominant-baseline="central" class="wm" fill="#FFFFFF">LOOT</text>
+</svg>

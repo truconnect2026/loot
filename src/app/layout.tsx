@@ -17,10 +17,25 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://loot.works"),
-  title: "loot.works — AI Thrift Store Scanner",
+  title: {
+    default: "loot.works — AI Thrift Store Scanner",
+    template: "%s | Loot",
+  },
   description:
     "Scan thrift store items, get instant profit estimates, condition grading, and listing generation. The AI-powered reselling toolkit.",
-  icons: [{ rel: "icon", url: "/favicon.svg", type: "image/svg+xml" }],
+  icons: [
+    { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
+    { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
+  ],
+  openGraph: {
+    siteName: "Loot",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: "@loot.works",
+  },
 };
 
 // Lock pinch-to-zoom — iOS auto-zoom on small inputs and accidental
