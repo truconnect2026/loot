@@ -16,6 +16,16 @@ import { createServerClient } from "@supabase/ssr";
  * The onboarding gate (zip-required-before-dashboard) lives in the
  * dashboard component itself, not here, because that check needs a
  * profiles-table query which we don't want to run on every request.
+ *
+ * Public routes — intentionally kept outside the `matcher` below so
+ * Supabase + redirect logic never runs on them. Affiliate buyers and
+ * press hitting these pages must not be bounced through auth. Keep
+ * this list in sync with the matcher when adding marketing pages.
+ *   - /pro       — Digistore-driven Pro landing page
+ *   - /kit       — public brand + partner kit
+ *   - /partners  — affiliate / partner application
+ *   - /flip      — daily Flip-or-Skip game
+ *   - /welcome, /thanks, /privacy, /terms — static marketing
  */
 
 const PROTECTED = ["/app", "/account", "/onboarding"];

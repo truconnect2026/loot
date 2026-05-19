@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import SplashScreen from "@/components/shared/SplashScreen";
 
 /**
@@ -24,12 +25,20 @@ const MIN_VISIBLE_MS = 1200;
 const EXIT_MS = 400;
 
 export default function SplashGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  // /marketing-screens/* renders idealized phone-mockup content captured
+  // for the brand kit. The splash overlay would leak into the captures,
+  // so suppress it on those routes — they are never linked from anywhere
+  // user-facing.
+  const skipSplash = pathname?.startsWith("/marketing-screens") ?? false;
+
   // mounted: render the SplashScreen at all
   // exiting: drives the splashExit fade
-  const [mounted, setMounted] = useState(true);
+  const [mounted, setMounted] = useState(!skipSplash);
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
+    if (skipSplash) return;
     const exitTimer = window.setTimeout(() => {
       setExiting(true);
     }, MIN_VISIBLE_MS);
@@ -40,7 +49,7 @@ export default function SplashGate({ children }: { children: ReactNode }) {
       window.clearTimeout(exitTimer);
       window.clearTimeout(unmountTimer);
     };
-  }, []);
+  }, [skipSplash]);
 
   return (
     <>

@@ -84,13 +84,10 @@ export default function BottomSheet({
         "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
     }
     if (currentTranslateY.current > 100) {
-      // Zero the inline transform before handing off to onClose so
-      // the unmount-side bsSlideDown keyframe (which starts at
-      // translateY(0)) doesn't snap-jump from the dragged offset
-      // back to 0 at frame 0 of its animation.
-      if (sheetRef.current) {
-        sheetRef.current.style.transform = "translateY(0)";
-      }
+      // Hand off to onClose; the open-sync useEffect below picks up
+      // the false transition and pins the inline transform to
+      // translateY(100%) so the closed-state cascade can't fall
+      // back to translateY(0) (the visible position).
       onClose();
     } else if (sheetRef.current) {
       sheetRef.current.style.transform = "translateY(0)";
@@ -98,12 +95,31 @@ export default function BottomSheet({
     currentTranslateY.current = 0;
   }, [onClose]);
 
-  // Reset sheet position when opening
+  // Sync inline transform + transition to whichever terminal state
+  // the open prop demands, so the inline value never disagrees with
+  // the bsSlideUp/bsSlideDown keyframe's `to` value. Eliminates the
+  // cascade collision where inline said translateY(0) but the
+  // animation said translateY(100%) — under any re-render that
+  // perturbed the cascade, the inline would briefly win and the
+  // sheet's header strip would surface above viewport bottom as a
+  // persistent visible stub.
+  //
+  //   open=true  → translateY(0)    + transition: transform 400ms
+  //                (transition lets the drag snap-back ease smoothly
+  //                 back to 0 after a sub-threshold pulldown)
+  //   open=false → translateY(100%) + transition: none
+  //                (no smoothing on close — the bsSlideDown keyframe
+  //                 owns the visible motion; the inline just locks
+  //                 the post-animation terminal state)
   useEffect(() => {
-    if (open && sheetRef.current) {
+    if (!sheetRef.current) return;
+    if (open) {
       sheetRef.current.style.transform = "translateY(0)";
       sheetRef.current.style.transition =
         "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
+    } else {
+      sheetRef.current.style.transform = "translateY(100%)";
+      sheetRef.current.style.transition = "none";
     }
   }, [open]);
 
