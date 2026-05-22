@@ -176,7 +176,7 @@ export default function HeroSection() {
           }}
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 7-day refund
+            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day refund
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime

@@ -36,7 +36,7 @@ const FAQS = [
   },
   {
     q: "What if the customer refunds?",
-    a: "Standard 7-day refund clawback applies. Encourages quality referrals over volume spam.",
+    a: "60-day refund clawback applies (matches the customer refund window). Encourages quality referrals over volume spam.",
   },
   {
     q: "Can I run paid ads to loot.works?",

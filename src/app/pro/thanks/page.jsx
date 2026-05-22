@@ -1,14 +1,12 @@
 "use client";
 
 /**
- * /pro/thanks — post-checkout landing.
+ * /pro/thanks — post-checkout landing. Canonical thank-you page.
  *
- * Digistore product 691098 should be configured to redirect customers here
- * (or to /thanks at the top level — both work; /thanks is the legacy URL).
- *
- * TODO(David): in the Digistore admin panel, set the "Thank-you page" URL
- * for product 691098 to https://loot.works/pro/thanks if you want buyers
- * to land on the cosmic-themed page. Otherwise keep /thanks.
+ * TODO(David): in the Digistore admin panel for product 691098, set the
+ * "Thank-you page" URL to https://loot.works/pro/thanks. The legacy
+ * /thanks URL still works but this cosmic-themed page is the intended
+ * landing.
  *
  * Pure static: no auth gate, no Supabase, no analytics. order_id from the
  * Digistore redirect (if present) is surfaced verbatim for support tickets.
@@ -160,7 +158,7 @@ function ThanksInner() {
               marginTop: 24,
             }}
           >
-            7-day refund · cancel anytime from settings
+            60-day refund · cancel anytime from settings
           </p>
         </FadeUp>
       </main>

@@ -17,10 +17,11 @@
  *      mailbox needs to be staffed.
  *   2. BUSINESS_NAME + BUSINESS_ADDRESS — fill in operator-of-record + the
  *      address registered with Digistore. They cross-check.
- *   3. REFUND PERIOD: this page advertises "7-day refund" in multiple
- *      places. Verify Digistore product 691098 is also set to 7 days. A
- *      mismatch (e.g. site says 7, Digistore says 14) is grounds for
- *      rejection. Change one to match the other before submitting.
+ *   3. REFUND PERIOD: this page advertises "60-day refund" in multiple
+ *      places. Verify Digistore product 691098 is also set to 60 days
+ *      (Digistore's allowed values are 60, 90, or 180 — 7-day is not
+ *      acceptable). A mismatch between the on-page copy and the
+ *      Digistore admin setting is grounds for rejection.
  */
 
 import Link from "next/link";

@@ -6,10 +6,11 @@ import CoinMark from "@/components/shared/CoinMark";
 /**
  * Refund Policy — Digistore approval requirement.
  *
- * The /pro sales page advertises a 7-day refund. Digistore product 691098
- * must be configured to match — if Digistore's refund window is different,
- * either reconcile that admin setting OR change the on-page copy. A
- * mismatch is grounds for marketplace rejection.
+ * The /pro sales page advertises a 60-day refund (Digistore's required
+ * minimum is 60, 90, or 180 — 7 days is not on their allowed list).
+ * Verify Digistore product 691098 is set to 60 days in the admin panel.
+ * A mismatch between the on-page copy and the Digistore admin setting
+ * is grounds for marketplace rejection.
  *
  * TODO(David): replace the boilerplate copy below with the policy you (and
  * counsel) sign off on. The placeholders in [SQUARE BRACKETS] must be
@@ -60,12 +61,12 @@ export default function RefundPolicyPage() {
         >
           <section>
             <h2 className="text-[18px] font-[600] mb-2" style={{ color: "#fff" }}>
-              7-Day Money-Back Guarantee
+              60-Day Money-Back Guarantee
             </h2>
             <p>
-              We offer a full refund within 7 days of your initial purchase, no
+              We offer a full refund within 60 days of your initial purchase, no
               questions asked. If you are not satisfied with loot.works Pro for
-              any reason, contact us within 7 days of purchase and we will
+              any reason, contact us within 60 days of purchase and we will
               process a full refund.
             </p>
           </section>
@@ -102,8 +103,8 @@ export default function RefundPolicyPage() {
               Annual Plan Refunds
             </h2>
             <p>
-              Annual plan refunds within the 7-day window are processed in
-              full. Outside the 7-day window, annual plans are non-refundable
+              Annual plan refunds within the 60-day window are processed in
+              full. Outside the 60-day window, annual plans are non-refundable
               for the remaining term, but you can cancel future renewals at
               any time.
             </p>

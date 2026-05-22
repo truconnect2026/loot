@@ -252,7 +252,7 @@ export default function PricingSection({ onCTA }) {
                   marginTop: 16,
                 }}
               >
-                7-DAY REFUND · NO QUESTIONS
+                60-DAY REFUND · NO QUESTIONS
               </p>
             </div>
           </FadeUp>

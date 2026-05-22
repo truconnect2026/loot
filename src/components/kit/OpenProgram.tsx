@@ -79,7 +79,7 @@ export default function OpenProgram() {
             </div>
             <div className="op-out-caption">
               *assumes monthly Pro subs at $14.99 × 40%. annual subs payout once
-              per renewal · refunds clawback within 7 days.
+              per renewal · refunds clawback within 60 days.
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function OpenProgram() {
             </li>
             <li>
               <span>Refund clawback</span>
-              <strong>7-day window (standard)</strong>
+              <strong>60-day window (matches refund policy)</strong>
             </li>
           </ul>
         </div>
