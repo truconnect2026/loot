@@ -22,8 +22,8 @@ import { createServerClient } from "@supabase/ssr";
  * press hitting these pages must not be bounced through auth. Keep
  * this list in sync with the matcher when adding marketing pages.
  *   - /pro       — Digistore-driven Pro landing page
- *   - /kit       — public brand + partner kit
- *   - /partners  — affiliate / partner application
+ *   - /kit       — public brand + partner kit + affiliate hub (absorbs
+ *                  /affiliates and /partners — see next.config redirects)
  *   - /flip      — daily Flip-or-Skip game
  *   - /welcome, /thanks, /privacy, /terms — static marketing
  */

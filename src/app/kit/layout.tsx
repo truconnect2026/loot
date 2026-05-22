@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Loot Brand Kit — everything you need to post about Loot",
+  title: "loot.works/kit — affiliate program · brand assets · press",
   description:
-    "Logos, scripts, screenshots, voice guidelines, press facts. Free to use for affiliates and press. Just don't make us look bad.",
+    "40% recurring on AI thrift arbitrage. Climb the tier ladder: Standard (40%) → Gold (50%) → Founding 20 (60% lifetime). Plus brand assets, swipe copy, press kit. One page, everything you need to promote loot.works.",
   openGraph: {
-    title: "Everything you need to post about Loot",
+    title: "loot.works/kit — affiliate hub + brand kit + press",
     description:
-      "Logos, copy, screenshots, scripts. Free to use. Just don't make us look bad.",
+      "Climb the ladder: 40% → 50% → 60% recurring. Brand assets + swipe copy + press kit, all in one place.",
     url: "/kit",
     siteName: "Loot",
     images: [
       {
+        // TODO(David): design /og-kit.png — falls back to existing kit OG image for now.
         url: "/og/kit.png",
         width: 1200,
         height: 630,
-        alt: "Loot Brand Kit — everything you need to post about Loot",
+        alt: "loot.works/kit — affiliate hub · brand assets · press",
       },
     ],
     locale: "en_US",
@@ -23,14 +24,18 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Everything you need to post about Loot",
+    title: "loot.works/kit — affiliate hub + brand kit + press",
     description:
-      "Logos, scripts, screenshots, voice guidelines. Free to use. loot.works/kit",
+      "40% → 50% → 60% recurring affiliate ladder. Brand assets + swipe copy + press. loot.works/kit",
     images: ["/og/kit.png"],
     creator: "@loot.works",
   },
   alternates: {
     canonical: "/kit",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

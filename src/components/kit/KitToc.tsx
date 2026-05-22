@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from "react";
 
+// 12 sections per the unified-hub spec (2026-05-22). The ladder hero is
+// #sec-hero (not in TOC — it's the page anchor). #sec-ladder is the deep
+// gamified tier section; #founding-20 is the application landing target
+// for the /partners → /kit redirect.
 const SECTIONS: { id: string; n: string; label: string }[] = [
   { id: "sec-pitch", n: "01", label: "The Pitch" },
-  { id: "sec-logos", n: "02", label: "Logos" },
-  { id: "sec-flip", n: "03", label: "Meet Flip" },
-  { id: "sec-colors", n: "04", label: "Color System" },
-  { id: "sec-type", n: "05", label: "Type" },
-  { id: "sec-shots", n: "06", label: "Screenshots" },
-  { id: "sec-post", n: "07", label: "Post Kit" },
-  { id: "sec-affiliate", n: "08", label: "Affiliate Program" },
-  { id: "sec-press", n: "09", label: "Press" },
-  { id: "sec-do", n: "10", label: "You Can" },
-  { id: "sec-dont", n: "11", label: "You Can't" },
+  { id: "sec-open", n: "02", label: "Open Program" },
+  { id: "sec-ladder", n: "03", label: "The Ladder" },
+  { id: "founding-20", n: "04", label: "Founding 20" },
+  { id: "sec-post", n: "05", label: "Post Kit" },
+  { id: "sec-logos", n: "06", label: "Brand Assets" },
+  { id: "sec-rules", n: "07", label: "Usage Rules" },
+  { id: "sec-press", n: "08", label: "Press" },
+  { id: "sec-news", n: "09", label: "What's New" },
+  { id: "sec-faq", n: "10", label: "FAQ" },
 ];
 
 export default function KitToc() {
