@@ -70,12 +70,19 @@ export default function ProPage() {
       <TopStrip />
       <main>
         <HeroSection />
+        <hr className="pro-section-divider" />
         <GutPunch />
+        <hr className="pro-section-divider" />
         <FeatureMatrix />
+        <hr className="pro-section-divider" />
         <ROICalculator />
+        <hr className="pro-section-divider" />
         <Testimonials />
+        <hr className="pro-section-divider" />
         <PricingSection onCTA={handleCTA} />
+        <hr className="pro-section-divider" />
         <FAQSection />
+        <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
       </main>
       <Toast message={toast.msg} visible={toast.vis} />

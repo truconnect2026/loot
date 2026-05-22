@@ -11,21 +11,33 @@
 :global(.pro-page-root) {
   background: #070510;
   color: #fff;
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-manrope), sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Shimmer gradient text ── */
+/* ── Shimmer single-color sweep (mint → white → mint) ── */
 :global(.shimmer-text) {
-  background: linear-gradient(110deg, #5CE0B8, #F5C518, #3B82F6, #F5C518, #5CE0B8);
+  background: linear-gradient(110deg, #5CE0B8 0%, #5CE0B8 30%, #FFFFFF 50%, #5CE0B8 70%, #5CE0B8 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: shimmer 8s linear infinite;
+  animation: shimmer 6s linear infinite;
+}
+
+/* ── Section divider — thin horizontal mint gradient between sections ── */
+:global(.pro-section-divider) {
+  height: 1px;
+  width: 60%;
+  max-width: 720px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, transparent, rgba(92,224,184,0.2), transparent);
+  border: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Keyframes ── */
@@ -134,6 +146,12 @@
 /* ── Pricing: 2-col at ≥720px ── */
 @media (min-width: 720px) {
   :global(.pricing-grid) { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── FAQ headline: single line at ≥768px, wrap-tight below ── */
+:global(.faq-headline) { white-space: normal; line-height: 1.0; }
+@media (min-width: 768px) {
+  :global(.faq-headline) { white-space: nowrap; }
 }
 
 /* ── Reduced motion ── */

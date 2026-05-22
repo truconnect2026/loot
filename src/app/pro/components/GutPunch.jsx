@@ -5,13 +5,51 @@ import { C } from "../lib/colors.js";
 import { CoinMark, Eyebrow, FadeUp } from "./atoms.jsx";
 import { useCounter } from "../hooks/usePageHooks.jsx";
 
+/**
+ * Product thumbnail with onError fallback to the Saturn CoinMark.
+ * Image paths reference /flip game items — slugs may not all be in
+ * /public/items/ yet; the moment the PNG is dropped in, this picks it up.
+ */
+function ItemImage({ src, alt }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div
+        style={{
+          position: "absolute", inset: 0, display: "flex",
+          alignItems: "center", justifyContent: "center",
+        }}
+      >
+        <CoinMark size={32} color="rgba(255,255,255,0.12)" />
+      </div>
+    );
+  }
+  // Plain <img> rather than next/image — we need the onError handler and the
+  // tiny LCP win from Image isn't worth the LayoutShift cost on these thumbs.
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setFailed(true)}
+      style={{
+        position: "absolute", inset: 0,
+        width: "100%", height: "100%", objectFit: "cover",
+        display: "block",
+      }}
+    />
+  );
+}
+
+// Image paths reference /flip game item slugs. If a slug image isn't yet in
+// /public/items/, the onError handler falls back to the Saturn coin placeholder.
 const missedItems = [
-  { name: "Pyrex 403", loss: 85 },
-  { name: "Carhartt J97", loss: 140 },
-  { name: "Polo Stadium", loss: 220 },
-  { name: "Big E Levis", loss: 220 },
-  { name: "Le Creuset 7qt", loss: 180 },
-  { name: "Air Jordan 1", loss: 250 },
+  { name: "Pyrex 403", loss: 85, img: "/items/pyrex-butterprint-403.png" },
+  { name: "Carhartt J97", loss: 140, img: "/items/carhartt-detroit-j97.png" },
+  { name: "Polo Stadium", loss: 220, img: "/items/polo-rl-stadium-92.png" },
+  { name: "Big E Levis", loss: 220, img: "/items/big-e-levis-501.png" },
+  { name: "Le Creuset 7qt", loss: 180, img: "/items/le-creuset-dutch-oven.png" },
+  { name: "Air Jordan 1", loss: 250, img: "/items/air-jordan-1.png" },
 ];
 
 export default function GutPunch() {
@@ -70,7 +108,7 @@ export default function GutPunch() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,128px)",
               lineHeight: 1.3,
               paddingBottom: "0.5em",
@@ -79,11 +117,11 @@ export default function GutPunch() {
           >
             THE AVERAGE FLIPPER
             <br />
-            <span style={{ color: "rgba(255,255,255,0.45)" }}>MISSES</span>
+            <span style={{ color: "rgba(255,255,255,0.65)" }}>MISSES</span>
           </h2>
           <p
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,128px)",
               lineHeight: 1.3,
               color: C.red,
@@ -97,7 +135,7 @@ export default function GutPunch() {
         <FadeUp delay={0.3}>
           <p
             style={{
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "var(--font-manrope), sans-serif",
               fontSize: "clamp(16px,2vw,20px)",
               color: "rgba(255,255,255,0.55)",
               maxWidth: 580,
@@ -132,21 +170,21 @@ export default function GutPunch() {
               >
                 <div
                   style={{
+                    position: "relative",
                     width: "100%",
                     aspectRatio: "1",
-                    borderRadius: 10,
+                    borderRadius: 8,
                     background: "rgba(255,255,255,0.02)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    overflow: "hidden",
                     marginBottom: 12,
                   }}
                 >
-                  <CoinMark size={32} color="rgba(255,255,255,0.12)" />
+                  {/* Product image — falls back to Saturn coin if 404. */}
+                  <ItemImage src={item.img} alt={item.name} />
                 </div>
                 <p
                   style={{
-                    fontFamily: "'Space Mono', monospace",
+                    fontFamily: "var(--font-mono), monospace",
                     fontSize: 12,
                     color: "rgba(255,255,255,0.55)",
                     marginBottom: 6,
@@ -154,7 +192,14 @@ export default function GutPunch() {
                 >
                   {item.name}
                 </p>
-                <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: C.red }}>
+                <p
+                  style={{
+                    fontFamily: "var(--font-bebas), sans-serif",
+                    fontSize: "clamp(32px,4vw,48px)",
+                    color: C.red,
+                    lineHeight: 1,
+                  }}
+                >
                   −${item.loss}
                 </p>
               </div>

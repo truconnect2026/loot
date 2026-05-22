@@ -70,7 +70,7 @@ export default function CosmicBackground() {
             width: "160vmax",
             height: "160vmax",
             flexShrink: 0,
-            opacity: 0.18,
+            opacity: 0.28,
             animation: "saturnRotate 240s linear infinite",
           }}
         >

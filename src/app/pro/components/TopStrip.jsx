@@ -11,8 +11,9 @@ export default function TopStrip() {
         top: 0,
         zIndex: 100,
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         alignItems: "center",
+        gap: 48,
         padding: "14px 24px",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
@@ -24,7 +25,7 @@ export default function TopStrip() {
         <CoinMark size={20} />
         <span
           style={{
-            fontFamily: "'Space Mono', monospace",
+            fontFamily: "var(--font-mono), monospace",
             fontSize: 13,
             color: C.mint,
             letterSpacing: "0.06em",
@@ -39,7 +40,7 @@ export default function TopStrip() {
           display: "flex",
           alignItems: "center",
           gap: 10,
-          fontFamily: "'Space Mono', monospace",
+          fontFamily: "var(--font-mono), monospace",
           fontSize: 11,
           color: "rgba(255,255,255,0.5)",
         }}

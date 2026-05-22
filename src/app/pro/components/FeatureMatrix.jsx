@@ -20,7 +20,7 @@ const featureRows = [
 ];
 
 const thBase = {
-  fontFamily: "'Space Mono', monospace",
+  fontFamily: "var(--font-mono), monospace",
   fontSize: 11,
   letterSpacing: "0.12em",
   textTransform: "uppercase",
@@ -30,7 +30,7 @@ const thBase = {
   textAlign: "center",
 };
 const tdBase = {
-  fontFamily: "'Space Mono', monospace",
+  fontFamily: "var(--font-mono), monospace",
   fontSize: 13,
   padding: "14px 12px",
   borderBottom: "1px solid rgba(255,255,255,0.05)",
@@ -53,7 +53,7 @@ export default function FeatureMatrix() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,96px)",
               lineHeight: 1.3,
               paddingBottom: "0.5em",
@@ -95,7 +95,7 @@ export default function FeatureMatrix() {
                       style={{
                         ...tdBase,
                         textAlign: "left",
-                        fontFamily: "'Manrope', sans-serif",
+                        fontFamily: "var(--font-manrope), sans-serif",
                         fontWeight: r.a === "gold" ? 600 : 400,
                         color: r.a === "gold" ? C.gold : "rgba(255,255,255,0.75)",
                       }}

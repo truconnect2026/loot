@@ -12,7 +12,7 @@ export default function Toast({ message, visible }) {
         transform: `translateX(-50%) translateY(${visible ? 0 : 20}px)`,
         background: C.mint,
         color: C.bg,
-        fontFamily: "'Space Mono', monospace",
+        fontFamily: "var(--font-mono), monospace",
         fontSize: 14,
         fontWeight: 700,
         padding: "14px 28px",

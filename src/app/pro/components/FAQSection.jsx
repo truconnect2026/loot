@@ -40,7 +40,7 @@ function FAQItem({ item, isOpen, onToggle }) {
   }, [isOpen]);
 
   return (
-    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
@@ -60,10 +60,10 @@ function FAQItem({ item, isOpen, onToggle }) {
       >
         <span
           style={{
-            fontFamily: "'Manrope', sans-serif",
-            fontSize: "clamp(16px,2vw,18px)",
+            fontFamily: "var(--font-manrope), sans-serif",
+            fontSize: 18,
             fontWeight: 600,
-            color: isOpen ? "#fff" : "rgba(255,255,255,0.65)",
+            color: isOpen ? "#fff" : "rgba(255,255,255,0.75)",
             transition: "color 0.2s",
           }}
         >
@@ -71,10 +71,10 @@ function FAQItem({ item, isOpen, onToggle }) {
         </span>
         <span
           style={{
-            fontFamily: "'Space Mono', monospace",
-            fontSize: 24,
+            fontFamily: "var(--font-mono), monospace",
+            fontSize: 18,
             color: C.purple,
-            transition: "transform 0.35s cubic-bezier(0.16,1,0.3,1)",
+            transition: "transform 0.3s ease",
             transform: isOpen ? "rotate(45deg)" : "rotate(0)",
             flexShrink: 0,
             lineHeight: 1,
@@ -94,9 +94,9 @@ function FAQItem({ item, isOpen, onToggle }) {
         <div ref={contentRef}>
           <p
             style={{
-              fontFamily: "'Manrope', sans-serif",
+              fontFamily: "var(--font-manrope), sans-serif",
               fontSize: 15,
-              color: "rgba(255,255,255,0.55)",
+              color: "rgba(255,255,255,0.75)",
               lineHeight: 1.65,
               paddingBottom: 22,
             }}
@@ -126,11 +126,12 @@ export default function FAQSection() {
         </FadeUp>
         <FadeUp delay={0.15}>
           <h2
+            className="faq-headline"
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,96px)",
-              lineHeight: 1.3,
-              paddingBottom: "0.5em",
+              lineHeight: 1.0,
+              paddingBottom: "0.25em",
               marginBottom: 48,
             }}
           >

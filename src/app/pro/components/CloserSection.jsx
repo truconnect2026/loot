@@ -46,7 +46,7 @@ export default function CloserSection({ onCTA }) {
           <CoinMark size={18} color="rgba(255,255,255,0.25)" />
           <span
             style={{
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: "var(--font-mono), monospace",
               fontSize: 12,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -62,11 +62,11 @@ export default function CloserSection({ onCTA }) {
       <FadeUp delay={0.2}>
         <h2
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
+            fontFamily: "var(--font-bebas), sans-serif",
             fontSize: "clamp(56px,11vw,160px)",
-            lineHeight: 1.3,
-            paddingBottom: "0.5em",
-            marginBottom: "0.5em",
+            lineHeight: 1.0,
+            margin: 0,
+            padding: 0,
           }}
         >
           EVERY <ShimmerText>WEEKEND</ShimmerText>
@@ -75,11 +75,12 @@ export default function CloserSection({ onCTA }) {
         </h2>
         <p
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
+            fontFamily: "var(--font-bebas), sans-serif",
             fontSize: "clamp(56px,11vw,160px)",
-            lineHeight: 1.3,
+            lineHeight: 1.0,
             color: C.gold,
-            marginBottom: 48,
+            margin: "0 0 48px",
+            padding: 0,
           }}
         >
           MONEY MISSED.
@@ -87,19 +88,25 @@ export default function CloserSection({ onCTA }) {
       </FadeUp>
 
       <FadeUp delay={0.4}>
+        {/* Chunkiest CTA on the page — the closer punch. Gradient + top-edge
+            highlight gives it a physical-button feel that out-weights every
+            other button (hero CLAIM PRO, pricing CLAIM ANNUAL). */}
         <button
           onClick={() => onCTA && onCTA("annual_closer")}
           className="cta-btn-primary"
           style={{
-            fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: "clamp(24px,3vw,32px)",
+            fontFamily: "var(--font-bebas), sans-serif",
+            fontSize: "clamp(28px,3.5vw,36px)",
             letterSpacing: "0.04em",
-            background: C.mint,
             color: C.bg,
+            background: "linear-gradient(180deg, #6FE5C0 0%, #5CE0B8 100%)",
             border: "none",
-            padding: "24px 64px",
+            borderTop: "1px solid rgba(255,255,255,0.3)",
+            padding: "28px 64px",
             borderRadius: 6,
             cursor: "pointer",
+            boxShadow:
+              "0 12px 48px rgba(92,224,184,0.45), inset 0 0 0 1px rgba(92,224,184,0.3)",
             animation: "pulseGlow 3s ease-in-out infinite",
             transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
             marginBottom: 24,
@@ -112,7 +119,7 @@ export default function CloserSection({ onCTA }) {
       <FadeUp delay={0.5}>
         <p
           style={{
-            fontFamily: "'Space Mono', monospace",
+            fontFamily: "var(--font-mono), monospace",
             fontSize: 12,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
@@ -137,7 +144,7 @@ export default function CloserSection({ onCTA }) {
         <CoinMark size={22} />
         <span
           style={{
-            fontFamily: "'Space Mono', monospace",
+            fontFamily: "var(--font-mono), monospace",
             fontSize: 14,
             color: C.mint,
             letterSpacing: "0.15em",

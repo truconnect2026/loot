@@ -16,7 +16,7 @@ export default function PricingSection({ onCTA }) {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,96px)",
               lineHeight: 1.3,
               paddingBottom: "0.5em",
@@ -48,7 +48,7 @@ export default function PricingSection({ onCTA }) {
             >
               <p
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: 11,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
@@ -60,9 +60,9 @@ export default function PricingSection({ onCTA }) {
               </p>
               <p
                 style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontFamily: "var(--font-bebas), sans-serif",
                   fontSize: "clamp(48px,8vw,72px)",
-                  color: "#fff",
+                  color: "rgba(255,255,255,0.95)",
                   lineHeight: 1,
                   marginBottom: 12,
                 }}
@@ -72,7 +72,7 @@ export default function PricingSection({ onCTA }) {
               </p>
               <p
                 style={{
-                  fontFamily: "'Manrope', sans-serif",
+                  fontFamily: "var(--font-manrope), sans-serif",
                   fontSize: 15,
                   color: "rgba(255,255,255,0.45)",
                   marginBottom: 32,
@@ -86,7 +86,7 @@ export default function PricingSection({ onCTA }) {
                   <li
                     key={i}
                     style={{
-                      fontFamily: "'Manrope', sans-serif",
+                      fontFamily: "var(--font-manrope), sans-serif",
                       fontSize: 15,
                       color: "rgba(255,255,255,0.65)",
                       padding: "10px 0",
@@ -104,7 +104,7 @@ export default function PricingSection({ onCTA }) {
                 onClick={() => onCTA && onCTA("monthly")}
                 className="cta-btn-outline"
                 style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontFamily: "var(--font-bebas), sans-serif",
                   fontSize: 20,
                   letterSpacing: "0.04em",
                   background: "transparent",
@@ -146,7 +146,7 @@ export default function PricingSection({ onCTA }) {
                   right: 20,
                   background: C.mint,
                   color: C.bg,
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: 12,
                   fontWeight: 700,
                   padding: "6px 14px",
@@ -158,7 +158,7 @@ export default function PricingSection({ onCTA }) {
 
               <p
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: 11,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
@@ -170,11 +170,12 @@ export default function PricingSection({ onCTA }) {
               </p>
               <p
                 style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontFamily: "var(--font-bebas), sans-serif",
                   fontSize: "clamp(48px,8vw,72px)",
                   color: "#fff",
                   lineHeight: 1,
                   marginBottom: 12,
+                  filter: "drop-shadow(0 0 24px rgba(92,224,184,0.4))",
                 }}
               >
                 $99.99
@@ -182,7 +183,7 @@ export default function PricingSection({ onCTA }) {
               </p>
               <p
                 style={{
-                  fontFamily: "'Manrope', sans-serif",
+                  fontFamily: "var(--font-manrope), sans-serif",
                   fontSize: 15,
                   color: "rgba(255,255,255,0.45)",
                   marginBottom: 4,
@@ -193,7 +194,7 @@ export default function PricingSection({ onCTA }) {
               </p>
               <p
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: 12,
                   color: "rgba(255,255,255,0.3)",
                   marginBottom: 32,
@@ -206,7 +207,7 @@ export default function PricingSection({ onCTA }) {
                   <li
                     key={i}
                     style={{
-                      fontFamily: "'Manrope', sans-serif",
+                      fontFamily: "var(--font-manrope), sans-serif",
                       fontSize: 15,
                       color: "rgba(255,255,255,0.65)",
                       padding: "10px 0",
@@ -216,7 +217,7 @@ export default function PricingSection({ onCTA }) {
                       gap: 10,
                     }}
                   >
-                    <span style={{ color: C.gold }}>★</span> {f}
+                    <span style={{ color: C.gold, fontSize: 16, textShadow: "0 0 8px rgba(245,197,24,0.5)" }}>★</span> {f}
                   </li>
                 ))}
               </ul>
@@ -224,7 +225,7 @@ export default function PricingSection({ onCTA }) {
                 onClick={() => onCTA && onCTA("annual")}
                 className="cta-btn-primary"
                 style={{
-                  fontFamily: "'Bebas Neue', sans-serif",
+                  fontFamily: "var(--font-bebas), sans-serif",
                   fontSize: 20,
                   letterSpacing: "0.04em",
                   background: C.mint,
@@ -242,7 +243,7 @@ export default function PricingSection({ onCTA }) {
               </button>
               <p
                 style={{
-                  fontFamily: "'Space Mono', monospace",
+                  fontFamily: "var(--font-mono), monospace",
                   fontSize: 11,
                   letterSpacing: "0.1em",
                   textTransform: "uppercase",
@@ -260,7 +261,7 @@ export default function PricingSection({ onCTA }) {
         <FadeUp delay={0.4}>
           <p
             style={{
-              fontFamily: "'Space Mono', monospace",
+              fontFamily: "var(--font-mono), monospace",
               fontSize: 11,
               letterSpacing: "0.08em",
               textAlign: "center",

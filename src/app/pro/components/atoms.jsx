@@ -30,7 +30,7 @@ export function Eyebrow({ text, color = C.mint }) {
       <div style={{ width: 40, height: 2, background: color, borderRadius: 1, flexShrink: 0 }} />
       <span
         style={{
-          fontFamily: "'Space Mono', monospace",
+          fontFamily: "var(--font-mono), monospace",
           fontSize: 13,
           letterSpacing: "0.14em",
           textTransform: "uppercase",

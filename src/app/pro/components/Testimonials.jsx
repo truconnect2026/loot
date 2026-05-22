@@ -44,7 +44,7 @@ export default function Testimonials() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,96px)",
               lineHeight: 1.3,
               paddingBottom: "0.5em",
@@ -55,7 +55,7 @@ export default function Testimonials() {
           </h2>
           <p
             style={{
-              fontFamily: "'Bebas Neue', sans-serif",
+              fontFamily: "var(--font-bebas), sans-serif",
               fontSize: "clamp(48px,9vw,96px)",
               lineHeight: 1.3,
               color: C.blue,
@@ -104,7 +104,7 @@ export default function Testimonials() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontFamily: "'Bebas Neue', sans-serif",
+                        fontFamily: "var(--font-bebas), sans-serif",
                         fontSize: 22,
                         color: C.mint,
                         background: "transparent",
@@ -114,14 +114,14 @@ export default function Testimonials() {
                     </div>
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: "#fff" }}>
+                        <span style={{ fontFamily: "var(--font-mono), monospace", fontSize: 13, color: "#fff" }}>
                           {r.h}
                         </span>
                         <CheckIcon size={13} color={C.mint} />
                       </div>
                       <span
                         style={{
-                          fontFamily: "'Space Mono', monospace",
+                          fontFamily: "var(--font-mono), monospace",
                           fontSize: 11,
                           color: "rgba(255,255,255,0.3)",
                         }}
@@ -147,7 +147,7 @@ export default function Testimonials() {
                 </div>
                 <p
                   style={{
-                    fontFamily: "'Manrope', sans-serif",
+                    fontFamily: "var(--font-manrope), sans-serif",
                     fontSize: 15,
                     color: "rgba(255,255,255,0.82)",
                     lineHeight: 1.6,

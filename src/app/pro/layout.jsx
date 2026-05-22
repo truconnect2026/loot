@@ -1,14 +1,37 @@
+import { Bebas_Neue, Manrope, Space_Mono } from "next/font/google";
+
 /**
  * /pro layout — server component.
  *
- * Loads Bebas Neue + Manrope + Space Mono via Google Fonts so the literal
- * font-family names in the section components' inline styles resolve
- * directly. (next/font would rename them, which would break the 1:1 port
- * from the standalone HTML's inline styles.)
+ * Switched from Google Fonts <link> to next/font/google. The previous <link>
+ * approach was racey in production (FOUT to system condensed sans). next/font
+ * self-hosts the woff2 + ships a CSS variable so headlines reliably resolve
+ * to Bebas Neue even on slow connections.
  *
- * Also owns the page-level Next.js metadata export — the SEO + OG tags
- * port directly from the source HTML's <head>.
+ * Every section component reads --font-bebas / --font-manrope / --font-mono
+ * via var(...) in its inline styles.
  */
+
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  display: "swap",
+});
+
+const spaceMono = Space_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata = {
   title: "loot.works/pro — the unfair advantage for resellers",
@@ -34,15 +57,8 @@ export const metadata = {
 
 export default function ProLayout({ children }) {
   return (
-    <>
-      {/* Next.js App Router auto-hoists these to <head>. */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
-      />
+    <div className={`${bebasNeue.variable} ${manrope.variable} ${spaceMono.variable}`}>
       {children}
-    </>
+    </div>
   );
 }
