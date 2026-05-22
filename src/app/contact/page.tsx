@@ -54,8 +54,8 @@ export default function ContactPage() {
             </h2>
             <p>
               Email{" "}
-              <a href="mailto:support@loot.works" style={{ color: "#5CE0B8" }}>
-                support@loot.works
+              <a href="mailto:lootworks.goflip@gmail.com" style={{ color: "#5CE0B8" }}>
+                lootworks.goflip@gmail.com
               </a>{" "}
               for help with your account, billing, scans, or anything else.
               We aim to respond within one business day.

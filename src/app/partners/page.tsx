@@ -1171,7 +1171,7 @@ export default function PartnersPage() {
               <a href="/terms">Terms</a>
               <a href="/partners">Partners</a>
               <a href="/pro">Pro</a>
-              <a href="mailto:support@loot.works">Contact</a>
+              <a href="mailto:lootworks.goflip@gmail.com">Contact</a>
             </div>
             <p className="ft-biz">
               © 2026 Loot · loot.works · built in Locust Grove, GA

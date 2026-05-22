@@ -146,8 +146,8 @@ function ThanksInner() {
             }}
           >
             Questions?{" "}
-            <a href="mailto:support@loot.works" style={{ color: C.mint }}>
-              support@loot.works
+            <a href="mailto:lootworks.goflip@gmail.com" style={{ color: C.mint }}>
+              lootworks.goflip@gmail.com
             </a>
           </p>
           <p

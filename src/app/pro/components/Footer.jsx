@@ -27,7 +27,8 @@ import Link from "next/link";
 import { C } from "../lib/colors.js";
 import { CoinMark } from "./atoms.jsx";
 
-const SUPPORT_EMAIL = "support@loot.works"; // TODO(David): confirm staffed address
+// CONFIRMED: support inbox is lootworks.goflip@gmail.com
+const SUPPORT_EMAIL = "lootworks.goflip@gmail.com";
 const BUSINESS_NAME = "[BUSINESS NAME]"; // TODO(David): operator-of-record
 const BUSINESS_ADDRESS = "[BUSINESS ADDRESS]"; // TODO(David): registered with Digistore
 
