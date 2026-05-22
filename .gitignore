@@ -37,6 +37,9 @@ yarn-error.log*
 # claude code session metadata
 .claude/
 
+# local screenshot output (playwright)
+/screenshots
+
 # vercel
 .vercel
 

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1612"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#g)"/>
+  <g fill="none" stroke="#5CE0B8" stroke-width="2" stroke-linecap="round" opacity="0.4">
+    <circle cx="200" cy="180" r="60"/>
+    <ellipse cx="200" cy="180" rx="140" ry="40" transform="rotate(-23 200 180)"/>
+  </g>
+  <text x="200" y="320" text-anchor="middle"
+        font-family="ui-monospace, monospace" font-size="14"
+        fill="#5CE0B8" opacity="0.5" letter-spacing="0.2em">
+    ITEM IMAGE
+  </text>
+</svg>

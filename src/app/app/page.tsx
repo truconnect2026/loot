@@ -34,6 +34,8 @@ import TargetMarkdownsSheet from "@/components/dashboard/TargetMarkdownsSheet";
 import ComingSoonSheet from "@/components/dashboard/ComingSoonSheet";
 import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
 import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
+import AppMarketingPreview from "@/components/app/AppMarketingPreview";
+import FlipDailyCard from "@/components/dashboard/FlipDailyCard";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
 import { createClient } from "@/lib/supabase";
 import type { VerdictPayload } from "@/components/dashboard/ScanOverlay";
@@ -619,7 +621,48 @@ function SectionIcon({
   );
 }
 
-export default function DashboardPage() {
+// ─────────────────────────────────────────────────────────────────────────
+// Session-gated wrapper. Middleware lets unauth visitors hit /app (exact path
+// only — /app/haul, /app/scan etc. still redirect). This wrapper does the
+// client-side getUser() check and routes to either the marketing preview or
+// the real dashboard. The dashboard itself (DashboardPage) is unchanged.
+// ─────────────────────────────────────────────────────────────────────────
+export default function Page() {
+  const [authState, setAuthState] = useState<"loading" | "auth" | "unauth">(
+    "loading",
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (cancelled) return;
+      setAuthState(data.user ? "auth" : "unauth");
+    }).catch(() => {
+      if (!cancelled) setAuthState("unauth");
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Loading shell — same page bg as both branches, no flash. Tiny mint dot
+  // tells the user something is loading without being a full splash.
+  if (authState === "loading") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "radial-gradient(ellipse at top, #0a1612 0%, #000 60%)",
+        }}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (authState === "unauth") return <AppMarketingPreview />;
+  return <DashboardPage />;
+}
+
+function DashboardPage() {
   const router = useRouter();
   const supabase = createClient();
 
@@ -1426,6 +1469,11 @@ export default function DashboardPage() {
             onAiVision={() => startScan("vision")}
             todayScans={todayScans}
           />
+          {/* Flip-or-skip daily card — surfaces today's round + streak.
+              Reads localStorage, no server dependency. */}
+          <div style={{ marginTop: 16 }}>
+            <FlipDailyCard />
+          </div>
           {/* Free-user quota counter — sits below the scan zone,
               hidden for Pro members and during the loading window
               before the first /api/scan-count response.
@@ -1629,6 +1677,9 @@ export default function DashboardPage() {
           />
         </div>
         </ScrollReveal>
+
+        {/* 8.5. FLIP OR SKIP daily-drop CTA — removed during /flip rebuild;
+            new dashboard card lands in a follow-up prompt. */}
 
         {/* 9. Tools drawer — also wrapped in ScrollReveal for the
             same scroll-triggered reveal as sourcing above. */}

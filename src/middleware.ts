@@ -30,6 +30,11 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED = ["/app", "/account", "/onboarding"];
 
+// Exact paths that LOOK protected but render a public marketing preview when
+// unauthed. /app shows AppMarketingPreview to unauth visitors; /app/haul,
+// /app/scan, /app/settings, /app/* sub-routes still redirect normally.
+const PUBLIC_PREVIEW_EXACT = new Set(["/app"]);
+
 const AFF_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days in seconds
 
 function setAffCookies(
@@ -107,8 +112,13 @@ export async function middleware(request: NextRequest) {
     return redirect;
   }
 
-  // Unauthed user on protected page → go to login
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  // Unauthed user on protected page → go to login, EXCEPT the public-preview
+  // exact paths (e.g. /app exact renders AppMarketingPreview).
+  if (
+    !user &&
+    PROTECTED.some((p) => pathname.startsWith(p)) &&
+    !PUBLIC_PREVIEW_EXACT.has(pathname)
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     const redirect = NextResponse.redirect(url);
