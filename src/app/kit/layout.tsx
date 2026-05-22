@@ -12,11 +12,10 @@ export const metadata: Metadata = {
     siteName: "Loot",
     images: [
       {
-        // TODO(David): design /og-kit.png — falls back to existing kit OG image for now.
-        url: "/og/kit.png",
+        url: "/og-kit.png",
         width: 1200,
         height: 630,
-        alt: "loot.works/kit — affiliate hub · brand assets · press",
+        alt: "loot.works/kit — affiliate program, brand assets, press",
       },
     ],
     locale: "en_US",
@@ -27,7 +26,14 @@ export const metadata: Metadata = {
     title: "loot.works/kit — affiliate hub + brand kit + press",
     description:
       "40% → 50% → 60% recurring affiliate ladder. Brand assets + swipe copy + press. loot.works/kit",
-    images: ["/og/kit.png"],
+    images: [
+      {
+        url: "/og-kit.png",
+        width: 1200,
+        height: 630,
+        alt: "loot.works/kit — affiliate program, brand assets, press",
+      },
+    ],
     creator: "@loot.works",
   },
   alternates: {
