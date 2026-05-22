@@ -148,11 +148,11 @@ export default function Founding20() {
             </div>
             <div className="f20-callout">
               <span className="f20-arrow">→</span> your audience already pays
-              for flipping tools — Vendoo, LP, Whatnot, take your pick
+              for reseller tools and listing software
             </div>
             <div className="f20-callout">
-              <span className="f20-arrow">→</span> you&apos;ve seen what 20%
-              lifetime caps look like. you deserve different math.
+              <span className="f20-arrow">→</span> you&apos;ve seen what most
+              affiliate programs pay. you deserve different math.
             </div>
             <div className="f20-callout f20-callout--not">
               not for: dropshippers, mass-affiliate aggregators, anyone with
@@ -211,12 +211,6 @@ export default function Founding20() {
             <span className="f20-comm-pill">DIGISTORE24 PAYOUT</span>
             <span className="f20-comm-pill">STRIPE + REWARDFUL OPTIONAL</span>
           </div>
-
-          {/* TODO(David): verify competitor rates monthly or remove this line */}
-          <p className="f20-comm-compare">
-            beats List Perfectly (20% lifetime), Vendoo (15% / 6mo),
-            PrimeLister (30%)
-          </p>
         </div>
 
         {/* EARNINGS CALCULATOR — reuses partners-page styles. Wrap in

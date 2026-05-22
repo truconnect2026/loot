@@ -141,9 +141,9 @@ It paid for the whole month of subscription with one find.
 
 const TWEET_5 = `Reseller stack 2026:
 
-- listing tool (LP / Vendoo)
+- listing tool
 - sourcing tool (Loot)
-- shipping tool (Pirate Ship)
+- shipping tool
 
 Loot is the missing piece. Scan, comp, verdict — pre-purchase.
 
@@ -1055,8 +1055,9 @@ export default function KitPage() {
                 <div className="press-row">
                   <span className="press-key">Press contact</span>
                   <span className="press-val">
-                    {/* TODO(David): confirm press@loot.works inbox exists, OR keep lootworks.goflip@gmail.com */}
-                    <a href="mailto:lootworks.goflip@gmail.com">lootworks.goflip@gmail.com</a>
+                    <a href="mailto:lootworks.goflip@gmail.com?subject=loot.works%20press%20inquiry">
+                      lootworks.goflip@gmail.com
+                    </a>
                   </span>
                 </div>
                 <div className="press-row">
@@ -1077,10 +1078,6 @@ export default function KitPage() {
                 <p className="founder-bio">
                   Reseller-turned-builder. Spent years opening five tabs to comp a single
                   thrift find — built Loot so no one else has to. Based in McDonough, GA.
-                </p>
-                <p className="founder-links">
-                  {/* TODO(David): real LinkedIn / X handles */}
-                  <a href="#">LinkedIn</a> · <a href="#">@davidjones on X</a>
                 </p>
               </div>
             </div>
@@ -1683,13 +1680,6 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
   margin-bottom: 6px;
 }
 .kit-page .founder-bio { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 8px; }
-.kit-page .founder-links {
-  font-family: var(--mono); font-size: 11px;
-  color: rgba(255,255,255,0.4);
-}
-.kit-page .founder-links a { color: var(--peri); text-decoration: none; }
-.kit-page .founder-links a:hover { text-decoration: underline; }
-
 .kit-page .press-empty {
   padding: 24px;
   text-align: center;
