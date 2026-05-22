@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>loot.works/pro — the unfair advantage for resellers</title>
+<meta name="description" content="AI thrift arbitrage. Real eBay comps in 1.4 seconds. Yard sale map. BOLO alerts. $14.99/mo, cancel anytime. Built for flippers.">
+<meta property="og:title" content="LOOT.WORKS / pro">
+<meta property="og:description" content="Stop leaving money on the shelf. Real comps. Real maps. Real alerts. $14.99/mo.">
+<meta property="og:image" content="/og-pro.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://loot.works/pro">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://loot.works/pro">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- React -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+/* ── Reset ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: #070510;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #070510;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Shimmer gradient text ── */
+.shimmer-text {
+  background: linear-gradient(110deg, #5CE0B8, #F5C518, #3B82F6, #F5C518, #5CE0B8);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 8s linear infinite;
+}
+
+/* ── Keyframes ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 40px rgba(92,224,184,0.35); }
+  50%      { box-shadow: 0 0 80px rgba(92,224,184,0.55); }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 1; }
+}
+
+@keyframes saturnRotate {
+  from { transform: rotate(-23deg); }
+  to   { transform: rotate(337deg); }
+}
+
+@keyframes dustDrift {
+  0%, 100% { transform: translate(0, 0); }
+  25%      { transform: translate(40px, -30px); }
+  50%      { transform: translate(-20px, 35px); }
+  75%      { transform: translate(30px, 15px); }
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.3); opacity: 1; }
+}
+
+/* ── Focus rings ── */
+:focus-visible {
+  outline: 2px solid #5CE0B8;
+  outline-offset: 3px;
+}
+
+/* ── Range sliders ── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  border: 3px solid #070510;
+}
+.slider-mint::-webkit-slider-thumb { background: #5CE0B8; }
+.slider-gold::-webkit-slider-thumb { background: #F5C518; }
+
+input[type="range"]::-moz-range-thumb {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  border: 3px solid #070510;
+}
+.slider-mint::-moz-range-thumb { background: #5CE0B8; }
+.slider-gold::-moz-range-thumb { background: #F5C518; }
+
+/* ── Hover / press on CTA buttons ── */
+.cta-btn-primary:hover  { transform: scale(1.02) !important; }
+.cta-btn-primary:active { transform: scale(0.98) !important; }
+.cta-btn-outline:hover  { background: rgba(92,224,184,0.08) !important; transform: scale(1.02) !important; }
+.cta-btn-outline:active { transform: scale(0.98) !important; }
+
+/* ── Hover on cards ── */
+.missed-card:hover   { border-color: rgba(239,68,68,0.25) !important; background: rgba(255,255,255,0.04) !important; }
+.review-card:hover   { border-color: rgba(59,130,246,0.3) !important; }
+.pricing-card:hover  { border-color: rgba(255,255,255,0.2) !important; }
+.pricing-card--annual:hover { box-shadow: 0 0 60px rgba(92,224,184,0.18) !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ── Mobile: hide strip stats + stack hero CTA ── */
+@media (max-width: 640px) {
+  .strip-stats { display: none !important; }
+  .hero-cta-row { flex-direction: column !important; align-items: flex-start !important; }
+  .hero-cta-row .cta-btn-primary { width: 100% !important; text-align: center !important; }
+  .hero-cta-row .hero-price-stack { align-self: center !important; text-align: center !important; width: 100% !important; justify-content: center !important; }
+}
+
+/* ── Pricing: 2-col at ≥720px ── */
+@media (min-width: 720px) {
+  .pricing-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+/* shared.jsx — hooks, atoms, color constants */
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ── Scroll-triggered visibility (with iframe fallback) ── */
+function useInView(opts = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    /* Primary: IntersectionObserver */
+    let obs;
+    try {
+      obs = new IntersectionObserver(
+        ([e]) => { if (e.isIntersecting) { setInView(true); if (opts.once !== false) obs.unobserve(el); } },
+        { threshold: opts.threshold || 0.12 }
+      );
+      obs.observe(el);
+    } catch (_) { /* observer unsupported — fallback below handles it */ }
+
+    /* Fallback: if observer doesn't fire within 600ms, check manually via getBoundingClientRect */
+    const fallbackTimer = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < vh + 100 && rect.bottom > -100) {
+        setInView(true);
+      }
+    }, 600);
+
+    /* Also listen for scroll to trigger elements further down */
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < vh * 0.92 && rect.bottom > 0) {
+        setInView(true);
+        window.removeEventListener('scroll', onScroll);
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      window.removeEventListener('scroll', onScroll);
+      if (obs) obs.disconnect();
+    };
+  }, []);
+  return [ref, inView];
+}
+
+/* ── Animated count-up (fires once) ── */
+function useCounter(target, dur = 2000, active = false) {
+  const [count, setCount] = useState(0);
+  const fired = useRef(false);
+  useEffect(() => {
+    if (!active || fired.current) return;
+    fired.current = true;
+    let start = null;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / dur, 1);
+      setCount(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [active, target, dur]);
+  return count;
+}
+
+/* ── Color palette ── */
+const C = {
+  mint: '#5CE0B8', gold: '#F5C518', purple: '#6B46C1',
+  blue: '#3B82F6', red: '#ef4444', bg: '#070510',
+  card: '#0d0a17', cardLt: '#110e1d',
+};
+
+/* ── Saturn CoinMark (simplified) ── */
+function CoinMark({ size = 24, color = C.mint, style = {} }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={style} aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5" stroke={color} strokeWidth="1.5"/>
+      <ellipse cx="12" cy="12" rx="10" ry="3" stroke={color} strokeWidth="1.2" transform="rotate(-20 12 12)"/>
+    </svg>
+  );
+}
+
+/* ── Shimmer text ── */
+function ShimmerText({ children, style = {} }) {
+  return <span className="shimmer-text" style={style}>{children}</span>;
+}
+
+/* ── Section eyebrow (divider + label) ── */
+function Eyebrow({ text, color = C.mint }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+      <div style={{ width: 40, height: 2, background: color, borderRadius: 1, flexShrink: 0 }}/>
+      <span style={{
+        fontFamily: "'Space Mono', monospace", fontSize: 13,
+        letterSpacing: '0.14em', textTransform: 'uppercase', color,
+      }}>{text}</span>
+    </div>
+  );
+}
+
+/* ── Fade-up on scroll (IntersectionObserver) ── */
+function FadeUp({ delay = 0, children, style = {}, className = '' }) {
+  const [ref, inView] = useInView();
+  return (
+    <div ref={ref} className={className} style={{
+      opacity: inView ? 1 : 0,
+      transform: inView ? 'translateY(0)' : 'translateY(32px)',
+      transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+/* ── Inline SVG check icon ── */
+function CheckIcon({ size = 12, color = C.mint }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="none" style={{ verticalAlign: 'middle', flexShrink: 0 }} aria-hidden="true">
+      <path d="M2.5 6.5L5 9L9.5 3.5" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+/* ── Expose globally ── */
+Object.assign(window, { useInView, useCounter, C, CoinMark, ShimmerText, Eyebrow, FadeUp, CheckIcon });
+
+</script>
+<script type="text/babel">
+/* cosmic-bg.jsx — full-page atmosphere: stars, Saturn ring, dust, dot grid, grain */
+const { useMemo: _useMemo } = React;
+
+function CosmicBackground() {
+  const stars = _useMemo(() => {
+    const out = [];
+    for (let i = 0; i < 82; i++) {
+      const r = Math.random();
+      out.push({
+        x: Math.random() * 100, y: Math.random() * 100,
+        s: 0.5 + Math.random() * 2,
+        c: r > 0.88 ? C.gold : r > 0.78 ? C.blue : '#fff',
+        d: Math.random() * 6, dur: 2.5 + Math.random() * 5,
+      });
+    }
+    return out;
+  }, []);
+
+  const dust = _useMemo(() => [
+    { x: 15, y: 25, sz: 260, c: C.mint,   o: 0.045, d: 0  },
+    { x: 72, y: 12, sz: 300, c: C.purple, o: 0.05,  d: 4  },
+    { x: 38, y: 55, sz: 220, c: C.mint,   o: 0.035, d: 8  },
+    { x: 82, y: 68, sz: 280, c: C.purple, o: 0.045, d: 12 },
+    { x: 8,  y: 78, sz: 200, c: C.mint,   o: 0.03,  d: 16 },
+  ], []);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+
+      {/* ── Stars ── */}
+      {stars.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${s.x}%`, top: `${s.y}%`,
+          width: s.s, height: s.s, borderRadius: '50%',
+          backgroundColor: s.c,
+          animation: `twinkle ${s.dur}s ease-in-out ${s.d}s infinite`,
+        }}/>
+      ))}
+
+      {/* ── Saturn ring (centered, tilted, rotating) ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          width: '160vmax', height: '160vmax', flexShrink: 0,
+          opacity: 0.18,
+          animation: 'saturnRotate 240s linear infinite',
+        }}>
+          <svg viewBox="0 0 800 800" fill="none" style={{ width: '100%', height: '100%' }} aria-hidden="true">
+            <ellipse cx="400" cy="400" rx="380" ry="110" stroke={C.mint} strokeWidth="0.6" opacity="0.5"/>
+            <ellipse cx="400" cy="400" rx="340" ry="95"  stroke="rgba(255,255,255,0.3)" strokeWidth="0.4" opacity="0.35"/>
+            <ellipse cx="400" cy="400" rx="300" ry="80"  stroke={C.purple} strokeWidth="0.4" opacity="0.25"/>
+            <ellipse cx="400" cy="400" rx="260" ry="65"  stroke={C.gold}   strokeWidth="0.3" opacity="0.15"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Drifting dust blobs ── */}
+      {dust.map((d, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: `${d.x}%`, top: `${d.y}%`,
+          width: d.sz, height: d.sz, borderRadius: '50%',
+          background: d.c, filter: `blur(${d.sz * 0.55}px)`,
+          opacity: d.o,
+          animation: `dustDrift ${22 + i * 4}s ease-in-out ${d.d}s infinite`,
+        }}/>
+      ))}
+
+      {/* ── Mint dot grid ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'radial-gradient(circle, rgba(92,224,184,0.45) 1px, transparent 1px)',
+        backgroundSize: '32px 32px',
+        opacity: 0.08,
+      }}/>
+
+      {/* ── Film grain ── */}
+      <div style={{
+        position: 'absolute', inset: '-50%', width: '200%', height: '200%',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        opacity: 0.04,
+        animation: 'grain 8s steps(10) infinite',
+      }}/>
+    </div>
+  );
+}
+
+Object.assign(window, { CosmicBackground });
+
+</script>
+<script type="text/babel">
+/* hero-punch.jsx — TopStrip + HeroSection + GutPunch */
+const { useState: _hs, useEffect: _he, useRef: _hr, useCallback: _hc } = React;
+
+/* ═══════════════════ TOP STRIP ═══════════════════ */
+function TopStrip() {
+  return (
+    <header style={{
+      position: 'sticky', top: 0, zIndex: 100,
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '14px 24px',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      background: 'rgba(7,5,16,0.72)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <CoinMark size={20}/>
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: C.mint, letterSpacing: '0.06em' }}>
+          LOOT.WORKS / <b>pro</b>
+        </span>
+      </div>
+      <div className="strip-stats" style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.5)',
+      }}>
+        <span style={{
+          width: 7, height: 7, borderRadius: '50%', background: C.mint,
+          display: 'inline-block', boxShadow: `0 0 10px ${C.mint}`,
+          animation: 'breathe 2.5s ease-in-out infinite',
+        }}/>
+        <span>12,847 RESELLERS</span>
+        <span style={{ width: 1, height: 12, background: 'rgba(92,224,184,0.3)', display: 'inline-block' }}/>
+        <span>$2.1M FLIPPED</span>
+      </div>
+    </header>
+  );
+}
+
+/* ═══════════════════ HERO ═══════════════════ */
+function HeroSection({ onCTA }) {
+  return (
+    <section style={{ padding: 'clamp(64px,10vw,96px) 24px clamp(80px,12vw,128px)', maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      <FadeUp delay={0.1}>
+        <Eyebrow text="Pro Tier · Founding Pricing" color={C.mint}/>
+      </FadeUp>
+
+      <FadeUp delay={0.3}>
+        <h1 style={{
+          fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(64px,13vw,200px)',
+          lineHeight: 0.85, letterSpacing: '-0.01em', color: '#fff', marginBottom: '0.5em',
+          paddingBottom: '0.5em',
+        }}>
+          STOP <ShimmerText>LEAVING</ShimmerText><br/>
+          MONEY ON
+        </h1>
+        <p style={{
+          fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(64px,13vw,200px)',
+          lineHeight: 1.3, letterSpacing: '-0.01em', fontStyle: 'italic', color: C.gold,
+          marginBottom: 40,
+        }}>THE SHELF.</p>
+      </FadeUp>
+
+      <FadeUp delay={0.5}>
+        <p style={{
+          fontFamily: "'Manrope', sans-serif", fontSize: 'clamp(17px,2.2vw,24px)',
+          lineHeight: 1.55, color: 'rgba(255,255,255,0.65)', maxWidth: 620, marginBottom: 48,
+        }}>
+          every thrift run, every yard sale, every estate find. real comps in 1.4 seconds. maps. alerts. the unfair advantage every flipper has been waiting for.
+        </p>
+      </FadeUp>
+
+      <FadeUp delay={0.8}>
+        {/* CTA row */}
+        <div className="hero-cta-row" style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap', marginBottom: 20 }}>
+          <button onClick={() => {
+            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+          }} className="cta-btn-primary" style={{
+            fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: '0.04em',
+            background: C.mint, color: C.bg, border: 'none',
+            padding: '24px 48px', borderRadius: 6, cursor: 'pointer',
+            animation: 'pulseGlow 3s ease-in-out infinite',
+            transition: 'transform 0.15s cubic-bezier(0.16,1,0.3,1)',
+          }}>CLAIM PRO →</button>
+
+          <div className="hero-price-stack" style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(36px,4vw,52px)', color: C.gold, lineHeight: 1 }}>$14.99</span>
+            <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: 'rgba(255,255,255,0.45)' }}>/mo</span>
+          </div>
+        </div>
+
+        <p style={{
+          fontFamily: "'Space Mono', monospace", fontSize: 12,
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.35)', marginBottom: 32,
+        }}>or $99.99/yr · save $80</p>
+
+        {/* Trust strip */}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.5)', alignItems: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckIcon/> 7-day refund</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckIcon/> cancel anytime</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><CheckIcon/> pays for itself in 1 flip</span>
+        </div>
+      </FadeUp>
+    </section>
+  );
+}
+
+/* ═══════════════════ GUT PUNCH ═══════════════════ */
+const missedItems = [
+  { name: 'Pyrex 403',      loss: 85  },
+  { name: 'Carhartt J97',   loss: 140 },
+  { name: 'Polo Stadium',   loss: 220 },
+  { name: 'Big E Levis',    loss: 220 },
+  { name: 'Le Creuset 7qt', loss: 180 },
+  { name: 'Air Jordan 1',   loss: 250 },
+];
+
+function GutPunch() {
+  const sectionRef = _hr(null);
+  const [, inView] = useInView({ threshold: 0.15 });
+  const [sectionVisible, setSectionVisible] = _hs(false);
+  const count = useCounter(487, 2000, sectionVisible);
+
+  _he(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setSectionVisible(true); obs.unobserve(el); }
+    }, { threshold: 0.15 });
+    obs.observe(el);
+    const fallback = setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 100) setSectionVisible(true);
+    }, 800);
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.9) { setSectionVisible(true); window.removeEventListener('scroll', onScroll); }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { clearTimeout(fallback); window.removeEventListener('scroll', onScroll); obs.disconnect(); };
+  }, []);
+
+  return (
+    <section ref={sectionRef} style={{
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: 'clamp(80px,10vw,128px) 24px',
+      position: 'relative', zIndex: 1,
+    }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="the math you don't want to do" color={C.red}/></FadeUp>
+
+        <FadeUp delay={0.15}>
+          <h2 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(48px,9vw,128px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: '0.5em',
+          }}>
+            THE AVERAGE FLIPPER<br/>
+            <span style={{ color: 'rgba(255,255,255,0.45)' }}>MISSES</span>
+          </h2>
+          <p style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(48px,9vw,128px)', lineHeight: 1.3, color: C.red, marginBottom: 40,
+          }}>${count}/MO</p>
+        </FadeUp>
+
+        <FadeUp delay={0.3}>
+          <p style={{
+            fontFamily: "'Manrope', sans-serif", fontSize: 'clamp(16px,2vw,20px)',
+            color: 'rgba(255,255,255,0.55)', maxWidth: 580, marginBottom: 56, lineHeight: 1.55,
+          }}>
+            in items they passed on, items they overpaid for, items they didn't know were worth flipping. Pro is $14.99.
+          </p>
+        </FadeUp>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))',
+          gap: 14,
+        }}>
+          {missedItems.map((item, i) => (
+            <FadeUp key={i} delay={0.08 * i}>
+              <div className="missed-card" style={{
+                background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 14, padding: 16, textAlign: 'center',
+                transition: 'border-color 0.25s, background 0.25s',
+                cursor: 'default',
+              }}>
+                <div style={{
+                  width: '100%', aspectRatio: '1', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.02)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 12,
+                }}>
+                  <CoinMark size={32} color="rgba(255,255,255,0.12)"/>
+                </div>
+                <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>{item.name}</p>
+                <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: C.red }}>−${item.loss}</p>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+Object.assign(window, { TopStrip, HeroSection, GutPunch });
+
+</script>
+<script type="text/babel">
+/* features-calc.jsx — FeatureMatrix + ROICalculator */
+const { useState: _fs, useCallback: _fc } = React;
+
+/* ═══════════════════ FEATURE MATRIX ═══════════════════ */
+const featureRows = [
+  { f: 'Daily scans',              free: '3',           pro: 'Unlimited',    a: 'mint' },
+  { f: 'AI vision identification', free: 'check',       pro: 'check',        a: null   },
+  { f: 'Live eBay sold comps',     free: 'Limited',     pro: 'Real-time',    a: 'mint' },
+  { f: 'FLIP OR SKIP daily game',  free: 'check',       pro: 'check',        a: null   },
+  { f: 'Haul tracking',            free: 'Last 7 days', pro: 'Full history', a: 'mint' },
+  { f: 'Yard sale map',            free: '—',           pro: 'Live + alerts',a: 'gold' },
+  { f: 'BOLO alerts',              free: '—',           pro: 'Push + email', a: 'gold' },
+  { f: 'Price trend graphs',       free: '—',           pro: '90-day history', a: 'gold' },
+  { f: 'Brand authenticator',      free: '—',           pro: 'AI-powered',   a: 'gold' },
+  { f: 'Export to spreadsheet',    free: '—',           pro: 'CSV / Sheets', a: 'gold' },
+  { f: 'Community BOLO feed',      free: 'Read-only',   pro: 'Post + react', a: 'mint' },
+  { f: 'Priority support',         free: '—',           pro: '24h response', a: 'gold' },
+];
+
+const thBase = {
+  fontFamily: "'Space Mono', monospace", fontSize: 11,
+  letterSpacing: '0.12em', textTransform: 'uppercase',
+  padding: '16px 12px', borderBottom: '1px solid rgba(255,255,255,0.1)',
+  color: 'rgba(255,255,255,0.4)', textAlign: 'center',
+};
+const tdBase = {
+  fontFamily: "'Space Mono', monospace", fontSize: 13,
+  padding: '14px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+  verticalAlign: 'middle',
+};
+
+function accentClr(a) { return a === 'gold' ? C.gold : a === 'mint' ? C.mint : '#fff'; }
+
+function FeatureMatrix() {
+  const [hov, setHov] = _fs(-1);
+  return (
+    <section style={{ padding: 'clamp(80px,10vw,128px) 24px', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="the whole arsenal" color={C.gold}/></FadeUp>
+
+        <FadeUp delay={0.15}>
+          <h2 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: 48,
+          }}>FREE VS <span style={{ color: C.gold }}>PRO.</span></h2>
+        </FadeUp>
+
+        <FadeUp delay={0.25}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 520 }} role="table">
+              <thead>
+                <tr>
+                  <th style={{ ...thBase, textAlign: 'left', width: '50%' }}>FEATURE</th>
+                  <th style={{ ...thBase, width: '25%' }}>FREE</th>
+                  <th style={{ ...thBase, width: '25%', color: C.gold }}>PRO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {featureRows.map((r, i) => (
+                  <tr key={i}
+                    onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(-1)}
+                    style={{
+                      background: hov === i ? 'rgba(255,255,255,0.025)' : 'transparent',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <td style={{
+                      ...tdBase, textAlign: 'left',
+                      fontFamily: "'Manrope', sans-serif",
+                      fontWeight: r.a === 'gold' ? 600 : 400,
+                      color: r.a === 'gold' ? C.gold : 'rgba(255,255,255,0.75)',
+                    }}>{r.f}</td>
+                    <td style={{
+                      ...tdBase, textAlign: 'center',
+                      color: r.free === '—' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.45)',
+                    }}>{r.free === 'check' ? <CheckIcon color="rgba(255,255,255,0.45)"/> : r.free}</td>
+                    <td style={{
+                      ...tdBase, textAlign: 'center',
+                      color: r.a ? accentClr(r.a) : '#fff',
+                      fontWeight: r.a ? 700 : 400,
+                    }}>{r.pro === 'check' ? <CheckIcon color={r.a ? accentClr(r.a) : '#fff'}/> : r.pro}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════ ROI CALCULATOR ═══════════════════ */
+function ROICalculator() {
+  const [flips, setFlips] = _fs(4);
+  const [avg, setAvg] = _fs(75);
+
+  const monthly = Math.round(flips * avg * 4.33);
+  const roi = Math.round(((monthly - 14.99) / 14.99) * 100);
+  const fraction = 14.99 / avg;
+
+  let punchline;
+  if (fraction < 1) {
+    const pct = Math.ceil(fraction * 100);
+    punchline = (<>pro pays for itself with just <span style={{ color: C.mint, fontWeight: 700 }}>{pct}%</span> of one flip</>);
+  } else {
+    const n = Math.ceil(fraction);
+    punchline = (<>pro pays for itself in just <span style={{ color: C.mint, fontWeight: 700 }}>{n}</span> flip{n > 1 ? 's' : ''}</>);
+  }
+
+  const sliderTrack = (val, min, max, color) => ({
+    background: `linear-gradient(to right, ${color} ${((val - min) / (max - min)) * 100}%, rgba(255,255,255,0.08) ${((val - min) / (max - min)) * 100}%)`,
+  });
+
+  return (
+    <section style={{
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      borderBottom: '1px solid rgba(255,255,255,0.06)',
+      padding: 'clamp(80px,10vw,128px) 24px',
+      position: 'relative', zIndex: 1,
+      background: 'linear-gradient(180deg, rgba(92,224,184,0.025) 0%, transparent 100%)',
+    }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="do the math" color={C.mint}/></FadeUp>
+
+        <FadeUp delay={0.15}>
+          <h2 style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: '0.5em',
+          }}>
+            PRO PAYS FOR ITSELF.
+          </h2>
+          <p style={{
+            fontFamily: "'Bebas Neue', sans-serif",
+            fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, color: C.mint, marginBottom: 40,
+          }}>IN ONE FLIP.</p>
+        </FadeUp>
+
+        <FadeUp delay={0.25}>
+          <div style={{
+            background: C.card, border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 20, padding: 'clamp(24px,4vw,40px)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.35)',
+          }}>
+            {/* Flips per week */}
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+                <label style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>
+                  flips per week
+                </label>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,8vw,72px)', color: C.mint, lineHeight: 1 }}>{flips}</span>
+              </div>
+              <input type="range" min="1" max="20" value={flips}
+                onChange={e => setFlips(+e.target.value)}
+                className="slider-mint"
+                style={sliderTrack(flips, 1, 20, C.mint)}
+              />
+            </div>
+
+            {/* Avg flip profit */}
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
+                <label style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)' }}>
+                  avg flip profit
+                </label>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,8vw,72px)', color: C.gold, lineHeight: 1 }}>${avg}</span>
+              </div>
+              <input type="range" min="10" max="500" step="5" value={avg}
+                onChange={e => setAvg(+e.target.value)}
+                className="slider-gold"
+                style={sliderTrack(avg, 10, 500, C.gold)}
+              />
+            </div>
+
+            {/* Results */}
+            <div style={{
+              borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 28,
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 20,
+            }}>
+              <div>
+                <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>you make</p>
+                <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(28px,4vw,42px)', color: C.mint }}>
+                  ${monthly.toLocaleString()}<span style={{ fontSize: '0.45em', color: 'rgba(255,255,255,0.35)' }}>/mo</span>
+                </p>
+              </div>
+              <div>
+                <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>pro costs</p>
+                <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(28px,4vw,42px)', color: 'rgba(255,255,255,0.45)' }}>
+                  $14.99<span style={{ fontSize: '0.45em', color: 'rgba(255,255,255,0.25)' }}>/mo</span>
+                </p>
+              </div>
+              <div>
+                <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>pro ROI</p>
+                <ShimmerText style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(28px,4vw,42px)', display: 'block' }}>
+                  {roi.toLocaleString()}%
+                </ShimmerText>
+              </div>
+            </div>
+
+            <p style={{
+              fontFamily: "'Manrope', sans-serif", fontSize: 16,
+              color: 'rgba(255,255,255,0.55)', marginTop: 28, textAlign: 'center', lineHeight: 1.5,
+            }}>{punchline}</p>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+Object.assign(window, { FeatureMatrix, ROICalculator });
+
+</script>
+<script type="text/babel">
+/* reviews-pricing.jsx — Testimonials + PricingSection */
+
+/* ═══════════════════ TESTIMONIALS ═══════════════════ */
+const reviewsData = [
+  { mono: 'T', h: '@thriftking47',    t: '2h', stars: 5,
+    q: 'scanned 12 items at goodwill in 8 mins. caught a $180 le creuset i would\'ve walked past. pro pays for itself daily.' },
+  { mono: 'C', h: '@crate_digger_atl', t: '6h', stars: 5,
+    q: 'the yard sale map alone is worth it. found 3 estate sales i didn\'t know about saturday. came home with $400 in inventory.' },
+  { mono: 'G', h: '@goodwillgrails',   t: '1d', stars: 5,
+    q: 'BOLO pinged me on a Polo Stadium \'92 in the bins. $14 → $400. paid for the year in one find.' },
+  { mono: 'F', h: '@flipperflora',     t: '2d', stars: 4,
+    q: 'replaced my vendoo + ebay tabs + spreadsheets workflow. love it. only ask: wish the yard sale map covered more rural areas.' },
+];
+
+function Testimonials() {
+  return (
+    <section style={{ padding: 'clamp(80px,10vw,128px) 24px', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="from the hunters" color={C.blue}/></FadeUp>
+        <FadeUp delay={0.15}>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: '0.5em' }}>
+            REAL FLIPPERS.
+          </h2>
+          <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, color: C.blue, marginBottom: 40 }}>REAL FLIPS.</p>
+        </FadeUp>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          {reviewsData.map((r, i) => (
+            <FadeUp key={i} delay={0.08 * i}>
+              <div className="review-card" style={{
+                background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 16, padding: 24, transition: 'border-color 0.25s', height: '100%',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 42, height: 42, borderRadius: '50%',
+                      border: '2px solid rgba(92,224,184,0.4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: C.mint,
+                      background: 'transparent',
+                    }}>{r.mono}</div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 13, color: '#fff' }}>{r.h}</span>
+                        <CheckIcon size={13} color={C.mint}/>
+                      </div>
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                        {r.t} · loot.works
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    {[0,1,2,3,4].map(j => (
+                      <span key={j} style={{
+                        color: j < r.stars ? C.gold : 'rgba(255,255,255,0.15)',
+                        fontSize: 15,
+                        textShadow: j < r.stars ? '0 0 8px rgba(245,197,24,0.4)' : 'none',
+                      }}>★</span>
+                    ))}
+                  </div>
+                </div>
+                <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 15, color: 'rgba(255,255,255,0.82)', lineHeight: 1.6 }}>
+                  {r.q}
+                </p>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════ PRICING ═══════════════════ */
+const monthlyBullets = ['Unlimited scans', 'BOLO alerts', 'Yard sale map', 'Brand authenticator'];
+const annualBullets  = ['Everything in Monthly', 'Priority support', 'Early features access', 'Founding member status'];
+
+function PricingSection({ onCTA }) {
+  return (
+    <section id="pricing" style={{ padding: 'clamp(80px,10vw,128px) 24px', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="two ways in" color={C.mint}/></FadeUp>
+        <FadeUp delay={0.15}>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: 48 }}>
+            PICK YOUR <span style={{ color: C.mint }}>WEAPON.</span>
+          </h2>
+        </FadeUp>
+
+        <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24, marginBottom: 40 }}>
+          {/* ── Monthly ── */}
+          <FadeUp delay={0.25}>
+            <div className="pricing-card" style={{
+              background: 'rgba(255,255,255,0.025)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 20, padding: 'clamp(28px,4vw,40px)',
+              display: 'flex', flexDirection: 'column', height: '100%',
+              transition: 'border-color 0.25s',
+            }}>
+              <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 16 }}>MONTHLY</p>
+              <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,8vw,72px)', color: '#fff', lineHeight: 1, marginBottom: 12 }}>
+                $14.99<span style={{ fontSize: '0.4em', color: 'rgba(255,255,255,0.35)' }}>/mo</span>
+              </p>
+              <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 15, color: 'rgba(255,255,255,0.45)', marginBottom: 32, lineHeight: 1.4 }}>
+                pay as you flip. cancel whenever.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, flex: 1, marginBottom: 32 }}>
+                {monthlyBullets.map((f, i) => (
+                  <li key={i} style={{
+                    fontFamily: "'Manrope', sans-serif", fontSize: 15,
+                    color: 'rgba(255,255,255,0.65)', padding: '10px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <span style={{ color: C.mint, fontWeight: 700 }}>→</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => onCTA && onCTA('monthly')} className="cta-btn-outline" style={{
+                fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: '0.04em',
+                background: 'transparent', color: C.mint,
+                border: `2px solid ${C.mint}`, padding: '16px 32px',
+                borderRadius: 6, cursor: 'pointer', width: '100%',
+                transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+              }}>START MONTHLY →</button>
+            </div>
+          </FadeUp>
+
+          {/* ── Annual ── */}
+          <FadeUp delay={0.35}>
+            <div className="pricing-card pricing-card--annual" style={{
+              background: 'rgba(92,224,184,0.035)',
+              border: `2px solid ${C.mint}`,
+              borderRadius: 20, padding: 'clamp(28px,4vw,40px)',
+              display: 'flex', flexDirection: 'column', height: '100%',
+              position: 'relative',
+              boxShadow: '0 0 40px rgba(92,224,184,0.12)',
+              transition: 'box-shadow 0.25s',
+            }}>
+              {/* Save badge — mint on black */}
+              <div style={{
+                position: 'absolute', top: -13, right: 20,
+                background: C.mint, color: C.bg,
+                fontFamily: "'Space Mono', monospace", fontSize: 12, fontWeight: 700,
+                padding: '6px 14px', borderRadius: 8,
+              }}>↓ Save $80</div>
+
+              <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.gold, marginBottom: 16 }}>BEST VALUE</p>
+              <p style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,8vw,72px)', color: '#fff', lineHeight: 1, marginBottom: 12 }}>
+                $99.99<span style={{ fontSize: '0.4em', color: 'rgba(255,255,255,0.35)' }}>/yr</span>
+              </p>
+              <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 15, color: 'rgba(255,255,255,0.45)', marginBottom: 4, lineHeight: 1.4 }}>
+                that's $8.33/mo
+              </p>
+              <p style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 32 }}>
+                vs $14.99 monthly · 44% off
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, flex: 1, marginBottom: 32 }}>
+                {annualBullets.map((f, i) => (
+                  <li key={i} style={{
+                    fontFamily: "'Manrope', sans-serif", fontSize: 15,
+                    color: 'rgba(255,255,255,0.65)', padding: '10px 0',
+                    borderBottom: '1px solid rgba(92,224,184,0.08)',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <span style={{ color: C.gold }}>★</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => onCTA && onCTA('annual')} className="cta-btn-primary" style={{
+                fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: '0.04em',
+                background: C.mint, color: C.bg, border: 'none',
+                padding: '16px 32px', borderRadius: 6, cursor: 'pointer', width: '100%',
+                boxShadow: '0 0 30px rgba(92,224,184,0.18)',
+                transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
+              }}>CLAIM ANNUAL →</button>
+              <p style={{
+                fontFamily: "'Space Mono', monospace", fontSize: 11,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 16,
+              }}>7-DAY REFUND · NO QUESTIONS</p>
+            </div>
+          </FadeUp>
+        </div>
+
+        <FadeUp delay={0.4}>
+          <p style={{
+            fontFamily: "'Space Mono', monospace", fontSize: 11,
+            letterSpacing: '0.08em', textAlign: 'center',
+            color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase',
+          }}>SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY DIGISTORE24 + STRIPE</p>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+Object.assign(window, { Testimonials, PricingSection });
+
+</script>
+<script type="text/babel">
+/* faq-close.jsx — FAQSection + CloserSection + Toast + App + render */
+const { useState: _qs, useCallback: _qc, useRef: _qr, useEffect: _qe } = React;
+
+/* ═══════════════════ FAQ ═══════════════════ */
+const faqData = [
+  { q: "what if i'm not even a 'real' flipper yet?",
+    a: "perfect — Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike. Pro is most valuable for resellers leveling up." },
+  { q: "what if i don't like it?",
+    a: "7-day full refund, no questions. you can also cancel anytime from settings — no chat, no email, no friction. you're in control." },
+  { q: "why subscription vs. one-time?",
+    a: "live eBay comps require ongoing data infrastructure. the AI improves weekly. new features ship monthly. subscription means you always have the sharpest tool." },
+  { q: "can i switch between monthly and annual?",
+    a: "yes. upgrade to annual anytime and we'll prorate. downgrade at any renewal." },
+  { q: "how does the yard sale map work?",
+    a: "Pro pulls listings from Craigslist, Facebook Marketplace, Estatesales.net, and local newspapers. filters by date, distance, and item type. push alert when grail items are listed nearby." },
+  { q: "do you sell my data?",
+    a: "never. your scans stay yours. your hauls stay yours. the only data we use is aggregated, anonymized comps to improve the AI." },
+];
+
+/* Accordion item with JS-measured height instead of maxHeight ceiling */
+function FAQItem({ item, isOpen, onToggle }) {
+  const contentRef = _qr(null);
+  const [height, setHeight] = _qs(0);
+
+  _qe(() => {
+    if (contentRef.current) {
+      setHeight(contentRef.current.scrollHeight);
+    }
+  }, [isOpen]);
+
+  return (
+    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <button
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '22px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+          color: '#fff', gap: 16,
+        }}
+      >
+        <span style={{
+          fontFamily: "'Manrope', sans-serif",
+          fontSize: 'clamp(16px,2vw,18px)', fontWeight: 600,
+          color: isOpen ? '#fff' : 'rgba(255,255,255,0.65)',
+          transition: 'color 0.2s',
+        }}>{item.q}</span>
+        <span style={{
+          fontFamily: "'Space Mono', monospace", fontSize: 24, color: C.purple,
+          transition: 'transform 0.35s cubic-bezier(0.16,1,0.3,1)',
+          transform: isOpen ? 'rotate(45deg)' : 'rotate(0)',
+          flexShrink: 0, lineHeight: 1,
+        }}>+</span>
+      </button>
+      <div style={{
+        height: isOpen ? height : 0, overflow: 'hidden',
+        transition: 'height 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.3s',
+        opacity: isOpen ? 1 : 0,
+      }}>
+        <div ref={contentRef}>
+          <p style={{
+            fontFamily: "'Manrope', sans-serif", fontSize: 15,
+            color: 'rgba(255,255,255,0.55)', lineHeight: 1.65, paddingBottom: 22,
+          }}>{item.a}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FAQSection() {
+  const [open, setOpen] = _qs(0);
+  return (
+    <section style={{
+      borderTop: '1px solid rgba(255,255,255,0.06)',
+      padding: 'clamp(80px,10vw,128px) 24px',
+      position: 'relative', zIndex: 1,
+    }}>
+      <div style={{ maxWidth: 750, margin: '0 auto' }}>
+        <FadeUp><Eyebrow text="still on the fence?" color={C.purple}/></FadeUp>
+        <FadeUp delay={0.15}>
+          <h2 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 'clamp(48px,9vw,96px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: 48 }}>
+            REAL QUESTIONS. <span style={{ color: C.purple }}>REAL ANSWERS.</span>
+          </h2>
+        </FadeUp>
+
+        <div>
+          {faqData.map((item, i) => (
+            <FadeUp key={i} delay={0.04 * i}>
+              <FAQItem item={item} isOpen={open === i} onToggle={() => setOpen(open === i ? -1 : i)}/>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════ CLOSER ═══════════════════ */
+function CloserSection({ onCTA }) {
+  return (
+    <section style={{
+      padding: 'clamp(120px,14vw,192px) 24px',
+      position: 'relative', zIndex: 1, textAlign: 'center', overflow: 'hidden',
+    }}>
+      {/* Background Saturn decoration */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        pointerEvents: 'none',
+      }}>
+        <div style={{ width: '120vmax', height: '120vmax', flexShrink: 0, opacity: 0.04 }}>
+          <svg viewBox="0 0 800 800" fill="none" style={{ width: '100%', height: '100%' }} aria-hidden="true">
+            <ellipse cx="400" cy="400" rx="380" ry="100" stroke={C.mint} strokeWidth="0.8"/>
+            <ellipse cx="400" cy="400" rx="320" ry="80" stroke={C.purple} strokeWidth="0.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <FadeUp>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 36 }}>
+          <CoinMark size={18} color="rgba(255,255,255,0.25)"/>
+          <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>the choice</span>
+          <CoinMark size={18} color="rgba(255,255,255,0.25)"/>
+        </div>
+      </FadeUp>
+
+      <FadeUp delay={0.2}>
+        <h2 style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: 'clamp(56px,11vw,160px)', lineHeight: 1.3, paddingBottom: '0.5em', marginBottom: '0.5em',
+        }}>
+          EVERY <ShimmerText>WEEKEND</ShimmerText><br/>WITHOUT PRO IS
+        </h2>
+        <p style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: 'clamp(56px,11vw,160px)', lineHeight: 1.3, color: C.gold, marginBottom: 48,
+        }}>MONEY MISSED.</p>
+      </FadeUp>
+
+      <FadeUp delay={0.4}>
+        <button onClick={() => onCTA && onCTA('annual')} className="cta-btn-primary" style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: 'clamp(24px,3vw,32px)', letterSpacing: '0.04em',
+          background: C.mint, color: C.bg, border: 'none',
+          padding: '24px 64px', borderRadius: 6, cursor: 'pointer',
+          animation: 'pulseGlow 3s ease-in-out infinite',
+          transition: 'transform 0.15s cubic-bezier(0.16,1,0.3,1)',
+          marginBottom: 24,
+        }}>CLAIM PRO NOW →</button>
+      </FadeUp>
+
+      <FadeUp delay={0.5}>
+        <p style={{
+          fontFamily: "'Space Mono', monospace", fontSize: 12,
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: 'rgba(255,255,255,0.3)', marginBottom: 80,
+        }}>$14.99/MO · $99.99/YR · CANCEL ANYTIME · 7-DAY REFUND</p>
+      </FadeUp>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, position: 'relative', zIndex: 1 }}>
+        <CoinMark size={22}/>
+        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 14, color: C.mint, letterSpacing: '0.15em', fontWeight: 700 }}>LOOT.WORKS</span>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════ TOAST ═══════════════════ */
+function Toast({ message, visible }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 32, left: '50%',
+      transform: `translateX(-50%) translateY(${visible ? 0 : 20}px)`,
+      background: C.mint, color: C.bg,
+      fontFamily: "'Space Mono', monospace", fontSize: 14, fontWeight: 700,
+      padding: '14px 28px', borderRadius: 12,
+      boxShadow: '0 8px 32px rgba(92,224,184,0.3)',
+      opacity: visible ? 1 : 0,
+      transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
+      zIndex: 9999, pointerEvents: 'none', whiteSpace: 'nowrap',
+    }}>{message}</div>
+  );
+}
+
+/* ═══════════════════ APP ═══════════════════ */
+function App() {
+  const [toast, setToast] = _qs({ msg: '', vis: false });
+
+  const handleCTA = _qc((plan) => {
+    const label = plan === 'annual' ? 'Annual Pro' : 'Monthly Pro';
+    setToast({ msg: `→ ${label} · routing to checkout`, vis: true });
+    setTimeout(() => setToast(t => ({ ...t, vis: false })), 3000);
+  }, []);
+
+  return (
+    <>
+      <CosmicBackground/>
+      <TopStrip/>
+      <main>
+        <HeroSection onCTA={handleCTA}/>
+        <GutPunch/>
+        <FeatureMatrix/>
+        <ROICalculator/>
+        <Testimonials/>
+        <PricingSection onCTA={handleCTA}/>
+        <FAQSection/>
+        <CloserSection onCTA={handleCTA}/>
+      </main>
+      <Toast message={toast.msg} visible={toast.vis}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+</script>
+</body>
+</html>
