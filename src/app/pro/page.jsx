@@ -38,6 +38,8 @@ import Testimonials from "./components/Testimonials.jsx";
 import PricingSection from "./components/PricingSection.jsx";
 import FAQSection from "./components/FAQSection.jsx";
 import CloserSection from "./components/CloserSection.jsx";
+import Footer from "./components/Footer.jsx";
+import CookieBanner from "./components/CookieBanner.jsx";
 import Toast from "./components/Toast.jsx";
 
 const DIGISTORE_BASE = "https://checkout-ds24.com/product/691098";
@@ -85,6 +87,8 @@ export default function ProPage() {
         <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
       </main>
+      <Footer />
+      <CookieBanner />
       <Toast message={toast.msg} visible={toast.vis} />
     </div>
   );

@@ -34,6 +34,11 @@ export default function TopStrip() {
           LOOT.WORKS / <b>pro</b>
         </span>
       </div>
+      {/* Compliance: replaced fabricated stats ("12,847 RESELLERS · $2.1M
+          FLIPPED") with honest framing — no number claims that can't be
+          back-validated against real user count + transaction volume.
+          Restore real stats here once we can verify them (Digistore + Stripe
+          + Supabase aggregates). */}
       <div
         className="strip-stats"
         style={{
@@ -56,7 +61,7 @@ export default function TopStrip() {
             animation: "breathe 2.5s ease-in-out infinite",
           }}
         />
-        <span>12,847 RESELLERS</span>
+        <span>BUILT FOR RESELLERS</span>
         <span
           style={{
             width: 1,
@@ -65,7 +70,7 @@ export default function TopStrip() {
             display: "inline-block",
           }}
         />
-        <span>$2.1M FLIPPED</span>
+        <span>FOUNDING COHORT</span>
       </div>
     </header>
   );

@@ -182,9 +182,21 @@ export default function HeroSection() {
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> pays for itself in 1 flip
+            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> pays for itself in 1 flip*
           </span>
         </div>
+        {/* Compliance caveat for the "pays for itself in 1 flip" claim. */}
+        <p
+          style={{
+            fontFamily: "var(--font-mono), monospace",
+            fontSize: 10,
+            letterSpacing: "0.08em",
+            color: "rgba(255,255,255,0.35)",
+            marginTop: 12,
+          }}
+        >
+          *based on average flip profit. results vary.
+        </p>
       </FadeUp>
     </section>
   );

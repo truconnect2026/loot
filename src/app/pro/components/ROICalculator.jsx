@@ -280,6 +280,19 @@ export default function ROICalculator() {
               {punchline}
             </p>
           </div>
+          {/* Compliance disclaimer for the live calc above. */}
+          <p
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 10,
+              letterSpacing: "0.08em",
+              color: "rgba(255,255,255,0.35)",
+              marginTop: 16,
+              textAlign: "center",
+            }}
+          >
+            estimated based on user input · actual results vary
+          </p>
         </FadeUp>
       </div>
     </section>

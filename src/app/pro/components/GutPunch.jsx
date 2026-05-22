@@ -154,6 +154,12 @@ export default function GutPunch() {
             gap: 14,
           }}
         >
+          {/* TODO(David): The "$487/MO" missed-flips claim above is illustrative,
+              not back-validated against real user data. Either source a credible
+              study to cite (and add the citation here), or replace the figure
+              with a softer framing like "research suggests" + range. The 6
+              item-specific loss numbers below are representative examples based
+              on typical resale prices and should be treated the same way. */}
           {missedItems.map((item, i) => (
             <FadeUp key={i} delay={0.08 * i}>
               <div
@@ -206,6 +212,23 @@ export default function GutPunch() {
             </FadeUp>
           ))}
         </div>
+        {/* Compliance disclaimer — frames the $487 figure + the per-item loss
+            cards as a representative illustration, not a verified statistic. */}
+        <p
+          style={{
+            fontFamily: "var(--font-mono), monospace",
+            fontSize: 10,
+            letterSpacing: "0.08em",
+            color: "rgba(255,255,255,0.35)",
+            marginTop: 24,
+            textAlign: "center",
+            maxWidth: 720,
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+        >
+          *representative example based on typical resale values · individual results vary
+        </p>
       </div>
     </section>
   );
