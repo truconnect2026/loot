@@ -253,7 +253,7 @@ export default function HeroSection() {
         <FadeUp delay={0.6}>
           <div className="pro-hero-visual">
             <img
-              src="/kit/scan-ui-mockup.png"
+              src="/kit/scan-ui-mockup-optimized.png"
               alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — verdict in 1.45s: $4 buy, $35 resell, 21× ROI, FLIP IT"
               className="pro-hero-mockup"
               width={1024}
