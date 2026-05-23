@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           className="text-[11px] font-[500] tracking-[0.12em] uppercase text-[var(--text-muted)] mb-10"
           style={{ fontFamily: "var(--font-label)" }}
         >
-          Last updated: [LAST UPDATED DATE]
+          Last updated: May 23, 2026
         </div>
 
         <Prose>
@@ -128,9 +128,9 @@ export default function PrivacyPage() {
 
           <H2>9. Contact</H2>
           <P>
-            Questions or requests: <Mail>hello@loot.works</Mail>.
+            Questions or requests: <Mail>lootworks.goflip@gmail.com</Mail>.
             <br />
-            Operated by [BUSINESS NAME], [ADDRESS].
+            Operated by TruConnect, 1020 Ezekiel Way, Locust Grove, GA 30248, USA.
           </P>
         </Prose>
 

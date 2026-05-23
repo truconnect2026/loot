@@ -52,7 +52,7 @@ export default function RefundPolicyPage() {
           className="text-[11px] font-[500] tracking-[0.12em] uppercase text-[var(--text-muted)] mb-10"
           style={{ fontFamily: "var(--font-label)" }}
         >
-          Last updated: [LAST UPDATED DATE]
+          Last updated: May 23, 2026
         </div>
 
         <div

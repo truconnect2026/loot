@@ -30,8 +30,8 @@ import { CoinMark } from "./atoms.jsx";
 
 // CONFIRMED: support inbox is lootworks.goflip@gmail.com
 const SUPPORT_EMAIL = "lootworks.goflip@gmail.com";
-const BUSINESS_NAME = "[BUSINESS NAME]"; // TODO(David): operator-of-record
-const BUSINESS_ADDRESS = "[BUSINESS ADDRESS]"; // TODO(David): registered with Digistore
+const BUSINESS_NAME = "TruConnect";
+const BUSINESS_ADDRESS = "1020 Ezekiel Way, Locust Grove, GA 30248, USA";
 
 export default function Footer() {
   return (

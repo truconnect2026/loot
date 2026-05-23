@@ -45,13 +45,13 @@ export default function TermsPage() {
           className="text-[11px] font-[500] tracking-[0.12em] uppercase text-[var(--text-muted)] mb-10"
           style={{ fontFamily: "var(--font-label)" }}
         >
-          Last updated: [LAST UPDATED DATE]
+          Last updated: May 23, 2026
         </div>
 
         <Prose>
           <P>
             These Terms govern your use of loot.works (the
-            &ldquo;Service&rdquo;), operated by [BUSINESS NAME] (&ldquo;we&rdquo;,
+            &ldquo;Service&rdquo;), operated by TruConnect (&ldquo;we&rdquo;,
             &ldquo;us&rdquo;). By creating an account or subscribing you agree
             to these Terms.
           </P>
@@ -155,9 +155,9 @@ export default function TermsPage() {
 
           <H2>12. Contact</H2>
           <P>
-            Questions: <Mail>hello@loot.works</Mail>.
+            Questions: <Mail>lootworks.goflip@gmail.com</Mail>.
             <br />
-            Operated by [BUSINESS NAME], [ADDRESS].
+            Operated by TruConnect, 1020 Ezekiel Way, Locust Grove, GA 30248, USA.
           </P>
         </Prose>
 

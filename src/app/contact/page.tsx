@@ -81,9 +81,8 @@ export default function ContactPage() {
               Business
             </h2>
             <p style={{ color: "rgba(255,255,255,0.6)", whiteSpace: "pre-line" }}>
-              {/* TODO(David): operator-of-record + address registered with Digistore */}
-              [BUSINESS NAME]
-              {"\n"}[BUSINESS ADDRESS]
+              TruConnect
+              {"\n"}1020 Ezekiel Way, Locust Grove, GA 30248, USA
             </p>
           </section>
         </div>
