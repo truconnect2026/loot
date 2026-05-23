@@ -982,6 +982,26 @@ export default function KitPage() {
                 </div>
               ))}
             </div>
+
+            {/* Sitemap — full site architecture diagram. Press + designers
+                reference this for the 3-pillar (MARKETING / APP / LEGAL)
+                route taxonomy. */}
+            <h3 className="kit-sub-header" style={{ marginTop: 48 }}>Sitemap</h3>
+            <p className="sec-sub">Full site architecture · 3-pillar tree · PNG @ 2x.</p>
+            <div className="sitemap-card">
+              <a href="/kit/sitemap.png" className="sitemap-thumb" download aria-label="Download sitemap PNG">
+                <img src="/kit/sitemap.png" alt="loot.works sitemap — MARKETING, APP, LEGAL columns" />
+              </a>
+              <div className="sitemap-meta">
+                <span className="sitemap-label">SITEMAP</span>
+                <p className="sitemap-desc">
+                  Every public route at a glance. Useful for press,
+                  designers, and creators referencing the site structure.
+                </p>
+                <p className="sitemap-fileinfo">1 file · PNG · 2x resolution</p>
+                <a href="/kit/sitemap.png" className="btn-dl" download>DOWNLOAD PNG</a>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1583,6 +1603,50 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
 .kit-page .type-footer a:hover { opacity: 0.7; }
 
 /* SCREENSHOTS */
+/* SITEMAP CARD */
+.kit-page .sitemap-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: center;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(92,224,184,0.25);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 4px;
+}
+@media (min-width: 768px) {
+  .kit-page .sitemap-card { grid-template-columns: minmax(0, 240px) 1fr; gap: 32px; padding: 32px; }
+}
+.kit-page .sitemap-thumb {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.3);
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+  outline: none;
+}
+.kit-page .sitemap-thumb:hover,
+.kit-page .sitemap-thumb:focus-visible {
+  border-color: rgba(92,224,184,0.6);
+  transform: translateY(-1px);
+}
+.kit-page .sitemap-thumb img {
+  display: block; width: 100%; height: auto;
+}
+.kit-page .sitemap-meta { display: flex; flex-direction: column; gap: 10px; }
+.kit-page .sitemap-label {
+  font-family: var(--mono); font-weight: 700; font-size: 11px;
+  letter-spacing: 0.16em; color: var(--mint);
+}
+.kit-page .sitemap-desc { font-weight: 300; font-size: 14px; color: rgba(255,255,255,0.65); margin: 0; line-height: 1.55; }
+.kit-page .sitemap-fileinfo {
+  font-family: var(--mono); font-weight: 500; font-size: 11px;
+  color: rgba(255,255,255,0.4); letter-spacing: 0.04em; margin: 0;
+}
+.kit-page .sitemap-meta .btn-dl { align-self: flex-start; margin-top: 6px; padding: 10px 18px; font-size: 11px; }
+
 .kit-page .shots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 @media (min-width: 768px) { .kit-page .shots-grid { grid-template-columns: repeat(3, 1fr); } }
 .kit-page .shot-tile {
