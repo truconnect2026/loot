@@ -1007,6 +1007,55 @@ export default function KitPage() {
               </div>
             </div>
 
+            {/* IG ad creative bundle — 6 editorial vertical ads. Affiliates
+                and Founding 20 creators drop these straight into IG / Reels /
+                TikTok posts without re-shooting. Multi-file: each download
+                link grabs a single PNG so creators can pull only what fits
+                their angle. */}
+            <h3 className="kit-sub-header" style={{ marginTop: 48 }}>IG Ad Creatives</h3>
+            <p className="sec-sub">6 vertical ad variants · 1122×1402 · ready for IG / TikTok / Reels.</p>
+            <div className="sitemap-card adkit-card">
+              <a
+                href="/ads/ig-carhartt.png"
+                className="sitemap-thumb"
+                download
+                aria-label="Download Carhartt ad PNG"
+              >
+                <img
+                  src="/ads/ig-carhartt.png"
+                  alt="loot.works ad creative — Carhartt jacket $8 at Goodwill, $140 resell, 17× ROI"
+                />
+                <span className="adkit-multi-badge" aria-hidden="true">6 FILES</span>
+              </a>
+              <div className="sitemap-meta">
+                <span className="sitemap-label">IG AD CREATIVES</span>
+                <p className="sitemap-desc">
+                  Editorial vertical ads for thrift finds — Carhartt, Le
+                  Creuset, Big E Levi&apos;s, Pendleton, vintage Nike, vinyl.
+                  Drop straight into IG, Reels, TikTok, or Pinterest. Each
+                  shows the buy / resell / ROI verdict.
+                </p>
+                <p className="sitemap-fileinfo">6 files · PNG · 1122×1402</p>
+                <ul className="adkit-filelist">
+                  {[
+                    { file: "ig-carhartt.png",   label: "Carhartt jacket — $8 → $140" },
+                    { file: "ig-lecreuset.png",  label: "Le Creuset Dutch oven" },
+                    { file: "ig-levis-bige.png", label: "Levi's 501 Big E" },
+                    { file: "ig-nike-tee.png",   label: "Nike single-stitch tee" },
+                    { file: "ig-pendleton.png",  label: "Pendleton blanket" },
+                    { file: "ig-vinyl.png",      label: "Vinyl record" },
+                  ].map((a) => (
+                    <li key={a.file}>
+                      <a href={`/ads/${a.file}`} download className="adkit-dl">
+                        <span className="adkit-dl-name">{a.label}</span>
+                        <span className="adkit-dl-action">DOWNLOAD →</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
             {/* Sitemap — full site architecture diagram. Press + designers
                 reference this for the 3-pillar (MARKETING / APP / LEGAL)
                 route taxonomy. */}
@@ -1670,6 +1719,48 @@ html:has(.kit-page) { scroll-behavior: smooth; scroll-padding-top: 80px; }
   color: rgba(255,255,255,0.4); letter-spacing: 0.04em; margin: 0;
 }
 .kit-page .sitemap-meta .btn-dl { align-self: flex-start; margin-top: 6px; padding: 10px 18px; font-size: 11px; }
+
+/* Multi-file asset card variant — IG ad creatives bundle. Adds the
+   "6 FILES" badge to the thumb and a per-file download list inside
+   the meta column. */
+.kit-page .adkit-card .sitemap-thumb { position: relative; }
+.kit-page .adkit-multi-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-family: var(--mono); font-weight: 700; font-size: 9px;
+  letter-spacing: 0.14em; color: var(--gold);
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(245,197,24,0.55);
+  border-radius: 999px;
+  padding: 4px 9px;
+  text-transform: uppercase;
+}
+.kit-page .adkit-filelist {
+  list-style: none; padding: 0; margin: 12px 0 0;
+  display: flex; flex-direction: column;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.kit-page .adkit-filelist li { border-bottom: 1px solid rgba(255,255,255,0.04); }
+.kit-page .adkit-filelist li:last-child { border-bottom: none; }
+.kit-page .adkit-dl {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 4px;
+  font-family: var(--display); font-weight: 500; font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  transition: color 0.15s var(--ease), padding-left 0.15s var(--ease);
+}
+.kit-page .adkit-dl:hover, .kit-page .adkit-dl:focus-visible {
+  color: var(--mint); padding-left: 8px; outline: none;
+}
+.kit-page .adkit-dl-name { flex: 1; min-width: 0; }
+.kit-page .adkit-dl-action {
+  font-family: var(--mono); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--mint);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+.kit-page .adkit-dl:hover .adkit-dl-action { opacity: 1; }
 
 .kit-page .shots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 @media (min-width: 768px) { .kit-page .shots-grid { grid-template-columns: repeat(3, 1fr); } }
