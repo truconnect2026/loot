@@ -3,6 +3,49 @@
 import { C } from "../lib/colors.js";
 import { CheckIcon, Eyebrow, FadeUp, ShimmerText } from "./atoms.jsx";
 
+const HERO_STYLES = `
+.pro-hero-grid { display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; }
+@media (min-width: 1024px) {
+  .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
+}
+.pro-hero-text { min-width: 0; }
+.pro-hero-visual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 380px;
+}
+@media (min-width: 1024px) {
+  .pro-hero-visual { max-width: 460px; margin: 0; justify-content: flex-end; }
+}
+.pro-hero-visual::before {
+  content: '';
+  position: absolute;
+  inset: -8% -4% -8% -4%;
+  background: radial-gradient(ellipse at center, rgba(92,224,184,0.18) 0%, rgba(92,224,184,0.05) 35%, transparent 65%);
+  filter: blur(28px);
+  z-index: 0;
+  pointer-events: none;
+}
+.pro-hero-mockup {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.5)) drop-shadow(0 0 32px rgba(92,224,184,0.18));
+}
+/* On desktop, dial headline down slightly so it lives alongside the
+   mockup instead of pushing it off-screen. */
+@media (min-width: 1024px) {
+  .pro-hero-headline { font-size: clamp(64px, 8.5vw, 132px) !important; }
+  .pro-hero-italic   { font-size: clamp(48px, 6.5vw, 100px) !important; }
+}
+`;
+
 export default function HeroSection() {
   return (
     <section
@@ -14,12 +57,17 @@ export default function HeroSection() {
         zIndex: 1,
       }}
     >
+      <style dangerouslySetInnerHTML={{ __html: HERO_STYLES }} />
+
+      <div className="pro-hero-grid">
+        <div className="pro-hero-text">
       <FadeUp delay={0.1}>
         <Eyebrow text="Pro Tier · Founding Pricing" color={C.mint} />
       </FadeUp>
 
       <FadeUp delay={0.3}>
         <h1
+          className="pro-hero-headline"
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
             fontSize: "clamp(64px,13vw,200px)",
@@ -36,6 +84,7 @@ export default function HeroSection() {
         {/* Line 3 — italic gold, ~75% size so the preposition "ON THE SHELF" stays
             with what it modifies and the sentence resolves rather than competing. */}
         <p
+          className="pro-hero-italic"
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
             fontSize: "clamp(48px,9.75vw,150px)",
@@ -198,6 +247,23 @@ export default function HeroSection() {
           *based on average flip profit. results vary.
         </p>
       </FadeUp>
+        </div>
+
+        {/* Product visualization — proves the verdict-in-1.4s claim is real. */}
+        <FadeUp delay={0.6}>
+          <div className="pro-hero-visual">
+            <img
+              src="/kit/scan-ui-mockup.png"
+              alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — verdict in 1.45s: $4 buy, $35 resell, 21× ROI, FLIP IT"
+              className="pro-hero-mockup"
+              width={1024}
+              height={1536}
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        </FadeUp>
+      </div>
     </section>
   );
 }

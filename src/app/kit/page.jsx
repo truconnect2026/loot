@@ -983,6 +983,30 @@ export default function KitPage() {
               ))}
             </div>
 
+            {/* Scan UI Mockup — the product visualization that also lives in
+                the /pro hero. Press and creators want this for write-ups +
+                tutorials without re-screenshotting the live app. */}
+            <h3 className="kit-sub-header" style={{ marginTop: 48 }}>Scan UI Mockup</h3>
+            <p className="sec-sub">Product visualization · iPhone mockup · PNG.</p>
+            <div className="sitemap-card">
+              <a href="/kit/scan-ui-mockup.png" className="sitemap-thumb" download aria-label="Download scan UI mockup PNG">
+                <img
+                  src="/kit/scan-ui-mockup.png"
+                  alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — verdict in 1.45s: $4 buy, $35 resell, 21× ROI, FLIP IT"
+                />
+              </a>
+              <div className="sitemap-meta">
+                <span className="sitemap-label">SCAN UI MOCKUP</span>
+                <p className="sitemap-desc">
+                  Hyper-realistic iPhone showing the live scan flow on a vintage
+                  Pyrex find. Use for product write-ups, tutorials, and
+                  feature explainers. Transparent background.
+                </p>
+                <p className="sitemap-fileinfo">1 file · PNG · transparent bg</p>
+                <a href="/kit/scan-ui-mockup.png" className="btn-dl" download>DOWNLOAD PNG</a>
+              </div>
+            </div>
+
             {/* Sitemap — full site architecture diagram. Press + designers
                 reference this for the 3-pillar (MARKETING / APP / LEGAL)
                 route taxonomy. */}
