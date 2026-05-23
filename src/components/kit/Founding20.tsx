@@ -227,6 +227,24 @@ export default function Founding20() {
         {/* PERKS */}
         <div className="f20-block">
           <div className="f20-section-label">WHAT YOU GET</div>
+
+          {/* Founding 20 kit mockup — proves the physical kit is real
+              before the perk cards make the textual claim. Mint radial
+              glow + drop-shadow match the rest of the cosmic palette. */}
+          <div className="f20-kit-mockup">
+            <img
+              src="/kit/founding-20-kit-mockup.png"
+              alt="Founding 20 creator kit — Flip mascot coyote enamel pin, Saturn sticker pack, custom hangtag, brass Saturn charm, branded fabric pouch, membership card, creator kit metal token"
+              width={1254}
+              height={1254}
+              loading="lazy"
+              decoding="async"
+            />
+            <p className="f20-kit-mockup-caption">
+              THE FOUNDING 20 KIT · SHIPS WITHIN 5 DAYS OF ACCEPTANCE
+            </p>
+          </div>
+
           <div className="f20-perks-grid">
             <div className="f20-perk">
               <div className="f20-perk-icon">🪐</div>
@@ -714,6 +732,44 @@ const F20_STYLES = `
 .f20-section .f20-calc-wrap { background: transparent; }
 
 /* Perks */
+/* Founding 20 physical-kit mockup — full-bleed hero visual above the
+   perk cards. Subtle mint glow via radial-gradient ::before sits behind
+   the image; drop-shadows add depth without competing with cosmic bg. */
+.f20-section .f20-kit-mockup {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto 32px;
+  padding: 0;
+}
+.f20-section .f20-kit-mockup::before {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  background: radial-gradient(ellipse at center, rgba(92,224,184,0.15) 0%, rgba(92,224,184,0.05) 35%, transparent 65%);
+  filter: blur(32px);
+  pointer-events: none;
+  z-index: 0;
+}
+.f20-section .f20-kit-mockup img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.55)) drop-shadow(0 0 24px rgba(92,224,184,0.12));
+}
+.f20-section .f20-kit-mockup-caption {
+  position: relative;
+  z-index: 1;
+  margin: 16px 0 0;
+  text-align: center;
+  font: 500 11px/1.4 var(--mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(92,224,184,0.5);
+}
+
 .f20-section .f20-perks-grid {
   display: grid; gap: 12px; grid-template-columns: 1fr;
 }
