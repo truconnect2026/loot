@@ -28,6 +28,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
+import { withUTM } from "@/lib/utm";
 import "./pro.module.css";
 import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
@@ -45,8 +46,17 @@ import Toast from "./components/Toast.jsx";
 
 const DIGISTORE_BASE = "https://checkout-ds24.com/product/691098";
 
+// Map the in-page CTA campaign slug to the canonical utm_content used
+// in docs/utm-tracking.md. Keep both in sync when adding new CTAs.
+const UTM_CONTENT_BY_CAMPAIGN = {
+  monthly: "pro_pricing_monthly",
+  annual: "pro_pricing_annual",
+  annual_closer: "pro_closer",
+};
+
 function checkoutUrl(campaign) {
-  return `${DIGISTORE_BASE}?utm_source=pro_page&utm_medium=cta&utm_campaign=${encodeURIComponent(campaign)}`;
+  const content = UTM_CONTENT_BY_CAMPAIGN[campaign] || `pro_${campaign}`;
+  return withUTM(DIGISTORE_BASE, content, "pro_purchase");
 }
 
 export default function ProPage() {

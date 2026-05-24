@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { withUTM } from "@/lib/utm";
+
+const DIGISTORE_SIGNUP = "https://digistore24.com/signup/691098/";
+const READY_TOAST_URL = withUTM(DIGISTORE_SIGNUP, "kit_ready_toast", "affiliate_signup");
+const COPIES_CHIP_URL = withUTM(DIGISTORE_SIGNUP, "kit_copies_chip", "affiliate_signup");
 
 /**
  * Gamification — the floating widgets that live across the entire /kit
@@ -146,7 +151,7 @@ export default function Gamification() {
         id: "ready-to-earn",
         kind: "ready-to-earn",
         body: "💡 You're ready. Claim your link.",
-        cta: { href: "https://digistore24.com/signup/691098/", label: "GET YOUR LINK →" },
+        cta: { href: READY_TOAST_URL, label: "GET YOUR LINK →" },
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -259,7 +264,7 @@ export default function Gamification() {
             </>
           ) : (
             <a
-              href="https://digistore24.com/signup/691098/"
+              href={COPIES_CHIP_URL}
               target="_blank"
               rel="noopener noreferrer"
             >

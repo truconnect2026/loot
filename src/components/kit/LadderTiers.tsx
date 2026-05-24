@@ -1,5 +1,7 @@
 "use client";
 
+import { withUTM } from "@/lib/utm";
+
 /**
  * LadderTiers — the deep gamification section. Three side-by-side cards
  * walking through every benefit at every tier. This is where the ladder
@@ -11,6 +13,8 @@
  */
 
 const DIGISTORE_SIGNUP = "https://digistore24.com/signup/691098/";
+const STANDARD_SIGNUP_URL = withUTM(DIGISTORE_SIGNUP, "kit_ladder_standard", "affiliate_signup");
+const GOLD_SIGNUP_URL = withUTM(DIGISTORE_SIGNUP, "kit_ladder_gold", "affiliate_signup");
 
 // TODO(David): wire to live count once founding-creators table exists.
 const FOUNDING_CLAIMED = 3;
@@ -60,7 +64,7 @@ export default function LadderTiers() {
               </li>
             </ul>
             <a
-              href={DIGISTORE_SIGNUP}
+              href={STANDARD_SIGNUP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="lt-card-cta lt-card-cta--mint"
@@ -120,7 +124,7 @@ export default function LadderTiers() {
             </div>
 
             <a
-              href={DIGISTORE_SIGNUP}
+              href={GOLD_SIGNUP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="lt-card-cta lt-card-cta--mint"

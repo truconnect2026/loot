@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { withUTM } from "@/lib/utm";
 
 /**
  * OpenProgram — Standard 40% tier section. Where casual visitors convert
@@ -15,6 +16,7 @@ import { useMemo, useState } from "react";
  */
 
 const DIGISTORE_SIGNUP = "https://digistore24.com/signup/691098/";
+const DIGISTORE_SIGNUP_URL = withUTM(DIGISTORE_SIGNUP, "kit_open_program", "affiliate_signup");
 const MONTHLY_COMMISSION = 14.99 * 0.4; // 5.996
 
 export default function OpenProgram() {
@@ -112,7 +114,7 @@ export default function OpenProgram() {
         </div>
 
         <a
-          href={DIGISTORE_SIGNUP}
+          href={DIGISTORE_SIGNUP_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="op-cta"
