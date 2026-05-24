@@ -91,9 +91,9 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5, duration: 0.5 }}
         >
-          <span>12,847 PLAYERS</span>
+          <span>DAILY DROP</span>
           <span className="flip-intro-stats-dot" aria-hidden="true">·</span>
-          <span>$2.1M FLIPPED</span>
+          <span>10 ITEMS</span>
           <span className="flip-intro-stats-dot" aria-hidden="true">·</span>
           <span>DAY {puzzleNumber}</span>
         </motion.div>

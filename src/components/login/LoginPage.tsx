@@ -470,7 +470,7 @@ export default function LoginPage() {
               animationDelay: "600ms",
             }}
           >
-            trusted by 12,000+ resellers
+            built for resellers
           </div>
 
           {/* ── Tagline ── concrete three-beat product description.

@@ -1117,6 +1117,11 @@ export interface DealsFeedItem {
   distance_miles: number;
 }
 
+// TODO(David): wire to real Facebook Marketplace / Craigslist / Nextdoor
+// scrapers before launch claims integrity. Until then, listings returned
+// by this function are AI-synthesized plausible examples — they vary by
+// zip + cache, but they are NOT real recent posts. DealCarousel renders
+// a "DEMO PREVIEW" badge so users know.
 export async function dealsFeed(
   zip: string,
   radius: number,

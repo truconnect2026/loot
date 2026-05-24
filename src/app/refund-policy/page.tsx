@@ -105,20 +105,41 @@ export default function RefundPolicyPage() {
             <p>
               Annual plan refunds within the 60-day window are processed in
               full. Outside the 60-day window, annual plans are non-refundable
-              for the remaining term, but you can cancel future renewals at
-              any time.
+              for the remaining term. You can cancel future annual renewals at
+              any time from your account settings — cancellation takes effect
+              at the end of the current paid period.
             </p>
           </section>
 
           <section>
             <h2 className="text-[18px] font-[600] mb-2" style={{ color: "#fff" }}>
-              Marketplace Details
+              Payment Processing
             </h2>
             <p>
-              Purchases are processed by Digistore24 Inc. as the merchant of
-              record. The Digistore24 terms of service also apply to your
-              purchase and may provide additional rights under applicable
-              consumer protection laws in your jurisdiction.
+              loot.works accepts payment through two processors. The processor
+              handling your purchase depends on how you signed up:
+            </p>
+            <p style={{ marginTop: 14 }}>
+              <strong style={{ color: "#fff" }}>Stripe purchases</strong> — If
+              you purchased directly through loot.works, Stripe processes your
+              payment. Refunds and subscription management are handled by
+              loot.works (us) per the terms above.
+            </p>
+            <p style={{ marginTop: 14 }}>
+              <strong style={{ color: "#fff" }}>Digistore24 purchases</strong> —
+              If you purchased through an affiliate link or marketplace listing,
+              Digistore24 Inc. processes your payment as the merchant of record.
+              The Digistore24 terms of service also apply to your purchase and
+              may provide additional rights under applicable consumer
+              protection laws in your jurisdiction. Refund requests for
+              Digistore purchases are processed through Digistore&apos;s order
+              management portal — typically faster than reaching out to us
+              directly.
+            </p>
+            <p style={{ marginTop: 14 }}>
+              If you&apos;re unsure which processor handled your purchase, check
+              the email confirmation you received — Stripe receipts come from
+              stripe.com, Digistore receipts come from digistore24.com.
             </p>
           </section>
 

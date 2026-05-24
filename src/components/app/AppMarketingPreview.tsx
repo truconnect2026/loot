@@ -125,12 +125,12 @@ export default function AppMarketingPreview() {
             <div className="amp-eyebrow">🪐 LOOT.WORKS · CALLED FROM /FLIP</div>
             <h1 className="amp-hero-title amp-hero-title--gradient">READY FOR THE REAL THING?</h1>
             <p className="amp-hero-sub">
-              You spotted ${flipRef.total.toLocaleString()} in our game. Pros spot $487 daily.
+              You spotted ${flipRef.total.toLocaleString()} in our game. Real shelves move faster.
             </p>
             <div className="amp-flip-stats">
-              <span>12,847 RESELLERS</span>
+              <span>BUILT FOR RESELLERS</span>
               <span>·</span>
-              <span>$2.1M FLIPPED</span>
+              <span>AI THRIFT ARBITRAGE</span>
               {flipRef.best > 0 && <><span>·</span><span>YOUR BEST: {flipRef.best}</span></>}
             </div>
             <div className="amp-hero-cta-row">
@@ -286,13 +286,15 @@ export default function AppMarketingPreview() {
         </div>
       </section>
 
-      {/* 6. Stats strip */}
+      {/* 6. Stats strip — non-quantified per claim-integrity audit
+          (2026-05-24). Restore real numbers here only once Supabase
+          aggregates + Digistore reporting can back them. */}
       <section className="amp-stats">
-        <span><strong>12,847</strong> resellers</span>
+        <span><strong>Built</strong> for resellers</span>
         <span className="amp-stats-div" aria-hidden>·</span>
-        <span><strong>340K</strong> items scanned</span>
+        <span><strong>AI</strong> thrift arbitrage</span>
         <span className="amp-stats-div" aria-hidden>·</span>
-        <span><strong>$2.1M</strong> flipped</span>
+        <span><strong>Real</strong> comp data</span>
       </section>
 
       {/* 7. Pricing teaser */}

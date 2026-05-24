@@ -98,6 +98,13 @@ interface DealCarouselProps {
   loading?: boolean;
   /** Shown in place of cards when `deals` is empty and not loading. */
   emptyMessage?: string;
+  /** Render a small "DEMO PREVIEW" badge next to the section label.
+   * The current feeds are AI-synthesized via Claude (see src/lib/claude.ts
+   * dealsFeed / freeFeed / clearanceFeed) rather than scraped from real
+   * Facebook Marketplace / Craigslist / Nextdoor. The badge keeps users
+   * honest about what they're seeing until real scraping wires up.
+   * Default: false. */
+  isDemo?: boolean;
 }
 
 // Fade sits flush against the page bg (#120e18) so the carousel
@@ -118,6 +125,7 @@ export default function DealCarousel({
   liveSignal,
   loading,
   emptyMessage,
+  isDemo = false,
 }: DealCarouselProps) {
   const isEmpty = !loading && deals.length === 0;
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -174,6 +182,27 @@ export default function DealCarousel({
       >
         {icon}
         {label}
+        {isDemo && (
+          <span
+            aria-label="Demo preview — listings are AI-synthesized, not live marketplace data"
+            style={{
+              marginLeft: 8,
+              padding: "2px 6px",
+              borderRadius: 3,
+              fontFamily: "var(--font-label)",
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              color: "#F5C518",
+              background: "rgba(245,197,24,0.10)",
+              border: "1px solid rgba(245,197,24,0.35)",
+              textTransform: "uppercase",
+              lineHeight: 1.4,
+            }}
+          >
+            Demo Preview
+          </span>
+        )}
       </div>
 
       {/* Live signal — rendered inside the section header so it

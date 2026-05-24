@@ -1590,6 +1590,7 @@ function DashboardPage() {
                 liveSignal={<WinsTicker />}
                 loading={feedsLoading}
                 emptyMessage="no free finds nearby — try expanding your radius"
+                isDemo
               />
             </div>
             <div
@@ -1608,6 +1609,7 @@ function DashboardPage() {
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
                 emptyMessage="no deals nearby — try expanding your radius"
+                isDemo
               />
             </div>
           </>
@@ -1633,6 +1635,7 @@ function DashboardPage() {
                 liveSignal={<WinsTicker />}
                 loading={feedsLoading}
                 emptyMessage="no deals nearby — try expanding your radius"
+                isDemo
               />
             </div>
             <div
@@ -1650,6 +1653,7 @@ function DashboardPage() {
                 onDealTap={handleDealTap}
                 loading={feedsLoading}
                 emptyMessage="no free finds nearby — try expanding your radius"
+                isDemo
               />
             </div>
           </>

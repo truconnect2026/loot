@@ -122,7 +122,7 @@ export async function GET() {
             display: "flex",
           }}
         >
-          12,847 RESELLERS · 340K SCANS · $2.1M FLIPPED
+          BUILT FOR RESELLERS · AI THRIFT ARBITRAGE · $14.99/MO
         </div>
 
         {/* Footer URL — bottom-right, mono 18px mint */}
