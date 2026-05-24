@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import CoinMark from "@/components/shared/CoinMark";
 import DotGridBackground from "@/components/shared/DotGridBackground";
+import { readPendingPlan } from "@/lib/pending-plan";
+
+// Where to drop the user after they finish (or skip) onboarding.
+// If a /pro click queued a pending plan in sessionStorage, route to
+// /account so its auto-launch effect kicks off Stripe checkout with
+// the original attribution. Otherwise the canonical post-onboarding
+// destination is /app.
+function postOnboardingDestination(): string {
+  return readPendingPlan() ? "/account" : "/app";
+}
 
 /**
  * Post-signup capture: zip code + search radius.
@@ -107,7 +117,7 @@ export default function OnboardingPage() {
         .eq("id", user.id)
         .maybeSingle();
       if (!cancelled && profileRow?.zip_code) {
-        router.replace("/app");
+        router.replace(postOnboardingDestination());
         return;
       }
       if (!cancelled) {
@@ -191,7 +201,7 @@ export default function OnboardingPage() {
       setSubmitError("couldn't save — try again in a moment");
       return;
     }
-    router.replace("/app");
+    router.replace(postOnboardingDestination());
   }
 
   if (checking) {
@@ -554,7 +564,7 @@ export default function OnboardingPage() {
                    the redirect will simply re-fire on next /app visit,
                    which is acceptable degradation. */
               }
-              router.replace("/app");
+              router.replace(postOnboardingDestination());
             }}
             style={{
               display: "block",

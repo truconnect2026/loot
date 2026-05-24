@@ -10,6 +10,7 @@ import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import WinsTicker from "@/components/dashboard/WinsTicker";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
+import { readPendingPlan } from "@/lib/pending-plan";
 import ContextCard from "@/components/dashboard/ContextCard";
 import ScanButtons from "@/components/dashboard/ScanButtons";
 import DealCarousel from "@/components/dashboard/DealCarousel";
@@ -933,6 +934,15 @@ function DashboardPage() {
       // layer will handle routing them away.
       if (!user) {
         setGateChecked(true);
+        return;
+      }
+      // Pending-plan fast-path: if /pro queued a checkout before auth,
+      // forward to /account where the auto-launch effect will fire
+      // Stripe. Runs before the zip gate so we don't trap a brand-new
+      // purchaser in the onboarding capture screen — they can finish
+      // zip capture from /account later.
+      if (typeof window !== "undefined" && readPendingPlan()) {
+        router.replace("/account");
         return;
       }
       const { data: profileRow } = await supabase

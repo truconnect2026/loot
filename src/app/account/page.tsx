@@ -17,6 +17,7 @@ import {
   unsubscribeFromPush,
 } from "@/lib/push-client";
 import { DIGISTORE_FIND_ORDER_URL } from "@/lib/digistore-affiliate";
+import { clearPendingPlan, readPendingPlan } from "@/lib/pending-plan";
 
 function deriveInitials(name: string | null, email: string): string {
   if (name) {
@@ -574,14 +575,26 @@ export default function AccountPage() {
   // priceId, then redirects in-tab to the Stripe-hosted checkout
   // page. (No new tab here — checkout is the primary action; the
   // user comes back via success_url after paying.)
+  //
+  // Accepts optional plan + UTM metadata so the auto-launch effect
+  // below can forward attribution from the original /pro click;
+  // direct calls from the in-page UpgradeCard pass just the priceId
+  // and skip the extra payload.
   const handleSubscribe = useCallback(
-    async (priceId: string) => {
+    async (
+      priceId: string,
+      extra?: { plan?: string; utms?: Record<string, string> },
+    ) => {
       if (typeof window === "undefined") return;
       try {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId }),
+          body: JSON.stringify({
+            priceId,
+            ...(extra?.plan ? { plan: extra.plan } : {}),
+            ...(extra?.utms ?? {}),
+          }),
         });
         if (!res.ok) {
           console.error(
@@ -598,6 +611,39 @@ export default function AccountPage() {
     },
     [],
   );
+
+  // Pending-plan auto-launch: if the visitor clicked a /pro CTA while
+  // signed out, we stashed their plan choice + UTMs in sessionStorage.
+  // Once they sign in and land here (via /onboarding or /app), fire
+  // the Stripe checkout with the original attribution and clear the
+  // stash so a stale entry can't ambush a later visit.
+  //
+  // Guards: profile loaded, not already Pro, and one-shot via the ref.
+  // isPro suppresses the launch for existing subscribers who happen to
+  // hit /account with a stale pending plan in another tab.
+  const pendingHandledRef = useRef(false);
+  useEffect(() => {
+    if (pendingHandledRef.current) return;
+    if (loading || !profile) return;
+    if (profile.isPro) {
+      clearPendingPlan();
+      pendingHandledRef.current = true;
+      return;
+    }
+    const pending = readPendingPlan();
+    if (!pending) return;
+    pendingHandledRef.current = true;
+    clearPendingPlan();
+    const priceId =
+      pending.plan === "annual"
+        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""
+        : process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? "";
+    if (!priceId) {
+      console.error("[account] Stripe price not configured for pending plan");
+      return;
+    }
+    void handleSubscribe(priceId, { plan: pending.plan, utms: pending.utms });
+  }, [loading, profile, handleSubscribe]);
 
   // Loading state — show the branded spinner until session + profile are ready.
   if (loading || !profile) {

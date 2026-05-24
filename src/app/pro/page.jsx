@@ -21,14 +21,23 @@
  *   <CloserSection onCTA={handleCTA} />  ← annual_closer UTM
  *   <Toast />
  *
- * CTA flow: button fires a mint toast (visual confirmation), then 600ms
- * later window.location.href = digistore checkout URL with UTM params.
- * Metadata + Google Fonts loaded in layout.jsx (server component).
+ * CTA flow forks on auth:
+ *   - Signed-in visitor → POST /api/stripe/checkout, redirect to Stripe.
+ *   - Signed-out visitor → stash plan + UTMs in sessionStorage, bounce
+ *     to / (login). After auth, /onboarding (or /app) honors the
+ *     pending plan and forwards to /account, which auto-launches the
+ *     same Stripe checkout call. UTMs ride along into Stripe metadata.
+ *
+ * Digistore (checkout-ds24.com/product/691098) stays wired as the
+ * affiliate-cookie rail (see digistore-affiliate.ts) and as a last-
+ * resort fallback if the Stripe POST itself fails.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
+import { createClient } from "@/lib/supabase";
 import { withUTM } from "@/lib/utm";
+import { savePendingPlan, utmsFromSearch } from "@/lib/pending-plan";
 import "./pro.module.css";
 import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
@@ -54,9 +63,22 @@ const UTM_CONTENT_BY_CAMPAIGN = {
   annual_closer: "pro_closer",
 };
 
-function checkoutUrl(campaign) {
+function digistoreCheckoutUrl(campaign) {
   const content = UTM_CONTENT_BY_CAMPAIGN[campaign] || `pro_${campaign}`;
   return withUTM(DIGISTORE_BASE, content, "pro_purchase");
+}
+
+// The CTA campaign slug ("annual_closer") collapses into the plan key
+// the Stripe API understands ("annual"). Closer != a different price,
+// just a different placement on the page; the analytics distinction
+// lives in utm_content above.
+function planFromCampaign(campaign) {
+  return campaign === "annual_closer" ? "annual" : campaign;
+}
+
+function priceIdFor(plan) {
+  if (plan === "annual") return process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? "";
+  return process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? "";
 }
 
 export default function ProPage() {
@@ -87,17 +109,57 @@ export default function ProPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleCTA = useCallback((plan) => {
-    const label =
-      plan === "annual_closer"
-        ? "Annual Pro"
-        : plan === "annual"
-          ? "Annual Pro"
-          : "Monthly Pro";
+  const handleCTA = useCallback(async (campaign) => {
+    const plan = planFromCampaign(campaign);
+    const label = plan === "annual" ? "Annual Pro" : "Monthly Pro";
     setToast({ msg: `→ ${label} · routing to checkout`, vis: true });
-    // Brief 600ms hold so the user sees the confirmation, then redirect.
+
+    // Capture ad-source attribution from the current URL — these are
+    // the UTMs the ad referrer dropped on /pro. We carry them through
+    // either rail so post-conversion reporting still ties back.
+    const utms = typeof window !== "undefined" ? utmsFromSearch(window.location.search) : {};
+
+    // Signed-in path: straight to Stripe. The /api/stripe/checkout
+    // route validates the priceId and creates a hosted Session URL.
+    // Failure here drops to the Digistore fallback so a Stripe outage
+    // doesn't silently kill the conversion.
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
+
+    if (user) {
+      try {
+        const priceId = priceIdFor(plan);
+        if (!priceId) throw new Error("Stripe price not configured");
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priceId, plan, ...utms }),
+        });
+        if (!res.ok) throw new Error(`Checkout failed (${res.status})`);
+        const { url } = await res.json();
+        if (!url) throw new Error("Stripe did not return a URL");
+        window.setTimeout(() => { window.location.href = url; }, 600);
+        window.setTimeout(() => setToast((t) => ({ ...t, vis: false })), 3000);
+        return;
+      } catch (err) {
+        console.error("[pro] Stripe checkout failed, falling back to Digistore", err);
+        // intentional fall-through to the Digistore redirect below
+      }
+    } else {
+      // Signed-out path: stash plan + UTMs, bounce to login. /account
+      // picks the pending plan up post-auth and auto-launches Stripe.
+      savePendingPlan(plan, utms);
+      window.setTimeout(() => { window.location.href = "/"; }, 600);
+      window.setTimeout(() => setToast((t) => ({ ...t, vis: false })), 3000);
+      return;
+    }
+
+    // Fallback: Digistore-hosted checkout. Used only if the Stripe POST
+    // above threw — keeps the affiliate rail available and means a
+    // Stripe-side outage still produces revenue.
     window.setTimeout(() => {
-      window.location.href = checkoutUrl(plan);
+      window.location.href = digistoreCheckoutUrl(campaign);
     }, 600);
     window.setTimeout(() => setToast((t) => ({ ...t, vis: false })), 3000);
   }, []);

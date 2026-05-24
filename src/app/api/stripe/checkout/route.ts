@@ -4,6 +4,33 @@ import { getStripe, isKnownPrice } from "@/lib/stripe";
 
 interface CheckoutBody {
   priceId?: string;
+  plan?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+}
+
+const UTM_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+] as const;
+
+// Stripe metadata: keys 40 chars, values 500 chars. UTM values from
+// ad networks are well within bounds, but truncate defensively.
+function pickUtms(body: CheckoutBody): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of UTM_KEYS) {
+    const raw = body[k];
+    if (typeof raw === "string" && raw.length > 0) {
+      out[k] = raw.slice(0, 500);
+    }
+  }
+  return out;
 }
 
 export interface CheckoutResponse {
@@ -55,6 +82,17 @@ export async function POST(
 
   const origin = req.nextUrl.origin;
 
+  // Carry UTMs from the click that originated this checkout into
+  // Stripe metadata so ad-source attribution survives onto the Session
+  // and Subscription rows. Same payload on both so we can join either way.
+  const utms = pickUtms(body);
+  const plan = typeof body.plan === "string" ? body.plan.slice(0, 40) : "";
+  const sessionMetadata: Record<string, string> = {
+    supabase_user_id: user.id,
+    ...(plan ? { plan } : {}),
+    ...utms,
+  };
+
   try {
     const session = await getStripe().checkout.sessions.create({
       mode: "subscription",
@@ -62,9 +100,9 @@ export async function POST(
       customer: profileRow?.stripe_customer_id ?? undefined,
       customer_email: profileRow?.stripe_customer_id ? undefined : user.email,
       client_reference_id: user.id,
-      metadata: { supabase_user_id: user.id },
+      metadata: sessionMetadata,
       subscription_data: {
-        metadata: { supabase_user_id: user.id },
+        metadata: sessionMetadata,
       },
       success_url: `${origin}/account?checkout=success`,
       cancel_url: `${origin}/account?checkout=canceled`,
