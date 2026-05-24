@@ -15,11 +15,13 @@ import EarningsCalculator from "@/components/partners/EarningsCalculator";
  * (which we'll delete once we know this section is live).
  */
 
-// MANUAL UPDATE: change LAST_CLAIMED_AT + CLAIMED_SPOTS when a new
-// founding spot fills. TODO(David): wire to Supabase once founding-creators
-// table exists.
-const LAST_CLAIMED_AT = "2 hours ago";
-const CLAIMED_SPOTS = 3;
+// Live count comes from GET /api/founding20/count on mount. The literal
+// fallback below is what renders before hydration (and on count fetch
+// failure). LAST_CLAIMED_AT stays manual for now — there's no
+// "approved-at" column yet, just submitted_at + reviewed_at, and we
+// don't want to surface raw submission timestamps publicly.
+const LAST_CLAIMED_AT = "this week";
+const FALLBACK_CLAIMED_SPOTS = 0;
 const TOTAL_FOUNDING_SPOTS = 20;
 
 const FORM_MAX_WHY = 250;
@@ -50,6 +52,8 @@ const FAQS = [
 export default function Founding20() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -59,7 +63,23 @@ export default function Founding20() {
   const [url, setUrl] = useState("");
   const [why, setWhy] = useState("");
 
+  const [claimedSpots, setClaimedSpots] = useState<number>(FALLBACK_CLAIMED_SPOTS);
   const [countdown, setCountdown] = useState<string>("");
+
+  // Live counter — fetch on mount; silently keep fallback on failure
+  // so the section still renders if the API is down.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/founding20/count")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.claimed === "number") {
+          setClaimedSpots(data.claimed);
+        }
+      })
+      .catch(() => { /* keep fallback */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Monthly leaderboard countdown (resets at end of month).
   // TODO(David): replace local-time end-of-month with timezone-aware target.
@@ -81,13 +101,36 @@ export default function Founding20() {
     setOpenFaq((cur) => (cur === idx ? null : idx));
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-    // TODO(David): wire submission backend. For now form just sets local
-    // submitted state — confirm whether submissions go to email / Slack
-    // webhook / Supabase before launch.
-    setSubmitted(true);
+    if (!name.trim() || !email.trim() || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/founding20", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          primary_platform: platform || undefined,
+          follower_count: followers || undefined,
+          handle: handle || undefined,
+          channel_url: url || undefined,
+          notes: why || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `Request failed (${res.status})`);
+      }
+      setSubmitted(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setSubmitError(message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -109,7 +152,7 @@ export default function Founding20() {
           <div className="f20-scarcity">
             <div className="f20-scarcity-line">
               <span className="f20-pulse-dot" aria-hidden="true" />
-              <CountUp value={CLAIMED_SPOTS} duration={800} /> of{" "}
+              <CountUp value={claimedSpots} duration={800} /> of{" "}
               <CountUp
                 value={TOTAL_FOUNDING_SPOTS}
                 duration={1000}
@@ -320,22 +363,22 @@ export default function Founding20() {
           <div className="f20-section-label">FOUNDING CREATORS</div>
           <div className="f20-creators-grid">
             {Array.from({ length: TOTAL_FOUNDING_SPOTS }).map((_, i) => {
-              const isLastFilled = i === CLAIMED_SPOTS;
+              const isLastFilled = i === claimedSpots;
               return (
                 <div
                   key={i}
                   className={`f20-creator-slot${
-                    i < CLAIMED_SPOTS ? " f20-creator-slot--filled" : ""
+                    i < claimedSpots ? " f20-creator-slot--filled" : ""
                   }${isLastFilled ? " f20-creator-slot--yours" : ""}`}
                   aria-label={
-                    i < CLAIMED_SPOTS
+                    i < claimedSpots
                       ? `Slot ${i + 1} filled`
                       : isLastFilled
                         ? `Slot ${i + 1} — your spot is here`
                         : `Slot ${i + 1} open`
                   }
                 >
-                  {i < CLAIMED_SPOTS ? (
+                  {i < claimedSpots ? (
                     <span className="f20-creator-handle">
                       {/* TODO(David): real handle once signed */}
                       @creator{i + 1}
@@ -549,9 +592,19 @@ export default function Founding20() {
                 <p className="f20-trust-line">
                   // no contract · no quota · drop anytime
                 </p>
-                <button type="submit" className="f20-cta-submit">
-                  CLAIM MY SPOT →
+                <button
+                  type="submit"
+                  className="f20-cta-submit"
+                  disabled={submitting}
+                  aria-busy={submitting}
+                >
+                  {submitting ? "SENDING..." : "CLAIM MY SPOT →"}
                 </button>
+                {submitError && (
+                  <p className="f20-apply-note" style={{ color: "#ef4444" }} role="alert">
+                    {submitError}
+                  </p>
+                )}
                 <p className="f20-apply-note">
                   we reply within 24 hours, no ghosting
                 </p>
@@ -573,10 +626,10 @@ export default function Founding20() {
                 >
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <h3>you&apos;re in the queue</h3>
+                <h3>application received</h3>
                 <p>
-                  decision same day (we promise). check your @ — we DM from
-                  @loot.works.
+                  we&apos;ll respond within 24 hours. check the email you submitted —
+                  we DM from @loot.works.
                 </p>
               </div>
             )}
