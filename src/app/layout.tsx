@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import SplashGate from "@/components/shared/SplashGate";
 
@@ -83,6 +84,7 @@ export default function RootLayout({
             backgroundImage: NOISE_SVG,
           }}
         />
+        <Analytics />
       </body>
     </html>
   );

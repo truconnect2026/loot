@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { Eyebrow, FadeUp } from "./atoms.jsx";
 
@@ -142,7 +143,15 @@ export default function FAQSection() {
         <div>
           {faqData.map((item, i) => (
             <FadeUp key={i} delay={0.04 * i}>
-              <FAQItem item={item} isOpen={open === i} onToggle={() => setOpen(open === i ? -1 : i)} />
+              <FAQItem
+                item={item}
+                isOpen={open === i}
+                onToggle={() => {
+                  const opening = open !== i;
+                  if (opening) track("pro_faq_expanded", { question: item.q });
+                  setOpen(opening ? i : -1);
+                }}
+              />
             </FadeUp>
           ))}
         </div>

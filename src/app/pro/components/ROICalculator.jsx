@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { Eyebrow, FadeUp, ShimmerText } from "./atoms.jsx";
 
@@ -11,6 +12,19 @@ const sliderTrack = (val, min, max, color) => ({
 export default function ROICalculator() {
   const [flips, setFlips] = useState(4);
   const [avg, setAvg] = useState(75);
+
+  // Debounced track of slider interactions — fires 500ms after user
+  // stops dragging so we don't flood analytics with intermediate values.
+  const trackTimerRef = useRef(null);
+  useEffect(() => {
+    if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+    trackTimerRef.current = setTimeout(() => {
+      track("pro_roi_calculator_used", { flips, avg_profit: avg });
+    }, 500);
+    return () => {
+      if (trackTimerRef.current) clearTimeout(trackTimerRef.current);
+    };
+  }, [flips, avg]);
 
   const monthly = Math.round(flips * avg * 4.33);
   const fraction = 14.99 / avg;

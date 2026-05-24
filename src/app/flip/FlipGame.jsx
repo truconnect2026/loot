@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, MotionConfig, motion, useMotionValue } from "motion/react";
+import { track } from "@vercel/analytics";
 import { getDailyItems, getPuzzleNumber } from "./lib/dailySeed.js";
-import { calcTotalScore } from "./lib/scoring.js";
+import { calcTotalScore, getScoreTier } from "./lib/scoring.js";
 import CosmicBackdrop from "./components/CosmicBackdrop.jsx";
 import IntroScreen from "./components/IntroScreen.jsx";
 import CardStack from "./components/CardStack.jsx";
@@ -75,6 +76,7 @@ export default function FlipGame() {
   // Referral tracking + replay-count hydration
   useEffect(() => {
     if (typeof window === "undefined") return;
+    track("flip_page_viewed");
     const ref = new URLSearchParams(window.location.search).get("ref");
     if (ref) {
       try { localStorage.setItem("fos-referred-by", ref); } catch { /* */ }
@@ -90,6 +92,23 @@ export default function FlipGame() {
       window.setTimeout(() => setKonamiHintVisible(false), 7000);
     }
   }, []);
+
+  // One-shot analytics event when the round resolves to results. Reset on
+  // replay (phase === "playing") so the next completion re-fires.
+  const roundTrackedRef = useRef(false);
+  useEffect(() => {
+    if (phase === "playing") {
+      roundTrackedRef.current = false;
+      return;
+    }
+    if (phase !== "results" || roundTrackedRef.current) return;
+    roundTrackedRef.current = true;
+    const scoreData = calcTotalScore(answers, priceGuesses);
+    track("flip_round_completed", {
+      score: scoreData.finalScore,
+      tier: getScoreTier(scoreData.finalScore),
+    });
+  }, [phase, answers, priceGuesses]);
 
   // Konami code on intro phase
   useEffect(() => {

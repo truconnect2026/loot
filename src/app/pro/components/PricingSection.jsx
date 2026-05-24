@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { Eyebrow, FadeUp } from "./atoms.jsx";
 
@@ -101,7 +102,10 @@ export default function PricingSection({ onCTA }) {
                 ))}
               </ul>
               <button
-                onClick={() => onCTA && onCTA("monthly")}
+                onClick={() => {
+                  track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
+                  onCTA && onCTA("monthly");
+                }}
                 className="cta-btn-outline"
                 style={{
                   fontFamily: "var(--font-bebas), sans-serif",
@@ -222,7 +226,10 @@ export default function PricingSection({ onCTA }) {
                 ))}
               </ul>
               <button
-                onClick={() => onCTA && onCTA("annual")}
+                onClick={() => {
+                  track("pro_plan_clicked", { plan: "annual", price: 99.99 });
+                  onCTA && onCTA("annual");
+                }}
                 className="cta-btn-primary"
                 style={{
                   fontFamily: "var(--font-bebas), sans-serif",

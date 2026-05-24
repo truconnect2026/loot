@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { CheckIcon, Eyebrow, FadeUp, ShimmerText } from "./atoms.jsx";
 
@@ -134,6 +135,7 @@ export default function HeroSection() {
         >
           <button
             onClick={() => {
+              track("pro_hero_cta_clicked", { location: "hero", plan_target: "pricing" });
               document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
             }}
             className="cta-btn-primary"

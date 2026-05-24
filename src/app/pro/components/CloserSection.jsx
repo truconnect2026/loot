@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { CoinMark, FadeUp, ShimmerText } from "./atoms.jsx";
 
@@ -92,7 +93,10 @@ export default function CloserSection({ onCTA }) {
             highlight gives it a physical-button feel that out-weights every
             other button (hero CLAIM PRO, pricing CLAIM ANNUAL). */}
         <button
-          onClick={() => onCTA && onCTA("annual_closer")}
+          onClick={() => {
+            track("pro_closer_cta_clicked", { location: "closer" });
+            onCTA && onCTA("annual_closer");
+          }}
           className="cta-btn-primary"
           style={{
             fontFamily: "var(--font-bebas), sans-serif",

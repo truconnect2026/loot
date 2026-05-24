@@ -26,7 +26,8 @@
  * Metadata + Google Fonts loaded in layout.jsx (server component).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { track } from "@vercel/analytics";
 import "./pro.module.css";
 import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
@@ -50,6 +51,31 @@ function checkoutUrl(campaign) {
 
 export default function ProPage() {
   const [toast, setToast] = useState({ msg: "", vis: false });
+
+  // Scroll depth tracking — fire once per session per 25/50/75/100 threshold.
+  // Uses session-scoped Set so a single visitor doesn't generate four events
+  // per minute as they scroll up and down the page.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const fired = new Set();
+    const thresholds = [25, 50, 75, 100];
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const scrolled = window.scrollY + window.innerHeight;
+      const total = doc.scrollHeight;
+      if (total <= 0) return;
+      const pct = (scrolled / total) * 100;
+      for (const t of thresholds) {
+        if (pct >= t && !fired.has(t)) {
+          fired.add(t);
+          track("pro_scroll_depth", { depth: `${t}%` });
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleCTA = useCallback((plan) => {
     const label =
