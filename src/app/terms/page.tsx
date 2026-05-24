@@ -141,9 +141,9 @@ export default function TermsPage() {
 
           <H2>10. Governing law</H2>
           <P>
-            These Terms are governed by the laws of [STATE], without regard to
+            These Terms are governed by the laws of Georgia, without regard to
             conflict-of-law principles. Disputes will be resolved in the state
-            or federal courts located in [STATE].
+            or federal courts located in Georgia.
           </P>
 
           <H2>11. Changes to these Terms</H2>

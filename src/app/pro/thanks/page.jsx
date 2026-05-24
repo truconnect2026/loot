@@ -41,6 +41,30 @@ function ThanksInner() {
         }}
       >
         <FadeUp>
+          {/* Payment-received confirmation pill — reassures the buyer the
+              Digistore charge processed BEFORE they read the welcome
+              headline. Sits above the CoinMark so it's the first thing
+              the eye lands on. */}
+          <div
+            style={{
+              display: "inline-block",
+              padding: "8px 16px",
+              marginBottom: 24,
+              background: "rgba(92,224,184,0.15)",
+              border: "1px solid #5CE0B8",
+              borderRadius: 4,
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.2em",
+              color: "#5CE0B8",
+              textTransform: "uppercase",
+            }}
+          >
+            ✓ Payment received · Pro active
+          </div>
+        </FadeUp>
+
+        <FadeUp>
           <div style={{ display: "inline-flex", marginBottom: 16 }}>
             <CoinMark size={36} color={C.mint} />
           </div>
@@ -71,8 +95,7 @@ function ThanksInner() {
               margin: "32px auto 0",
             }}
           >
-            Your account has been upgraded. Check your email for the receipt
-            and access details.
+            Payment confirmed. Pro is active. Receipt sent to your email.
           </p>
         </FadeUp>
 
@@ -132,6 +155,18 @@ function ThanksInner() {
           >
             OPEN APP →
           </Link>
+          <p
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.05em",
+              color: "rgba(92,224,184,0.5)",
+              marginTop: 16,
+              textAlign: "center",
+            }}
+          >
+            backed by our 60-day money-back guarantee · cancel anytime in settings
+          </p>
         </FadeUp>
 
         <FadeUp delay={0.65}>
