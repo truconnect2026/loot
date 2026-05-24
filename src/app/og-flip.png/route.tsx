@@ -9,10 +9,72 @@ const GOLD = "#F5C518";
 const RED = "#ef4444";
 const BLUE = "#3B82F6";
 const BLACK = "#0a0a0a";
+const COSMIC_BLACK = "#070510"; // matches /og-pro.png + /og-kit.png
 
 const CACHE_HEADERS = {
   "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
 };
+
+// Bebas Neue regular — pinned v14 TTF on Google's CDN. Satori (the engine
+// behind ImageResponse) doesn't support woff2, so we fetch TTF directly.
+// Loaded lazily on first request; the Vercel edge runtime caches the fetch.
+const BEBAS_TTF_URL =
+  "https://fonts.gstatic.com/s/bebasneue/v14/JTUSjIg69CK48gW7PXoo9Wlhyw.ttf";
+let bebasPromise: Promise<ArrayBuffer> | null = null;
+function loadBebas() {
+  if (!bebasPromise) {
+    bebasPromise = fetch(BEBAS_TTF_URL).then((r) => {
+      if (!r.ok) throw new Error(`Bebas Neue fetch failed: ${r.status}`);
+      return r.arrayBuffer();
+    });
+  }
+  return bebasPromise;
+}
+
+// Deterministic starfield matching og-pro.png's pipeline — 60 stars, mixed
+// white/gold/mint/blue, seeded with a fixed PRNG so the layout is stable
+// across regenerations. Mulberry32 in 12 lines.
+function mulberry32(seed: number) {
+  let t = seed;
+  return function () {
+    t |= 0;
+    t = (t + 0x6d2b79f5) | 0;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+type Star = { x: number; y: number; r: number; color: string; opacity: number };
+function buildStars(): Star[] {
+  const rng = mulberry32(0xc051e711);
+  const colors: { c: string; w: number }[] = [
+    { c: "#ffffff", w: 0.55 },
+    { c: GOLD, w: 0.15 },
+    { c: MINT, w: 0.12 },
+    { c: BLUE, w: 0.1 },
+    { c: "#ffffff", w: 0.08 },
+  ];
+  const out: Star[] = [];
+  for (let i = 0; i < 60; i++) {
+    const x = Math.round(rng() * 1200);
+    const y = Math.round(rng() * 630);
+    const sizeRoll = rng();
+    const r = sizeRoll > 0.92 ? 2.2 : sizeRoll > 0.65 ? 1.4 : 0.9;
+    const opacity = 0.4 + rng() * 0.5;
+    const wRoll = rng();
+    let acc = 0;
+    let pick = colors[0];
+    for (const c of colors) {
+      acc += c.w;
+      if (wRoll <= acc) {
+        pick = c;
+        break;
+      }
+    }
+    out.push({ x, y, r, color: pick.c, opacity });
+  }
+  return out;
+}
 
 type Tier = "wolf" | "solid" | "mid" | "rip";
 
@@ -247,86 +309,238 @@ export async function GET(req: Request) {
     return response;
   }
 
-  // Evergreen / per-day
+  // Evergreen / per-day — cosmic editorial system, matches /og-pro.png and
+  // /og-kit.png. Bebas Neue for the headline, JetBrains Mono fallback chain
+  // for the mono accents.
+  let bebasData: ArrayBuffer | null = null;
+  try {
+    bebasData = await loadBebas();
+  } catch {
+    // Network blip or upstream changes — fall back to system sans-serif
+    // (still bold + condensed-looking at 140px) rather than 500ing the OG.
+    bebasData = null;
+  }
+
+  const stars = buildStars();
+  const headlineFont = bebasData ? "Bebas Neue" : "system-ui, sans-serif";
+
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: BLACK, display: "flex", flexDirection: "column", position: "relative" }}>
-        <CosmicBg />
-
-        <div style={{ position: "absolute", top: 48, left: 56, display: "flex", alignItems: "center", gap: 14 }}>
-          <SaturnGlyph />
-          <div style={{ fontSize: 22, color: MINT, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: "0.05em", display: "flex" }}>
-            loot.works/flip
-          </div>
-        </div>
-
-        {/* Mascot lower-right */}
-        <div style={{ position: "absolute", bottom: 110, right: 80, display: "flex" }}>
-          <CosmicMascot mood="smirk" color={MINT} size={200} />
-        </div>
-
-        {/* Headline */}
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: COSMIC_BLACK,
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Layered cosmic gradient — subtle nebula bloom in opposing corners */}
         <div
           style={{
-            position: "absolute", top: 180, left: 60,
-            fontSize: 128, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.03em",
-            color: MINT, display: "flex",
+            position: "absolute",
+            inset: 0,
+            background:
+              `radial-gradient(ellipse 700px 500px at 18% 12%, rgba(123,143,255,0.08), transparent 65%),` +
+              `radial-gradient(ellipse 900px 700px at 78% 88%, rgba(92,224,184,0.06), transparent 60%)`,
+            display: "flex",
           }}
-        >
-          FLIP OR SKIP
-        </div>
+        />
 
-        {/* Subhead */}
+        {/* Dot grid — same 32px cadence as og-pro */}
         <div
           style={{
-            position: "absolute", top: 340, left: 64,
-            fontSize: 30, color: "#ffffff", opacity: 0.7, display: "flex",
-            letterSpacing: "0.01em",
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px)",
+            backgroundSize: "32px 32px",
+            display: "flex",
+          }}
+        />
+
+        {/* Saturn ring — lower-right, off-canvas, mint particle stroke at -23deg */}
+        <div
+          style={{
+            position: "absolute",
+            right: -120,
+            bottom: -100,
+            width: 700,
+            height: 700,
+            transform: "rotate(-23deg)",
+            display: "flex",
           }}
         >
-          daily thrift game · trust your gut
+          <svg viewBox="0 0 700 700" width="700" height="700">
+            <ellipse cx="350" cy="350" rx="320" ry="92" fill="none" stroke={MINT} strokeWidth="1.2" opacity="0.32" strokeDasharray="1.5 4" />
+            <ellipse cx="350" cy="350" rx="270" ry="76" fill="none" stroke={MINT} strokeWidth="1" opacity="0.22" strokeDasharray="1 3" />
+            <ellipse cx="350" cy="350" rx="380" ry="110" fill="none" stroke={MINT} strokeWidth="1" opacity="0.22" strokeDasharray="1 3" />
+            <circle cx="350" cy="350" r="150" fill="rgba(40,30,60,0.4)" stroke="rgba(123,143,255,0.45)" strokeWidth="1.2" />
+          </svg>
         </div>
 
-        {/* Item or tagline */}
-        {item && (
+        {/* Starfield — 60 deterministic pinpoints */}
+        <div style={{ position: "absolute", inset: 0, display: "flex" }}>
+          <svg viewBox="0 0 1200 630" width="1200" height="630">
+            {stars.map((s, i) => (
+              <circle key={i} cx={s.x} cy={s.y} r={s.r} fill={s.color} opacity={s.opacity} />
+            ))}
+          </svg>
+        </div>
+
+        {/* Top-left wordmark — mono mint caps */}
+        <div
+          style={{
+            position: "absolute",
+            top: 56,
+            left: 64,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+          }}
+        >
+          <SaturnGlyph color={MINT} size={36} />
           <div
             style={{
-              position: "absolute", bottom: 110, left: 60,
-              fontSize: 26, color: MINT,
+              fontSize: 24,
+              color: MINT,
               fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              letterSpacing: "0.02em", display: "flex", maxWidth: 700,
+              letterSpacing: "0.28em",
+              fontWeight: 500,
+              textTransform: "uppercase",
+              display: "flex",
             }}
           >
-            today: {item}
+            LOOT.WORKS&nbsp;&nbsp;/&nbsp;&nbsp;FLIP
           </div>
-        )}
+        </div>
 
+        {/* Per-day chip — top-right, mono mint outlined */}
         {day && (
           <div
             style={{
-              position: "absolute", top: 48, right: 56,
-              padding: "8px 18px", border: `2px solid ${MINT}`,
-              color: MINT, fontSize: 18,
+              position: "absolute",
+              top: 60,
+              right: 64,
+              padding: "10px 18px",
+              border: `2px solid ${MINT}`,
+              color: MINT,
+              fontSize: 18,
               fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              letterSpacing: "0.16em", display: "flex",
+              letterSpacing: "0.18em",
+              display: "flex",
             }}
           >
             DAY {day}
           </div>
         )}
 
+        {/* Editorial headline stack — center-left vertical alignment, mirrors og-pro */}
         <div
           style={{
-            position: "absolute", bottom: 56, right: 60,
-            fontSize: 20, color: MINT, opacity: 0.7, display: "flex",
-            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-            letterSpacing: "0.06em",
+            position: "absolute",
+            left: 64,
+            top: 230,
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          play free →
+          <div
+            style={{
+              fontFamily: headlineFont,
+              fontSize: 140,
+              fontWeight: 400,
+              lineHeight: 0.92,
+              letterSpacing: "-0.01em",
+              color: "#ffffff",
+              textTransform: "uppercase",
+              display: "flex",
+            }}
+          >
+            FLIP OR SKIP.
+          </div>
+          {/* Faux-italic via skew — Bebas Neue regular has no italic glyphs,
+              and Satori can't synthesize one. CSS skewX keeps the geometry
+              honest at OG-render scale. */}
+          <div
+            style={{
+              fontFamily: headlineFont,
+              fontSize: 80,
+              fontWeight: 400,
+              lineHeight: 1,
+              letterSpacing: "-0.01em",
+              color: GOLD,
+              textTransform: "uppercase",
+              transform: "skewX(-10deg)",
+              transformOrigin: "left",
+              marginTop: 8,
+              display: "flex",
+            }}
+          >
+            DAILY DROP.
+          </div>
+          <div
+            style={{
+              fontSize: 24,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              fontWeight: 500,
+              letterSpacing: "0.18em",
+              color: MINT,
+              textTransform: "uppercase",
+              marginTop: 36,
+              display: "flex",
+            }}
+          >
+            10 ITEMS&nbsp;&nbsp;·&nbsp;&nbsp;TRUST YOUR GUT
+          </div>
+        </div>
+
+        {/* Per-day item — optional accent line below the stack */}
+        {item && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 110,
+              left: 64,
+              fontSize: 22,
+              color: MINT,
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              letterSpacing: "0.06em",
+              display: "flex",
+              maxWidth: 760,
+              opacity: 0.85,
+            }}
+          >
+            today: {item}
+          </div>
+        )}
+
+        {/* Bottom-left URL — mono mint 50% opacity, matches og-pro footer */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 56,
+            left: 64,
+            fontSize: 14,
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            color: MINT,
+            opacity: 0.55,
+            letterSpacing: "0.18em",
+            display: "flex",
+          }}
+        >
+          loot.works/flip
         </div>
       </div>
     ),
-    { ...SIZE, headers: CACHE_HEADERS },
+    {
+      ...SIZE,
+      headers: CACHE_HEADERS,
+      fonts: bebasData
+        ? [{ name: "Bebas Neue", data: bebasData, weight: 400, style: "normal" }]
+        : undefined,
+    },
   );
 }
