@@ -1,10 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import {
-  buildDigistoreCheckoutUrl,
-  readAffiliateCookies,
-} from "@/lib/digistore-affiliate";
+import { useState, type ReactNode } from "react";
 
 interface UpgradeCardProps {
   /** Stripe price IDs — pulled from the build-time
@@ -18,6 +14,15 @@ interface UpgradeCardProps {
  * Free-user variant of the plan card. Sits in the same slot as
  * ProfileCard's plan section; sells two prices side-by-side and
  * routes to /api/stripe/checkout via the parent's onSubscribe.
+ *
+ * Always-Stripe: both tiles call onSubscribe, which the parent wires
+ * to /api/stripe/checkout. Earlier this card short-circuited to
+ * Digistore whenever the loot_aff_* affiliate cookies were present
+ * (so affiliates could be credited via Digistore's tracking), but
+ * that landed users on the unapproved Digistore product page and
+ * blocked conversions. The Digistore rail still lives in the parent
+ * as a Stripe-failure fallback; affiliate attribution on /account is
+ * a separate problem to revisit once the Digistore product is live.
  *
  * Visual treatment is intentionally premium — this is the revenue
  * lever:
@@ -36,31 +41,7 @@ export default function UpgradeCard({
   annualPriceId,
   onSubscribe,
 }: UpgradeCardProps) {
-  // Hydration: cookies are only readable client-side, so resolve the
-  // affiliate state after mount. Until then we render the Stripe
-  // path; that's a graceful default — Stripe is the lower-fee rail.
-  const [digistoreUrl, setDigistoreUrl] = useState<string | null>(null);
-  useEffect(() => {
-    const aff = readAffiliateCookies();
-    if (aff.source === "digistore") {
-      setDigistoreUrl(
-        buildDigistoreCheckoutUrl({
-          affId: aff.id,
-          campaign: aff.campaign,
-        }),
-      );
-    }
-  }, []);
-
-  // When the affiliate cookie is set, both plan tiles route to the
-  // same Digistore checkout (the user picks monthly/annual on
-  // Digistore's hosted checkout page, where both are configured as
-  // payment plans under product 691098).
   const handleTap = (priceId: string) => {
-    if (digistoreUrl) {
-      window.location.href = digistoreUrl;
-      return;
-    }
     onSubscribe(priceId);
   };
 
@@ -210,7 +191,7 @@ export default function UpgradeCard({
               price="$14.99"
               period="/mo"
               note="cancel anytime"
-              disabled={!digistoreUrl && !monthlyPriceId}
+              disabled={!monthlyPriceId}
               onTap={() => handleTap(monthlyPriceId)}
               primary
               popular
@@ -228,7 +209,7 @@ export default function UpgradeCard({
                   — 5 months free
                 </>
               }
-              disabled={!digistoreUrl && !annualPriceId}
+              disabled={!annualPriceId}
               onTap={() => handleTap(annualPriceId)}
               primary={false}
             />

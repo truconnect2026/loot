@@ -18,6 +18,22 @@ import {
 } from "@/lib/push-client";
 import { DIGISTORE_FIND_ORDER_URL } from "@/lib/digistore-affiliate";
 import { clearPendingPlan, readPendingPlan } from "@/lib/pending-plan";
+import { withUTM } from "@/lib/utm";
+
+// Digistore product page — same URL the /pro CTAs fall back to when
+// the Stripe POST fails. Centralised here so a future product-ID
+// change touches one spot.
+const DIGISTORE_CHECKOUT_BASE = "https://checkout-ds24.com/product/691098";
+
+// Default UTM payload for /account-originated checkouts. Matches the
+// scheme in docs/utm-tracking.md. Auto-launch callers (pending-plan
+// from /pro) supply their own utms and override this entirely.
+const ACCOUNT_DEFAULT_UTMS = {
+  utm_source: "loot_works",
+  utm_medium: "internal",
+  utm_campaign: "pro_purchase",
+  utm_content: "account_upgrade",
+};
 
 function deriveInitials(name: string | null, email: string): string {
   if (name) {
@@ -578,36 +594,63 @@ export default function AccountPage() {
   //
   // Accepts optional plan + UTM metadata so the auto-launch effect
   // below can forward attribution from the original /pro click;
-  // direct calls from the in-page UpgradeCard pass just the priceId
-  // and skip the extra payload.
+  // direct UpgradeCard taps pass just the priceId and fall back to
+  // ACCOUNT_DEFAULT_UTMS (utm_content=account_upgrade).
+  //
+  // Digistore is wired as a failure fallback only: if the Stripe POST
+  // throws or returns no URL, we redirect to the Digistore product
+  // page carrying the same UTMs so attribution survives the rail
+  // switch. This mirrors the /pro fork and keeps a Stripe outage
+  // from silently killing conversions.
   const handleSubscribe = useCallback(
     async (
       priceId: string,
       extra?: { plan?: string; utms?: Record<string, string> },
     ) => {
       if (typeof window === "undefined") return;
+      const inferredPlan =
+        priceId === (process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? "")
+          ? "annual"
+          : priceId === (process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? "")
+            ? "monthly"
+            : null;
+      const plan = extra?.plan ?? inferredPlan ?? "";
+      const utms = extra?.utms ?? ACCOUNT_DEFAULT_UTMS;
       try {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             priceId,
-            ...(extra?.plan ? { plan: extra.plan } : {}),
-            ...(extra?.utms ?? {}),
+            ...(plan ? { plan } : {}),
+            ...utms,
           }),
         });
         if (!res.ok) {
-          console.error(
-            "[account] Checkout session failed:",
-            await res.text(),
-          );
-          return;
+          throw new Error(`Checkout failed (${res.status}): ${await res.text()}`);
         }
         const { url } = (await res.json()) as { url?: string };
-        if (url) window.location.href = url;
+        if (!url) throw new Error("Stripe did not return a URL");
+        window.location.href = url;
+        return;
       } catch (err) {
-        console.error("[account] Checkout session error:", err);
+        console.error(
+          "[account] Stripe checkout failed, falling back to Digistore",
+          err,
+        );
       }
+      // Fallback: Digistore-hosted checkout with the same UTMs so the
+      // ad-source attribution still rolls up correctly on the
+      // Digistore reporting side.
+      const content =
+        typeof utms.utm_content === "string" && utms.utm_content
+          ? utms.utm_content
+          : "account_upgrade";
+      const campaign =
+        typeof utms.utm_campaign === "string" && utms.utm_campaign
+          ? utms.utm_campaign
+          : "pro_purchase";
+      window.location.href = withUTM(DIGISTORE_CHECKOUT_BASE, content, campaign);
     },
     [],
   );
