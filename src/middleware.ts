@@ -28,7 +28,12 @@ import { createServerClient } from "@supabase/ssr";
  *   - /welcome, /thanks, /privacy, /terms — static marketing
  */
 
-const PROTECTED = ["/app", "/account", "/onboarding"];
+// /onboarding is intentionally NOT in PROTECTED — unauthed visitors get
+// an in-page "sign in to continue setup" view rather than a silent
+// redirect to /. The page's own Supabase check still handles authed
+// users (route them to /app if they already have a zip saved, else
+// render the capture form).
+const PROTECTED = ["/app", "/account"];
 
 // Exact paths that LOOK protected but render a public marketing preview when
 // unauthed. /app shows AppMarketingPreview to unauth visitors; /app/haul,
@@ -130,5 +135,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/app/:path*", "/account/:path*", "/onboarding/:path*"],
+  matcher: ["/", "/app/:path*", "/account/:path*"],
 };

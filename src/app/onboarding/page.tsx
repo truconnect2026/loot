@@ -83,6 +83,11 @@ export default function OnboardingPage() {
   // Gate the form behind a profile check so a returning user with a
   // saved zip never sees this screen — they bounce straight to /app.
   const [checking, setChecking] = useState(true);
+  // Set when the profile check returns no Supabase user — instead of
+  // silently redirecting (which looks like a blank page to anyone
+  // visiting /onboarding manually), we render a clear "sign in to
+  // continue setup" view with a CTA back to the welcome page.
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,8 +95,10 @@ export default function OnboardingPage() {
       const { data: userData } = await supabase.auth.getUser();
       const user = userData.user;
       if (!user) {
-        // Middleware will catch this, but guard anyway.
-        if (!cancelled) router.replace("/");
+        if (!cancelled) {
+          setNeedsAuth(true);
+          setChecking(false);
+        }
         return;
       }
       const { data: profileRow } = await supabase
@@ -217,6 +224,84 @@ export default function OnboardingPage() {
               to { transform: rotate(360deg); }
             }
           `}</style>
+        </div>
+      </>
+    );
+  }
+
+  if (needsAuth) {
+    return (
+      <>
+        <DotGridBackground />
+        <div
+          style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", minHeight: "100vh",
+            padding: "24px", position: "relative", zIndex: 1, textAlign: "center",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32 }}>
+            <CoinMark size={22} color="#5CE0B8" />
+            <span
+              style={{
+                fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+                fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", color: "#5CE0B8",
+              }}
+            >
+              LOOT.WORKS&nbsp;/&nbsp;ONBOARDING
+            </span>
+          </div>
+
+          <h1
+            style={{
+              fontFamily: "var(--font-display, 'Bebas Neue', sans-serif)",
+              fontWeight: 400, fontSize: "clamp(40px, 8vw, 64px)", lineHeight: 1,
+              letterSpacing: "-0.01em", color: "#fff",
+              margin: "0 0 16px", maxWidth: 520, textTransform: "uppercase",
+            }}
+          >
+            Sign in to finish setup.
+          </h1>
+          <p
+            style={{
+              fontFamily: "var(--font-body, 'Manrope', sans-serif)",
+              fontSize: 16, lineHeight: 1.55, color: "rgba(255,255,255,0.65)",
+              margin: "0 0 32px", maxWidth: 440,
+            }}
+          >
+            We use this screen to capture your ZIP and search radius right
+            after you sign in — so deal feeds and yard sale maps land local.
+          </p>
+
+          <a
+            href="/welcome"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "16px 28px",
+              background: "linear-gradient(180deg, #6FE5C0 0%, #5CE0B8 100%)",
+              color: "#0A0A0A", textDecoration: "none",
+              fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+              fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
+              borderRadius: 9999,
+              boxShadow: "0 8px 24px rgba(92,224,184,0.3), 0 2px 8px rgba(0,0,0,0.3)",
+            }}
+          >
+            SIGN IN TO CONTINUE →
+          </a>
+
+          <p
+            style={{
+              marginTop: 28,
+              fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+              fontWeight: 500, fontSize: 11, letterSpacing: "0.12em",
+              color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
+            }}
+          >
+            Already have Pro?&nbsp;
+            <a href="/welcome" style={{ color: "#5CE0B8", textDecoration: "underline" }}>
+              go to sign-in
+            </a>
+          </p>
         </div>
       </>
     );
