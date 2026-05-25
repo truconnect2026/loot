@@ -529,7 +529,9 @@ const INLINE_STYLES = `
   font-family: var(--display);
   overflow-x: hidden;
   display: flex; flex-direction: column;
-  padding: 16px;
+  /* iOS notch clearance: max() against env() so simulator/desktop
+     where the inset is 0 still gets the baseline 16px gutter. */
+  padding: max(16px, env(safe-area-inset-top)) 16px 16px;
 }
 
 /* ─── Cosmic backdrop ─────────────────────────────────────────── */
@@ -598,10 +600,15 @@ const INLINE_STYLES = `
 }
 
 /* ─── Intro ───────────────────────────────────────────────────── */
+/* min-height: 80vh was forcing a tall intro that pushed content
+   below the fold on smaller phones (iPhone SE / 13 mini). flex: 1
+   inside .flip-game-wrap (100dvh) still gives the section the full
+   viewport when there's room; without the floor it collapses to
+   content height when the viewport is short. */
 .flip-intro {
   position: relative; flex: 1;
   display: flex; align-items: center; justify-content: center;
-  text-align: center; padding: 24px 16px; min-height: 80vh;
+  text-align: center; padding: 12px 16px;
 }
 .flip-intro--warping { animation: flip-warp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
 @keyframes flip-warp {
@@ -613,7 +620,7 @@ const INLINE_STYLES = `
 }
 .flip-intro-inner {
   position: relative; z-index: 1; max-width: 540px; width: 100%;
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
 .flip-intro-mascot {
   filter: drop-shadow(0 0 20px rgba(92,224,184,0.4));
@@ -625,16 +632,16 @@ const INLINE_STYLES = `
 }
 .flip-intro-mascot-svg { display: block; }
 .flip-intro-title {
-  font-family: var(--display); font-weight: 900; font-size: 88px;
+  font-family: var(--display); font-weight: 900; font-size: 56px;
   line-height: 0.95; letter-spacing: -0.02em;
-  margin: 8px 0 0;
+  margin: 2px 0 0;
 }
 .flip-intro-title--gradient {
   background: linear-gradient(90deg, #5CE0B8 0%, #3B82F6 50%, #6B46C1 100%);
   -webkit-background-clip: text; background-clip: text;
   color: transparent !important;
 }
-@media (min-width: 768px) { .flip-intro-title { font-size: 144px; } }
+@media (min-width: 768px) { .flip-intro-title { font-size: 112px; } }
 .flip-intro-sub {
   font-family: var(--display); font-weight: 500; font-size: 16px;
   color: rgba(92,224,184,0.7); margin: 0;
@@ -1659,8 +1666,11 @@ body.fos-cursor-active, body.fos-cursor-active * { cursor: none !important; }
   position: fixed; z-index: 5; opacity: 0.6;
   transition: opacity 200ms;
 }
-.flip-corner-mascot--top-left { top: 12px; left: 12px; }
-.flip-corner-mascot--top-right { top: 12px; right: 12px; }
+/* Notch clearance — the corner mascot is position:fixed, so the
+   wrap's safe-area padding doesn't apply. Bump top by the inset
+   directly. */
+.flip-corner-mascot--top-left { top: max(12px, env(safe-area-inset-top)); left: 12px; }
+.flip-corner-mascot--top-right { top: max(12px, env(safe-area-inset-top)); right: 12px; }
 .flip-corner-mascot:hover { opacity: 1; }
 
 /* ─── Replay banner / konami hint / grail hunter badge ───────── */

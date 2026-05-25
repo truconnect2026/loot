@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 
 const HEADLINE = "FLIP OR SKIP";
 
-function MascotSvg({ size = 120, spin = 3 }) {
+function MascotSvg({ size = 96, spin = 3 }) {
   return (
     <svg className="flip-intro-mascot-svg" width={size} height={size} viewBox="0 0 160 160" aria-hidden="true">
       <ellipse cx="80" cy="80" rx="70" ry="20" fill="none" stroke="#5CE0B8" strokeWidth="2" transform="rotate(-23 80 80)">
@@ -85,6 +85,10 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           Daily thrift game. 10 items. Trust your gut.
         </motion.p>
 
+        {/* Stats row used to duplicate "DAY {N}" alongside the
+            top-pinned chip; the subhead already reads "Trust your
+            gut" so DAY + the gut-trust line both got dropped here
+            to cut visual repetition. */}
         <motion.div
           className="flip-intro-stats"
           initial={{ opacity: 0 }}
@@ -94,8 +98,6 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           <span>DAILY DROP</span>
           <span className="flip-intro-stats-dot" aria-hidden="true">·</span>
           <span>10 ITEMS</span>
-          <span className="flip-intro-stats-dot" aria-hidden="true">·</span>
-          <span>DAY {puzzleNumber}</span>
         </motion.div>
 
         <motion.button
