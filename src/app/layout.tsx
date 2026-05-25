@@ -19,24 +19,52 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://loot.works"),
   title: {
-    default: "loot.works — AI Thrift Store Scanner",
-    template: "%s | Loot",
+    default: "loot.works",
+    template: "%s · loot.works",
   },
   description:
-    "Scan thrift store items, get instant profit estimates, condition grading, and listing generation. The AI-powered reselling toolkit.",
+    "Scan a thrift find. Get buy price, resell price, and ROI in 2 seconds. Built for the 130M Americans who resell.",
+  applicationName: "loot.works",
+  keywords: [
+    "thrift flipping",
+    "reseller app",
+    "thrift scanner",
+    "resale arbitrage",
+    "ROI calculator",
+  ],
+  // Preserved from the pre-merge metadata — the new spec doesn't
+  // redefine icons, so favicon + apple-touch-icon stay wired.
   icons: [
     { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
     { rel: "apple-touch-icon", url: "/apple-touch-icon.png" },
   ],
   openGraph: {
-    siteName: "Loot",
-    locale: "en_US",
+    title: "loot.works",
+    description:
+      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in 2 seconds.",
+    url: "https://loot.works",
+    siteName: "loot.works",
+    images: [
+      {
+        url: "/og-thumbnail.png",
+        width: 1200,
+        height: 630,
+        alt: "loot.works — AI thrift-flip scanner",
+      },
+    ],
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    creator: "@loot.works",
+    site: "@davidjones_dev",
+    creator: "@davidjones_dev",
+    title: "loot.works",
+    description:
+      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in 2 seconds.",
+    images: ["/og-thumbnail.png"],
   },
+  robots: { index: true, follow: true },
 };
 
 // Lock pinch-to-zoom — iOS auto-zoom on small inputs and accidental
