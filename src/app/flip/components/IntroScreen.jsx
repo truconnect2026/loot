@@ -5,22 +5,6 @@ import { motion } from "motion/react";
 
 const HEADLINE = "FLIP OR SKIP";
 
-function MascotSvg({ size = 96, spin = 3 }) {
-  return (
-    <svg className="flip-intro-mascot-svg" width={size} height={size} viewBox="0 0 160 160" aria-hidden="true">
-      <ellipse cx="80" cy="80" rx="70" ry="20" fill="none" stroke="#5CE0B8" strokeWidth="2" transform="rotate(-23 80 80)">
-        <animateTransform attributeName="transform" type="rotate" from="-23 80 80" to="337 80 80" dur={`${spin}s`} repeatCount="indefinite" />
-      </ellipse>
-      <path d="M 50 50 L 44 22 L 66 42 Z" fill="none" stroke="#5CE0B8" strokeWidth="2" />
-      <path d="M 110 50 L 116 22 L 94 42 Z" fill="none" stroke="#5CE0B8" strokeWidth="2" />
-      <ellipse cx="80" cy="86" rx="38" ry="36" fill="none" stroke="#5CE0B8" strokeWidth="2" />
-      <path d="M 62 102 Q 80 132 98 102 Q 94 116 80 118 Q 66 116 62 102 Z" fill="none" stroke="#5CE0B8" strokeWidth="2" />
-      <ellipse cx="80" cy="108" rx="3" ry="2.4" fill="#5CE0B8" />
-      <path d="M 60 80 Q 67 76 74 80" stroke="#5CE0B8" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-      <ellipse cx="98" cy="80" rx="3.5" ry="3" fill="#5CE0B8" />
-    </svg>
-  );
-}
 
 export default function IntroScreen({ puzzleNumber, onStart, ready = true, warping = false, replayCount = 0, konamiArmed = false, konamiHint = false }) {
   const [firstTime, setFirstTime] = useState(false);
@@ -52,16 +36,6 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
       <span className="flip-intro-day flip-day-chip">DAY {puzzleNumber}</span>
 
       <div className="flip-intro-inner">
-        <motion.div
-          className="flip-intro-mascot"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          whileHover={{ scale: 1.05 }}
-        >
-          <MascotSvg />
-        </motion.div>
-
         <h1 className="flip-intro-title flip-intro-title--gradient" aria-label={HEADLINE}>
           {headlineChars.map((c, i) => (
             <motion.span
