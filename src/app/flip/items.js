@@ -16,17 +16,14 @@
  * @property {"common"|"mid"|"high"|"grail"} rarity
  */
 
-// Photo bank lives at public/flip/items/<slug>.png. The 24 FLIPS below each
-// have a matching photo. The 12 SKIPS are photo-less and fall back to the
-// shared placeholder — no per-skip art required since they exist primarily
-// to be reflexively dismissed.
+// Photo bank lives at public/flip/items/<slug>.png. Every item below has a
+// matching photo.
 const PHOTO_BASE = "/flip/items";
-const PLACEHOLDER = "/items/_placeholder.svg";
 
-const i = (id, slug, name, era, brand, category, hint, buyEst, resellEst, isFlip, difficulty, rarity, hasPhoto = true) => ({
+const i = (id, slug, name, era, brand, category, hint, buyEst, resellEst, isFlip, difficulty, rarity) => ({
   id,
   slug,
-  image: hasPhoto ? `${PHOTO_BASE}/${slug}.png` : PLACEHOLDER,
+  image: `${PHOTO_BASE}/${slug}.png`,
   name,
   era,
   brand,
@@ -42,7 +39,7 @@ const i = (id, slug, name, era, brand, category, hint, buyEst, resellEst, isFlip
 
 /** @type {FlipItem[]} */
 export const ITEMS = [
-  // ─── FLIPS (24) — each slug maps to public/flip/items/<slug>.png ───────────
+  // ─── 24 items — each slug maps to public/flip/items/<slug>.png ─────────────
   i(1, "pyrex-butterprint", "Pyrex Butterprint 403", "1957–68", "Pyrex", "vintage glassware",
     "Cinderella handles. Turquoise farm scene.", 4, 85, true, "easy", "mid"),
   i(2, "lecreuset-dutch", "Le Creuset 7.25qt Dutch Oven", "Any", "Le Creuset", "kitchen",
@@ -91,32 +88,6 @@ export const ITEMS = [
     "Opaque jade green. \"Fire-King\" bottom stamp.", 5, 80, true, "easy", "mid"),
   i(24, "leather-briefcase", "Vintage Leather Briefcase", "1960s–80s", "Hartmann / Coach", "leather",
     "Full-grain. Brass hardware. Combo locks.", 12, 110, true, "medium", "mid"),
-
-  // ─── SKIPS (12) — low value, common, damaged. No photos. ───────────────────
-  i(25, "generic-floral-figurine", "Generic Floral Figurine", "modern", "Unknown", "decor",
-    "Mass-produced ceramic. Smells like grandma's mall booth.", 2, 4, false, "easy", "common", false),
-  i(26, "walmart-era-vase", "Walmart-Era Glass Vase", "2010s", "Unknown", "decor",
-    "Big box origin. No marks. Plain.", 1, 3, false, "easy", "common", false),
-  i(27, "cracked-pyrex-snowflake", "Cracked Pyrex Snowflake (damaged)", "1970s", "Pyrex", "vintage glassware",
-    "Right pattern, but a visible hairline crack on the rim.", 2, 5, false, "trick", "common", false),
-  i(28, "faded-modern-disney-plush", "Faded Modern Disney Plush", "2010s", "Disney", "plush",
-    "Mass licensed. Faded from sun. Not a vintage Pooh.", 1, 2, false, "easy", "common", false),
-  i(29, "ceramic-christmas-mug", "Ceramic Christmas Mug", "2010s", "Unknown", "kitchen",
-    "Generic holiday motif. Decal not painted.", 1, 1, false, "easy", "common", false),
-  i(30, "broken-porcelain-figurine", "Broken Porcelain Figurine", "1980s", "Unknown", "decor",
-    "Repaired with visible glue. Chipped hand.", 1, 0, false, "easy", "common", false),
-  i(31, "pier1-soy-candle", "Modern Pier 1 Candle", "2020s", "Pier 1", "decor",
-    "Big-retail candle. Used. Not collectible.", 2, 3, false, "easy", "common", false),
-  i(32, "old-tinsel-garland", "Old Tinsel Garland", "1990s", "Unknown", "decor",
-    "Tangled silver tinsel. Not antique mercury glass.", 1, 1, false, "easy", "common", false),
-  i(33, "live-laugh-love-sign", "\"Live Laugh Love\" Sign", "2010s", "Unknown", "decor",
-    "MDF + vinyl letters. The sign of a hard pass.", 2, 2, false, "easy", "common", false),
-  i(34, "sun-faded-plastic-flowers", "Sun-Faded Plastic Flowers", "modern", "Unknown", "decor",
-    "UV-bleached. Brittle stems. Estate-sale filler.", 1, 1, false, "easy", "common", false),
-  i(35, "generic-canvas-tote", "Generic Canvas Tote", "2020s", "Unknown", "bag",
-    "Stained. Branded for a 2019 conference. Pass.", 1, 2, false, "easy", "common", false),
-  i(36, "copper-pot-no-maker", "Copper Pot, No Maker Mark", "20th century", "Unknown", "kitchen",
-    "Copper-look, but no maker stamp. Likely thin-plated.", 8, 12, false, "trick", "common", false),
 ];
 
 // ─── Back-compat shims ─────────────────────────────────────────────────────

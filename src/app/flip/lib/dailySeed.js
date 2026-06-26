@@ -44,23 +44,21 @@ function takeFrom(pool, rnd, count) {
 
 /**
  * Returns 10 items for today's round, deterministically shuffled by today's
- * date. Mix tuned to ~6 flips, ~3 skips, ~1 trick — but always exactly 10.
- * The trick bucket is sampled first so it always lands; remaining slots are
- * topped up from flip/skip pools, then the final 10 are reshuffled.
+ * date. Mix: 1 trick + 9 flips, always exactly 10. The trick bucket is
+ * sampled first so it always lands; remaining slots topped up from flips,
+ * then the final 10 are reshuffled.
  */
 export function getDailyItems() {
   const rnd = mulberry32(todaySeed());
 
-  const flips = ITEMS.filter((it) => it.isFlip && it.difficulty !== "trick");
-  const skips = ITEMS.filter((it) => !it.isFlip && it.difficulty !== "trick");
+  const flips = ITEMS.filter((it) => it.difficulty !== "trick");
   const tricks = ITEMS.filter((it) => it.difficulty === "trick");
 
-  const target = { tricks: 1, flips: 6, skips: 3 };
+  const target = { tricks: 1, flips: 9 };
 
   const picked = [
     ...takeFrom(tricks, rnd, target.tricks),
     ...takeFrom(flips, rnd, target.flips),
-    ...takeFrom(skips, rnd, target.skips),
   ];
 
   // Top off to exactly 10 from a combined pool if any bucket was short.
