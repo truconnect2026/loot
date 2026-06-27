@@ -393,7 +393,7 @@ export default function FlipGame() {
               <div className="flip-game-header">
                 <div className="flip-game-header-left">
                   <span className="flip-day-chip">
-                    <SaturnInline /> DAY {puzzleNumber}
+                    DAY {puzzleNumber}
                   </span>
                   {streak >= 2 && (
                     <span className="flip-header-streak">🔥 {streak}</span>
@@ -480,14 +480,6 @@ export default function FlipGame() {
   );
 }
 
-function SaturnInline() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 40 40" aria-hidden="true" style={{ verticalAlign: "middle", marginRight: 6 }}>
-      <circle cx="20" cy="20" r="8" fill="none" stroke="currentColor" strokeWidth="2.5" />
-      <ellipse cx="20" cy="20" rx="18" ry="5" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(-23 20 20)" />
-    </svg>
-  );
-}
 
 function Intermission({ kind }) {
   const META = {
