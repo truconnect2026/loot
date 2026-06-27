@@ -387,11 +387,6 @@ export default function FlipGame() {
               <PlayingEnvironment streak={streak} />
               <DirectionalBackground x={dragX} />
 
-              {/* Persistent corner mascot — reacts to game events */}
-              <div className="flip-corner-mascot flip-corner-mascot--top-left">
-                <Mascot ref={playingMascotRef} mood={streak >= 3 ? "hyped" : "smirk"} size={56} animated={false} />
-              </div>
-
               <div className="flip-game-header">
                 <div className="flip-game-header-left">
                   <span className="flip-day-chip">
