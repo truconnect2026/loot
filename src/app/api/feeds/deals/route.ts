@@ -54,7 +54,7 @@ function toFeedDeal(item: DealsFeedItem, idx: number): FeedDeal {
     source: platformToSource(item.platform),
     isFree: false,
     postedAt: formatAge(item.age_hours),
-    url: "",
+    url: item.url || "",
   };
 }
 

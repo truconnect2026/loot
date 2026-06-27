@@ -1073,6 +1073,28 @@ async function callFeedTool(
       : [];
 }
 
+async function callFeedToolWithSearch(
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens = 4096,
+): Promise<unknown[]> {
+  const message = await getClient().messages.create({
+    model: HAIKU,
+    max_tokens: maxTokens,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }] as any,
+  });
+  const text = extractText(message);
+  const parsed = parseFeedJson(text);
+  return Array.isArray(parsed)
+    ? parsed
+    : Array.isArray((parsed as Record<string, unknown>)?.items)
+      ? ((parsed as Record<string, unknown>).items as unknown[])
+      : [];
+}
+
 function parseFeedJson(raw: string): unknown {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = (fenced ? fenced[1] : raw).trim();
@@ -1094,16 +1116,21 @@ function parseFeedJson(raw: string): unknown {
   throw new Error(`No JSON in feed response: ${raw.slice(0, 200)}`);
 }
 
-const DEALS_FEED_SYSTEM = `You are a resale arbitrage expert. Generate realistic Facebook Marketplace and Craigslist listings that a reseller would want to flip. Focus on furniture, electronics, vintage items, brand-name kitchen appliances, and collectibles. Asking prices should be UNDERPRICED relative to resale value — these are the kinds of underpriced posts a reseller jumps on. Respond with ONLY a JSON array, no markdown, no prose. Each element:
+const DEALS_FEED_SYSTEM = `You are a resale arbitrage expert helping a reseller find real, currently-listed items to flip. Use web search to find ACTUAL current listings on Facebook Marketplace, Craigslist, and OfferUp near the given zip code. Search for underpriced furniture, electronics, vintage items, brand-name kitchen appliances, and collectibles that a reseller could flip for profit.
+
+Only include listings you actually found via search with a real URL. Do not invent listings. If you cannot find enough real ones, return fewer.
+
+Respond with ONLY a JSON array, no markdown, no prose. Each element:
 {
   "title": "string (lowercase per LOOT voice; proper nouns capitalized)",
   "platform": "Facebook" or "Craigslist",
   "asking_price": number,
-  "estimated_resale_value": number,
+  "estimated_resale_value": number (your expert estimate),
   "profit_estimate": number,
   "category": "string",
   "age_hours": number between 1 and 48,
-  "distance_miles": number
+  "distance_miles": number,
+  "url": "string (the real listing URL you found)"
 }`;
 
 export interface DealsFeedItem {
@@ -1115,20 +1142,16 @@ export interface DealsFeedItem {
   category: string;
   age_hours: number;
   distance_miles: number;
+  url: string;
 }
 
-// TODO(David): wire to real Facebook Marketplace / Craigslist / Nextdoor
-// scrapers before launch claims integrity. Until then, listings returned
-// by this function are AI-synthesized plausible examples — they vary by
-// zip + cache, but they are NOT real recent posts. DealCarousel renders
-// a "DEMO PREVIEW" badge so users know.
 export async function dealsFeed(
   zip: string,
   radius: number,
 ): Promise<DealsFeedItem[]> {
-  const items = await callFeedTool(
+  const items = await callFeedToolWithSearch(
     DEALS_FEED_SYSTEM,
-    `Zip code: ${zip}\nRadius: ${radius} miles\nGenerate 8-12 listings as a JSON array.`,
+    `Zip code: ${zip}\nRadius: ${radius} miles\nSearch for and return 8-12 real current listings as a JSON array.`,
   );
   return items.map((it) => {
     const obj = (it ?? {}) as Record<string, unknown>;
@@ -1142,6 +1165,7 @@ export async function dealsFeed(
       category: String(obj.category ?? ""),
       age_hours: Math.max(1, Math.min(48, Number(obj.age_hours ?? 6))),
       distance_miles: Math.max(0, Number(obj.distance_miles ?? 0)),
+      url: String(obj.url ?? ""),
     };
   });
 }
