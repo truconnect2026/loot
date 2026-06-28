@@ -11,31 +11,36 @@ import {
   type ScannerHandle,
 } from "@/lib/scanner";
 import type { ScanResponse } from "@/app/api/scan/route";
+import type { MultiDetectItem, BatchValuation } from "@/lib/claude";
 
-/**
- * Verdict payload + the user-captured thumbnail. The thumbnail is
- * grabbed client-side (UPC: at decode time; AI Vision: the user's
- * shutter tap) and never round-trips through /api/scan, so it can't
- * live on ScanResponse — it sits next to it on this client-only
- * envelope.
- */
 export interface VerdictPayload extends ScanResponse {
   capturedImage?: string | null;
 }
 
 interface ScanOverlayProps {
   open: boolean;
-  mode: "barcode" | "vision";
+  mode: "barcode" | "vision" | "shelf";
   onResult: (verdict: VerdictPayload) => void;
   onCancel: () => void;
-  /** Called when /api/scan returns 403 (free-user daily limit hit).
-   * The dashboard closes the overlay and opens the PaywallSheet. */
   onPaywall?: (info: { used: number; limit: number }) => void;
 }
 
 const ACCENT = {
   barcode: { hex: "#5CE0B8", rgb: "92,224,184" },
   vision: { hex: "#D4A574", rgb: "212,165,116" },
+  shelf: { hex: "#5CE0B8", rgb: "92,224,184" },
+};
+
+const SHELF_VERDICT_COLOR: Record<"BUY" | "PASS" | "MAYBE", string> = {
+  BUY: "#5CE0B8",
+  MAYBE: "#F5C518",
+  PASS: "#6b7280",
+};
+const SHELF_DOT_GRAY = "#4b5563";
+const SHELF_DETECT_LABEL: Record<MultiDetectItem["confidence"], string> = {
+  high: "hi",
+  medium: "med",
+  low: "lo",
 };
 
 // Light haptic — Android Chrome only, silent no-op everywhere else.
@@ -45,16 +50,8 @@ function haptic(pattern: number | number[] = 10) {
   }
 }
 
-// Viewfinder is sized via CSS (86vw, max 440px, aspect 4/3) instead
-// of fixed FRAME_W/FRAME_H now that the camera feed is full-bleed.
-
 type Phase =
   | { kind: "framing" }
-  // Both payload variants carry a `capturedImage` (a JPEG dataURL of
-  // the video frame). For barcode mode we grab it the moment the UPC
-  // decodes — gives the verdict sheet a thumbnail of what was just
-  // scanned. For vision mode `image` is already the captured frame,
-  // so capturedImage just aliases it.
   | {
       kind: "captured";
       payload:
@@ -62,18 +59,19 @@ type Phase =
         | { type: "vision"; image: string };
     }
   | { kind: "submitting"; progress: number }
-  // Camera-specific failure: getUserMedia denied, no camera, or the
-  // video element didn't reach 'playing' within 6s. Distinct from the
-  // generic `error` phase below (which covers scan-side / API-side
-  // failures) so we can render a permission-aware fallback UI rather
-  // than the same "SCAN FAILED" treatment.
   | { kind: "cameraError" }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string }
+  // Shelf phases — two-stage detect then value.
+  | { kind: "shelf-detecting"; capturedImage: string }
+  | { kind: "shelf-valuing"; capturedImage: string; items: MultiDetectItem[] }
+  | {
+      kind: "shelf-done";
+      capturedImage: string;
+      items: MultiDetectItem[];
+      valuations: Map<number, BatchValuation>;
+    }
+  | { kind: "shelf-empty"; capturedImage: string };
 
-/** Captures a JPEG dataURL of the current video frame. Wraps the lib
- * helper in try/catch because thumbnail-grab failures must not block
- * the scan flow — the verdict sheet just renders without a thumbnail
- * if this returns null. */
 function safelyCaptureFrame(video: HTMLVideoElement | null): string | null {
   if (!video) return null;
   try {
@@ -96,7 +94,6 @@ function CornerBracket({
   stroke?: number;
   inset?: number;
 }) {
-  // L-shape from two `arm`px arms, 2px stroke, 4px inset from each frame edge.
   const ARM = arm;
   const STROKE = stroke;
   const INSET = inset;
@@ -145,12 +142,6 @@ function CornerBracket({
   }
 }
 
-/**
- * Vision-mode shutter — 68px outer ring with a 42px solid inner disc
- * that brightens on press, mimicking a physical camera shutter. Mint
- * (not the camel vision-mode accent) because the user is recognizing
- * this as a shutter, not an "AI Vision" branded element.
- */
 function CaptureShutter({
   cameraReady,
   onTap,
@@ -187,9 +178,6 @@ function CaptureShutter({
         transform: pressed ? "scale(0.96)" : "scale(1)",
       }}
     >
-      {/* Inner disc — 42px circle that goes from 30% mint at rest
-          to 60% on press, registering the shutter tap as a
-          physical actuation rather than a hover-style highlight. */}
       <span
         aria-hidden="true"
         style={{
@@ -208,11 +196,6 @@ function CaptureShutter({
   );
 }
 
-/**
- * Camera-off glyph — a simple X stroke in red for the cameraError
- * fallback view. Standalone (not inside a camera silhouette) per
- * the spec: the icon needs to read at 32px without further detail.
- */
 function CameraOffIcon() {
   return (
     <svg
@@ -239,10 +222,6 @@ function CancelButton({
 }: {
   onCancel: () => void;
   label?: string;
-  /** Margin-top override — the vision capture flow wants tighter
-   * vertical spacing between the round CAPTURE button and the
-   * CANCEL pill below it than the barcode mode's "SCANNING UPC..."
-   * label-to-CANCEL gap. */
   marginTop?: number;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -285,11 +264,18 @@ export default function ScanOverlay({
   const [phase, setPhase] = useState<Phase>({ kind: "framing" });
   const [costInput, setCostInput] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
-  // Surfaces non-terminal errors directly under the scanner frame so the
-  // user always sees what went wrong, even if the phase machine keeps going
-  // (e.g. transient barcode-decode glitches). Distinct from `phase: error`,
-  // which is the full-screen terminal failure.
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [activeMode, setActiveMode] = useState<"barcode" | "vision" | "shelf">(mode);
+
+  // Shelf-specific overlay UI state — separate from phase so they survive
+  // the valuing→done transition without resetting.
+  const shelfImgRef = useRef<HTMLImageElement>(null);
+  const shelfRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const [shelfSelectedIndex, setShelfSelectedIndex] = useState<number | null>(null);
+  const [shelfImgRenderedSize, setShelfImgRenderedSize] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -307,31 +293,30 @@ export default function ScanOverlay({
   const streamRef = useRef<MediaStream | null>(null);
   const scannerRef = useRef<ScannerHandle | null>(null);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Camera readiness mirror — `cameraReady` is state, but the 6s
-  // timeout closure captures stale state. The ref reads fresh.
   const cameraReadyRef = useRef(false);
   const cameraTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const accent = ACCENT[mode];
+  const accent = ACCENT[activeMode];
 
+  // Effect 1: camera init. Opens the stream and sets cameraReady.
+  // Barcode scanner start is handled separately in Effect 2 so that
+  // in-session mode switches can start/stop it without reopening the stream.
   useEffect(() => {
     if (!open) return;
 
-    // Reset the state machine each time the overlay opens or the mode flips.
     /* eslint-disable react-hooks/set-state-in-effect */
     setPhase({ kind: "framing" });
     setCostInput("");
     setCameraReady(false);
     setInlineError(null);
+    setActiveMode(mode);
+    setShelfSelectedIndex(null);
+    setShelfImgRenderedSize(null);
     /* eslint-enable react-hooks/set-state-in-effect */
+    shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
     let cancelled = false;
 
-    // 6s play-timeout — if the video element never reaches a
-    // playable state (corrupt stream, OS silently denied access,
-    // etc), bounce to the cameraError phase so the user sees a
-    // "check permissions" affordance instead of staring at a black
-    // overlay forever.
     cameraTimeoutRef.current = setTimeout(() => {
       if (cancelled) return;
       if (!cameraReadyRef.current) {
@@ -340,8 +325,6 @@ export default function ScanOverlay({
       }
     }, 6000);
 
-    // Native <video> error event — fires on decode failures, src
-    // changes that fail to load, etc. Same bounce as the timeout.
     const video = videoRef.current;
     const onVideoError = () => {
       if (cancelled) return;
@@ -369,37 +352,8 @@ export default function ScanOverlay({
           clearTimeout(cameraTimeoutRef.current);
           cameraTimeoutRef.current = null;
         }
-
-        if (mode === "barcode") {
-          scannerRef.current = await startBarcodeScanner(
-            v,
-            (upc) => {
-              // Confirm the decode physically — feels native on Android,
-              // silent everywhere else.
-              haptic();
-              scannerRef.current?.stop();
-              // Grab the frame BEFORE we stop the stream — once
-              // tracks are stopped, the video's currentSrc becomes
-              // black and captureFrame would return an empty image.
-              const capturedImage = safelyCaptureFrame(videoRef.current);
-              stopStream(streamRef.current);
-              streamRef.current = null;
-              setInlineError(null);
-              setPhase({
-                kind: "captured",
-                payload: { type: "barcode", upc, capturedImage },
-              });
-            },
-            // Per-decode error from the barcode lib. These were previously
-            // console.warn-only and invisible to the user; surface them now.
-            (err) => flagError("barcode-decode", err)
-          );
-        }
       } catch (err) {
         flagError("camera-init", err);
-        // getUserMedia rejection, NotAllowedError, NotFoundError, etc.
-        // All map to the same camera-unavailable UI — the user's next
-        // action is "check permissions / settings," not "retry scan."
         if (!cancelled) setPhase({ kind: "cameraError" });
       }
     })();
@@ -418,7 +372,61 @@ export default function ScanOverlay({
       }
       if (video) video.removeEventListener("error", onVideoError);
     };
-  }, [open, mode]);
+  }, [open, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect 2: barcode scanner — starts when camera is ready and activeMode is
+  // barcode. Cleans up and restarts whenever activeMode changes within a session.
+  useEffect(() => {
+    if (!open || !cameraReady || activeMode !== "barcode" || !videoRef.current) {
+      scannerRef.current?.stop();
+      scannerRef.current = null;
+      return;
+    }
+    const v = videoRef.current;
+    let cancelled = false;
+    let handle: ScannerHandle | null = null;
+
+    startBarcodeScanner(
+      v,
+      (upc) => {
+        haptic();
+        handle?.stop();
+        const capturedImage = safelyCaptureFrame(v);
+        stopStream(streamRef.current);
+        streamRef.current = null;
+        setInlineError(null);
+        setPhase({
+          kind: "captured",
+          payload: { type: "barcode", upc, capturedImage },
+        });
+      },
+      (err) => flagError("barcode-decode", err),
+    )
+      .then((h) => {
+        if (!cancelled) {
+          handle = h;
+          scannerRef.current = h;
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+      handle?.stop();
+      scannerRef.current = null;
+    };
+  }, [open, cameraReady, activeMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Switch active mode within an open session.
+  const switchMode = (m: "barcode" | "vision" | "shelf") => {
+    if (m === activeMode) return;
+    setPhase({ kind: "framing" });
+    setInlineError(null);
+    setShelfSelectedIndex(null);
+    setShelfImgRenderedSize(null);
+    shelfRowRefs.current.clear();
+    setActiveMode(m);
+  };
 
   const handleCapture = () => {
     const video = videoRef.current;
@@ -428,18 +436,80 @@ export default function ScanOverlay({
     }
     try {
       const image = captureFrame(video);
-      // Confirm the shutter physically.
       haptic();
       stopStream(streamRef.current);
       streamRef.current = null;
       setInlineError(null);
-      setPhase({
-        kind: "captured",
-        payload: { type: "vision", image },
-      });
+      if (activeMode === "shelf") {
+        void handleShelfCapture(image);
+      } else {
+        setPhase({
+          kind: "captured",
+          payload: { type: "vision", image },
+        });
+      }
     } catch (err) {
       const message = flagError("capture", err);
       setPhase({ kind: "error", message });
+    }
+  };
+
+  // Two-stage shelf scan: detect → value.
+  // Reuses /api/scan-multi-test/detect and /api/scan-multi-test/value unchanged.
+  const handleShelfCapture = async (image: string) => {
+    setShelfSelectedIndex(null);
+    setShelfImgRenderedSize(null);
+    shelfRowRefs.current.clear();
+    setPhase({ kind: "shelf-detecting", capturedImage: image });
+
+    let items: MultiDetectItem[] = [];
+    try {
+      const res = await fetch("/api/scan-multi-test/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Detection failed");
+      items = json.items ?? [];
+    } catch (err) {
+      setPhase({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Detection failed",
+      });
+      return;
+    }
+
+    if (items.length === 0) {
+      setPhase({ kind: "shelf-empty", capturedImage: image });
+      return;
+    }
+
+    setPhase({ kind: "shelf-valuing", capturedImage: image, items });
+
+    try {
+      const res = await fetch("/api/scan-multi-test/value", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((it, i) => ({
+            index: i,
+            name: it.name,
+            category: it.category,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Valuation failed");
+      const vals: BatchValuation[] = json.valuations ?? [];
+      const map = new Map<number, BatchValuation>();
+      for (const v of vals) map.set(v.index, v);
+      setPhase({ kind: "shelf-done", capturedImage: image, items, valuations: map });
+    } catch (err) {
+      setPhase({
+        kind: "error",
+        message: err instanceof Error ? err.message : "Valuation failed",
+      });
     }
   };
 
@@ -477,9 +547,6 @@ export default function ScanOverlay({
             scans_limit?: number;
           };
       if (!res.ok || "error" in data) {
-        // 403 with scans_used + scans_limit = the daily-limit gate.
-        // Bubble up to the dashboard so it can swap our overlay for
-        // the PaywallSheet rather than render a generic error here.
         if (
           res.status === 403 &&
           "error" in data &&
@@ -493,10 +560,7 @@ export default function ScanOverlay({
         }
         const apiMessage =
           "error" in data ? data.error : `Scan failed (${res.status})`;
-        const message = flagError(
-          `api-error[${res.status}]`,
-          apiMessage
-        );
+        const message = flagError(`api-error[${res.status}]`, apiMessage);
         setPhase({ kind: "error", message });
         if (progressTimer.current) clearInterval(progressTimer.current);
         progressTimer.current = null;
@@ -505,10 +569,6 @@ export default function ScanOverlay({
 
       if (progressTimer.current) clearInterval(progressTimer.current);
       progressTimer.current = null;
-      // Attach the frame the user actually captured so VerdictSheet
-      // can render it as a thumbnail. UPC mode supplies its grabbed
-      // frame via phase.payload.capturedImage; AI Vision mode reuses
-      // the same image it sent to the API.
       const capturedImage =
         phase.payload.type === "barcode"
           ? phase.payload.capturedImage
@@ -524,6 +584,35 @@ export default function ScanOverlay({
 
   if (!open) return null;
 
+  // Derived shelf values — used in shelf-valuing and shelf-done render.
+  const isShelfPhase =
+    phase.kind === "shelf-detecting" ||
+    phase.kind === "shelf-valuing" ||
+    phase.kind === "shelf-done" ||
+    phase.kind === "shelf-empty";
+
+  const shelfItems =
+    phase.kind === "shelf-valuing" || phase.kind === "shelf-done"
+      ? phase.items
+      : [];
+
+  const shelfValuations =
+    phase.kind === "shelf-done"
+      ? phase.valuations
+      : new Map<number, BatchValuation>();
+
+  const isShelfValuing = phase.kind === "shelf-valuing";
+
+  const shelfBuyCount = [...shelfValuations.values()].filter(
+    (v) => v.verdict === "BUY",
+  ).length;
+  const shelfMaybeCount = [...shelfValuations.values()].filter(
+    (v) => v.verdict === "MAYBE",
+  ).length;
+  const shelfPassCount = [...shelfValuations.values()].filter(
+    (v) => v.verdict === "PASS",
+  ).length;
+
   return (
     <>
       <style>{`
@@ -535,6 +624,8 @@ export default function ScanOverlay({
           0%   { transform: translate(-50%, -50%) scale(0.9);  opacity: 1; }
           100% { transform: translate(-50%, -50%) scale(1.5);  opacity: 0; }
         }
+        @keyframes shelfPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+        .shelf-pulse { animation: shelfPulse 1.2s ease-in-out infinite; }
       `}</style>
 
       <div
@@ -551,10 +642,482 @@ export default function ScanOverlay({
           justifyContent: "center",
         }}
       >
-        {/* Full-bleed camera feed during framing — sits behind every
-            other element. Switches to display:none once the user
-            captures or transitions out of framing so the centered
-            phase-specific UI below dominates the screen. */}
+        {/* ── Shelf result panel ─────────────────────────────────────
+            Renders over everything else when in a shelf phase.
+            Full-screen scrollable so long lists don't clip. ──────── */}
+        {isShelfPhase && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 40,
+              background: "rgba(10,8,14,0.98)",
+              overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Header bar */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 18px 8px",
+                flexShrink: 0,
+              }}
+            >
+              {/* Status / summary */}
+              <div
+                style={{
+                  fontFamily: "var(--font-label)",
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "#5A4E70",
+                }}
+              >
+                {phase.kind === "shelf-detecting" && (
+                  <span className="shelf-pulse" style={{ color: "#f59e0b" }}>
+                    ① reading the shelf…
+                  </span>
+                )}
+                {phase.kind === "shelf-valuing" && (
+                  <span>
+                    <span style={{ color: "#5CE0B8" }}>
+                      ✓ {shelfItems.length} items
+                    </span>
+                    {"  "}
+                    <span className="shelf-pulse" style={{ color: "#f59e0b" }}>
+                      ② pricing…
+                    </span>
+                  </span>
+                )}
+                {phase.kind === "shelf-done" && (
+                  <span>
+                    <span style={{ color: "#e5e7eb" }}>{shelfItems.length}</span>
+                    {" detected · "}
+                    <span style={{ color: SHELF_VERDICT_COLOR.BUY }}>{shelfBuyCount} BUY</span>
+                    {" · "}
+                    <span style={{ color: SHELF_VERDICT_COLOR.MAYBE }}>{shelfMaybeCount} MAYBE</span>
+                    {" · "}
+                    <span style={{ color: SHELF_VERDICT_COLOR.PASS }}>{shelfPassCount} PASS</span>
+                  </span>
+                )}
+                {phase.kind === "shelf-empty" && (
+                  <span style={{ color: "#6b7280" }}>nothing detected</span>
+                )}
+              </div>
+
+              {/* Close */}
+              <button
+                onClick={onCancel}
+                aria-label="Close"
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#5A4E70",
+                  cursor: "pointer",
+                  padding: 4,
+                  lineHeight: 1,
+                }}
+              >
+                <svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                >
+                  <line x1={18} y1={6} x2={6} y2={18} />
+                  <line x1={6} y1={6} x2={18} y2={18} />
+                </svg>
+              </button>
+            </div>
+
+            {/* Shelf-detecting: spinner + captured image preview */}
+            {phase.kind === "shelf-detecting" && (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 16,
+                  padding: 24,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={phase.capturedImage}
+                  alt="captured shelf"
+                  style={{
+                    width: "100%",
+                    maxHeight: 260,
+                    objectFit: "contain",
+                    borderRadius: 8,
+                    opacity: 0.5,
+                  }}
+                />
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    color: "#5A4E70",
+                    fontFamily: "var(--font-label)",
+                    fontSize: 11,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  <CoinMarkSpinner />
+                  IDENTIFYING ITEMS…
+                </div>
+              </div>
+            )}
+
+            {/* Shelf-empty: message + retake */}
+            {phase.kind === "shelf-empty" && (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  padding: 32,
+                  textAlign: "center",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={phase.capturedImage}
+                  alt="captured shelf"
+                  style={{
+                    width: "100%",
+                    maxHeight: 200,
+                    objectFit: "contain",
+                    borderRadius: 8,
+                    opacity: 0.4,
+                    marginBottom: 8,
+                  }}
+                />
+                <div
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 15,
+                    color: "#C8C0D8",
+                  }}
+                >
+                  nothing detected
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    color: "#5A4E70",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  get closer · more light · aim at item spines
+                </div>
+                <button
+                  onClick={() => setPhase({ kind: "framing" })}
+                  style={{
+                    marginTop: 8,
+                    padding: "10px 28px",
+                    borderRadius: 10,
+                    background: "rgba(92,224,184,0.08)",
+                    border: "1px solid rgba(92,224,184,0.20)",
+                    color: "#5CE0B8",
+                    fontFamily: "var(--font-label)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.10em",
+                    cursor: "pointer",
+                  }}
+                >
+                  RETAKE
+                </button>
+              </div>
+            )}
+
+            {/* Shelf-valuing + shelf-done: image + dots + list */}
+            {(phase.kind === "shelf-valuing" || phase.kind === "shelf-done") && (
+              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                {/* Image with numbered dots */}
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    flexShrink: 0,
+                    padding: "0 0 4px",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={shelfImgRef}
+                    src={phase.capturedImage}
+                    alt="shelf"
+                    onLoad={() => {
+                      const el = shelfImgRef.current;
+                      if (!el) return;
+                      setShelfImgRenderedSize({
+                        w: el.clientWidth,
+                        h: el.clientHeight,
+                      });
+                    }}
+                    style={{ width: "100%", display: "block" }}
+                  />
+
+                  {shelfImgRenderedSize &&
+                    shelfItems.map((item, idx) => {
+                      const [bx, by, bw, bh] = item.bbox;
+                      const cx = (bx + bw / 2) * shelfImgRenderedSize.w;
+                      const cy = (by + bh / 2) * shelfImgRenderedSize.h;
+                      const val = shelfValuations.get(idx);
+                      const color = val
+                        ? SHELF_VERDICT_COLOR[val.verdict]
+                        : SHELF_DOT_GRAY;
+                      const isSel = shelfSelectedIndex === idx;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setShelfSelectedIndex(
+                              idx === shelfSelectedIndex ? null : idx,
+                            );
+                            shelfRowRefs.current
+                              .get(idx)
+                              ?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "nearest",
+                              });
+                          }}
+                          aria-label={`Item ${idx + 1}: ${item.name}`}
+                          style={{
+                            position: "absolute",
+                            left: cx,
+                            top: cy,
+                            transform: `translate(-50%, -50%) scale(${isSel ? 1.4 : 1})`,
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            background: color,
+                            color: color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
+                            fontSize: 10,
+                            fontWeight: "bold",
+                            fontFamily: "monospace",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: isSel
+                              ? `0 0 0 3px #fff, 0 0 12px 4px ${color}`
+                              : "0 1px 3px rgba(0,0,0,0.6)",
+                            transition:
+                              "background 300ms ease, transform 150ms ease, box-shadow 150ms ease",
+                            zIndex: isSel ? 10 : 5,
+                          }}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                </div>
+
+                {/* Item list */}
+                <div
+                  style={{
+                    padding: "8px 12px 32px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
+                  {shelfItems.map((item, idx) => {
+                    const val = shelfValuations.get(idx);
+                    const color = val
+                      ? SHELF_VERDICT_COLOR[val.verdict]
+                      : SHELF_DOT_GRAY;
+                    const isSel = shelfSelectedIndex === idx;
+                    return (
+                      <div
+                        key={idx}
+                        ref={(el) => {
+                          if (el) shelfRowRefs.current.set(idx, el);
+                          else shelfRowRefs.current.delete(idx);
+                        }}
+                        onClick={() =>
+                          setShelfSelectedIndex(
+                            idx === shelfSelectedIndex ? null : idx,
+                          )
+                        }
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "8px 10px",
+                          borderLeft: `3px solid ${color}`,
+                          background: isSel
+                            ? "rgba(255,255,255,0.06)"
+                            : "rgba(255,255,255,0.02)",
+                          borderRadius: "0 6px 6px 0",
+                          cursor: "pointer",
+                          transition:
+                            "background 120ms ease, border-color 300ms ease",
+                        }}
+                      >
+                        {/* Number dot */}
+                        <span
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            background: color,
+                            color:
+                              color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
+                            fontSize: 10,
+                            fontWeight: "bold",
+                            fontFamily: "monospace",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            transition: "background 300ms ease",
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+
+                        {/* Name */}
+                        <span
+                          style={{
+                            flex: 1,
+                            fontFamily: "var(--font-body)",
+                            fontSize: 12,
+                            color: "#C8C0D8",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {item.name}
+                        </span>
+
+                        {/* Verdict pill or pulse placeholder */}
+                        {val ? (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: "bold",
+                              color,
+                              border: `1px solid ${color}`,
+                              borderRadius: 4,
+                              padding: "1px 5px",
+                              flexShrink: 0,
+                              fontFamily: "var(--font-label)",
+                            }}
+                          >
+                            {val.verdict}
+                          </span>
+                        ) : (
+                          <span
+                            className={isShelfValuing ? "shelf-pulse" : undefined}
+                            style={{
+                              fontSize: 10,
+                              color: "#4b5563",
+                              flexShrink: 0,
+                            }}
+                          >
+                            …
+                          </span>
+                        )}
+
+                        {/* Sell price */}
+                        <span
+                          style={{
+                            fontFamily: "var(--font-label)",
+                            fontSize: 11,
+                            color: "#C8C0D8",
+                            flexShrink: 0,
+                            minWidth: 48,
+                            textAlign: "right",
+                          }}
+                        >
+                          {val && val.sellPrice > 0 ? `$${val.sellPrice}` : "—"}
+                        </span>
+
+                        {/* Detect confidence tag */}
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: "#4b5563",
+                            flexShrink: 0,
+                            minWidth: 18,
+                            textAlign: "right",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {SHELF_DETECT_LABEL[item.confidence]}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Reasoning callout for selected item */}
+                  {shelfSelectedIndex !== null &&
+                    shelfValuations.get(shelfSelectedIndex)?.reasoning && (
+                      <div
+                        style={{
+                          marginTop: 4,
+                          padding: "10px 12px",
+                          background: "rgba(255,255,255,0.03)",
+                          borderRadius: 6,
+                          fontFamily: "var(--font-body)",
+                          fontSize: 12,
+                          color: "#6b7280",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        <span style={{ color: "#4b5563", marginRight: 6 }}>
+                          #{shelfSelectedIndex + 1}
+                        </span>
+                        {shelfValuations.get(shelfSelectedIndex)!.reasoning}
+                      </div>
+                    )}
+
+                  {/* Retake button at bottom of list */}
+                  <button
+                    onClick={() => setPhase({ kind: "framing" })}
+                    style={{
+                      marginTop: 8,
+                      alignSelf: "center",
+                      padding: "8px 20px",
+                      borderRadius: 8,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#5A4E70",
+                      fontFamily: "var(--font-label)",
+                      fontSize: 10,
+                      letterSpacing: "0.10em",
+                      cursor: "pointer",
+                    }}
+                  >
+                    RETAKE
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Camera feed ─────────────────────────────────────────── */}
         <video
           ref={videoRef}
           playsInline
@@ -571,16 +1134,10 @@ export default function ScanOverlay({
             display: phase.kind === "framing" ? "block" : "none",
             opacity: cameraReady ? 1 : 0,
             transition: "opacity 200ms cubic-bezier(0.16, 1, 0.3, 1)",
-            // Floor at z-index 1 so the gradient backdrop (z 5),
-            // capture button (z 20), and cancel button (z 20) all
-            // sit reliably above the camera feed regardless of how
-            // the browser paints native <video>.
             zIndex: 1,
           }}
         />
 
-        {/* Camera-loading spinner — centered over the (still-black)
-            video element until the stream resolves. */}
         {!cameraReady && phase.kind === "framing" && (
           <div
             style={{
@@ -597,9 +1154,7 @@ export default function ScanOverlay({
           </div>
         )}
 
-        {/* Vignette — radial dim outside the viewfinder so the corner
-            brackets read as the active region. Disabled during non-
-            framing phases (no video showing). */}
+        {/* Vignette */}
         {phase.kind === "framing" && (
           <div
             aria-hidden="true"
@@ -614,11 +1169,65 @@ export default function ScanOverlay({
           />
         )}
 
-        {/* Viewfinder — sized to 86% of viewport width (capped at
-            440px for tablets), 4:3 aspect-ratio. Just corner brackets
-            on top of the full-bleed video — no border, no bg. The
-            zone defines where to point the camera; the dim vignette
-            outside it does the rest of the work. */}
+        {/* ── Mode toggle — BARCODE · ITEM · SHELF ────────────────── */}
+        {phase.kind === "framing" && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(max(16px, env(safe-area-inset-top)) + 8px)",
+              left: 0,
+              right: 0,
+              display: "flex",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                background: "rgba(0,0,0,0.45)",
+                borderRadius: 10,
+                padding: 3,
+                gap: 2,
+              }}
+            >
+              {(
+                [
+                  { key: "barcode", label: "BARCODE" },
+                  { key: "vision", label: "ITEM" },
+                  { key: "shelf", label: "SHELF" },
+                ] as const
+              ).map(({ key, label }) => {
+                const isActive = activeMode === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => switchMode(key)}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 7,
+                      border: "none",
+                      background: isActive
+                        ? "rgba(255,255,255,0.12)"
+                        : "transparent",
+                      color: isActive ? "#e5e7eb" : "#5A4E70",
+                      fontFamily: "var(--font-label)",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.08em",
+                      cursor: "pointer",
+                      transition: "background 150ms ease, color 150ms ease",
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Viewfinder ──────────────────────────────────────────── */}
         <div
           style={{
             position: "relative",
@@ -626,15 +1235,10 @@ export default function ScanOverlay({
             width: "86vw",
             maxWidth: 440,
             aspectRatio: "4 / 3",
-            // Block-flow — the centered flex parent vertically
-            // centers the viewfinder + the phase-specific UI below.
           }}
         >
           {phase.kind === "framing" && (
             <>
-              {/* Corner brackets — bracket arm scaled up so the
-                  L-shape reads as deliberate framing at 300+ px
-                  width. */}
               <CornerBracket
                 corner="tl"
                 color={accent.hex}
@@ -671,16 +1275,12 @@ export default function ScanOverlay({
                   right: "10%",
                   height: 1,
                   background: `linear-gradient(90deg, transparent, ${accent.hex}, transparent)`,
-                  // Layered laser glow — tight inner halo + wider
-                  // soft outer wash so the line reads as a coherent
-                  // light beam, not just a thin gradient. Tuned to
-                  // the global scan-line spec.
                   boxShadow: `0 0 12px rgba(${accent.rgb}, 0.3), 0 0 24px rgba(${accent.rgb}, 0.1)`,
                   animation:
                     "scanLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite",
                 }}
               />
-              {[0.30, 0.20, 0.12].map((startAlpha, i) => (
+              {[0.3, 0.2, 0.12].map((startAlpha, i) => (
                 <div
                   key={i}
                   style={{
@@ -710,9 +1310,7 @@ export default function ScanOverlay({
           )}
         </div>
 
-        {/* Inline error banner — surfaces the latest failure directly under
-            the frame so transient errors (camera/decode/api/network) are
-            never silent. Sits above any phase-specific UI. */}
+        {/* Inline error banner */}
         {inlineError && phase.kind !== "error" && (
           <div
             role="alert"
@@ -730,15 +1328,11 @@ export default function ScanOverlay({
           </div>
         )}
 
-        {/* Phase-specific MIDDLE content — labels / cost input / progress
-            / scan-side error message. Cancel + capture buttons live in
-            the absolute-positioned bottom column at the end of the
-            overlay so they persist across every phase. */}
-        {phase.kind === "framing" && mode === "barcode" && (
+        {/* ── Phase-specific middle content ───────────────────────── */}
+        {phase.kind === "framing" && activeMode === "barcode" && (
           <div
             style={{
               marginTop: 24,
-              // Uppercase mode label — stays mono.
               fontFamily: "var(--font-label)",
               fontSize: 12,
               color: "var(--text-muted)",
@@ -760,7 +1354,6 @@ export default function ScanOverlay({
           >
             <div
               style={{
-                // Uppercase status label — stays mono.
                 fontFamily: "var(--font-label)",
                 fontSize: 11,
                 color: "var(--text-muted)",
@@ -832,7 +1425,6 @@ export default function ScanOverlay({
                     outline: "none",
                     fontFamily: "var(--font-body)",
                     fontWeight: 700,
-                    // 16px minimum — iOS Safari auto-zooms below 16.
                     fontSize: 16,
                     color: "var(--text-primary)",
                     minWidth: 0,
@@ -860,9 +1452,6 @@ export default function ScanOverlay({
                 CHECK
               </button>
             </div>
-            {/* Cancel sits in the absolute bottom column rendered at
-                the end of the overlay — it persists across every
-                phase so the user always has an exit. */}
           </div>
         )}
 
@@ -871,13 +1460,12 @@ export default function ScanOverlay({
             <div
               style={{
                 marginTop: 24,
-                // Uppercase processing label — stays mono.
                 fontFamily: "var(--font-label)",
                 fontSize: 12,
                 color: "var(--text-muted)",
               }}
             >
-              {mode === "barcode" ? "ANALYZING COMPS..." : "AI IDENTIFYING..."}
+              {activeMode === "barcode" ? "ANALYZING COMPS..." : "AI IDENTIFYING..."}
             </div>
             <div
               style={{
@@ -913,7 +1501,6 @@ export default function ScanOverlay({
           >
             <div
               style={{
-                // Uppercase error header — stays mono.
                 fontFamily: "var(--font-label)",
                 fontSize: 11,
                 letterSpacing: "0.10em",
@@ -933,19 +1520,10 @@ export default function ScanOverlay({
             >
               {phase.message}
             </div>
-            {/* Close sits in the absolute bottom column at the end
-                of the overlay (persistent cancel). */}
           </div>
         )}
 
-        {/* Camera-off fallback — shown when the camera couldn't
-            initialize (permission denied, no device, decode error,
-            or play() didn't resolve within 6s). Covers the full
-            overlay area so the broken camera state has its own
-            self-contained UI: icon + message + permissions hint +
-            GO BACK. The outer overlay's #120e18 0.95 background
-            already gives this view its dark surface; we just stack
-            the centered block on top. */}
+        {/* Camera-off fallback */}
         {phase.kind === "cameraError" && (
           <div
             style={{
@@ -981,10 +1559,6 @@ export default function ScanOverlay({
             >
               check permissions in settings
             </div>
-            {/* GO BACK — same CancelButton styling, lives inside
-                this view because the bottom column is suppressed
-                during cameraError (the user has nothing to cancel
-                from the camera flow). */}
             <CancelButton
               onCancel={onCancel}
               label="GO BACK"
@@ -993,34 +1567,27 @@ export default function ScanOverlay({
           </div>
         )}
 
-        {/* Vision-mode bottom gradient — fades the lower 35vh from
-            transparent to near-black so the capture + cancel buttons
-            stay legible against bright/busy camera frames. Sits below
-            the buttons (z 5) and above the video (z 1). Hidden
-            outside framing/vision so other phases don't get a
-            random gradient at their bottom. */}
-        {phase.kind === "framing" && mode === "vision" && (
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: "35vh",
-              background:
-                "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.75) 100%)",
-              zIndex: 5,
-              pointerEvents: "none",
-            }}
-          />
-        )}
+        {/* Bottom gradient — vision / shelf framing only */}
+        {phase.kind === "framing" &&
+          (activeMode === "vision" || activeMode === "shelf") && (
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "35vh",
+                background:
+                  "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.75) 100%)",
+                zIndex: 5,
+                pointerEvents: "none",
+              }}
+            />
+          )}
 
-        {/* Bottom action column — always-on cancel button, plus the
-            vision-mode capture circle + label stacked above it.
-            Suppressed during cameraError (which renders its own
-            GO BACK inside its centered error block). */}
-        {phase.kind !== "cameraError" && (
+        {/* Bottom action column */}
+        {phase.kind !== "cameraError" && !isShelfPhase && (
           <div
             style={{
               position: "absolute",
@@ -1035,25 +1602,26 @@ export default function ScanOverlay({
               zIndex: 20,
             }}
           >
-            {phase.kind === "framing" && mode === "vision" && (
-              <>
-                <CaptureShutter
-                  cameraReady={cameraReady}
-                  onTap={handleCapture}
-                />
-                <div
-                  style={{
-                    fontFamily: "var(--font-label)",
-                    fontSize: 9,
-                    color: "#5A4E70",
-                    letterSpacing: "0.10em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  FRAME THE ITEM
-                </div>
-              </>
-            )}
+            {phase.kind === "framing" &&
+              (activeMode === "vision" || activeMode === "shelf") && (
+                <>
+                  <CaptureShutter
+                    cameraReady={cameraReady}
+                    onTap={handleCapture}
+                  />
+                  <div
+                    style={{
+                      fontFamily: "var(--font-label)",
+                      fontSize: 9,
+                      color: "#5A4E70",
+                      letterSpacing: "0.10em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {activeMode === "shelf" ? "FRAME THE SHELF" : "FRAME THE ITEM"}
+                  </div>
+                </>
+              )}
             <CancelButton onCancel={onCancel} marginTop={0} />
           </div>
         )}
