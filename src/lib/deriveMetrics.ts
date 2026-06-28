@@ -46,13 +46,12 @@ export function deriveMetrics(item: BatchValuation): {
       default:       sellSpeed = "SLOW"; // book
     }
 
-    // Bump: expensive items move slower (more selective buyers)
-    if (estResale >= 40) {
-      if (sellSpeed === "FAST")     sellSpeed = "MODERATE";
-      else if (sellSpeed === "MODERATE") sellSpeed = "SLOW";
+    // Bump: only lots slow down when expensive (figures/cards stay Fast)
+    if (category === "lot" && estResale >= 40) {
+      sellSpeed = "SLOW"; // lots are already MODERATE; bump to SLOW
     }
 
-    // PASS verdict always slow — no point rushing a non-opportunity
+    // PASS verdict always slow
     if (verdict === "PASS") sellSpeed = "SLOW";
 
     // ── 2. Demand by verdict + price ─────────────────────────────
@@ -72,8 +71,8 @@ export function deriveMetrics(item: BatchValuation): {
     } else if (category === "lot" || category === "media") {
       platform = estResale >= 25 ? "Mercari" : "Facebook Local";
     } else {
-      // book or unrecognised
-      platform = "Facebook Local";
+      // book single: decent books ship via Mercari, cheap ones sell local
+      platform = estResale >= 15 ? "Mercari" : "Facebook Local";
     }
 
     // Override: bulky high-value items favour local pickup

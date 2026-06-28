@@ -33,47 +33,55 @@ function item(
 }
 
 const INPUT: BatchValuation[] = [
-  // ── Book singles that form lots after groupSeries ──────────────────────
-  item(0,  "City of Bones (Mortal Instruments)",              3.50),
-  item(1,  "City of Ashes (Mortal Instruments)",              3.50),
-  item(2,  "City of Lost Souls (Mortal Instrum...)",          3.50),
-  item(3,  "City of Heavenly Fire (Mortal In...)",            4.00),
-  item(4,  "City of Fallen Angels (The Mortal ...)",          3.50),
-  item(5,  "City of Glass (The Mortal Instruments)",          3.50),
-  item(6,  "Clockwork Angel (The Infernal Devices)",          4.00),
-  item(7,  "Clockwork Prince (The Infernal Devices)",         4.00),
-  item(8,  "Clockwork Princess (The Infernal Devices)",       4.50),
-  // ── Manga series — "series" triggers lot before "manga" triggers media ─
-  item(9,  "Sailor Moon Manga Series (multiple volumes)",    18.00, "High"),
-  item(10, "Soul Eater Manga Series (multiple volumes)",     15.00, "High"),
-  // ── Funko Pop — figure category ─────────────────────────────────────────
-  item(11, "Killua Zoldyck Funko Pop (Hunter x Hunter)",    12.00, "High",   "MAYBE"),
-  // ── Misc singles — fall through to "book" ────────────────────────────────
-  item(12, "Luffy Bento Box",                                 8.00, "Medium", "MAYBE"),
-  // ── Book singles (PASS) ───────────────────────────────────────────────────
-  item(13, "The Hunger Games",                                3.00, "Low"),
-  item(14, "Catching Fire",                                   3.00, "Low"),
-  item(15, "Mockingjay",                                      3.00, "Low"),
-  item(16, "Harry Potter and the Sorcerer's Stone",           5.00),
-  item(17, "Harry Potter and the Chamber of Secrets",         4.00),
-  item(18, "Harry Potter and the Prisoner of Azkaban",        5.00),
-  item(19, "Harry Potter and the Goblet of Fire",             5.00),
-  // ── Manga volumes — "vol " → lot ──────────────────────────────────────────
-  item(20, "One Piece Vol 1",                                12.00, "High"),
-  item(21, "One Piece Vol 2",                                10.00, "High"),
-  item(22, "One Piece Vol 3",                                12.00, "High"),
-  // ── Household — no category match → "book" ────────────────────────────────
-  item(23, "KitchenAid Mixer (Red)",                         45.00, "High",   "BUY"),
-  // ── "set" in name → lot category ──────────────────────────────────────────
-  item(24, "Vintage Pyrex Bowl Set",                         22.00, "Medium", "BUY"),
-  // ── More household singles ────────────────────────────────────────────────
-  item(25, "LEGO Star Wars Millennium Falcon",               35.00, "High",   "BUY"),
-  item(26, "Nintendo DS Lite (Black)",                       18.00, "High",   "BUY"),
-  item(27, "Random Romance Novel",                            2.00, "Low"),
-  // ── Graded card — card category, price-bump on speed ─────────────────────
-  item(28, "PSA 9 Charizard Holo Pokemon Card",            150.00, "High",   "BUY"),
-  // ── Complete set — lot + bulky override on platform ───────────────────────
-  item(29, "Harry Potter Complete Hardcover Set",            75.00, "High",   "BUY"),
+  // ── Book series: Mortal Instruments (groupSeries lot test) ─────────────────
+  item(0,  "City of Bones (Mortal Instruments)",              3.50),   // book PASS → FB Local
+  item(1,  "City of Ashes (Mortal Instruments)",              3.50),   // book PASS → FB Local
+  item(2,  "City of Lost Souls (Mortal Instrum...)",          3.50),   // book PASS → FB Local
+  item(3,  "City of Heavenly Fire (Mortal In...)",            4.00),   // book PASS → FB Local
+  item(4,  "City of Fallen Angels (The Mortal ...)",          3.50),   // book PASS → FB Local
+  item(5,  "City of Glass (The Mortal Instruments)",          3.50),   // book PASS → FB Local
+
+  // ── Book series: Infernal Devices (groupSeries test) ──────────────────────
+  item(6,  "Clockwork Angel (The Infernal Devices)",          4.00),   // book PASS → FB Local
+  item(7,  "Clockwork Prince (The Infernal Devices)",         4.00),   // book PASS → FB Local
+  item(8,  "Clockwork Princess (The Infernal Devices)",       4.50),   // book PASS → FB Local
+
+  // ── Lots: manga series (≥$25 → Mercari) ───────────────────────────────────
+  item(9,  "Sailor Moon Manga Series (multiple volumes)",    28.00, "High"),  // lot MODERATE → Mercari
+  item(10, "Soul Eater Manga Series (multiple volumes)",     26.00, "High"),  // lot MODERATE → Mercari
+
+  // ── Lots: One Piece volumes (vol → lot, groupSeries test) ─────────────────
+  item(11, "One Piece Vol 1",                                12.00, "High"),  // lot MODERATE → FB Local
+  item(12, "One Piece Vol 2",                                10.00, "High"),  // lot MODERATE → FB Local
+  item(13, "One Piece Vol 3",                                12.00, "High"),  // lot MODERATE → FB Local
+
+  // ── Figures: ≥2 BUY → FAST speed, eBay ───────────────────────────────────
+  item(14, "Killua Zoldyck Funko Pop (Hunter x Hunter)",    18.00, "High", "BUY"),  // figure FAST → eBay
+  item(15, "Naruto Uzumaki Funko Pop #71 (Chase)",          25.00, "High", "BUY"),  // figure FAST → eBay
+
+  // ── Card: PSA grade → FAST regardless of price ────────────────────────────
+  item(16, "PSA 9 Charizard Holo Pokemon Card",            150.00, "High", "BUY"),  // card FAST → eBay
+
+  // ── Book singles: mid-price (≥$15 → Mercari) ──────────────────────────────
+  item(17, "Atomic Habits (hardcover)",                      20.00, "High", "BUY"),  // book SLOW → Mercari
+  item(18, "Where the Crawdads Sing",                        15.00, "High", "BUY"),  // book SLOW → Mercari
+
+  // ── Book singles: cheap (<$15 → Facebook Local) ───────────────────────────
+  item(19, "The Hunger Games",                                4.00, "Low"),           // book PASS → FB Local
+  item(20, "Harry Potter and the Sorcerer's Stone",           5.00),                  // book PASS → FB Local
+
+  // ── Electronics / household (default "book" category) ─────────────────────
+  item(21, "Nintendo DS Lite (Black)",                       18.00, "High", "BUY"),  // book SLOW → Mercari
+  item(22, "KitchenAid Mixer (Red)",                         45.00, "High", "BUY"),  // book SLOW → Mercari
+
+  // ── Lot with "set": mid-price → Mercari ───────────────────────────────────
+  item(23, "Vintage Pyrex Bowl Set",                         28.00, "Medium", "BUY"), // lot MODERATE → Mercari
+
+  // ── Bulky set: lot + "complete" override → Facebook Local ─────────────────
+  item(24, "Harry Potter Complete Hardcover Set",            75.00, "High", "BUY"),   // lot SLOW ($75≥$40) → FB Local
+
+  // ── Figure: MAYBE → MODERATE (non-FAST figure) ────────────────────────────
+  item(25, "Goku DragonBall Z Figure",                       10.00, "High", "MAYBE"), // figure MODERATE → eBay
 ];
 
 console.log(`\n=== INPUT: ${INPUT.length} items ===\n`);
