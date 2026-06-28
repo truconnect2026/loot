@@ -350,6 +350,8 @@ export default function ScanOverlay({
   const [shelfVerdictOpen, setShelfVerdictOpen] = useState(false);
   const [shelfVerdictData, setShelfVerdictData] = useState<VerdictPayload | null>(null);
   const [expandedLots, setExpandedLots] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<"ALL" | "BUY" | "MAYBE" | "PASS">("ALL");
+  const [hasCopied, setHasCopied] = useState(false);
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -390,6 +392,7 @@ export default function ScanOverlay({
     setShelfVerdictOpen(false);
     setShelfVerdictData(null);
     setExpandedLots(new Set());
+    setActiveFilter("ALL");
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -503,6 +506,7 @@ export default function ScanOverlay({
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
     setExpandedLots(new Set());
+    setActiveFilter("ALL");
     shelfRowRefs.current.clear();
     setActiveMode(m);
   };
@@ -539,6 +543,7 @@ export default function ScanOverlay({
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
     setExpandedLots(new Set());
+    setActiveFilter("ALL");
     shelfRowRefs.current.clear();
     setPhase({ kind: "shelf-detecting", capturedImage: image });
 
@@ -727,17 +732,87 @@ export default function ScanOverlay({
   const sortedMain =
     phase.kind === "shelf-done" ? buildSortedRows(shelfValuations) : [];
   const buyMain = sortedMain.filter((v) => v.verdict === "BUY");
-  const heroCount = buyMain.length;
   const heroMaybeCount = sortedMain.filter((v) => v.verdict === "MAYBE").length;
   const heroPassCount = sortedMain.filter((v) => v.verdict === "PASS").length;
   const heroSumLow = Math.round(buyMain.reduce((s, v) => s + v.resaleLow, 0));
   const heroSumHigh = Math.round(buyMain.reduce((s, v) => s + v.resaleHigh, 0));
+
+  // Active-filter headline stats — recompute when chip changes.
+  const activeFilterItems =
+    activeFilter === "ALL" || activeFilter === "BUY"
+      ? buyMain
+      : sortedMain.filter((v) => v.verdict === activeFilter);
+  const headlineCount = activeFilterItems.length;
+  const headlineSumLow = Math.round(
+    activeFilterItems.reduce((s, v) => s + v.resaleLow, 0),
+  );
+  const headlineSumHigh = Math.round(
+    activeFilterItems.reduce((s, v) => s + v.resaleHigh, 0),
+  );
+  const showResaleLine =
+    activeFilter !== "PASS" &&
+    headlineCount > 0 &&
+    (headlineSumLow > 0 || headlineSumHigh > 0);
+
+  // Filtered list — ALL shows every anchor/single; tier chip narrows by verdict.
+  const filteredMain =
+    activeFilter === "ALL"
+      ? sortedMain
+      : sortedMain.filter((v) => v.verdict === activeFilter);
 
   // Dot clusters computed after image renders.
   const dotClusters =
     shelfImgRenderedSize && phase.kind === "shelf-done"
       ? clusterDots(shelfItems, shelfValuations, shelfImgRenderedSize)
       : [];
+
+  const copyHaul = async () => {
+    const buy = sortedMain.filter((v) => v.verdict === "BUY");
+    const maybe = sortedMain.filter((v) => v.verdict === "MAYBE");
+    const stripLot = (name: string) =>
+      name.replace(/\s*\(full set,\s*\d+\s*vols?\)\s*$/i, "");
+    const fmtRange = (v: BatchValuation) =>
+      v.resaleLow > 0 && v.resaleHigh > 0
+        ? `$${v.resaleLow}–$${v.resaleHigh}`
+        : v.estResale > 0
+          ? `$${v.estResale}`
+          : "";
+
+    let text = `LOOT HAUL — ${sortedMain.length} items · ${buy.length} worth grabbing`;
+    if (heroSumLow > 0 || heroSumHigh > 0) {
+      text += `\n~$${heroSumLow}–$${heroSumHigh} resale`;
+    }
+    if (buy.length > 0) {
+      text += "\n\nBUY:";
+      for (const v of buy) {
+        const r = fmtRange(v);
+        text += `\n- ${stripLot(v.name)}${r ? ` · ${r}` : ""}${v.platform ? ` · ${v.platform}` : ""}`;
+      }
+    }
+    if (maybe.length > 0) {
+      text += "\n\nMAYBE:";
+      for (const v of maybe) {
+        const r = fmtRange(v);
+        text += `\n- ${stripLot(v.name)}${r ? ` · ${r}` : ""}`;
+      }
+    }
+    text += "\n\nvia loot.works";
+
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch { /* silent */ }
+      document.body.removeChild(ta);
+    }
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+  };
 
   return (
     <>
@@ -931,58 +1006,155 @@ export default function ScanOverlay({
             {/* Done: headline hero + image with clustered dots + sorted list */}
             {phase.kind === "shelf-done" && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Hero headline */}
+                {/* Hero headline + COPY HAUL + filter chips */}
                 <div style={{ padding: "0 18px 10px", flexShrink: 0 }}>
-                  {heroCount > 0 ? (
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 22,
-                        fontWeight: 700,
-                        color: "#5CE0B8",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {heroCount} worth grabbing
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 20,
-                        fontWeight: 700,
-                        color: "#C8C0D8",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      nothing worth grabbing
-                    </div>
-                  )}
                   <div
                     style={{
-                      fontFamily: "var(--font-label)",
-                      fontSize: 11,
-                      color: "#6b7280",
-                      marginTop: 3,
-                      letterSpacing: "0.04em",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 8,
                     }}
                   >
-                    {heroMaybeCount} maybe · {heroPassCount} pass ·{" "}
-                    {shelfItems.length} items
-                  </div>
-                  {heroCount > 0 && (heroSumLow > 0 || heroSumHigh > 0) && (
-                    <div
+                    <div>
+                      {activeFilter === "MAYBE" ? (
+                        <div
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: "#F5C518",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {headlineCount} maybe
+                        </div>
+                      ) : activeFilter === "PASS" ? (
+                        <div
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: "#6b7280",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {headlineCount} pass
+                        </div>
+                      ) : headlineCount > 0 ? (
+                        <div
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: "#5CE0B8",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {headlineCount} worth grabbing
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: 20,
+                            fontWeight: 700,
+                            color: "#C8C0D8",
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          nothing worth grabbing
+                        </div>
+                      )}
+                      <div
+                        style={{
+                          fontFamily: "var(--font-label)",
+                          fontSize: 11,
+                          color: "#6b7280",
+                          marginTop: 3,
+                          letterSpacing: "0.04em",
+                        }}
+                      >
+                        {heroMaybeCount} maybe · {heroPassCount} pass ·{" "}
+                        {shelfItems.length} items
+                      </div>
+                      {showResaleLine && (
+                        <div
+                          style={{
+                            fontFamily: "var(--font-label)",
+                            fontSize: 10,
+                            color: "#4b5563",
+                            marginTop: 2,
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          ~${headlineSumLow}–${headlineSumHigh} resale
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => void copyHaul()}
                       style={{
-                        fontFamily: "var(--font-label)",
-                        fontSize: 10,
-                        color: "#4b5563",
+                        flexShrink: 0,
                         marginTop: 2,
-                        letterSpacing: "0.04em",
+                        padding: "5px 10px",
+                        borderRadius: 8,
+                        background: hasCopied
+                          ? "rgba(92,224,184,0.15)"
+                          : "rgba(255,255,255,0.05)",
+                        border: hasCopied
+                          ? "1px solid rgba(92,224,184,0.40)"
+                          : "1px solid rgba(255,255,255,0.10)",
+                        color: hasCopied ? "#5CE0B8" : "#5A4E70",
+                        fontFamily: "var(--font-label)",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all 200ms ease",
                       }}
                     >
-                      ~${heroSumLow}–${heroSumHigh} resale
-                    </div>
-                  )}
+                      {hasCopied ? "COPIED ✓" : "COPY HAUL"}
+                    </button>
+                  </div>
+                  {/* Filter chips: ALL · BUY · MAYBE · PASS */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 6,
+                      marginTop: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {(["ALL", "BUY", "MAYBE", "PASS"] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setActiveFilter(f)}
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: 12,
+                          background:
+                            activeFilter === f
+                              ? "#5CE0B8"
+                              : "rgba(255,255,255,0.05)",
+                          border:
+                            activeFilter === f
+                              ? "none"
+                              : "1px solid rgba(255,255,255,0.10)",
+                          color: activeFilter === f ? "#000" : "#6b7280",
+                          fontFamily: "var(--font-label)",
+                          fontSize: 10,
+                          fontWeight: 700,
+                          letterSpacing: "0.06em",
+                          cursor: "pointer",
+                          transition: "all 150ms ease",
+                        }}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Image with clustered verdict dots */}
@@ -1010,6 +1182,12 @@ export default function ScanOverlay({
                       const isSingle = cluster.indices.length === 1;
                       const detIdx = cluster.indices[0];
                       const isSel = isSingle && shelfSelectedIndex === detIdx;
+                      const clusterMatchesFilter =
+                        activeFilter === "ALL" ||
+                        cluster.indices.some((idx) => {
+                          const v = shelfValuations.get(idx);
+                          return v?.verdict === activeFilter;
+                        });
                       return (
                         <button
                           key={ci}
@@ -1071,7 +1249,8 @@ export default function ScanOverlay({
                               ? `0 0 0 3px #fff, 0 0 12px 4px ${cluster.color}`
                               : "0 1px 3px rgba(0,0,0,0.6)",
                             transition:
-                              "background 300ms ease, transform 150ms ease, box-shadow 150ms ease",
+                              "background 300ms ease, transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
+                            opacity: clusterMatchesFilter ? 1 : 0.25,
                             zIndex: isSel ? 10 : 5,
                           }}
                         >
@@ -1090,7 +1269,19 @@ export default function ScanOverlay({
                     gap: 4,
                   }}
                 >
-                  {sortedMain.map((val) => {
+                  {filteredMain.length === 0 ? (
+                    <div
+                      style={{
+                        padding: "24px 0",
+                        textAlign: "center",
+                        fontFamily: "var(--font-body)",
+                        fontSize: 13,
+                        color: "#4b5563",
+                      }}
+                    >
+                      no {activeFilter.toLowerCase()} items
+                    </div>
+                  ) : filteredMain.map((val) => {
                     const detIdx = val.index;
                     const isSel = shelfSelectedIndex === detIdx;
                     const color = SHELF_VERDICT_COLOR[val.verdict];
