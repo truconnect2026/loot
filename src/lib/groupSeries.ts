@@ -77,6 +77,11 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
   try {
     const keys = items.map((it) => seriesKey(it.name ?? ""));
 
+    // Log derived key per item
+    for (let i = 0; i < items.length; i++) {
+      console.log(`[GROUP] "${items[i].name}" -> key=${keys[i] === null ? "null" : `"${keys[i]}"`}`);
+    }
+
     const buckets = new Map<string, number[]>();
     for (let i = 0; i < items.length; i++) {
       const k = keys[i];
@@ -84,6 +89,11 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
       const existing = buckets.get(k);
       if (existing) existing.push(i);
       else buckets.set(k, [i]);
+    }
+
+    // Log each bucket
+    for (const [k, indices] of buckets) {
+      console.log(`[GROUP] bucket "${k}": ${indices.length} items`);
     }
 
     // Only groups of 3+ become lots
@@ -134,6 +144,10 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
         result[i] = { ...result[i], groupId, groupRole: "lot-member" };
       }
     }
+
+    const anchorCount = [...lots.values()].length;
+    const memberCount = [...lots.values()].reduce((s, idx) => s + idx.length - 1, 0);
+    console.log(`[GROUP] anchors=${anchorCount} members=${memberCount}`);
 
     // Reorder: anchors/singles keep original positions; members follow their anchor
     const emitted = new Set<number>();
