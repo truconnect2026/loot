@@ -1,24 +1,27 @@
 import type { BatchValuation } from "./claude";
 
-const SKIP_PARENS = new Set([
-  "set",
-  "box set",
-  "manga",
-  "hardcover",
-  "paperback",
-  "softcover",
-  "omnibus",
-  "collection",
-  "illustrated",
-  "anniversary",
-  "deluxe",
-  "complete series",
-  "series",
-  "graphic novel",
-  "volume",
-  "collector edition",
-  "special edition",
+// Parenthetical content that is NOT a series name.
+// When blocked, we fall through and derive the key from the text before the paren.
+const GENERIC_PAREN_PHRASES = new Set([
+  // generic quantity / format
+  "set", "box set", "complete", "complete set", "collection", "omnibus",
+  "multiple", "multiple volumes",
+  // format/edition
+  "manga", "hardcover", "paperback", "softcover", "graphic novel",
+  "illustrated", "anniversary", "deluxe", "series", "complete series",
+  "collector edition", "special edition", "volume", "vol",
+  // subject descriptors
+  "anime", "anime character",
+  // bare color words
+  "red", "black", "blue", "white", "green", "pink", "purple", "gold", "silver",
 ]);
+
+function isGenericParenContent(norm: string): boolean {
+  if (GENERIC_PAREN_PHRASES.has(norm)) return true;
+  // "vol N", "volume N", "book N" with trailing number
+  if (/^(?:vol(?:ume)?|book)\s*\d+$/.test(norm)) return true;
+  return false;
+}
 
 function normalizeKey(s: string): string {
   return s
@@ -29,37 +32,83 @@ function normalizeKey(s: string): string {
     .replace(/^the /, "");
 }
 
-function seriesKey(name: string): string | null {
-  // Rule 1: Parenthetical series tag — "Title (Series Name)"
-  const parenMatch = name.match(/^.+\(([^)]+)\)\s*$/);
-  if (parenMatch) {
-    const inner = parenMatch[1].trim();
-    const norm = normalizeKey(inner);
-    if (norm.length > 0 && !SKIP_PARENS.has(norm)) return norm;
-  }
+// Strip "..." or "…" and any content between it and the next ")" or end of string.
+// e.g. "(Mortal Instrum...)" → "(Mortal Instrum)" so the paren closes cleanly.
+function stripTruncation(name: string): string {
+  return name.replace(/(?:\.{3}|…)[^)]*(\)|$)/g, "$1").trim();
+}
 
-  // Rule 2: "<Series> Vol/Volume/Book/# N"
-  const volMatch = name.match(/^(.+?)\s+(?:vol(?:ume)?|book|#)\s*\.?\s*\d+/i);
+// Derive key from a plain text string (no parens) using Vol/Series/Set rules.
+function keyFromBase(text: string): string | null {
+  // "Series Vol N" / "Book N" / "# N"
+  const volMatch = text.match(/^(.+?)\s+(?:vol(?:ume)?|book|#)\s*\.?\s*\d+/i);
   if (volMatch) {
     const k = normalizeKey(volMatch[1]);
     if (k.length >= 2) return k;
   }
-
-  // Rule 3: name ends with "Manga Series" or "Series"
-  const seriesEndMatch = name.match(/^(.+?)\s+(?:manga\s+)?series\s*$/i);
-  if (seriesEndMatch) {
-    const k = normalizeKey(seriesEndMatch[1]);
+  // Ends with "Manga Series" or "Series"
+  const seriesMatch = text.match(/^(.+?)\s+(?:manga\s+)?series\s*$/i);
+  if (seriesMatch) {
+    const k = normalizeKey(seriesMatch[1]);
     if (k.length >= 2) return k;
   }
-
-  // Rule 4: name ends with "(set)"
-  const setEndMatch = name.match(/^(.+?)\s+\(set\)\s*$/i);
-  if (setEndMatch) {
-    const k = normalizeKey(setEndMatch[1]);
+  // Ends with "(set)"
+  const setMatch = text.match(/^(.+?)\s+\(set\)\s*$/i);
+  if (setMatch) {
+    const k = normalizeKey(setMatch[1]);
     if (k.length >= 2) return k;
   }
-
   return null;
+}
+
+function seriesKey(rawName: string): string | null {
+  const name = stripTruncation(rawName);
+
+  // Rule 1: Parenthetical — "Title (Series Name)"
+  const parenMatch = name.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  if (parenMatch) {
+    const beforeParen = parenMatch[1].trim();
+    const inner = parenMatch[2].trim();
+    const norm = normalizeKey(inner);
+
+    if (norm.length > 0 && !isGenericParenContent(norm)) {
+      return norm; // paren is a real series tag
+    }
+    // Paren is generic — derive from text before the paren
+    const fromBase = keyFromBase(beforeParen);
+    if (fromBase !== null) return fromBase;
+    // Fall through to rules on the full name
+  }
+
+  // Rules 2-4 on the full truncation-stripped name
+  return keyFromBase(name);
+}
+
+// Merge shorter keys that are pure prefixes of longer keys into the longer key.
+// Minimum prefix length: 4 chars. Prevents short stop-words from over-merging.
+function foldPrefixKeys(buckets: Map<string, number[]>): void {
+  // Sort longest-first so longer keys are always at lower indices
+  const keys = [...buckets.keys()].sort((a, b) => b.length - a.length);
+
+  // Iterate from shortest (end) toward longest (start)
+  for (let i = keys.length - 1; i >= 0; i--) {
+    const shorter = keys[i];
+    if (shorter.length < 4) continue;
+    if (!buckets.has(shorter)) continue; // already merged in a prior step
+
+    for (let j = 0; j < i; j++) {
+      const longer = keys[j];
+      if (!buckets.has(longer)) continue;
+      if (longer.startsWith(shorter)) {
+        // shorter is a character-level prefix of longer — merge
+        const shortItems = buckets.get(shorter)!;
+        const longItems = buckets.get(longer)!;
+        for (const idx of shortItems) longItems.push(idx);
+        buckets.delete(shorter);
+        break;
+      }
+    }
+  }
 }
 
 function median(values: number[]): number {
@@ -79,7 +128,9 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
 
     // Log derived key per item
     for (let i = 0; i < items.length; i++) {
-      console.log(`[GROUP] "${items[i].name}" -> key=${keys[i] === null ? "null" : `"${keys[i]}"`}`);
+      console.log(
+        `[GROUP] "${items[i].name}" -> key=${keys[i] === null ? "null" : `"${keys[i]}"`}`,
+      );
     }
 
     const buckets = new Map<string, number[]>();
@@ -91,7 +142,10 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
       else buckets.set(k, [i]);
     }
 
-    // Log each bucket
+    // Fold prefix keys (e.g. "mortal in" → "mortal instruments")
+    foldPrefixKeys(buckets);
+
+    // Log each bucket after folding
     for (const [k, indices] of buckets) {
       console.log(`[GROUP] bucket "${k}": ${indices.length} items`);
     }
@@ -157,7 +211,7 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
       if (emitted.has(i)) continue;
       const item = result[i];
 
-      if (item.groupRole === "lot-member") continue; // emitted with anchor
+      if (item.groupRole === "lot-member") continue; // will be emitted with anchor
 
       emitted.add(i);
       ordered.push(item);
