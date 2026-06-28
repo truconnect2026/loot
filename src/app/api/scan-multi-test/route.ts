@@ -1,8 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { identifyMultiFromImage, type MultiDetectItem } from "@/lib/claude";
+import { identifyMultiFromImage, getVerdict } from "@/lib/claude";
+
+export interface ScanMultiTestItem {
+  name: string;
+  brand: string;
+  category: string;
+  bbox: [number, number, number, number];
+  detectConfidence: "high" | "medium" | "low";
+  verdict: "BUY" | "PASS" | "MAYBE";
+  sellPrice: number;
+  reasoning: string;
+}
 
 export interface ScanMultiTestResponse {
-  items: MultiDetectItem[];
+  items: ScanMultiTestItem[];
 }
 
 export async function POST(
@@ -23,12 +34,43 @@ export async function POST(
     );
   }
 
+  let detected;
   try {
-    const items = await identifyMultiFromImage(image);
-    return NextResponse.json({ items });
+    detected = await identifyMultiFromImage(image);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Detection failed";
-    console.error("scan-multi-test error:", err);
+    console.error("scan-multi-test detection error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  // Run all valuations in parallel; a single failure doesn't abort the batch.
+  const verdicts = await Promise.all(
+    detected.map(async (item) => {
+      try {
+        return await getVerdict({
+          itemName: item.name,
+          cost: 0,
+          imageDescription: item.category || undefined,
+        });
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  const items: ScanMultiTestItem[] = detected.map((item, idx) => {
+    const v = verdicts[idx];
+    return {
+      name: item.name,
+      brand: item.brand,
+      category: item.category,
+      bbox: item.bbox,
+      detectConfidence: item.confidence,
+      verdict: v?.verdict ?? "MAYBE",
+      sellPrice: v?.sellPrice ?? 0,
+      reasoning: v?.reasoning ?? "",
+    };
+  });
+
+  return NextResponse.json({ items });
 }
