@@ -19,6 +19,34 @@ const DETECT_LABEL: Record<MultiDetectItem["confidence"], string> = {
 
 const DOT_GRAY = "#4b5563";
 
+async function toJpegDataUrl(file: File, maxDim = 1600): Promise<string> {
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = dataUrl;
+  });
+  let { width, height } = img;
+  if (Math.max(width, height) > maxDim) {
+    const scale = maxDim / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("no canvas context");
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
 export default function ScanMultiTestPage() {
   const imgRef = useRef<HTMLImageElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -40,67 +68,76 @@ export default function ScanMultiTestPage() {
     setErrorMsg(null);
     setImgRenderedSize(null);
     setSelectedIndex(null);
+    setStatus("detecting");
 
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImgSrc(dataUrl);
-      setStatus("detecting");
+    // Re-encode to JPEG on the client: normalises format (HEIC, PNG, WebP →
+    // JPEG) and downscales large phone photos so the upload is fast and the
+    // Anthropic API always receives a declared type it accepts.
+    let jpeg: string;
+    try {
+      jpeg = await toJpegDataUrl(file);
+    } catch {
+      setErrorMsg(
+        "couldn't read that image format — try a JPEG or screenshot",
+      );
+      setStatus("error");
+      return;
+    }
 
-      // Stage 1: detect
-      let detected: MultiDetectItem[] = [];
-      try {
-        const res = await fetch("/api/scan-multi-test/detect", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: dataUrl }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Detection failed");
-        detected = json.items ?? [];
-        setDetectedItems(detected);
-      } catch (err) {
-        setErrorMsg(
-          `Detection failed: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        setStatus("error");
-        return;
-      }
+    setImgSrc(jpeg);
 
-      if (detected.length === 0) {
-        setStatus("done");
-        return;
-      }
+    // Stage 1: detect
+    let detected: MultiDetectItem[] = [];
+    try {
+      const res = await fetch("/api/scan-multi-test/detect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: jpeg }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Detection failed");
+      detected = json.items ?? [];
+      setDetectedItems(detected);
+    } catch (err) {
+      setErrorMsg(
+        `Detection failed: ${err instanceof Error ? err.message : "unknown"}`,
+      );
+      setStatus("error");
+      return;
+    }
 
-      // Stage 2: value
-      setStatus("valuing");
-      try {
-        const res = await fetch("/api/scan-multi-test/value", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: detected.map((it, i) => ({
-              index: i,
-              name: it.name,
-              category: it.category,
-            })),
-          }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Valuation failed");
-        const vals: BatchValuation[] = json.valuations ?? [];
-        const map = new Map<number, BatchValuation>();
-        for (const v of vals) map.set(v.index, v);
-        setValuations(map);
-        setStatus("done");
-      } catch (err) {
-        setErrorMsg(
-          `Valuation failed: ${err instanceof Error ? err.message : "unknown"}`,
-        );
-        setStatus("error");
-      }
-    };
-    reader.readAsDataURL(file);
+    if (detected.length === 0) {
+      setStatus("done");
+      return;
+    }
+
+    // Stage 2: value
+    setStatus("valuing");
+    try {
+      const res = await fetch("/api/scan-multi-test/value", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: detected.map((it, i) => ({
+            index: i,
+            name: it.name,
+            category: it.category,
+          })),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Valuation failed");
+      const vals: BatchValuation[] = json.valuations ?? [];
+      const map = new Map<number, BatchValuation>();
+      for (const v of vals) map.set(v.index, v);
+      setValuations(map);
+      setStatus("done");
+    } catch (err) {
+      setErrorMsg(
+        `Valuation failed: ${err instanceof Error ? err.message : "unknown"}`,
+      );
+      setStatus("error");
+    }
   }
 
   function onImgLoad() {
@@ -240,7 +277,8 @@ export default function ScanMultiTestPage() {
                     boxShadow: isSelected
                       ? `0 0 0 3px #fff, 0 0 12px 4px ${color}`
                       : "0 1px 3px rgba(0,0,0,0.6)",
-                    transition: "background 300ms ease, transform 150ms ease, box-shadow 150ms ease",
+                    transition:
+                      "background 300ms ease, transform 150ms ease, box-shadow 150ms ease",
                     zIndex: isSelected ? 10 : 5,
                   }}
                 >
@@ -331,11 +369,7 @@ export default function ScanMultiTestPage() {
                   ) : (
                     <span
                       className={status === "valuing" ? "pulse" : undefined}
-                      style={{
-                        fontSize: 10,
-                        color: "#4b5563",
-                        flexShrink: 0,
-                      }}
+                      style={{ fontSize: 10, color: "#4b5563", flexShrink: 0 }}
                     >
                       …
                     </span>

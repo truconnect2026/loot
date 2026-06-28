@@ -253,8 +253,13 @@ export interface VisionIdentifyResult {
 export async function identifyFromImage(
   imageBase64: string
 ): Promise<VisionIdentifyResult> {
-  // Strip data URI prefix if present.
+  const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+  const detectedType = mimeMatch ? mimeMatch[1] : "image/jpeg";
   const stripped = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const media_type = (
+    allowed.includes(detectedType) ? detectedType : "image/jpeg"
+  ) as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
   const message = await getClient().messages.create({
     model: SONNET,
@@ -268,7 +273,7 @@ export async function identifyFromImage(
             type: "image",
             source: {
               type: "base64",
-              media_type: "image/jpeg",
+              media_type,
               data: stripped,
             },
           },
@@ -321,7 +326,13 @@ export interface MultiDetectItem {
 export async function identifyMultiFromImage(
   imageBase64: string,
 ): Promise<MultiDetectItem[]> {
+  const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+  const detectedType = mimeMatch ? mimeMatch[1] : "image/jpeg";
   const stripped = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const media_type = (
+    allowed.includes(detectedType) ? detectedType : "image/jpeg"
+  ) as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
 
   const message = await getClient().messages.create({
     model: SONNET,
@@ -335,7 +346,7 @@ export async function identifyMultiFromImage(
             type: "image",
             source: {
               type: "base64",
-              media_type: "image/jpeg",
+              media_type,
               data: stripped,
             },
           },
