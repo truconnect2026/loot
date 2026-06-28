@@ -294,6 +294,98 @@ export async function identifyFromImage(
   };
 }
 
+const MULTI_DETECT_SYSTEM = `You are identifying resellable items in a photo of a shelf, table, or box — typically books, but also media, games, and brand-name goods. Find EVERY distinct item you can identify, including books shown spine-only.
+
+For each item return its bounding box as normalized coordinates (0.0–1.0) relative to image width/height: x,y = top-left corner, w,h = width/height.
+
+Give an honest confidence for how sure you are of the IDENTIFICATION (reading the spine/cover correctly):
+- "high": text clearly legible, confident in title
+- "medium": partially legible or inferred
+- "low": barely readable, best guess
+
+Respond with ONLY a JSON array, no markdown, no prose:
+[
+  { "name": "string", "brand": "string", "category": "string",
+    "bbox": [x, y, w, h], "confidence": "high"|"medium"|"low" }
+]
+If you can find no identifiable items, return [].`;
+
+export interface MultiDetectItem {
+  name: string;
+  brand: string;
+  category: string;
+  bbox: [number, number, number, number];
+  confidence: "high" | "medium" | "low";
+}
+
+export async function identifyMultiFromImage(
+  imageBase64: string,
+): Promise<MultiDetectItem[]> {
+  const stripped = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+
+  const message = await getClient().messages.create({
+    model: SONNET,
+    max_tokens: 2048,
+    system: MULTI_DETECT_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: "image/jpeg",
+              data: stripped,
+            },
+          },
+          {
+            type: "text",
+            text: "Identify every resellable item with bounding boxes.",
+          },
+        ],
+      },
+    ],
+  });
+
+  const text = extractText(message);
+  let rawItems: unknown[] = [];
+  try {
+    const parsed = parseFeedJson(text);
+    rawItems = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    rawItems = [];
+  }
+
+  return rawItems
+    .map((it) => {
+      const obj = (it ?? {}) as Record<string, unknown>;
+      const bboxRaw = obj.bbox;
+      const bbox: [number, number, number, number] =
+        Array.isArray(bboxRaw) && bboxRaw.length >= 4
+          ? [
+              Math.max(0, Math.min(1, Number(bboxRaw[0]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[1]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[2]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[3]))),
+            ]
+          : [0, 0, 0, 0];
+      const confRaw = obj.confidence;
+      const confidence: MultiDetectItem["confidence"] =
+        confRaw === "high" || confRaw === "medium" || confRaw === "low"
+          ? confRaw
+          : "low";
+      return {
+        name: String(obj.name ?? "Unknown"),
+        brand: String(obj.brand ?? ""),
+        category: String(obj.category ?? ""),
+        bbox,
+        confidence,
+      };
+    })
+    .filter((item) => item.bbox[2] > 0 && item.bbox[3] > 0);
+}
+
 const LISTING_SYSTEM = `You write Facebook Marketplace listings that sell fast. Given an item and target price, produce an optimized title and description.
 
 Title rules:
