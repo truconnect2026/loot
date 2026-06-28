@@ -336,7 +336,7 @@ export async function identifyMultiFromImage(
 
   const message = await getClient().messages.create({
     model: SONNET,
-    max_tokens: 2048,
+    max_tokens: 8192,
     system: MULTI_DETECT_SYSTEM,
     messages: [
       {
@@ -414,7 +414,7 @@ export async function identifyMultiFromImageDebug(imageBase64: string): Promise<
 
   const message = await getClient().messages.create({
     model: SONNET,
-    max_tokens: 2048,
+    max_tokens: 8192,
     system: MULTI_DETECT_SYSTEM,
     messages: [
       {
@@ -1341,22 +1341,35 @@ async function callFeedToolWithSearch(
 }
 
 function parseFeedJson(raw: string): unknown {
-  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = (fenced ? fenced[1] : raw).trim();
+  // Strip markdown code fences — handles both closed fences and truncated
+  // responses where the closing ``` is missing.
+  let cleaned = raw.trim();
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
   // Try array first, then object.
-  const arrStart = candidate.indexOf("[");
-  const arrEnd = candidate.lastIndexOf("]");
+  const arrStart = cleaned.indexOf("[");
+  const arrEnd = cleaned.lastIndexOf("]");
   if (arrStart !== -1 && arrEnd > arrStart) {
     try {
-      return JSON.parse(candidate.slice(arrStart, arrEnd + 1));
+      return JSON.parse(cleaned.slice(arrStart, arrEnd + 1));
     } catch {
-      /* fall through */
+      // Truncated array — salvage by trimming back to the last complete
+      // object and closing the array.
+      const partial = cleaned.slice(arrStart);
+      const lastBrace = partial.lastIndexOf("}");
+      if (lastBrace !== -1) {
+        try {
+          return JSON.parse(partial.slice(0, lastBrace + 1) + "]");
+        } catch {
+          /* fall through */
+        }
+      }
     }
   }
-  const objStart = candidate.indexOf("{");
-  const objEnd = candidate.lastIndexOf("}");
+  const objStart = cleaned.indexOf("{");
+  const objEnd = cleaned.lastIndexOf("}");
   if (objStart !== -1 && objEnd > objStart) {
-    return JSON.parse(candidate.slice(objStart, objEnd + 1));
+    return JSON.parse(cleaned.slice(objStart, objEnd + 1));
   }
   throw new Error(`No JSON in feed response: ${raw.slice(0, 200)}`);
 }
