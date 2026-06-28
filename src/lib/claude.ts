@@ -552,6 +552,26 @@ NO SPLIT VERDICTS: within one series group, every member must share the same gro
 - Near-duplicates (same item detected twice) → group them, redundant one is "lot-member".
 - Standalone titles with no series match: groupId null, groupRole "single".
 
+=== TASK 4: METRIC SPREAD — be specific to the item, never default ===
+- sellSpeed and demand must reflect the ACTUAL item, not a safe fallback.
+  FAST (<7 days): only genuinely fast-moving items — hyped anime figures, graded cards, trending collectibles, sought discontinued toys. A small minority on any thrift shelf.
+  MODERATE (7-30 days): most viable resale items. Decent electronics, mid-demand manga, name-brand kitchenware, working appliances.
+  SLOW (30+ days): common mass-market novels, niche or seasonal-out-of-season items, oversaturated categories (basic board games, random housewares).
+- High demand = deep active buyer pool. Mass-market books, common housewares, and basic clothing are Medium or Low — not High.
+- A realistic scan produces a SPREAD across speeds and demand tiers. If more than half your items are FAST AND High, you are defaulting — re-examine each item independently.
+- platform must match the item type. Do NOT default everything to eBay:
+  - Trading cards, graded items, niche collectibles, sought anime figures → eBay
+  - Heavy/bulky items, large furniture, large appliance lots → Facebook Local
+  - Current trend items, modern Funko Pops, general collectibles → eBay or Mercari
+  - Books, DVDs, games, and media bundles → Mercari or Facebook Shipped
+  - Clothing, shoes, accessories → Poshmark
+
+=== TASK 5: TIGHT PRICE BANDS ===
+- resaleHigh MUST be <= 1.6× resaleLow. No exceptions.
+- A band like $8–$18 (2.25×) is useless — it tells the reseller nothing. Tighten toward the conservative end when uncertain.
+- estResale must sit inside [resaleLow, resaleHigh], near the midpoint.
+- Correct: estResale=$12 → low=$10, high=$15. Wrong: estResale=$12 → low=$8, high=$18.
+
 Return ALL ${items.length} input indices. Do not skip any.`;
 
   const message = await getClient().messages.create({

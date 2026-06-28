@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { valuateBatch, type BatchValuation } from "@/lib/claude";
+import { normalizeMetrics } from "@/lib/normalizeMetrics";
 import { groupSeries } from "@/lib/groupSeries";
 
 export interface ValueResponse {
@@ -36,7 +37,8 @@ export async function POST(
 
   try {
     const valuations = await valuateBatch(items);
-    const grouped = groupSeries(valuations);
+    const normalized = normalizeMetrics(valuations);
+    const grouped = groupSeries(normalized);
     const buyCount = grouped.filter((v) => v.verdict === "BUY").length;
     const maybeCount = grouped.filter((v) => v.verdict === "MAYBE").length;
     const passCount = grouped.filter((v) => v.verdict === "PASS").length;
