@@ -95,7 +95,7 @@ export default function ScanMultiTestPage() {
     // Stage 1: detect
     let detected: MultiDetectItem[] = [];
     try {
-      const res = await fetch("/api/scan-multi-test/detect", {
+      const res = await fetch("/api/scan-multi/detect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: jpeg }),
@@ -124,7 +124,7 @@ export default function ScanMultiTestPage() {
     // Stage 2: value
     setStatus("valuing");
     try {
-      const res = await fetch("/api/scan-multi-test/value", {
+      const res = await fetch("/api/scan-multi/value", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

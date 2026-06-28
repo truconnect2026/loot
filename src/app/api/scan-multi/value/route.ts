@@ -28,7 +28,7 @@ export async function POST(
     return NextResponse.json({ valuations });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Valuation failed";
-    console.error("scan-multi-test/value error:", err);
+    console.error("scan-multi/value error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -463,7 +463,7 @@ export default function ScanOverlay({
   };
 
   // Two-stage shelf scan: detect → value.
-  // Reuses /api/scan-multi-test/detect and /api/scan-multi-test/value unchanged.
+  // Reuses /api/scan-multi/detect and /api/scan-multi/value unchanged.
   const handleShelfCapture = async (image: string) => {
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
@@ -472,7 +472,7 @@ export default function ScanOverlay({
 
     let items: MultiDetectItem[] = [];
     try {
-      const res = await fetch("/api/scan-multi-test/detect", {
+      const res = await fetch("/api/scan-multi/detect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image }),
@@ -496,7 +496,7 @@ export default function ScanOverlay({
     setPhase({ kind: "shelf-valuing", capturedImage: image, items });
 
     try {
-      const res = await fetch("/api/scan-multi-test/value", {
+      const res = await fetch("/api/scan-multi/value", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

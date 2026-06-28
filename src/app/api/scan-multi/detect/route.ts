@@ -32,7 +32,7 @@ export async function POST(
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Detection failed";
-    console.error("scan-multi-test/detect error:", err);
+    console.error("scan-multi/detect error:", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
