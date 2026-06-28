@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { valuateBatch, type BatchValuation } from "@/lib/claude";
+import { groupSeries } from "@/lib/groupSeries";
 
 export interface ValueResponse {
   valuations: BatchValuation[];
@@ -11,6 +12,7 @@ export interface ValueResponse {
     passCount: number;
     verifyCount: number;
     groupCount: number;
+    lotMemberCount: number;
   };
 }
 
@@ -34,23 +36,24 @@ export async function POST(
 
   try {
     const valuations = await valuateBatch(items);
-    const buyCount = valuations.filter((v) => v.verdict === "BUY").length;
-    const maybeCount = valuations.filter((v) => v.verdict === "MAYBE").length;
-    const passCount = valuations.filter((v) => v.verdict === "PASS").length;
-    const verifyCount = valuations.filter((v) => v.needsVerify).length;
-    const groupIds = new Set(
-      valuations.map((v) => v.groupId).filter((g): g is string => g !== null),
-    );
+    const grouped = groupSeries(valuations);
+    const buyCount = grouped.filter((v) => v.verdict === "BUY").length;
+    const maybeCount = grouped.filter((v) => v.verdict === "MAYBE").length;
+    const passCount = grouped.filter((v) => v.verdict === "PASS").length;
+    const verifyCount = grouped.filter((v) => v.needsVerify).length;
+    const anchors = grouped.filter((v) => v.groupRole === "lot-anchor");
+    const lotMemberCount = grouped.filter((v) => v.groupRole === "lot-member").length;
     return NextResponse.json({
-      valuations,
+      valuations: grouped,
       _debug: {
         inputCount: items.length,
-        valuedCount: valuations.length,
+        valuedCount: grouped.length,
         buyCount,
         maybeCount,
         passCount,
         verifyCount,
-        groupCount: groupIds.size,
+        groupCount: anchors.length,
+        lotMemberCount,
       },
     });
   } catch (err) {

@@ -475,6 +475,7 @@ export async function identifyMultiFromImageDebug(imageBase64: string): Promise<
 
 export interface BatchValuation {
   index: number;
+  name: string;
   verdict: "BUY" | "PASS" | "MAYBE";
   sellPrice: number;
   sellSpeed: "FAST" | "MODERATE" | "SLOW";
@@ -570,6 +571,7 @@ Return ALL ${items.length} input indices. Do not skip any.`;
     );
   }
 
+  const nameMap = new Map(items.map((it) => [it.index, it.name]));
   const byIndex = new Map<number, BatchValuation>();
   for (const raw of arr) {
     const o = (raw ?? {}) as Record<string, unknown>;
@@ -601,6 +603,7 @@ Return ALL ${items.length} input indices. Do not skip any.`;
         : null;
     byIndex.set(idx, {
       index: idx,
+      name: nameMap.get(idx) ?? "",
       verdict,
       estResale,
       resaleLow: Math.max(0, Number(o.resaleLow ?? 0)),
@@ -625,6 +628,7 @@ Return ALL ${items.length} input indices. Do not skip any.`;
     (it) =>
       byIndex.get(it.index) ?? {
         index: it.index,
+        name: it.name,
         verdict: "MAYBE" as const,
         estResale: 0,
         resaleLow: 0,
