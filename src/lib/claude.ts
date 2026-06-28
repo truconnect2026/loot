@@ -479,6 +479,16 @@ export interface BatchValuation {
   sellPrice: number;
   sellSpeed: "FAST" | "MODERATE" | "SLOW";
   reasoning: string;
+  estResale: number;
+  resaleLow: number;
+  resaleHigh: number;
+  daysToSell: string;
+  demand: "High" | "Medium" | "Low";
+  platform: string;
+  idConfidence: "high" | "medium" | "low";
+  needsVerify: boolean;
+  groupId: string | null;
+  groupRole: "single" | "lot-anchor" | "lot-member";
 }
 
 export async function valuateBatch(
@@ -489,19 +499,49 @@ export async function valuateBatch(
     .map((it) => `${it.index}. ${it.name} (${it.category})`)
     .join("\n");
 
-  const system = `You are a resale arbitrage expert. For EACH numbered item, give a fast flip verdict assuming it's found cheap at a thrift store. Respond with ONLY a JSON array, no markdown, no prose. One object per input item, echoing its index:
-[
-  { "index": number (echo the item's number),
-    "verdict": "BUY" | "PASS" | "MAYBE",
-    "sellPrice": number (realistic resale in USD),
-    "sellSpeed": "FAST" | "MODERATE" | "SLOW",
-    "reasoning": "max 8 words" }
-]
-Verdict rule: BUY if it reliably resells for $15+ or is sought-after; MAYBE if $5-15 or slow; PASS if under $5 or hard to move. Return one object for EVERY index, in order. Do not skip any.`;
+  const system = `You are a resale arbitrage expert. For EACH numbered item (assumed found at a thrift store), analyze resale potential. Return a strict JSON array — no markdown, no code fences, no prose. One object per input item, in index order.
+
+Required fields per object:
+{
+  "index": number (echo exactly),
+  "estResale": number (realistic USD resale on best platform),
+  "resaleLow": number (conservative range floor),
+  "resaleHigh": number (optimistic range ceiling),
+  "sellPrice": number (same value as estResale — kept for compatibility),
+  "sellSpeed": "FAST" | "MODERATE" | "SLOW",
+  "daysToSell": string (e.g. "~3 days", "1-2 weeks", "2-4 weeks", "1-3 months"),
+  "demand": "High" | "Medium" | "Low",
+  "platform": string (single best platform: "Facebook Local", "eBay", "Poshmark", "Mercari", or "Facebook Shipped"),
+  "idConfidence": "high" | "medium" | "low" (confidence the name is correct — judge from name specificity, independent of detect confidence),
+  "needsVerify": boolean (true if name contains "/" or hedging words like "likely"/"possibly"/"maybe", or blends two titles),
+  "groupId": string or null (shared label for items in the same lot or near-duplicates; null for standalone),
+  "groupRole": "single" | "lot-anchor" | "lot-member",
+  "verdict": "BUY" | "PASS" | "MAYBE",
+  "reasoning": string (max 10 words)
+}
+
+=== TASK 1: METRICS — be conservative and honest, use SOLD prices not listing prices ===
+- Single mass-market paperback: $1-5 typical resale. Common hardcover: $3-8.
+- Common household items, basic clothing, oversaturated categories: often near-zero resale value.
+- estResale is your best point estimate. resaleLow/resaleHigh bracket the realistic range.
+
+=== TASK 2: CALIBRATED VERDICT — use the FULL range, PASS is expected and correct ===
+- BUY: estResale >= $15 AND demand High AND sellSpeed FAST or MODERATE.
+- MAYBE: estResale $8-14, or demand Medium, or MODERATE speed with decent demand.
+- PASS: estResale < $8 OR (SLOW AND Low/Medium demand) OR item unlikely to sell locally.
+- A typical thrift shelf WILL have multiple PASS verdicts. Zero PASS across many common items is a calibration error — fix it.
+- Single common novel volumes (romance, thriller, YA, mass-market series): almost always PASS. Single volumes net under $5 after listing time. Do NOT mark every book BUY.
+
+=== TASK 3: GROUPING ===
+- Multiple volumes of the SAME series on the shelf → assign a shared groupId (e.g. "series-harry-potter"). Mark ONE as groupRole "lot-anchor" with estResale = the realistic LOT set price. Mark the others as "lot-member" with their individual estResale.
+- Near-duplicates (same item detected twice) → group them, redundant one is "lot-member".
+- Standalone items: groupId null, groupRole "single".
+
+Return ALL ${items.length} input indices. Do not skip any.`;
 
   const message = await getClient().messages.create({
     model: HAIKU,
-    max_tokens: 4096,
+    max_tokens: 8192,
     temperature: 0.2,
     system,
     messages: [{ role: "user", content: list }],
@@ -510,30 +550,80 @@ Verdict rule: BUY if it reliably resells for $15+ or is sought-after; MAYBE if $
   const parsed = parseFeedJson(text);
   const arr = Array.isArray(parsed) ? parsed : [];
 
+  if (arr.length < items.length) {
+    console.warn(
+      `[BATCH-VALUE] truncated: got ${arr.length} of ${items.length} items`,
+    );
+  }
+
   const byIndex = new Map<number, BatchValuation>();
   for (const raw of arr) {
     const o = (raw ?? {}) as Record<string, unknown>;
     const idx = Number(o.index);
     if (!Number.isFinite(idx)) continue;
     const v = o.verdict;
+    const verdict: "BUY" | "PASS" | "MAYBE" =
+      v === "BUY" || v === "PASS" || v === "MAYBE" ? v : "MAYBE";
+    const estResale = Math.max(0, Number(o.estResale ?? o.sellPrice ?? 0));
+    const demandRaw = o.demand;
+    const demand: "High" | "Medium" | "Low" =
+      demandRaw === "High" || demandRaw === "Medium" || demandRaw === "Low"
+        ? demandRaw
+        : "Medium";
+    const idConfRaw = o.idConfidence;
+    const idConfidence: "high" | "medium" | "low" =
+      idConfRaw === "high" || idConfRaw === "medium" || idConfRaw === "low"
+        ? idConfRaw
+        : "medium";
+    const groupRoleRaw = o.groupRole;
+    const groupRole: "single" | "lot-anchor" | "lot-member" =
+      groupRoleRaw === "lot-anchor" || groupRoleRaw === "lot-member"
+        ? groupRoleRaw
+        : "single";
+    const groupIdRaw = o.groupId;
+    const groupId: string | null =
+      typeof groupIdRaw === "string" && groupIdRaw.length > 0
+        ? groupIdRaw
+        : null;
     byIndex.set(idx, {
       index: idx,
-      verdict: v === "BUY" || v === "PASS" ? v : "MAYBE",
-      sellPrice: Math.max(0, Number(o.sellPrice ?? 0)),
-      sellSpeed:
-        o.sellSpeed === "FAST" || o.sellSpeed === "SLOW"
-          ? o.sellSpeed
-          : "MODERATE",
+      verdict,
+      estResale,
+      resaleLow: Math.max(0, Number(o.resaleLow ?? 0)),
+      resaleHigh: Math.max(0, Number(o.resaleHigh ?? estResale)),
+      sellPrice: estResale,
+      sellSpeed: normalizeSellSpeed(o.sellSpeed),
+      daysToSell: typeof o.daysToSell === "string" ? o.daysToSell : "unknown",
+      demand,
+      platform:
+        typeof o.platform === "string" && o.platform
+          ? o.platform
+          : "Facebook Local",
+      idConfidence,
+      needsVerify: o.needsVerify === true,
+      groupId,
+      groupRole,
       reasoning: String(o.reasoning ?? ""),
     });
   }
+
   return items.map(
     (it) =>
       byIndex.get(it.index) ?? {
         index: it.index,
         verdict: "MAYBE" as const,
+        estResale: 0,
+        resaleLow: 0,
+        resaleHigh: 0,
         sellPrice: 0,
         sellSpeed: "MODERATE" as const,
+        daysToSell: "unknown",
+        demand: "Medium" as const,
+        platform: "Facebook Local",
+        idConfidence: "low" as const,
+        needsVerify: false,
+        groupId: null,
+        groupRole: "single" as const,
         reasoning: "",
       },
   );
