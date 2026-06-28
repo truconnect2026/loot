@@ -536,8 +536,17 @@ PASS when the item nets little after time cost — keep this tight:
 - estResale < $8 OR (SLOW AND Low/Medium demand) OR item unlikely to sell locally → PASS.
 - A typical thrift shelf WILL have multiple PASS verdicts. Zero PASS across many common items is wrong. But zero BUY across collectible figures + complete series is equally wrong.
 
-=== TASK 3: GROUPING — run of 3+ volumes is a LOT, not separate items ===
-- Any run of 3 or more volumes of the SAME series OR the SAME author shelved together → group as a LOT. Assign a shared groupId (e.g. "series-one-piece"). Mark ONE as groupRole "lot-anchor" with estResale = the realistic full-lot price. Mark the rest as "lot-member" with their individual estResale. The anchor's verdict reflects the lot's value — a complete series lot is often BUY even when individual volumes would PASS.
+=== TASK 3: GROUPING — MANDATORY, no exceptions ===
+RULE: 3 or more volumes of the SAME series OR the SAME author shelved together = a LOT. This applies to ALL book formats — paperback, hardcover, manga, graphic novel, box set. No exceptions. Cassandra Clare series (Mortal Instruments, Infernal Devices, Dark Artifices, etc.), Leigh Bardugo, Sarah J. Maas, any recognizable multi-volume run — all must be grouped.
+
+HOW TO GROUP:
+- Assign every volume in the run the same groupId string (e.g. "series-mortal-instruments").
+- Pick ONE volume as groupRole "lot-anchor": set its estResale = realistic full-lot price, set its verdict to reflect the lot's value (a complete series often BUY even if singles would PASS).
+- All other volumes in the run: groupRole "lot-member", estResale = their individual price.
+- It is an ERROR to scatter the same series across different groupIds or to leave some volumes ungrouped.
+
+NO SPLIT VERDICTS: within one series group, every member must share the same groupId. The lot-anchor holds the verdict for the group. Do NOT mark one volume BUY and a sibling PASS — the anchor verdict covers them all.
+
 - A pair (2 volumes) may be grouped or left as singles at your discretion.
 - Near-duplicates (same item detected twice) → group them, redundant one is "lot-member".
 - Standalone titles with no series match: groupId null, groupRole "single".
