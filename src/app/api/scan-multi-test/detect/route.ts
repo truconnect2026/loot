@@ -3,6 +3,7 @@ import { identifyMultiFromImage, type MultiDetectItem } from "@/lib/claude";
 
 export interface DetectResponse {
   items: MultiDetectItem[];
+  _debug?: { rawLength: number; parsedCount: number };
 }
 
 export async function POST(
@@ -25,7 +26,10 @@ export async function POST(
 
   try {
     const items = await identifyMultiFromImage(image);
-    return NextResponse.json({ items });
+    return NextResponse.json({
+      items,
+      _debug: { rawLength: image.length, parsedCount: items.length },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Detection failed";
     console.error("scan-multi-test/detect error:", err);

@@ -58,6 +58,7 @@ export default function ScanMultiTestPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [imgRenderedSize, setImgRenderedSize] = useState<{ w: number; h: number } | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{ rawLength: number; parsedCount: number } | null>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -68,6 +69,7 @@ export default function ScanMultiTestPage() {
     setErrorMsg(null);
     setImgRenderedSize(null);
     setSelectedIndex(null);
+    setDebugInfo(null);
     setStatus("detecting");
 
     // Re-encode to JPEG on the client: normalises format (HEIC, PNG, WebP →
@@ -98,6 +100,7 @@ export default function ScanMultiTestPage() {
       if (!res.ok) throw new Error(json.error ?? "Detection failed");
       detected = json.items ?? [];
       setDetectedItems(detected);
+      if (json._debug) setDebugInfo(json._debug);
     } catch (err) {
       setErrorMsg(
         `Detection failed: ${err instanceof Error ? err.message : "unknown"}`,
@@ -218,7 +221,14 @@ export default function ScanMultiTestPage() {
           </span>
         )}
         {status === "done" && detectedItems.length === 0 && (
-          <span style={{ color: "#6b7280" }}>no items detected</span>
+          <span style={{ color: "#6b7280" }}>
+            no items detected
+            {debugInfo && (
+              <span style={{ marginLeft: 12, color: "#4b5563", fontSize: 11 }}>
+                [rawLength={debugInfo.rawLength} parsedCount={debugInfo.parsedCount}]
+              </span>
+            )}
+          </span>
         )}
         {status === "error" && (
           <span style={{ color: "#ef4444" }}>{errorMsg}</span>

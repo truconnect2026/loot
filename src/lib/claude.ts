@@ -360,6 +360,7 @@ export async function identifyMultiFromImage(
   });
 
   const text = extractText(message);
+  console.log("[MULTI-DETECT] raw response:", text.slice(0, 2000));
   let rawItems: unknown[] = [];
   try {
     const parsed = parseFeedJson(text);
@@ -367,6 +368,7 @@ export async function identifyMultiFromImage(
   } catch {
     rawItems = [];
   }
+  console.log("[MULTI-DETECT] parsed item count:", rawItems.length);
 
   return rawItems
     .map((it) => {
