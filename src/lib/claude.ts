@@ -386,6 +386,72 @@ export async function identifyMultiFromImage(
     .filter((item) => item.bbox[2] > 0 && item.bbox[3] > 0);
 }
 
+export interface BatchValuation {
+  index: number;
+  verdict: "BUY" | "PASS" | "MAYBE";
+  sellPrice: number;
+  sellSpeed: "FAST" | "MODERATE" | "SLOW";
+  reasoning: string;
+}
+
+export async function valuateBatch(
+  items: { index: number; name: string; category: string }[],
+): Promise<BatchValuation[]> {
+  if (items.length === 0) return [];
+  const list = items
+    .map((it) => `${it.index}. ${it.name} (${it.category})`)
+    .join("\n");
+
+  const system = `You are a resale arbitrage expert. For EACH numbered item, give a fast flip verdict assuming it's found cheap at a thrift store. Respond with ONLY a JSON array, no markdown, no prose. One object per input item, echoing its index:
+[
+  { "index": number (echo the item's number),
+    "verdict": "BUY" | "PASS" | "MAYBE",
+    "sellPrice": number (realistic resale in USD),
+    "sellSpeed": "FAST" | "MODERATE" | "SLOW",
+    "reasoning": "max 8 words" }
+]
+Verdict rule: BUY if it reliably resells for $15+ or is sought-after; MAYBE if $5-15 or slow; PASS if under $5 or hard to move. Return one object for EVERY index, in order. Do not skip any.`;
+
+  const message = await getClient().messages.create({
+    model: HAIKU,
+    max_tokens: 4096,
+    temperature: 0.2,
+    system,
+    messages: [{ role: "user", content: list }],
+  });
+  const text = extractText(message);
+  const parsed = parseFeedJson(text);
+  const arr = Array.isArray(parsed) ? parsed : [];
+
+  const byIndex = new Map<number, BatchValuation>();
+  for (const raw of arr) {
+    const o = (raw ?? {}) as Record<string, unknown>;
+    const idx = Number(o.index);
+    if (!Number.isFinite(idx)) continue;
+    const v = o.verdict;
+    byIndex.set(idx, {
+      index: idx,
+      verdict: v === "BUY" || v === "PASS" ? v : "MAYBE",
+      sellPrice: Math.max(0, Number(o.sellPrice ?? 0)),
+      sellSpeed:
+        o.sellSpeed === "FAST" || o.sellSpeed === "SLOW"
+          ? o.sellSpeed
+          : "MODERATE",
+      reasoning: String(o.reasoning ?? ""),
+    });
+  }
+  return items.map(
+    (it) =>
+      byIndex.get(it.index) ?? {
+        index: it.index,
+        verdict: "MAYBE" as const,
+        sellPrice: 0,
+        sellSpeed: "MODERATE" as const,
+        reasoning: "",
+      },
+  );
+}
+
 const LISTING_SYSTEM = `You write Facebook Marketplace listings that sell fast. Given an item and target price, produce an optimized title and description.
 
 Title rules:
