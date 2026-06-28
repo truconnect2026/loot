@@ -38,11 +38,79 @@ const SHELF_VERDICT_COLOR: Record<"BUY" | "PASS" | "MAYBE", string> = {
   PASS: "#6b7280",
 };
 const SHELF_DOT_GRAY = "#4b5563";
-const SHELF_DETECT_LABEL: Record<MultiDetectItem["confidence"], string> = {
-  high: "hi",
-  medium: "med",
-  low: "lo",
+
+// Build sorted list: BUY → MAYBE → PASS, anchors/singles only (members excluded).
+function buildSortedRows(vals: Map<number, BatchValuation>): BatchValuation[] {
+  const TIER: Record<string, number> = { BUY: 0, MAYBE: 1, PASS: 2 };
+  return [...vals.values()]
+    .filter((v) => v.groupRole !== "lot-member")
+    .sort((a, b) => {
+      const ta = TIER[a.verdict] ?? 1;
+      const tb = TIER[b.verdict] ?? 1;
+      if (ta !== tb) return ta - tb;
+      return b.estResale - a.estResale;
+    });
+}
+
+type DotCluster = {
+  indices: number[]; // detection indices in this cluster
+  cx: number; // centroid pixel x
+  cy: number; // centroid pixel y (pre-clamped)
+  color: string; // dominant verdict color
 };
+
+// Greedy proximity clustering: dots whose clamped centers are within `radius` px collapse.
+function clusterDots(
+  items: MultiDetectItem[],
+  vals: Map<number, BatchValuation>,
+  renderedSize: { w: number; h: number },
+  radius = 28,
+): DotCluster[] {
+  const VERDICT_PRIORITY: Record<string, number> = { BUY: 0, MAYBE: 1, PASS: 2 };
+  const points = items.map((item, idx) => {
+    const [bx, by, bw, bh] = item.bbox;
+    return {
+      idx,
+      cx: (bx + bw / 2) * renderedSize.w,
+      cy: Math.min(Math.max((by + bh / 2) * renderedSize.h, 12), renderedSize.h - 12),
+    };
+  });
+
+  const used = new Set<number>();
+  const clusters: DotCluster[] = [];
+
+  for (let i = 0; i < points.length; i++) {
+    if (used.has(i)) continue;
+    const group: number[] = [i];
+    used.add(i);
+    for (let j = i + 1; j < points.length; j++) {
+      if (used.has(j)) continue;
+      const dx = points[j].cx - points[i].cx;
+      const dy = points[j].cy - points[i].cy;
+      if (Math.sqrt(dx * dx + dy * dy) < radius) {
+        group.push(j);
+        used.add(j);
+      }
+    }
+    const cx = group.reduce((s, k) => s + points[k].cx, 0) / group.length;
+    const cy = group.reduce((s, k) => s + points[k].cy, 0) / group.length;
+    let bestP = 999;
+    let color = SHELF_DOT_GRAY;
+    for (const k of group) {
+      const val = vals.get(points[k].idx);
+      if (val) {
+        const p = VERDICT_PRIORITY[val.verdict] ?? 999;
+        if (p < bestP) {
+          bestP = p;
+          color = SHELF_VERDICT_COLOR[val.verdict];
+        }
+      }
+    }
+    clusters.push({ indices: group.map((k) => points[k].idx), cx, cy, color });
+  }
+
+  return clusters;
+}
 
 // Light haptic — Android Chrome only, silent no-op everywhere else.
 function haptic(pattern: number | number[] = 10) {
@@ -281,6 +349,7 @@ export default function ScanOverlay({
   const [shelfVerdictLoading, setShelfVerdictLoading] = useState(false);
   const [shelfVerdictOpen, setShelfVerdictOpen] = useState(false);
   const [shelfVerdictData, setShelfVerdictData] = useState<VerdictPayload | null>(null);
+  const [expandedLots, setExpandedLots] = useState<Set<string>>(new Set());
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -320,6 +389,7 @@ export default function ScanOverlay({
     setShelfItemCostInput("");
     setShelfVerdictOpen(false);
     setShelfVerdictData(null);
+    setExpandedLots(new Set());
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -432,6 +502,7 @@ export default function ScanOverlay({
     setInlineError(null);
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
+    setExpandedLots(new Set());
     shelfRowRefs.current.clear();
     setActiveMode(m);
   };
@@ -467,6 +538,7 @@ export default function ScanOverlay({
   const handleShelfCapture = async (image: string) => {
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
+    setExpandedLots(new Set());
     shelfRowRefs.current.clear();
     setPhase({ kind: "shelf-detecting", capturedImage: image });
 
@@ -651,15 +723,21 @@ export default function ScanOverlay({
 
   const isShelfValuing = phase.kind === "shelf-valuing";
 
-  const shelfBuyCount = [...shelfValuations.values()].filter(
-    (v) => v.verdict === "BUY",
-  ).length;
-  const shelfMaybeCount = [...shelfValuations.values()].filter(
-    (v) => v.verdict === "MAYBE",
-  ).length;
-  const shelfPassCount = [...shelfValuations.values()].filter(
-    (v) => v.verdict === "PASS",
-  ).length;
+  // Hero headline stats — anchors+singles only (lot-members excluded from counts).
+  const sortedMain =
+    phase.kind === "shelf-done" ? buildSortedRows(shelfValuations) : [];
+  const buyMain = sortedMain.filter((v) => v.verdict === "BUY");
+  const heroCount = buyMain.length;
+  const heroMaybeCount = sortedMain.filter((v) => v.verdict === "MAYBE").length;
+  const heroPassCount = sortedMain.filter((v) => v.verdict === "PASS").length;
+  const heroSumLow = Math.round(buyMain.reduce((s, v) => s + v.resaleLow, 0));
+  const heroSumHigh = Math.round(buyMain.reduce((s, v) => s + v.resaleHigh, 0));
+
+  // Dot clusters computed after image renders.
+  const dotClusters =
+    shelfImgRenderedSize && phase.kind === "shelf-done"
+      ? clusterDots(shelfItems, shelfValuations, shelfImgRenderedSize)
+      : [];
 
   return (
     <>
@@ -690,9 +768,7 @@ export default function ScanOverlay({
           justifyContent: "center",
         }}
       >
-        {/* ── Shelf result panel ─────────────────────────────────────
-            Renders over everything else when in a shelf phase.
-            Full-screen scrollable so long lists don't clip. ──────── */}
+        {/* ── Shelf result panel ── full-screen, all shelf phases ── */}
         {isShelfPhase && (
           <div
             style={{
@@ -706,58 +782,16 @@ export default function ScanOverlay({
               flexDirection: "column",
             }}
           >
-            {/* Header bar */}
+            {/* Header: close button only — headline or spinner carries the status */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                padding: "16px 18px 8px",
+                justifyContent: "flex-end",
+                padding: "14px 18px 6px",
                 flexShrink: 0,
               }}
             >
-              {/* Status / summary */}
-              <div
-                style={{
-                  fontFamily: "var(--font-label)",
-                  fontSize: 11,
-                  letterSpacing: "0.08em",
-                  color: "#5A4E70",
-                }}
-              >
-                {phase.kind === "shelf-detecting" && (
-                  <span className="shelf-pulse" style={{ color: "#f59e0b" }}>
-                    ① reading the shelf…
-                  </span>
-                )}
-                {phase.kind === "shelf-valuing" && (
-                  <span>
-                    <span style={{ color: "#5CE0B8" }}>
-                      ✓ {shelfItems.length} items
-                    </span>
-                    {"  "}
-                    <span className="shelf-pulse" style={{ color: "#f59e0b" }}>
-                      ② pricing…
-                    </span>
-                  </span>
-                )}
-                {phase.kind === "shelf-done" && (
-                  <span>
-                    <span style={{ color: "#e5e7eb" }}>{shelfItems.length}</span>
-                    {" detected · "}
-                    <span style={{ color: SHELF_VERDICT_COLOR.BUY }}>{shelfBuyCount} BUY</span>
-                    {" · "}
-                    <span style={{ color: SHELF_VERDICT_COLOR.MAYBE }}>{shelfMaybeCount} MAYBE</span>
-                    {" · "}
-                    <span style={{ color: SHELF_VERDICT_COLOR.PASS }}>{shelfPassCount} PASS</span>
-                  </span>
-                )}
-                {phase.kind === "shelf-empty" && (
-                  <span style={{ color: "#6b7280" }}>nothing detected</span>
-                )}
-              </div>
-
-              {/* Close */}
               <button
                 onClick={onCancel}
                 aria-label="Close"
@@ -785,17 +819,17 @@ export default function ScanOverlay({
               </button>
             </div>
 
-            {/* Shelf-detecting: spinner + captured image preview */}
-            {phase.kind === "shelf-detecting" && (
+            {/* Loading: one spinner + one status line */}
+            {(phase.kind === "shelf-detecting" ||
+              phase.kind === "shelf-valuing") && (
               <div
                 style={{
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "center",
-                  gap: 16,
-                  padding: 24,
+                  gap: 20,
+                  padding: "4px 20px 32px",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -804,30 +838,30 @@ export default function ScanOverlay({
                   alt="captured shelf"
                   style={{
                     width: "100%",
-                    maxHeight: 260,
-                    objectFit: "contain",
                     borderRadius: 8,
-                    opacity: 0.5,
+                    opacity: 0.55,
+                    objectFit: "contain",
                   }}
                 />
-                <div
+                <CoinMarkSpinner />
+                <span
+                  className="shelf-pulse"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    color: "#5A4E70",
+                    color: "#f59e0b",
                     fontFamily: "var(--font-label)",
                     fontSize: 11,
                     letterSpacing: "0.08em",
+                    textTransform: "uppercase",
                   }}
                 >
-                  <CoinMarkSpinner />
-                  IDENTIFYING ITEMS…
-                </div>
+                  {phase.kind === "shelf-detecting"
+                    ? "READING THE SHELF…"
+                    : `PRICING ${shelfItems.length} ITEMS…`}
+                </span>
               </div>
             )}
 
-            {/* Shelf-empty: message + retake */}
+            {/* Empty state */}
             {phase.kind === "shelf-empty" && (
               <div
                 style={{
@@ -894,17 +928,66 @@ export default function ScanOverlay({
               </div>
             )}
 
-            {/* Shelf-valuing + shelf-done: image + dots + list */}
-            {(phase.kind === "shelf-valuing" || phase.kind === "shelf-done") && (
+            {/* Done: headline hero + image with clustered dots + sorted list */}
+            {phase.kind === "shelf-done" && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Image with numbered dots */}
+                {/* Hero headline */}
+                <div style={{ padding: "0 18px 10px", flexShrink: 0 }}>
+                  {heroCount > 0 ? (
+                    <div
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: "#5CE0B8",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {heroCount} worth grabbing
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: 20,
+                        fontWeight: 700,
+                        color: "#C8C0D8",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      nothing worth grabbing
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      fontFamily: "var(--font-label)",
+                      fontSize: 11,
+                      color: "#6b7280",
+                      marginTop: 3,
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {heroMaybeCount} maybe · {heroPassCount} pass ·{" "}
+                    {shelfItems.length} items
+                  </div>
+                  {heroCount > 0 && (heroSumLow > 0 || heroSumHigh > 0) && (
+                    <div
+                      style={{
+                        fontFamily: "var(--font-label)",
+                        fontSize: 10,
+                        color: "#4b5563",
+                        marginTop: 2,
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      ~${heroSumLow}–${heroSumHigh} resale
+                    </div>
+                  )}
+                </div>
+
+                {/* Image with clustered verdict dots */}
                 <div
-                  style={{
-                    position: "relative",
-                    width: "100%",
-                    flexShrink: 0,
-                    padding: "0 0 4px",
-                  }}
+                  style={{ position: "relative", width: "100%", flexShrink: 0 }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -923,41 +1006,60 @@ export default function ScanOverlay({
                   />
 
                   {shelfImgRenderedSize &&
-                    shelfItems.map((item, idx) => {
-                      const [bx, by, bw, bh] = item.bbox;
-                      const cx = (bx + bw / 2) * shelfImgRenderedSize.w;
-                      const cy = (by + bh / 2) * shelfImgRenderedSize.h;
-                      const val = shelfValuations.get(idx);
-                      const color = val
-                        ? SHELF_VERDICT_COLOR[val.verdict]
-                        : SHELF_DOT_GRAY;
-                      const isSel = shelfSelectedIndex === idx;
+                    dotClusters.map((cluster, ci) => {
+                      const isSingle = cluster.indices.length === 1;
+                      const detIdx = cluster.indices[0];
+                      const isSel = isSingle && shelfSelectedIndex === detIdx;
                       return (
                         <button
-                          key={idx}
+                          key={ci}
                           onClick={() => {
-                            setShelfSelectedIndex(
-                              idx === shelfSelectedIndex ? null : idx,
-                            );
+                            const targetIdx = cluster.indices[0];
+                            if (isSingle) {
+                              setShelfSelectedIndex(
+                                targetIdx === shelfSelectedIndex
+                                  ? null
+                                  : targetIdx,
+                              );
+                              // Auto-expand lot if this is a member dot
+                              const clickedVal = shelfValuations.get(targetIdx);
+                              if (
+                                clickedVal?.groupRole === "lot-member" &&
+                                clickedVal.groupId
+                              ) {
+                                setExpandedLots((prev) =>
+                                  new Set([...prev, clickedVal.groupId!]),
+                                );
+                              }
+                            } else {
+                              setShelfSelectedIndex(targetIdx);
+                            }
                             shelfRowRefs.current
-                              .get(idx)
+                              .get(targetIdx)
                               ?.scrollIntoView({
                                 behavior: "smooth",
                                 block: "nearest",
                               });
                           }}
-                          aria-label={`Item ${idx + 1}: ${item.name}`}
+                          aria-label={
+                            isSingle
+                              ? `Item ${detIdx + 1}: ${shelfItems[detIdx]?.name ?? ""}`
+                              : `${cluster.indices.length} items`
+                          }
                           style={{
                             position: "absolute",
-                            left: cx,
-                            top: cy,
+                            left: cluster.cx,
+                            top: cluster.cy,
                             transform: `translate(-50%, -50%) scale(${isSel ? 1.4 : 1})`,
                             width: 24,
                             height: 24,
                             borderRadius: "50%",
-                            background: color,
-                            color: color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
-                            fontSize: 10,
+                            background: cluster.color,
+                            color:
+                              cluster.color === SHELF_DOT_GRAY
+                                ? "#9ca3af"
+                                : "#000",
+                            fontSize: isSingle ? 10 : 9,
                             fontWeight: "bold",
                             fontFamily: "monospace",
                             border: "none",
@@ -966,267 +1068,414 @@ export default function ScanOverlay({
                             alignItems: "center",
                             justifyContent: "center",
                             boxShadow: isSel
-                              ? `0 0 0 3px #fff, 0 0 12px 4px ${color}`
+                              ? `0 0 0 3px #fff, 0 0 12px 4px ${cluster.color}`
                               : "0 1px 3px rgba(0,0,0,0.6)",
                             transition:
                               "background 300ms ease, transform 150ms ease, box-shadow 150ms ease",
                             zIndex: isSel ? 10 : 5,
                           }}
                         >
-                          {idx + 1}
+                          {isSingle ? detIdx + 1 : `+${cluster.indices.length}`}
                         </button>
                       );
                     })}
                 </div>
 
-                {/* Item list */}
+                {/* Sorted item list — BUY → MAYBE → PASS, members collapsed */}
                 <div
                   style={{
                     padding: "8px 12px 32px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 6,
+                    gap: 4,
                   }}
                 >
-                  {shelfItems.map((item, idx) => {
-                    const val = shelfValuations.get(idx);
-                    const color = val
-                      ? SHELF_VERDICT_COLOR[val.verdict]
-                      : SHELF_DOT_GRAY;
-                    const isSel = shelfSelectedIndex === idx;
-                    return (
-                      <div
-                        key={idx}
-                        ref={(el) => {
-                          if (el) shelfRowRefs.current.set(idx, el);
-                          else shelfRowRefs.current.delete(idx);
-                        }}
-                        onClick={() =>
-                          setShelfSelectedIndex(
-                            idx === shelfSelectedIndex ? null : idx,
+                  {sortedMain.map((val) => {
+                    const detIdx = val.index;
+                    const isSel = shelfSelectedIndex === detIdx;
+                    const color = SHELF_VERDICT_COLOR[val.verdict];
+                    const isAnchor = val.groupRole === "lot-anchor";
+                    const isExpanded =
+                      isAnchor && val.groupId
+                        ? expandedLots.has(val.groupId)
+                        : false;
+                    const members =
+                      isAnchor && val.groupId
+                        ? [...shelfValuations.values()].filter(
+                            (v) =>
+                              v.groupRole === "lot-member" &&
+                              v.groupId === val.groupId,
                           )
-                        }
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "8px 10px",
-                          borderLeft: `3px solid ${color}`,
-                          background: isSel
-                            ? "rgba(255,255,255,0.06)"
-                            : "rgba(255,255,255,0.02)",
-                          borderRadius: "0 6px 6px 0",
-                          cursor: "pointer",
-                          transition:
-                            "background 120ms ease, border-color 300ms ease",
-                        }}
-                      >
-                        {/* Number dot */}
-                        <span
+                        : [];
+
+                    const priceStr =
+                      val.resaleLow > 0 && val.resaleHigh > 0
+                        ? `$${val.resaleLow}–$${val.resaleHigh}`
+                        : val.estResale > 0
+                          ? `$${val.estResale}`
+                          : "—";
+
+                    // Strip the "(full set, N vols)" suffix the grouper appended
+                    const displayName = isAnchor
+                      ? val.name.replace(
+                          /\s*\(full set,\s*\d+\s*vols?\)\s*$/i,
+                          "",
+                        )
+                      : val.name;
+
+                    return (
+                      <div key={detIdx}>
+                        {/* Main row — two lines */}
+                        <div
+                          ref={(el) => {
+                            if (el) shelfRowRefs.current.set(detIdx, el);
+                            else shelfRowRefs.current.delete(detIdx);
+                          }}
+                          onClick={() =>
+                            setShelfSelectedIndex(isSel ? null : detIdx)
+                          }
                           style={{
-                            width: 22,
-                            height: 22,
-                            borderRadius: "50%",
-                            background: color,
-                            color:
-                              color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
-                            fontSize: 10,
-                            fontWeight: "bold",
-                            fontFamily: "monospace",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                            transition: "background 300ms ease",
+                            flexDirection: "column",
+                            padding: "7px 10px",
+                            borderLeft: `3px solid ${color}`,
+                            background: isSel
+                              ? "rgba(255,255,255,0.06)"
+                              : "rgba(255,255,255,0.02)",
+                            borderRadius: "0 6px 6px 0",
+                            cursor: "pointer",
+                            transition:
+                              "background 120ms ease, border-color 300ms ease",
+                            gap: 3,
                           }}
                         >
-                          {idx + 1}
-                        </span>
-
-                        {/* Name */}
-                        <span
-                          style={{
-                            flex: 1,
-                            fontFamily: "var(--font-body)",
-                            fontSize: 12,
-                            color: "#C8C0D8",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {item.name}
-                        </span>
-
-                        {/* Verdict pill or pulse placeholder */}
-                        {val ? (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "bold",
-                              color,
-                              border: `1px solid ${color}`,
-                              borderRadius: 4,
-                              padding: "1px 5px",
-                              flexShrink: 0,
-                              fontFamily: "var(--font-label)",
-                            }}
-                          >
-                            {val.verdict}
-                          </span>
-                        ) : (
-                          <span
-                            className={isShelfValuing ? "shelf-pulse" : undefined}
-                            style={{
-                              fontSize: 10,
-                              color: "#4b5563",
-                              flexShrink: 0,
-                            }}
-                          >
-                            …
-                          </span>
-                        )}
-
-                        {/* Sell price */}
-                        <span
-                          style={{
-                            fontFamily: "var(--font-label)",
-                            fontSize: 11,
-                            color: "#C8C0D8",
-                            flexShrink: 0,
-                            minWidth: 48,
-                            textAlign: "right",
-                          }}
-                        >
-                          {val && val.sellPrice > 0 ? `$${val.sellPrice}` : "—"}
-                        </span>
-
-                        {/* Detect confidence tag */}
-                        <span
-                          style={{
-                            fontSize: 9,
-                            color: "#4b5563",
-                            flexShrink: 0,
-                            minWidth: 18,
-                            textAlign: "right",
-                            fontFamily: "monospace",
-                          }}
-                        >
-                          {SHELF_DETECT_LABEL[item.confidence]}
-                        </span>
-                      </div>
-                    );
-                  })}
-
-                  {/* Callout for selected item: reasoning + drill-down */}
-                  {shelfSelectedIndex !== null &&
-                    shelfValuations.get(shelfSelectedIndex) != null && (
-                      <div
-                        style={{
-                          marginTop: 4,
-                          padding: "10px 12px",
-                          background: "rgba(255,255,255,0.03)",
-                          borderRadius: 6,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                        }}
-                      >
-                        {/* Reasoning text */}
-                        {shelfValuations.get(shelfSelectedIndex)!.reasoning && (
+                          {/* Line 1: dot · name · lot chip · pill · price */}
                           <div
                             style={{
-                              fontFamily: "var(--font-body)",
-                              fontSize: 12,
-                              color: "#6b7280",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            <span style={{ color: "#4b5563", marginRight: 6 }}>
-                              #{shelfSelectedIndex + 1}
-                            </span>
-                            {shelfValuations.get(shelfSelectedIndex)!.reasoning}
-                          </div>
-                        )}
-
-                        {/* Cost input + FULL VERDICT button */}
-                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          <div
-                            style={{
-                              flex: 1,
-                              height: 36,
-                              position: "relative",
-                              backgroundColor: "rgba(0,0,0,0.3)",
-                              border: "1px solid rgba(255,255,255,0.06)",
-                              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
-                              borderRadius: 8,
                               display: "flex",
                               alignItems: "center",
-                              paddingLeft: 10,
+                              gap: 8,
                             }}
                           >
                             <span
                               style={{
-                                fontFamily: "var(--font-body)",
-                                fontSize: 13,
-                                color: "#5A4E70",
-                                marginRight: 4,
+                                width: 20,
+                                height: 20,
+                                borderRadius: "50%",
+                                background: color,
+                                color: "#000",
+                                fontSize: 9,
+                                fontWeight: "bold",
+                                fontFamily: "monospace",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
                               }}
                             >
-                              $
+                              {detIdx + 1}
                             </span>
-                            <input
-                              type="number"
-                              inputMode="decimal"
-                              step="0.01"
-                              min="0"
-                              value={shelfItemCostInput}
-                              onChange={(e) => setShelfItemCostInput(e.target.value)}
-                              placeholder="your cost"
+                            <span
                               style={{
                                 flex: 1,
-                                background: "transparent",
-                                border: "none",
-                                outline: "none",
                                 fontFamily: "var(--font-body)",
                                 fontSize: 13,
-                                color: "#e5e7eb",
-                                minWidth: 0,
+                                color: "#C8C0D8",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
                               }}
-                            />
+                            >
+                              {displayName}
+                            </span>
+                            {isAnchor && members.length > 0 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!val.groupId) return;
+                                  const gid = val.groupId;
+                                  setExpandedLots((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(gid)) next.delete(gid);
+                                    else next.add(gid);
+                                    return next;
+                                  });
+                                }}
+                                style={{
+                                  flexShrink: 0,
+                                  background: "rgba(92,224,184,0.10)",
+                                  border: "1px solid rgba(92,224,184,0.25)",
+                                  borderRadius: 4,
+                                  color: "#5CE0B8",
+                                  fontFamily: "var(--font-label)",
+                                  fontSize: 9,
+                                  fontWeight: 700,
+                                  letterSpacing: "0.06em",
+                                  padding: "2px 6px",
+                                  cursor: "pointer",
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {members.length + 1} vols{" "}
+                                {isExpanded ? "▾" : "▸"}
+                              </button>
+                            )}
+                            {val.needsVerify ? (
+                              <span
+                                style={{
+                                  flexShrink: 0,
+                                  fontSize: 9,
+                                  fontWeight: "bold",
+                                  fontFamily: "var(--font-label)",
+                                  color: "#f59e0b",
+                                  border: "1px solid rgba(245,158,11,0.5)",
+                                  borderRadius: 4,
+                                  padding: "1px 5px",
+                                }}
+                              >
+                                VERIFY
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  flexShrink: 0,
+                                  fontSize: 9,
+                                  fontWeight: "bold",
+                                  fontFamily: "var(--font-label)",
+                                  color,
+                                  border: `1px solid ${color}`,
+                                  borderRadius: 4,
+                                  padding: "1px 5px",
+                                }}
+                              >
+                                {val.verdict}
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                flexShrink: 0,
+                                fontFamily: "var(--font-label)",
+                                fontSize: 11,
+                                color: "#9ca3af",
+                                minWidth: 56,
+                                textAlign: "right",
+                              }}
+                            >
+                              {priceStr}
+                            </span>
                           </div>
-                          <button
-                            onClick={() => {
-                              const item = shelfItems[shelfSelectedIndex];
-                              if (item) void handleFullVerdict(shelfSelectedIndex, item);
-                            }}
-                            disabled={shelfVerdictLoading}
+
+                          {/* Line 2: sell speed · demand · platform */}
+                          <div
                             style={{
-                              height: 36,
-                              padding: "0 14px",
-                              borderRadius: 8,
-                              background: shelfVerdictLoading
-                                ? "rgba(92,224,184,0.05)"
-                                : "rgba(92,224,184,0.10)",
-                              border: "1px solid rgba(92,224,184,0.25)",
-                              color: "#5CE0B8",
+                              paddingLeft: 28,
                               fontFamily: "var(--font-label)",
                               fontSize: 10,
-                              fontWeight: 700,
-                              letterSpacing: "0.08em",
-                              cursor: shelfVerdictLoading ? "not-allowed" : "pointer",
-                              opacity: shelfVerdictLoading ? 0.6 : 1,
+                              color: "#4b5563",
+                              letterSpacing: "0.04em",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
-                              transition: "opacity 150ms ease, background 150ms ease",
                             }}
                           >
-                            {shelfVerdictLoading ? "…" : "FULL VERDICT"}
-                          </button>
+                            {val.sellSpeed} · {val.demand} demand ·{" "}
+                            {val.platform}
+                          </div>
                         </div>
-                      </div>
-                    )}
 
-                  {/* Retake button at bottom of list */}
+                        {/* Expanded lot members — indented, dimmed, read-only */}
+                        {isExpanded &&
+                          members.map((member) => (
+                            <div
+                              key={member.index}
+                              ref={(el) => {
+                                if (el)
+                                  shelfRowRefs.current.set(member.index, el);
+                                else
+                                  shelfRowRefs.current.delete(member.index);
+                              }}
+                              style={{
+                                marginLeft: 16,
+                                padding: "4px 10px",
+                                borderLeft:
+                                  "2px solid rgba(92,224,184,0.15)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                opacity: 0.5,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: "50%",
+                                  background: "rgba(92,224,184,0.20)",
+                                  color: "#5CE0B8",
+                                  fontSize: 8,
+                                  fontWeight: "bold",
+                                  fontFamily: "monospace",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {member.index + 1}
+                              </span>
+                              <span
+                                style={{
+                                  flex: 1,
+                                  fontFamily: "var(--font-body)",
+                                  fontSize: 12,
+                                  color: "#9ca3af",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {member.name}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: "var(--font-label)",
+                                  fontSize: 10,
+                                  color: "#4b5563",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {member.resaleLow > 0 && member.resaleHigh > 0
+                                  ? `$${member.resaleLow}–$${member.resaleHigh}`
+                                  : member.estResale > 0
+                                    ? `$${member.estResale}`
+                                    : "—"}
+                              </span>
+                            </div>
+                          ))}
+
+                        {/* Full verdict callout for selected row */}
+                        {isSel && (
+                          <div
+                            style={{
+                              marginTop: 4,
+                              padding: "10px 12px",
+                              background: "rgba(255,255,255,0.03)",
+                              borderRadius: 6,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 8,
+                            }}
+                          >
+                            {val.reasoning && (
+                              <div
+                                style={{
+                                  fontFamily: "var(--font-body)",
+                                  fontSize: 12,
+                                  color: "#6b7280",
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    color: "#4b5563",
+                                    marginRight: 6,
+                                  }}
+                                >
+                                  #{detIdx + 1}
+                                </span>
+                                {val.reasoning}
+                              </div>
+                            )}
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  flex: 1,
+                                  height: 36,
+                                  backgroundColor: "rgba(0,0,0,0.3)",
+                                  border: "1px solid rgba(255,255,255,0.06)",
+                                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
+                                  borderRadius: 8,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  paddingLeft: 10,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontFamily: "var(--font-body)",
+                                    fontSize: 13,
+                                    color: "#5A4E70",
+                                    marginRight: 4,
+                                  }}
+                                >
+                                  $
+                                </span>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="0.01"
+                                  min="0"
+                                  value={shelfItemCostInput}
+                                  onChange={(e) =>
+                                    setShelfItemCostInput(e.target.value)
+                                  }
+                                  placeholder="your cost"
+                                  style={{
+                                    flex: 1,
+                                    background: "transparent",
+                                    border: "none",
+                                    outline: "none",
+                                    fontFamily: "var(--font-body)",
+                                    fontSize: 13,
+                                    color: "#e5e7eb",
+                                    minWidth: 0,
+                                  }}
+                                />
+                              </div>
+                              <button
+                                onClick={() => {
+                                  const item = shelfItems[detIdx];
+                                  if (item)
+                                    void handleFullVerdict(detIdx, item);
+                                }}
+                                disabled={shelfVerdictLoading}
+                                style={{
+                                  height: 36,
+                                  padding: "0 14px",
+                                  borderRadius: 8,
+                                  background: shelfVerdictLoading
+                                    ? "rgba(92,224,184,0.05)"
+                                    : "rgba(92,224,184,0.10)",
+                                  border: "1px solid rgba(92,224,184,0.25)",
+                                  color: "#5CE0B8",
+                                  fontFamily: "var(--font-label)",
+                                  fontSize: 10,
+                                  fontWeight: 700,
+                                  letterSpacing: "0.08em",
+                                  cursor: shelfVerdictLoading
+                                    ? "not-allowed"
+                                    : "pointer",
+                                  opacity: shelfVerdictLoading ? 0.6 : 1,
+                                  whiteSpace: "nowrap",
+                                  transition:
+                                    "opacity 150ms ease, background 150ms ease",
+                                }}
+                              >
+                                {shelfVerdictLoading ? "…" : "FULL VERDICT"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
                   <button
                     onClick={() => setPhase({ kind: "framing" })}
                     style={{
