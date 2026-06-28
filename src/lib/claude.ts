@@ -399,6 +399,80 @@ export async function identifyMultiFromImage(
     .filter((item) => item.bbox[2] > 0 && item.bbox[3] > 0);
 }
 
+export async function identifyMultiFromImageDebug(imageBase64: string): Promise<{
+  items: MultiDetectItem[];
+  rawText: string;
+  parsedCount: number;
+}> {
+  const mimeMatch = imageBase64.match(/^data:(image\/\w+);base64,/);
+  const detectedType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const stripped = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  const media_type = (
+    allowed.includes(detectedType) ? detectedType : "image/jpeg"
+  ) as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+
+  const message = await getClient().messages.create({
+    model: SONNET,
+    max_tokens: 2048,
+    system: MULTI_DETECT_SYSTEM,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: { type: "base64", media_type, data: stripped },
+          },
+          { type: "text", text: "Identify every resellable item with bounding boxes." },
+        ],
+      },
+    ],
+  });
+
+  const rawText = extractText(message);
+  console.log("[MULTI-DETECT] raw response:", rawText.slice(0, 2000));
+
+  let rawItems: unknown[] = [];
+  try {
+    const parsed = parseFeedJson(rawText);
+    rawItems = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    rawItems = [];
+  }
+  console.log("[MULTI-DETECT] parsed item count:", rawItems.length);
+
+  const items = rawItems
+    .map((it) => {
+      const obj = (it ?? {}) as Record<string, unknown>;
+      const bboxRaw = obj.bbox;
+      const bbox: [number, number, number, number] =
+        Array.isArray(bboxRaw) && bboxRaw.length >= 4
+          ? [
+              Math.max(0, Math.min(1, Number(bboxRaw[0]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[1]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[2]))),
+              Math.max(0, Math.min(1, Number(bboxRaw[3]))),
+            ]
+          : [0, 0, 0, 0];
+      const confRaw = obj.confidence;
+      const confidence: MultiDetectItem["confidence"] =
+        confRaw === "high" || confRaw === "medium" || confRaw === "low"
+          ? confRaw
+          : "low";
+      return {
+        name: String(obj.name ?? "Unknown"),
+        brand: String(obj.brand ?? ""),
+        category: String(obj.category ?? ""),
+        bbox,
+        confidence,
+      };
+    })
+    .filter((item) => item.bbox[2] > 0 && item.bbox[3] > 0);
+
+  return { items, rawText, parsedCount: items.length };
+}
+
 export interface BatchValuation {
   index: number;
   verdict: "BUY" | "PASS" | "MAYBE";

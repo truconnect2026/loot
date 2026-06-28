@@ -59,6 +59,8 @@ export default function ScanMultiTestPage() {
   const [imgRenderedSize, setImgRenderedSize] = useState<{ w: number; h: number } | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [debugInfo, setDebugInfo] = useState<{ rawLength: number; parsedCount: number } | null>(null);
+  const [rawText, setRawText] = useState<string | null>(null);
+  const [showRaw, setShowRaw] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -70,6 +72,8 @@ export default function ScanMultiTestPage() {
     setImgRenderedSize(null);
     setSelectedIndex(null);
     setDebugInfo(null);
+    setRawText(null);
+    setShowRaw(false);
     setStatus("detecting");
 
     // Re-encode to JPEG on the client: normalises format (HEIC, PNG, WebP →
@@ -100,7 +104,10 @@ export default function ScanMultiTestPage() {
       if (!res.ok) throw new Error(json.error ?? "Detection failed");
       detected = json.items ?? [];
       setDetectedItems(detected);
-      if (json._debug) setDebugInfo(json._debug);
+      if (json._debug) {
+        setDebugInfo({ rawLength: json._debug.rawText?.length ?? 0, parsedCount: json._debug.parsedCount });
+        setRawText(json._debug.rawText ?? null);
+      }
     } catch (err) {
       setErrorMsg(
         `Detection failed: ${err instanceof Error ? err.message : "unknown"}`,
@@ -234,6 +241,52 @@ export default function ScanMultiTestPage() {
           <span style={{ color: "#ef4444" }}>{errorMsg}</span>
         )}
       </div>
+
+      {/* Raw response toggle — available as soon as detection has run */}
+      {rawText !== null && (
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => setShowRaw((v) => !v)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#4b5563",
+              fontSize: 11,
+              cursor: "pointer",
+              padding: 0,
+              fontFamily: "monospace",
+              textDecoration: "underline",
+            }}
+          >
+            {showRaw ? "hide raw response" : "show raw response"}
+          </button>
+          {debugInfo && (
+            <span style={{ marginLeft: 10, color: "#374151", fontSize: 10 }}>
+              rawLen={debugInfo.rawLength} parsed={debugInfo.parsedCount}
+            </span>
+          )}
+        </div>
+      )}
+
+      {showRaw && rawText !== null && (
+        <pre
+          style={{
+            maxHeight: 300,
+            overflow: "auto",
+            background: "#0a0a0a",
+            border: "1px solid #1f2937",
+            borderRadius: 6,
+            padding: "10px 12px",
+            fontSize: 10,
+            color: "#6b7280",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            marginBottom: 20,
+          }}
+        >
+          raw model response:{"\n"}{rawText}
+        </pre>
+      )}
 
       {imgSrc && (
         <div

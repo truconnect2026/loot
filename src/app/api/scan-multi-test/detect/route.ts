@@ -1,9 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { identifyMultiFromImage, type MultiDetectItem } from "@/lib/claude";
+import { identifyMultiFromImageDebug, type MultiDetectItem } from "@/lib/claude";
 
 export interface DetectResponse {
   items: MultiDetectItem[];
-  _debug?: { rawLength: number; parsedCount: number };
+  _debug: { rawText: string; parsedCount: number };
 }
 
 export async function POST(
@@ -25,10 +25,10 @@ export async function POST(
   }
 
   try {
-    const items = await identifyMultiFromImage(image);
+    const { items, rawText, parsedCount } = await identifyMultiFromImageDebug(image);
     return NextResponse.json({
       items,
-      _debug: { rawLength: image.length, parsedCount: items.length },
+      _debug: { rawText: rawText.slice(0, 3000), parsedCount },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Detection failed";
