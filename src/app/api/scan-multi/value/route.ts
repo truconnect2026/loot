@@ -6,6 +6,8 @@ export interface ValueResponse {
   _debug: {
     inputCount: number;
     valuedCount: number;
+    buyCount: number;
+    maybeCount: number;
     passCount: number;
     verifyCount: number;
     groupCount: number;
@@ -32,6 +34,8 @@ export async function POST(
 
   try {
     const valuations = await valuateBatch(items);
+    const buyCount = valuations.filter((v) => v.verdict === "BUY").length;
+    const maybeCount = valuations.filter((v) => v.verdict === "MAYBE").length;
     const passCount = valuations.filter((v) => v.verdict === "PASS").length;
     const verifyCount = valuations.filter((v) => v.needsVerify).length;
     const groupIds = new Set(
@@ -42,6 +46,8 @@ export async function POST(
       _debug: {
         inputCount: items.length,
         valuedCount: valuations.length,
+        buyCount,
+        maybeCount,
         passCount,
         verifyCount,
         groupCount: groupIds.size,

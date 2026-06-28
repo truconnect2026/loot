@@ -525,17 +525,22 @@ Required fields per object:
 - Common household items, basic clothing, oversaturated categories: often near-zero resale value.
 - estResale is your best point estimate. resaleLow/resaleHigh bracket the realistic range.
 
-=== TASK 2: CALIBRATED VERDICT — use the FULL range, PASS is expected and correct ===
-- BUY: estResale >= $15 AND demand High AND sellSpeed FAST or MODERATE.
-- MAYBE: estResale $8-14, or demand Medium, or MODERATE speed with decent demand.
-- PASS: estResale < $8 OR (SLOW AND Low/Medium demand) OR item unlikely to sell locally.
-- A typical thrift shelf WILL have multiple PASS verdicts. Zero PASS across many common items is a calibration error — fix it.
-- Single common novel volumes (romance, thriller, YA, mass-market series): almost always PASS. Single volumes net under $5 after listing time. Do NOT mark every book BUY.
+=== TASK 2: CALIBRATED VERDICT — commit to the right call, use the FULL range ===
+BUY when genuinely desirable — do NOT hedge into MAYBE:
+- demand High AND sellSpeed FAST or MODERATE AND estResale >= $15 → BUY.
+- Licensed character figures (Funko Pop, QPosket, anime figures) in good condition with High demand → BUY regardless of exact price.
+- A complete or near-complete manga/book SERIES lot with estResale $30+ → BUY (the lot is the product, not the individual volumes).
+- MAYBE means a real margin coin-flip: the item is sellable but profit depends heavily on the buyer's cost. Do NOT use MAYBE to hedge on items that are clearly desirable and fast-moving — those are BUY.
+PASS when the item nets little after time cost — keep this tight:
+- Single common novel volumes (romance, thriller, YA, mass-market series) → PASS. Single volumes net under $5 after listing time.
+- estResale < $8 OR (SLOW AND Low/Medium demand) OR item unlikely to sell locally → PASS.
+- A typical thrift shelf WILL have multiple PASS verdicts. Zero PASS across many common items is wrong. But zero BUY across collectible figures + complete series is equally wrong.
 
-=== TASK 3: GROUPING ===
-- Multiple volumes of the SAME series on the shelf → assign a shared groupId (e.g. "series-harry-potter"). Mark ONE as groupRole "lot-anchor" with estResale = the realistic LOT set price. Mark the others as "lot-member" with their individual estResale.
+=== TASK 3: GROUPING — run of 3+ volumes is a LOT, not separate items ===
+- Any run of 3 or more volumes of the SAME series OR the SAME author shelved together → group as a LOT. Assign a shared groupId (e.g. "series-one-piece"). Mark ONE as groupRole "lot-anchor" with estResale = the realistic full-lot price. Mark the rest as "lot-member" with their individual estResale. The anchor's verdict reflects the lot's value — a complete series lot is often BUY even when individual volumes would PASS.
+- A pair (2 volumes) may be grouped or left as singles at your discretion.
 - Near-duplicates (same item detected twice) → group them, redundant one is "lot-member".
-- Standalone items: groupId null, groupRole "single".
+- Standalone titles with no series match: groupId null, groupRole "single".
 
 Return ALL ${items.length} input indices. Do not skip any.`;
 
