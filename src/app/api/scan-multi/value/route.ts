@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { valuateBatch, type BatchValuation } from "@/lib/claude";
+import { deriveMetrics } from "@/lib/deriveMetrics";
 import { normalizeMetrics } from "@/lib/normalizeMetrics";
 import { groupSeries } from "@/lib/groupSeries";
 
@@ -37,7 +38,8 @@ export async function POST(
 
   try {
     const valuations = await valuateBatch(items);
-    const normalized = normalizeMetrics(valuations);
+    const withMetrics = valuations.map((v) => ({ ...v, ...deriveMetrics(v) }));
+    const normalized = normalizeMetrics(withMetrics);
     const grouped = groupSeries(normalized);
     const buyCount = grouped.filter((v) => v.verdict === "BUY").length;
     const maybeCount = grouped.filter((v) => v.verdict === "MAYBE").length;
