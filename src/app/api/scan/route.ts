@@ -11,9 +11,11 @@ import {
 import { FREE_DAILY_LIMIT } from "@/lib/limits";
 
 interface ScanRequestBody {
-  type: "barcode" | "vision";
+  type: "barcode" | "vision" | "known";
   upc?: string;
   image?: string;
+  itemName?: string;
+  category?: string;
   cost?: number;
 }
 
@@ -152,6 +154,12 @@ export async function POST(
         ? `${identified.brand} ${identified.name}`
         : identified.name;
       imageDescription = identified.category ?? undefined;
+    } else if (body.type === "known") {
+      if (!body.itemName || typeof body.itemName !== "string") {
+        return NextResponse.json({ error: "Missing itemName" }, { status: 400 });
+      }
+      itemName = body.itemName.trim();
+      imageDescription = body.category ?? undefined;
     } else {
       return NextResponse.json({ error: "Invalid scan type" }, { status: 400 });
     }
@@ -178,7 +186,7 @@ export async function POST(
       if (userData.user) {
         await supabase.from("scans").insert({
           user_id: userData.user.id,
-          method: body.type,
+          method: body.type === "known" ? "vision" : body.type,
           item_name: itemName,
           upc,
           cost,
@@ -197,7 +205,7 @@ export async function POST(
     }
 
     const response: ScanResponse = {
-      method: body.type,
+      method: body.type === "known" ? "vision" : body.type,
       name: itemName,
       upc,
       cost,

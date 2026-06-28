@@ -12,6 +12,7 @@ import {
 } from "@/lib/scanner";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { MultiDetectItem, BatchValuation } from "@/lib/claude";
+import VerdictSheet from "@/components/dashboard/VerdictSheet";
 
 export interface VerdictPayload extends ScanResponse {
   capturedImage?: string | null;
@@ -276,6 +277,10 @@ export default function ScanOverlay({
     w: number;
     h: number;
   } | null>(null);
+  const [shelfItemCostInput, setShelfItemCostInput] = useState("");
+  const [shelfVerdictLoading, setShelfVerdictLoading] = useState(false);
+  const [shelfVerdictOpen, setShelfVerdictOpen] = useState(false);
+  const [shelfVerdictData, setShelfVerdictData] = useState<VerdictPayload | null>(null);
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -312,6 +317,9 @@ export default function ScanOverlay({
     setActiveMode(mode);
     setShelfSelectedIndex(null);
     setShelfImgRenderedSize(null);
+    setShelfItemCostInput("");
+    setShelfVerdictOpen(false);
+    setShelfVerdictData(null);
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -510,6 +518,46 @@ export default function ScanOverlay({
         kind: "error",
         message: err instanceof Error ? err.message : "Valuation failed",
       });
+    }
+  };
+
+  const handleFullVerdict = async (idx: number, item: MultiDetectItem) => {
+    if (shelfVerdictLoading) return;
+    const cost = Number(shelfItemCostInput) || 0;
+    setShelfVerdictLoading(true);
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "known",
+          itemName: item.name,
+          category: item.category,
+          cost,
+        }),
+      });
+      const data = (await res.json()) as
+        | ScanResponse
+        | { error: string; scans_used?: number; scans_limit?: number };
+      if (res.status === 403 && "error" in data) {
+        if (
+          typeof data.scans_used === "number" &&
+          typeof data.scans_limit === "number"
+        ) {
+          onPaywall?.({ used: data.scans_used, limit: data.scans_limit });
+        }
+        return;
+      }
+      if (!res.ok || "error" in data) {
+        flagError("full-verdict", "error" in data ? data.error : `scan failed (${res.status})`);
+        return;
+      }
+      setShelfVerdictData({ ...(data as ScanResponse), capturedImage: undefined });
+      setShelfVerdictOpen(true);
+    } catch (err) {
+      flagError("full-verdict", err);
+    } finally {
+      setShelfVerdictLoading(false);
     }
   };
 
@@ -1070,25 +1118,111 @@ export default function ScanOverlay({
                     );
                   })}
 
-                  {/* Reasoning callout for selected item */}
+                  {/* Callout for selected item: reasoning + drill-down */}
                   {shelfSelectedIndex !== null &&
-                    shelfValuations.get(shelfSelectedIndex)?.reasoning && (
+                    shelfValuations.get(shelfSelectedIndex) != null && (
                       <div
                         style={{
                           marginTop: 4,
                           padding: "10px 12px",
                           background: "rgba(255,255,255,0.03)",
                           borderRadius: 6,
-                          fontFamily: "var(--font-body)",
-                          fontSize: 12,
-                          color: "#6b7280",
-                          lineHeight: 1.5,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
                         }}
                       >
-                        <span style={{ color: "#4b5563", marginRight: 6 }}>
-                          #{shelfSelectedIndex + 1}
-                        </span>
-                        {shelfValuations.get(shelfSelectedIndex)!.reasoning}
+                        {/* Reasoning text */}
+                        {shelfValuations.get(shelfSelectedIndex)!.reasoning && (
+                          <div
+                            style={{
+                              fontFamily: "var(--font-body)",
+                              fontSize: 12,
+                              color: "#6b7280",
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            <span style={{ color: "#4b5563", marginRight: 6 }}>
+                              #{shelfSelectedIndex + 1}
+                            </span>
+                            {shelfValuations.get(shelfSelectedIndex)!.reasoning}
+                          </div>
+                        )}
+
+                        {/* Cost input + FULL VERDICT button */}
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <div
+                            style={{
+                              flex: 1,
+                              height: 36,
+                              position: "relative",
+                              backgroundColor: "rgba(0,0,0,0.3)",
+                              border: "1px solid rgba(255,255,255,0.06)",
+                              boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
+                              borderRadius: 8,
+                              display: "flex",
+                              alignItems: "center",
+                              paddingLeft: 10,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: "var(--font-body)",
+                                fontSize: 13,
+                                color: "#5A4E70",
+                                marginRight: 4,
+                              }}
+                            >
+                              $
+                            </span>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              step="0.01"
+                              min="0"
+                              value={shelfItemCostInput}
+                              onChange={(e) => setShelfItemCostInput(e.target.value)}
+                              placeholder="your cost"
+                              style={{
+                                flex: 1,
+                                background: "transparent",
+                                border: "none",
+                                outline: "none",
+                                fontFamily: "var(--font-body)",
+                                fontSize: 13,
+                                color: "#e5e7eb",
+                                minWidth: 0,
+                              }}
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const item = shelfItems[shelfSelectedIndex];
+                              if (item) void handleFullVerdict(shelfSelectedIndex, item);
+                            }}
+                            disabled={shelfVerdictLoading}
+                            style={{
+                              height: 36,
+                              padding: "0 14px",
+                              borderRadius: 8,
+                              background: shelfVerdictLoading
+                                ? "rgba(92,224,184,0.05)"
+                                : "rgba(92,224,184,0.10)",
+                              border: "1px solid rgba(92,224,184,0.25)",
+                              color: "#5CE0B8",
+                              fontFamily: "var(--font-label)",
+                              fontSize: 10,
+                              fontWeight: 700,
+                              letterSpacing: "0.08em",
+                              cursor: shelfVerdictLoading ? "not-allowed" : "pointer",
+                              opacity: shelfVerdictLoading ? 0.6 : 1,
+                              whiteSpace: "nowrap",
+                              transition: "opacity 150ms ease, background 150ms ease",
+                            }}
+                          >
+                            {shelfVerdictLoading ? "…" : "FULL VERDICT"}
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -1626,6 +1760,14 @@ export default function ScanOverlay({
           </div>
         )}
       </div>
+
+      {/* Shelf item drill-down: VerdictSheet renders on top of the shelf results.
+          Closing it returns to the shelf results unchanged. */}
+      <VerdictSheet
+        open={shelfVerdictOpen}
+        onClose={() => setShelfVerdictOpen(false)}
+        data={shelfVerdictData}
+      />
     </>
   );
 }
