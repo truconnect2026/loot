@@ -1,88 +1,674 @@
-import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { buildWeekPlan } from "@/lib/sourcingPlan";
-import type { StoreRecord, LogRecord } from "@/lib/sourcingPlan";
-import { KNOWN_CHAINS } from "@/lib/sourcingPatterns";
+"use client";
 
-// Temporary verification page — dumps the plan output as JSON.
-// Replace with full UI in phase 6b.
-export default async function SourcingPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const user = userData.user;
+import { useState, useEffect, useRef, type FormEvent } from "react";
 
-  if (!user) {
+// ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
+interface StoreRecord {
+  id: string;
+  name: string;
+  chain: string;
+  location_label: string | null;
+}
+
+interface DayEntry {
+  store: StoreRecord;
+  label: string;
+  confidence: "pattern" | "confirmed" | "unknown";
+}
+
+interface DayPlan {
+  date: string;    // "YYYY-MM-DD"
+  weekday: number; // 0–6
+  entries: DayEntry[];
+}
+
+interface PlanData {
+  weekPlan: DayPlan[];
+  bestStop: DayEntry | null;
+}
+
+// ── Brand + display constants ────────────────────────────────────────────────
+const MINT = "#5CE0B8";
+const BG   = "#070510";
+
+const DAY_LETTER  = ["S", "M", "T", "W", "T", "F", "S"] as const;
+const WEEKDAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+
+const CHAIN_OPTIONS = ["Goodwill", "Savers", "Value Village", "other"] as const;
+type Chain = (typeof CHAIN_OPTIONS)[number];
+
+const CHAIN_COLOR: Record<string, { bg: string; text: string }> = {
+  Goodwill:        { bg: "rgba(92,224,184,0.10)",  text: "#5CE0B8" },
+  Savers:          { bg: "rgba(245,197,24,0.10)",  text: "#F5C518" },
+  "Value Village": { bg: "rgba(107,70,193,0.15)",  text: "#9B7EE8" },
+  other:           { bg: "rgba(255,255,255,0.06)", text: "#6b7280" },
+};
+
+// ── Small sub-components ─────────────────────────────────────────────────────
+function ChainBadge({ chain }: { chain: string }) {
+  const c = CHAIN_COLOR[chain] ?? CHAIN_COLOR.other!;
+  return (
+    <span style={{
+      fontFamily: "var(--font-label, monospace)",
+      fontSize: 9, letterSpacing: "0.10em",
+      padding: "2px 8px", borderRadius: 999,
+      background: c.bg, color: c.text,
+      textTransform: "uppercase",
+      flexShrink: 0,
+    }}>
+      {chain}
+    </span>
+  );
+}
+
+function ConfidencePill({ confidence }: { confidence: "pattern" | "confirmed" | "unknown" }) {
+  if (confidence === "confirmed") {
     return (
-      <main style={{ padding: 24, fontFamily: "monospace", color: "#e5e7eb", background: "#111", minHeight: "100vh" }}>
-        <h2>sourcing plan</h2>
-        <p style={{ color: "#E8636B" }}>not authenticated — sign in to see your plan</p>
-        <hr />
-        <h3>output shape (/api/sourcing/plan)</h3>
-        <pre style={{ color: "#5CE0B8", fontSize: 13 }}>{JSON.stringify(
-          {
-            weekPlan: [
-              {
-                date: "YYYY-MM-DD",
-                weekday: 0,
-                entries: [
-                  {
-                    store: { id: "uuid", name: "My Goodwill", chain: "Goodwill", location_label: "Broad St" },
-                    label: "Weekly color tag 50% off · check current color in-app",
-                    confidence: "pattern | confirmed | unknown",
-                  },
-                ],
-              },
-            ],
-            bestStop: {
-              store: { id: "uuid", name: "My Goodwill", chain: "Goodwill", location_label: "Broad St" },
-              label: "Senior Discount Day — extra 20% off (55+, most locations)",
-              confidence: "confirmed",
-            },
-          },
-          null,
-          2,
-        )}</pre>
-        <h3>known chains</h3>
-        <pre style={{ color: "#D4A574", fontSize: 13 }}>{JSON.stringify(KNOWN_CHAINS, null, 2)}</pre>
-      </main>
+      <span style={{
+        fontFamily: "var(--font-label, monospace)",
+        fontSize: 8, letterSpacing: "0.10em",
+        padding: "2px 9px", borderRadius: 999,
+        background: "rgba(92,224,184,0.12)",
+        border: "1px solid rgba(92,224,184,0.25)",
+        color: MINT, textTransform: "uppercase",
+      }}>confirmed</span>
+    );
+  }
+  return (
+    <span style={{
+      fontFamily: "var(--font-label, monospace)",
+      fontSize: 8, letterSpacing: "0.07em",
+      padding: "2px 9px", borderRadius: 999,
+      background: "rgba(212,165,116,0.08)",
+      border: "1px solid rgba(212,165,116,0.20)",
+      color: "#D4A574", textTransform: "uppercase",
+    }}>typical · verify in store</span>
+  );
+}
+
+// Group same-store entries for a day into one card (multiple patterns → bullet list).
+interface StoreCard {
+  store: StoreRecord;
+  labels: string[];
+  confidence: "pattern" | "confirmed" | "unknown";
+}
+
+function groupEntries(entries: DayEntry[]): StoreCard[] {
+  const map = new Map<string, StoreCard>();
+  for (const e of entries) {
+    if (e.confidence === "unknown") continue;
+    const ex = map.get(e.store.id);
+    if (ex) {
+      ex.labels.push(e.label);
+      if (e.confidence === "confirmed") ex.confidence = "confirmed";
+    } else {
+      map.set(e.store.id, { store: e.store, labels: [e.label], confidence: e.confidence });
+    }
+  }
+  return [...map.values()];
+}
+
+// ── Main page ────────────────────────────────────────────────────────────────
+export default function SourcingPage() {
+  const [plan,       setPlan]       = useState<PlanData | null>(null);
+  const [stores,     setStores]     = useState<StoreRecord[]>([]);
+  const [selDay,     setSelDay]     = useState(0);
+  const [loading,    setLoading]    = useState(true);
+  const [authErr,    setAuthErr]    = useState(false);
+  const [managing,   setManaging]   = useState(false);
+  const [addOpen,    setAddOpen]    = useState(false);
+  const [newName,    setNewName]    = useState("");
+  const [newChain,   setNewChain]   = useState<Chain>("Goodwill");
+  const [newLoc,     setNewLoc]     = useState("");
+  const [addBusy,    setAddBusy]    = useState(false);
+  // storeId → "yes"|"no" for today's session logging
+  const [logged,     setLogged]     = useState<Record<string, "yes" | "no">>({});
+
+  const todayCircleRef = useRef<HTMLDivElement>(null);
+
+  // ── Data fetching ──────────────────────────────────────────────────────────
+  async function refresh() {
+    const [pr, sr] = await Promise.all([
+      fetch("/api/sourcing/plan"),
+      fetch("/api/sourcing/stores"),
+    ]);
+    if (pr.status === 401 || sr.status === 401) {
+      setAuthErr(true);
+      setLoading(false);
+      return;
+    }
+    const [pd, sd] = await Promise.all([pr.json(), sr.json()]);
+    setPlan(pd as PlanData);
+    setStores((sd as { stores: StoreRecord[] }).stores ?? []);
+    setLoading(false);
+  }
+
+  useEffect(() => { void refresh(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!loading) {
+      todayCircleRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  }, [loading]);
+
+  // ── Mutations ──────────────────────────────────────────────────────────────
+  async function handleAddStore(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setAddBusy(true);
+    const res = await fetch("/api/sourcing/stores", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newName.trim(),
+        chain: newChain,
+        location_label: newLoc.trim() || undefined,
+      }),
+    });
+    if (res.ok) {
+      setNewName(""); setNewChain("Goodwill"); setNewLoc("");
+      setAddOpen(false);
+      await refresh();
+    }
+    setAddBusy(false);
+  }
+
+  async function handleDelete(id: string) {
+    await fetch(`/api/sourcing/stores?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    await refresh();
+  }
+
+  async function handleLog(storeId: string, wasOnSale: boolean) {
+    const res = await fetch("/api/sourcing/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ store_id: storeId, was_on_sale: wasOnSale }),
+    });
+    if (res.ok) setLogged((p) => ({ ...p, [storeId]: wasOnSale ? "yes" : "no" }));
+  }
+
+  // ── Loading / auth guards ──────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{ background: BG, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "var(--font-data, monospace)", color: MINT, fontSize: 13, letterSpacing: "0.08em" }}>
+          loading plan…
+        </span>
+      </div>
+    );
+  }
+  if (authErr) {
+    return (
+      <div style={{ background: BG, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14 }}>
+        <span style={{ fontFamily: "var(--font-ui, sans-serif)", color: "#9ca3af", fontSize: 15 }}>
+          Sign in to see your sourcing plan
+        </span>
+        <a href="/login" style={{ padding: "10px 28px", background: MINT, color: "#000", borderRadius: 8, fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textDecoration: "none" }}>
+          SIGN IN
+        </a>
+      </div>
     );
   }
 
-  const [storesRes, logsRes] = await Promise.all([
-    supabase
-      .from("sourcing_stores")
-      .select("id, name, chain, location_label")
-      .eq("user_id", user.id)
-      .order("created_at"),
-    supabase
-      .from("sourcing_logs")
-      .select("store_id, logged_date, was_on_sale")
-      .eq("user_id", user.id),
-  ]);
+  // ── Derived state ──────────────────────────────────────────────────────────
+  const weekPlan   = plan?.weekPlan ?? [];
+  const bestStop   = plan?.bestStop ?? null;
+  const hasStores  = stores.length > 0;
+  const selPlan    = weekPlan[selDay];
 
-  const stores = (storesRes.data ?? []) as StoreRecord[];
-  const logs = (logsRes.data ?? []) as LogRecord[];
-  const plan = buildWeekPlan(stores, logs);
+  // Next future day with any deal (for empty-today message)
+  const nextDealDay = weekPlan.slice(1).find((d) =>
+    d.entries.some((e) => e.confidence !== "unknown"),
+  );
 
+  // Cards for selected day
+  const dayCards = selPlan ? groupEntries(selPlan.entries) : [];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <main style={{ padding: 24, fontFamily: "monospace", color: "#e5e7eb", background: "#111", minHeight: "100vh" }}>
-      <h2 style={{ color: "#5CE0B8" }}>sourcing plan (placeholder — phase 6b will style this)</h2>
-      <p style={{ color: "#9ca3af" }}>user: {user.email} · {stores.length} stores · {logs.length} logs</p>
+    <div style={{ background: BG, minHeight: "100vh", color: "#e5e7eb", maxWidth: 480, margin: "0 auto" }}>
 
-      <h3>bestStop</h3>
-      <pre style={{ color: "#5CE0B8", fontSize: 13 }}>{JSON.stringify(plan.bestStop, null, 2)}</pre>
+      {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
+      <div style={{ position: "relative", padding: "32px 20px 22px", overflow: "hidden" }}>
+        {/* Saturn-ring motif — centered on the store name text area */}
+        <svg
+          aria-hidden="true"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", pointerEvents: "none" }}
+        >
+          <ellipse cx="50%" cy="72" rx="210" ry="56" fill="none" stroke="rgba(92,224,184,0.07)" strokeWidth="1.5" />
+          <ellipse cx="50%" cy="72" rx="270" ry="78" fill="none" stroke="rgba(92,224,184,0.04)" strokeWidth="1" />
+          <circle cx="88%"  cy="22"  r="1.5" fill="rgba(92,224,184,0.45)" />
+          <circle cx="10%"  cy="110" r="1"   fill="rgba(255,255,255,0.22)" />
+          <circle cx="85%"  cy="120" r="0.8" fill="rgba(92,224,184,0.30)" />
+          <circle cx="15%"  cy="30"  r="1.1" fill="rgba(255,255,255,0.18)" />
+        </svg>
 
-      <h3>weekPlan (7 days)</h3>
-      <pre style={{ color: "#e5e7eb", fontSize: 12 }}>{JSON.stringify(plan.weekPlan, null, 2)}</pre>
+        {/* Label */}
+        <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.16em", color: "#5A4E70", textTransform: "uppercase", marginBottom: 8, position: "relative" }}>
+          {"today's best stop"}
+        </div>
 
-      <hr style={{ borderColor: "#374151", margin: "24px 0" }} />
-      <h3 style={{ color: "#9ca3af" }}>api endpoints</h3>
-      <ul style={{ color: "#9ca3af", fontSize: 13 }}>
-        <li>GET /api/sourcing/plan</li>
-        <li>GET /api/sourcing/stores</li>
-        <li>POST /api/sourcing/stores — {`{ name, chain, location_label? }`}</li>
-        <li>DELETE /api/sourcing/stores?id=uuid</li>
-        <li>POST /api/sourcing/log — {`{ store_id, was_on_sale, logged_date?, note? }`}</li>
-      </ul>
-    </main>
+        {/* — No stores — */}
+        {!hasStores && (
+          <div style={{ position: "relative" }}>
+            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#4b5563", letterSpacing: "0.02em", lineHeight: 1.1 }}>
+              No stores yet
+            </div>
+            <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#6b7280", marginTop: 8, marginBottom: 20, lineHeight: 1.5 }}>
+              Add your stops to build your game plan
+            </div>
+            <button
+              onClick={() => setAddOpen(true)}
+              style={{
+                padding: "11px 28px", borderRadius: 10,
+                background: MINT, color: "#000", border: "none",
+                fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
+                cursor: "pointer", boxShadow: "0 0 20px rgba(92,224,184,0.35)",
+              }}
+            >
+              + ADD STORE
+            </button>
+          </div>
+        )}
+
+        {/* — Best stop — */}
+        {hasStores && bestStop && (
+          <div
+            role="button"
+            tabIndex={0}
+            style={{ position: "relative", cursor: "pointer" }}
+            onClick={() => {
+              setSelDay(0);
+              todayCircleRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+            }}
+            onKeyDown={(e) => e.key === "Enter" && setSelDay(0)}
+          >
+            <div style={{
+              fontFamily: "var(--font-display, sans-serif)",
+              fontSize: 44, lineHeight: 1, letterSpacing: "0.01em",
+              color: MINT,
+              textShadow: "0 0 32px rgba(92,224,184,0.55), 0 0 80px rgba(92,224,184,0.18)",
+            }}>
+              {bestStop.store.name}
+            </div>
+            {bestStop.store.location_label && (
+              <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 11, color: "#5A4E70", marginTop: 2, letterSpacing: "0.04em" }}>
+                {bestStop.store.location_label}
+              </div>
+            )}
+            <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#C8C0D8", marginTop: 8, lineHeight: 1.45 }}>
+              {bestStop.label}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <ConfidencePill confidence={bestStop.confidence} />
+            </div>
+          </div>
+        )}
+
+        {/* — Stores but no deal today — */}
+        {hasStores && !bestStop && (
+          <div style={{ position: "relative" }}>
+            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#4b5563", letterSpacing: "0.02em" }}>
+              No tracked deals today
+            </div>
+            {nextDealDay && (
+              <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#6b7280", marginTop: 8 }}>
+                next: {WEEKDAY_FULL[nextDealDay.weekday]} ({nextDealDay.date.slice(5).replace("-", "/")})
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ WEEK STRIP ═════════════════════════════════════════════════════ */}
+      {hasStores && (
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ display: "flex", gap: 6, padding: "0 20px 16px", width: "max-content" }}>
+            {weekPlan.map((day, idx) => {
+              const isToday    = idx === 0;
+              const isSel      = idx === selDay;
+              const hasDeals   = day.entries.some((e) => e.confidence !== "unknown");
+              const hasConf    = day.entries.some((e) => e.confidence === "confirmed");
+              const dotColor   = hasConf ? MINT : "rgba(212,165,116,0.65)";
+
+              return (
+                <div
+                  key={day.date}
+                  ref={isToday ? todayCircleRef : undefined}
+                  onClick={() => setSelDay(idx)}
+                  style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", padding: "2px 0" }}
+                >
+                  <div style={{
+                    width: 46, height: 46, borderRadius: "50%",
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    background: isSel ? (isToday ? "rgba(92,224,184,0.16)" : "rgba(255,255,255,0.05)") : "transparent",
+                    border: `2px solid ${isSel ? (isToday ? MINT : "rgba(255,255,255,0.18)") : "transparent"}`,
+                    boxShadow: isSel && isToday ? "0 0 16px rgba(92,224,184,0.28)" : "none",
+                    transition: "all 180ms ease",
+                  }}>
+                    <span style={{
+                      fontFamily: "var(--font-label, monospace)",
+                      fontSize: 8, letterSpacing: "0.12em",
+                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "#4b5563",
+                    }}>
+                      {DAY_LETTER[day.weekday]}
+                    </span>
+                    <span style={{
+                      fontFamily: "var(--font-data, monospace)",
+                      fontSize: 14, fontWeight: 700,
+                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "#6b7280",
+                      lineHeight: 1,
+                    }}>
+                      {day.date.slice(8)}
+                    </span>
+                  </div>
+                  {/* Deal indicator dot */}
+                  <div style={{
+                    width: 5, height: 5, borderRadius: "50%",
+                    background: hasDeals ? dotColor : "transparent",
+                    transition: "background 200ms ease",
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ SELECTED DAY PLAN ══════════════════════════════════════════════ */}
+      {hasStores && selPlan && (
+        <div style={{ padding: "0 16px 16px" }}>
+          {/* Day label */}
+          <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.13em", color: "#5A4E70", marginBottom: 12, textTransform: "uppercase" }}>
+            {selDay === 0 ? "today" : WEEKDAY_FULL[selPlan.weekday]} · {selPlan.date}
+          </div>
+
+          {dayCards.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "24px 0", fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#374151" }}>
+              nothing tracked this day
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {dayCards.map((card) => {
+                const isToday     = selDay === 0;
+                const alreadyLogged = logged[card.store.id];
+                return (
+                  <div key={card.store.id} style={{
+                    background: "rgba(255,255,255,0.028)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 14, padding: "14px 16px",
+                  }}>
+                    {/* Store name + chain */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{
+                        fontFamily: "var(--font-ui, sans-serif)", fontWeight: 600, fontSize: 15,
+                        color: "#e5e7eb", flex: 1, minWidth: 0,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {card.store.name}
+                      </span>
+                      <ChainBadge chain={card.store.chain} />
+                    </div>
+
+                    {card.store.location_label && (
+                      <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 10, color: "#5A4E70", marginBottom: 8, letterSpacing: "0.03em" }}>
+                        {card.store.location_label}
+                      </div>
+                    )}
+
+                    {/* Deal labels — bullet list when multiple */}
+                    <div style={{ marginBottom: 10 }}>
+                      {card.labels.map((lbl, i) => (
+                        <div key={i} style={{
+                          fontFamily: "var(--font-ui, sans-serif)", fontSize: 13, color: "#C8C0D8",
+                          lineHeight: 1.5,
+                          paddingLeft: card.labels.length > 1 ? 10 : 0,
+                          position: "relative",
+                        }}>
+                          {card.labels.length > 1 && (
+                            <span style={{ position: "absolute", left: 0, color: "#5A4E70" }}>·</span>
+                          )}
+                          {lbl}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Confidence pill — always visible, always honest */}
+                    <div style={{ marginBottom: isToday ? 12 : 0 }}>
+                      <ConfidencePill confidence={card.confidence} />
+                    </div>
+
+                    {/* One-tap log — today only */}
+                    {isToday && (
+                      alreadyLogged ? (
+                        <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 10, color: MINT, letterSpacing: "0.06em" }}>
+                          ✓ logged {alreadyLogged === "yes" ? "(on sale)" : "(not on sale)"}
+                        </div>
+                      ) : (
+                        <div>
+                          <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.10em", color: "#5A4E70", marginBottom: 7, textTransform: "uppercase" }}>
+                            on sale today?
+                          </div>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => void handleLog(card.store.id, true)}
+                              style={{
+                                flex: 1, padding: "8px 0", borderRadius: 8, border: "1px solid rgba(92,224,184,0.28)",
+                                background: "rgba(92,224,184,0.08)", color: MINT,
+                                fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                                cursor: "pointer",
+                              }}
+                            >
+                              ✓ YES
+                            </button>
+                            <button
+                              onClick={() => void handleLog(card.store.id, false)}
+                              style={{
+                                flex: 1, padding: "8px 0", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(255,255,255,0.03)", color: "#6b7280",
+                                fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                                cursor: "pointer",
+                              }}
+                            >
+                              ✗ NO
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ STORE MANAGEMENT ═══════════════════════════════════════════════ */}
+      <div style={{ padding: "0 16px 40px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 6 }}>
+        {/* Header row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0 12px" }}>
+          <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.13em", color: "#5A4E70", textTransform: "uppercase" }}>
+            my stores ({stores.length})
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {stores.length > 0 && (
+              <button
+                onClick={() => setManaging((m) => !m)}
+                style={{
+                  padding: "5px 12px", borderRadius: 8,
+                  background: managing ? "rgba(232,99,107,0.10)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${managing ? "rgba(232,99,107,0.25)" : "rgba(255,255,255,0.08)"}`,
+                  color: managing ? "#E8636B" : "#6b7280",
+                  fontFamily: "var(--font-label, monospace)", fontSize: 9, fontWeight: 700, letterSpacing: "0.08em",
+                  cursor: "pointer", transition: "all 150ms ease",
+                }}
+              >
+                {managing ? "DONE" : "MANAGE"}
+              </button>
+            )}
+            <button
+              onClick={() => setAddOpen(true)}
+              style={{
+                padding: "5px 14px", borderRadius: 8,
+                background: "rgba(92,224,184,0.10)", border: "1px solid rgba(92,224,184,0.25)",
+                color: MINT, fontFamily: "var(--font-label, monospace)", fontSize: 9, fontWeight: 700,
+                letterSpacing: "0.08em", cursor: "pointer",
+              }}
+            >
+              + ADD
+            </button>
+          </div>
+        </div>
+
+        {/* Store list */}
+        {stores.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "10px 0", fontFamily: "var(--font-ui, sans-serif)", fontSize: 13, color: "#374151" }}>
+            No stores added yet
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {stores.map((s) => (
+              <div key={s.id} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.05)",
+                borderRadius: 10, padding: "10px 14px",
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontWeight: 600, fontSize: 14, color: "#e5e7eb", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {s.name}
+                  </div>
+                  {s.location_label && (
+                    <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 10, color: "#5A4E70", letterSpacing: "0.03em", marginTop: 1 }}>
+                      {s.location_label}
+                    </div>
+                  )}
+                </div>
+                <ChainBadge chain={s.chain} />
+                {managing && (
+                  <button
+                    onClick={() => void handleDelete(s.id)}
+                    style={{
+                      flexShrink: 0, width: 28, height: 28, borderRadius: 7,
+                      background: "rgba(232,99,107,0.10)", border: "1px solid rgba(232,99,107,0.20)",
+                      color: "#E8636B", fontSize: 16, lineHeight: 1,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ ADD STORE MODAL ════════════════════════════════════════════════ */}
+      {addOpen && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 100,
+            background: "rgba(7,5,16,0.86)", backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setAddOpen(false); }}
+        >
+          <form
+            onSubmit={(e) => void handleAddStore(e)}
+            style={{
+              width: "100%", maxWidth: 480,
+              background: "#0E0B1F",
+              border: "1px solid rgba(92,224,184,0.14)",
+              borderRadius: "20px 20px 0 0",
+              padding: "22px 20px 40px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              fontFamily: "var(--font-display, sans-serif)",
+              fontSize: 24, letterSpacing: "0.04em",
+              color: MINT, marginBottom: 20,
+            }}>
+              ADD STORE
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <input
+                placeholder="Store name (e.g. Goodwill Broad St)"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+                style={{
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 10, padding: "13px 14px",
+                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
+                  width: "100%", boxSizing: "border-box",
+                }}
+              />
+
+              <select
+                value={newChain}
+                onChange={(e) => setNewChain(e.target.value as Chain)}
+                style={{
+                  background: "#0E0B1F", border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 10, padding: "13px 14px",
+                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
+                  width: "100%", boxSizing: "border-box", cursor: "pointer",
+                }}
+              >
+                {CHAIN_OPTIONS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+
+              <input
+                placeholder="Location label (optional — e.g. Broad St)"
+                value={newLoc}
+                onChange={(e) => setNewLoc(e.target.value)}
+                style={{
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 10, padding: "13px 14px",
+                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
+                  width: "100%", boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={() => setAddOpen(false)}
+                style={{
+                  flex: 1, padding: "13px 0", borderRadius: 10,
+                  background: "transparent", border: "1px solid rgba(255,255,255,0.10)",
+                  color: "#6b7280", fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700,
+                  letterSpacing: "0.08em", cursor: "pointer",
+                }}
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                disabled={addBusy || !newName.trim()}
+                style={{
+                  flex: 2, padding: "13px 0", borderRadius: 10, border: "none",
+                  background: addBusy || !newName.trim() ? "rgba(92,224,184,0.15)" : MINT,
+                  color: addBusy || !newName.trim() ? MINT : "#000",
+                  fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  cursor: addBusy || !newName.trim() ? "not-allowed" : "pointer",
+                  boxShadow: addBusy || !newName.trim() ? "none" : "0 0 18px rgba(92,224,184,0.32)",
+                  transition: "all 200ms ease",
+                }}
+              >
+                {addBusy ? "SAVING…" : "SAVE STORE"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
   );
 }
