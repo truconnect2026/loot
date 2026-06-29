@@ -352,6 +352,9 @@ export default function ScanOverlay({
   const [expandedLots, setExpandedLots] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<"ALL" | "BUY" | "MAYBE" | "PASS">("ALL");
   const [hasCopied, setHasCopied] = useState(false);
+  const [haulCost, setHaulCost] = useState("");
+  const [shelfRevealCount, setShelfRevealCount] = useState(0);
+  const [pressedRowIdx, setPressedRowIdx] = useState<number | null>(null);
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -393,6 +396,9 @@ export default function ScanOverlay({
     setShelfVerdictData(null);
     setExpandedLots(new Set());
     setActiveFilter("ALL");
+    setHaulCost("");
+    setShelfRevealCount(0);
+    setPressedRowIdx(null);
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -498,6 +504,26 @@ export default function ScanOverlay({
     };
   }, [open, cameraReady, activeMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Effect 3: count-up animation for BUY count on shelf-done reveal.
+  useEffect(() => {
+    if (phase.kind !== "shelf-done") { setShelfRevealCount(0); return; }
+    const target = [...phase.valuations.values()].filter(
+      (v) => v.groupRole !== "lot-member" && v.verdict === "BUY",
+    ).length;
+    if (target === 0) { setShelfRevealCount(0); return; }
+    const startTime = performance.now();
+    const duration = 600;
+    let raf: number;
+    const tick = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - (1 - t) ** 3;
+      setShelfRevealCount(Math.round(eased * target));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [phase.kind]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Switch active mode within an open session.
   const switchMode = (m: "barcode" | "vision" | "shelf") => {
     if (m === activeMode) return;
@@ -507,6 +533,8 @@ export default function ScanOverlay({
     setShelfImgRenderedSize(null);
     setExpandedLots(new Set());
     setActiveFilter("ALL");
+    setHaulCost("");
+    setPressedRowIdx(null);
     shelfRowRefs.current.clear();
     setActiveMode(m);
   };
@@ -544,6 +572,8 @@ export default function ScanOverlay({
     setShelfImgRenderedSize(null);
     setExpandedLots(new Set());
     setActiveFilter("ALL");
+    setHaulCost("");
+    setPressedRowIdx(null);
     shelfRowRefs.current.clear();
     setPhase({ kind: "shelf-detecting", capturedImage: image });
 
@@ -754,6 +784,18 @@ export default function ScanOverlay({
     headlineCount > 0 &&
     (headlineSumLow > 0 || headlineSumHigh > 0);
 
+  // Haul cost → net estimate (BUYs gross × 0.87 minus lot cost).
+  const haulCostNum = Number(haulCost) || 0;
+  const buyGrossResale = buyMain.reduce((s, v) => s + v.estResale, 0);
+  const haulNet =
+    haulCostNum > 0
+      ? Math.round((buyGrossResale * 0.87 - haulCostNum) * 100) / 100
+      : null;
+  const haulMultiple =
+    haulCostNum > 0 && buyGrossResale > 0
+      ? (buyGrossResale / haulCostNum).toFixed(1)
+      : null;
+
   // Filtered list — ALL shows every anchor/single; tier chip narrows by verdict.
   const filteredMain =
     activeFilter === "ALL"
@@ -827,6 +869,10 @@ export default function ScanOverlay({
         }
         @keyframes shelfPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
         .shelf-pulse { animation: shelfPulse 1.2s ease-in-out infinite; }
+        @keyframes rowIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       <div
@@ -1003,151 +1049,192 @@ export default function ScanOverlay({
               </div>
             )}
 
-            {/* Done: headline hero + image with clustered dots + sorted list */}
+            {/* Done: hero headline + cosmic bg + image with clustered dots + sorted list */}
             {phase.kind === "shelf-done" && (
               <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Hero headline + COPY HAUL + filter chips */}
-                <div style={{ padding: "0 18px 10px", flexShrink: 0 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: 8,
-                    }}
+
+                {/* ── HERO HEADER with cosmic texture ── */}
+                <div style={{ position: "relative", padding: "0 18px 14px", flexShrink: 0, overflow: "hidden" }}>
+                  {/* Cosmic: scattered stars + Saturn ring arc */}
+                  <svg
+                    aria-hidden="true"
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible", pointerEvents: "none" }}
+                    xmlns="http://www.w3.org/2000/svg"
                   >
+                    <circle cx="8%" cy="18%" r="1"   fill="rgba(255,255,255,0.30)" />
+                    <circle cx="22%" cy="7%"  r="0.7" fill="rgba(92,224,184,0.45)" />
+                    <circle cx="55%" cy="11%" r="1.1" fill="rgba(255,255,255,0.20)" />
+                    <circle cx="72%" cy="5%"  r="0.8" fill="rgba(92,224,184,0.38)" />
+                    <circle cx="89%" cy="23%" r="1"   fill="rgba(255,255,255,0.18)" />
+                    <circle cx="95%" cy="52%" r="0.6" fill="rgba(92,224,184,0.28)" />
+                    <circle cx="3%"  cy="62%" r="0.9" fill="rgba(255,255,255,0.14)" />
+                    <circle cx="78%" cy="82%" r="0.7" fill="rgba(92,224,184,0.18)" />
+                    <ellipse cx="88%" cy="13%" rx="72" ry="22" fill="none" stroke="rgba(92,224,184,0.09)" strokeWidth="1.5" />
+                    <ellipse cx="88%" cy="13%" rx="88" ry="30" fill="none" stroke="rgba(92,224,184,0.05)" strokeWidth="1"   />
+                  </svg>
+
+                  {/* Hero count + copy button row */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, position: "relative" }}>
                     <div>
                       {activeFilter === "MAYBE" ? (
-                        <div
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 22,
-                            fontWeight: 700,
-                            color: "#F5C518",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {headlineCount} maybe
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ fontFamily: "var(--font-display)", fontSize: 60, lineHeight: 1, color: "#F5C518", letterSpacing: "-0.01em" }}>
+                            {headlineCount}
+                          </span>
+                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: "#9ca3af", paddingBottom: 4 }}>
+                            maybe
+                          </span>
                         </div>
                       ) : activeFilter === "PASS" ? (
-                        <div
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 22,
-                            fontWeight: 700,
-                            color: "#6b7280",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {headlineCount} pass
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{ fontFamily: "var(--font-display)", fontSize: 60, lineHeight: 1, color: "#6b7280", letterSpacing: "-0.01em" }}>
+                            {headlineCount}
+                          </span>
+                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: "#6b7280", paddingBottom: 4 }}>
+                            pass
+                          </span>
                         </div>
                       ) : headlineCount > 0 ? (
-                        <div
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 22,
-                            fontWeight: 700,
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                          <span style={{
+                            fontFamily: "var(--font-display)",
+                            fontSize: 64,
+                            lineHeight: 1,
                             color: "#5CE0B8",
-                            lineHeight: 1.2,
-                          }}
-                        >
-                          {headlineCount} worth grabbing
+                            letterSpacing: "-0.01em",
+                            textShadow: "0 0 24px rgba(92,224,184,0.55), 0 0 60px rgba(92,224,184,0.18)",
+                          }}>
+                            {shelfRevealCount}
+                          </span>
+                          <span style={{ fontFamily: "var(--font-ui)", fontSize: 14, fontWeight: 600, color: "#9ca3af", paddingBottom: 4 }}>
+                            worth grabbing
+                          </span>
                         </div>
                       ) : (
-                        <div
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 20,
-                            fontWeight: 700,
-                            color: "#C8C0D8",
-                            lineHeight: 1.2,
-                          }}
-                        >
+                        <div style={{ fontFamily: "var(--font-ui)", fontSize: 18, fontWeight: 600, color: "#C8C0D8", lineHeight: 1.2 }}>
                           nothing worth grabbing
                         </div>
                       )}
-                      <div
-                        style={{
-                          fontFamily: "var(--font-label)",
-                          fontSize: 11,
-                          color: "#6b7280",
-                          marginTop: 3,
-                          letterSpacing: "0.04em",
-                        }}
-                      >
-                        {heroMaybeCount} maybe · {heroPassCount} pass ·{" "}
-                        {shelfItems.length} items
-                      </div>
                       {showResaleLine && (
-                        <div
-                          style={{
-                            fontFamily: "var(--font-label)",
-                            fontSize: 10,
-                            color: "#4b5563",
-                            marginTop: 2,
-                            letterSpacing: "0.04em",
-                          }}
-                        >
+                        <div style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#4b5563", marginTop: 3, letterSpacing: "0.04em" }}>
                           ~${headlineSumLow}–${headlineSumHigh} resale
                         </div>
                       )}
+                      <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#374151", marginTop: 2, letterSpacing: "0.04em" }}>
+                        {heroMaybeCount} maybe · {heroPassCount} pass · {shelfItems.length} items
+                      </div>
                     </div>
+
+                    {/* COPY HAUL — primary action */}
                     <button
                       onClick={() => void copyHaul()}
                       style={{
                         flexShrink: 0,
-                        marginTop: 2,
-                        padding: "5px 10px",
-                        borderRadius: 8,
-                        background: hasCopied
-                          ? "rgba(92,224,184,0.15)"
-                          : "rgba(255,255,255,0.05)",
-                        border: hasCopied
-                          ? "1px solid rgba(92,224,184,0.40)"
-                          : "1px solid rgba(255,255,255,0.10)",
-                        color: hasCopied ? "#5CE0B8" : "#5A4E70",
+                        marginTop: 4,
+                        padding: "7px 12px",
+                        borderRadius: 10,
+                        background: hasCopied ? "#5CE0B8" : "rgba(92,224,184,0.10)",
+                        border: hasCopied ? "none" : "1px solid rgba(92,224,184,0.30)",
+                        color: hasCopied ? "#000" : "#5CE0B8",
                         fontFamily: "var(--font-label)",
                         fontSize: 9,
                         fontWeight: 700,
                         letterSpacing: "0.08em",
                         cursor: "pointer",
                         whiteSpace: "nowrap",
+                        boxShadow: hasCopied ? "0 0 14px rgba(92,224,184,0.40)" : "none",
                         transition: "all 200ms ease",
                       }}
                     >
-                      {hasCopied ? "COPIED ✓" : "COPY HAUL"}
+                      {hasCopied ? "✓ COPIED" : "⬆ COPY HAUL"}
                     </button>
                   </div>
-                  {/* Filter chips: ALL · BUY · MAYBE · PASS */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 6,
-                      marginTop: 10,
-                      flexWrap: "wrap",
-                    }}
-                  >
+
+                  {/* HAUL COST → NET BAR */}
+                  <div style={{
+                    marginTop: 12,
+                    padding: "9px 12px",
+                    background: "rgba(255,255,255,0.025)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 8,
+                    position: "relative",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "#5A4E70", flexShrink: 0 }}>$</span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        min="0"
+                        placeholder="what'd you pay for the lot?"
+                        value={haulCost}
+                        onChange={(e) => setHaulCost(e.target.value)}
+                        style={{
+                          flex: 1,
+                          background: "transparent",
+                          border: "none",
+                          outline: "none",
+                          fontFamily: "var(--font-body)",
+                          fontSize: 13,
+                          color: "#e5e7eb",
+                          minWidth: 0,
+                        }}
+                      />
+                      {haulCostNum > 0 && haulNet !== null && (
+                        <>
+                          <span style={{
+                            fontFamily: "var(--font-data)",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: haulNet >= 0 ? "#5CE0B8" : "#E8636B",
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                          }}>
+                            {haulNet >= 0 ? `~$${haulNet}` : `~-$${Math.abs(haulNet)}`} net
+                          </span>
+                          {haulMultiple && (
+                            <span style={{
+                              fontFamily: "var(--font-data)",
+                              fontSize: 11,
+                              color: "#6b7280",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}>
+                              {haulMultiple}×
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-data)", fontSize: 9, color: "#374151", marginTop: 5, letterSpacing: "0.03em" }}>
+                      est. after ~13% fees · BUYs only
+                    </div>
+                  </div>
+
+                  {/* FILTER CHIPS: ALL · BUY · MAYBE · PASS */}
+                  <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
                     {(["ALL", "BUY", "MAYBE", "PASS"] as const).map((f) => (
                       <button
                         key={f}
                         onClick={() => setActiveFilter(f)}
                         style={{
-                          padding: "4px 10px",
-                          borderRadius: 12,
-                          background:
-                            activeFilter === f
-                              ? "#5CE0B8"
-                              : "rgba(255,255,255,0.05)",
-                          border:
-                            activeFilter === f
-                              ? "none"
-                              : "1px solid rgba(255,255,255,0.10)",
+                          padding: "5px 13px",
+                          borderRadius: 20,
+                          background: activeFilter === f
+                            ? (f === "MAYBE" ? "#F5C518" : f === "PASS" ? "#6b7280" : "#5CE0B8")
+                            : "rgba(255,255,255,0.05)",
+                          border: activeFilter === f ? "none" : "1px solid rgba(255,255,255,0.12)",
                           color: activeFilter === f ? "#000" : "#6b7280",
                           fontFamily: "var(--font-label)",
                           fontSize: 10,
                           fontWeight: 700,
                           letterSpacing: "0.06em",
                           cursor: "pointer",
+                          boxShadow: activeFilter === f
+                            ? (f === "BUY" ? "0 0 12px rgba(92,224,184,0.40)"
+                              : f === "MAYBE" ? "0 0 10px rgba(245,197,24,0.35)"
+                              : "none")
+                            : "none",
                           transition: "all 150ms ease",
                         }}
                       >
@@ -1157,10 +1244,8 @@ export default function ScanOverlay({
                   </div>
                 </div>
 
-                {/* Image with clustered verdict dots */}
-                <div
-                  style={{ position: "relative", width: "100%", flexShrink: 0 }}
-                >
+                {/* ── IMAGE WITH CLUSTERED VERDICT DOTS ── */}
+                <div style={{ position: "relative", width: "100%", flexShrink: 0 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     ref={shelfImgRef}
@@ -1169,14 +1254,10 @@ export default function ScanOverlay({
                     onLoad={() => {
                       const el = shelfImgRef.current;
                       if (!el) return;
-                      setShelfImgRenderedSize({
-                        w: el.clientWidth,
-                        h: el.clientHeight,
-                      });
+                      setShelfImgRenderedSize({ w: el.clientWidth, h: el.clientHeight });
                     }}
                     style={{ width: "100%", display: "block" }}
                   />
-
                   {shelfImgRenderedSize &&
                     dotClusters.map((cluster, ci) => {
                       const isSingle = cluster.indices.length === 1;
@@ -1194,30 +1275,15 @@ export default function ScanOverlay({
                           onClick={() => {
                             const targetIdx = cluster.indices[0];
                             if (isSingle) {
-                              setShelfSelectedIndex(
-                                targetIdx === shelfSelectedIndex
-                                  ? null
-                                  : targetIdx,
-                              );
-                              // Auto-expand lot if this is a member dot
+                              setShelfSelectedIndex(targetIdx === shelfSelectedIndex ? null : targetIdx);
                               const clickedVal = shelfValuations.get(targetIdx);
-                              if (
-                                clickedVal?.groupRole === "lot-member" &&
-                                clickedVal.groupId
-                              ) {
-                                setExpandedLots((prev) =>
-                                  new Set([...prev, clickedVal.groupId!]),
-                                );
+                              if (clickedVal?.groupRole === "lot-member" && clickedVal.groupId) {
+                                setExpandedLots((prev) => new Set([...prev, clickedVal.groupId!]));
                               }
                             } else {
                               setShelfSelectedIndex(targetIdx);
                             }
-                            shelfRowRefs.current
-                              .get(targetIdx)
-                              ?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "nearest",
-                              });
+                            shelfRowRefs.current.get(targetIdx)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
                           }}
                           aria-label={
                             isSingle
@@ -1233,10 +1299,7 @@ export default function ScanOverlay({
                             height: 24,
                             borderRadius: "50%",
                             background: cluster.color,
-                            color:
-                              cluster.color === SHELF_DOT_GRAY
-                                ? "#9ca3af"
-                                : "#000",
+                            color: cluster.color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
                             fontSize: isSingle ? 10 : 9,
                             fontWeight: "bold",
                             fontFamily: "monospace",
@@ -1248,8 +1311,7 @@ export default function ScanOverlay({
                             boxShadow: isSel
                               ? `0 0 0 3px #fff, 0 0 12px 4px ${cluster.color}`
                               : "0 1px 3px rgba(0,0,0,0.6)",
-                            transition:
-                              "background 300ms ease, transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
+                            transition: "background 300ms ease, transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
                             opacity: clusterMatchesFilter ? 1 : 0.25,
                             zIndex: isSel ? 10 : 5,
                           }}
@@ -1260,402 +1322,308 @@ export default function ScanOverlay({
                     })}
                 </div>
 
-                {/* Sorted item list — BUY → MAYBE → PASS, members collapsed */}
+                {/* ── SORTED ITEM LIST — staggered reveal, elevated cards ── */}
                 <div
-                  style={{
-                    padding: "8px 12px 32px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                  }}
+                  key={activeFilter}
+                  style={{ padding: "10px 12px 32px", display: "flex", flexDirection: "column", gap: 6 }}
                 >
                   {filteredMain.length === 0 ? (
-                    <div
-                      style={{
-                        padding: "24px 0",
-                        textAlign: "center",
-                        fontFamily: "var(--font-body)",
-                        fontSize: 13,
-                        color: "#4b5563",
-                      }}
-                    >
+                    <div style={{
+                      padding: "24px 0",
+                      textAlign: "center",
+                      fontFamily: "var(--font-body)",
+                      fontSize: 13,
+                      color: "#4b5563",
+                      animation: "rowIn 250ms ease both",
+                    }}>
                       no {activeFilter.toLowerCase()} items
                     </div>
-                  ) : filteredMain.map((val) => {
+                  ) : filteredMain.map((val, rowIdx) => {
                     const detIdx = val.index;
                     const isSel = shelfSelectedIndex === detIdx;
+                    const isPressed = pressedRowIdx === detIdx;
                     const color = SHELF_VERDICT_COLOR[val.verdict];
                     const isAnchor = val.groupRole === "lot-anchor";
-                    const isExpanded =
-                      isAnchor && val.groupId
-                        ? expandedLots.has(val.groupId)
-                        : false;
-                    const members =
-                      isAnchor && val.groupId
-                        ? [...shelfValuations.values()].filter(
-                            (v) =>
-                              v.groupRole === "lot-member" &&
-                              v.groupId === val.groupId,
-                          )
-                        : [];
+                    const isExpanded = isAnchor && val.groupId ? expandedLots.has(val.groupId) : false;
+                    const members = isAnchor && val.groupId
+                      ? [...shelfValuations.values()].filter(
+                          (v) => v.groupRole === "lot-member" && v.groupId === val.groupId,
+                        )
+                      : [];
 
                     const priceStr =
                       val.resaleLow > 0 && val.resaleHigh > 0
                         ? `$${val.resaleLow}–$${val.resaleHigh}`
-                        : val.estResale > 0
-                          ? `$${val.estResale}`
-                          : "—";
+                        : val.estResale > 0 ? `$${val.estResale}` : "—";
 
-                    // Strip the "(full set, N vols)" suffix the grouper appended
                     const displayName = isAnchor
-                      ? val.name.replace(
-                          /\s*\(full set,\s*\d+\s*vols?\)\s*$/i,
-                          "",
-                        )
+                      ? val.name.replace(/\s*\(full set,\s*\d+\s*vols?\)\s*$/i, "")
                       : val.name;
 
                     return (
-                      <div key={detIdx}>
-                        {/* Main row — two lines */}
+                      <div key={detIdx} style={{ animation: `rowIn 280ms ease ${rowIdx * 35}ms both` }}>
+                        {/* Elevated card: gradient left bar + card body */}
                         <div
                           ref={(el) => {
                             if (el) shelfRowRefs.current.set(detIdx, el);
                             else shelfRowRefs.current.delete(detIdx);
                           }}
-                          onClick={() =>
-                            setShelfSelectedIndex(isSel ? null : detIdx)
-                          }
+                          onClick={() => setShelfSelectedIndex(isSel ? null : detIdx)}
+                          onPointerDown={() => setPressedRowIdx(detIdx)}
+                          onPointerUp={() => setPressedRowIdx(null)}
+                          onPointerLeave={() => setPressedRowIdx(null)}
                           style={{
                             display: "flex",
-                            flexDirection: "column",
-                            padding: "7px 10px",
-                            borderLeft: `3px solid ${color}`,
-                            background: isSel
-                              ? "rgba(255,255,255,0.06)"
-                              : "rgba(255,255,255,0.02)",
-                            borderRadius: "0 6px 6px 0",
+                            borderRadius: "0 8px 8px 0",
+                            overflow: "hidden",
                             cursor: "pointer",
-                            transition:
-                              "background 120ms ease, border-color 300ms ease",
-                            gap: 3,
+                            transform: isPressed ? "scale(0.985)" : "scale(1)",
+                            boxShadow: isSel
+                              ? "0 2px 12px rgba(0,0,0,0.35)"
+                              : "0 1px 4px rgba(0,0,0,0.18)",
+                            transition: "transform 100ms ease, box-shadow 120ms ease",
                           }}
                         >
-                          {/* Line 1: dot · name · lot chip · pill · price */}
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: "50%",
-                                background: color,
-                                color: "#000",
-                                fontSize: 9,
-                                fontWeight: "bold",
-                                fontFamily: "monospace",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
+                          {/* Gradient accent bar */}
+                          <div style={{
+                            width: 3,
+                            flexShrink: 0,
+                            background: `linear-gradient(to bottom, ${color}, ${color}55)`,
+                            transition: "background 300ms ease",
+                          }} />
+                          {/* Card body */}
+                          <div style={{
+                            flex: 1,
+                            padding: "8px 10px",
+                            background: isPressed
+                              ? "rgba(255,255,255,0.065)"
+                              : isSel
+                                ? "rgba(255,255,255,0.052)"
+                                : "rgba(255,255,255,0.026)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 3,
+                            transition: "background 120ms ease",
+                          }}>
+                            {/* Line 1: dot · name · lot chip · verdict pill · price */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{
+                                width: 20, height: 20, borderRadius: "50%",
+                                background: color, color: "#000",
+                                fontSize: 9, fontWeight: "bold", fontFamily: "monospace",
+                                display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0,
-                              }}
-                            >
-                              {detIdx + 1}
-                            </span>
-                            <span
-                              style={{
+                                boxShadow: val.verdict === "BUY" ? "0 0 6px rgba(92,224,184,0.50)" : "none",
+                              }}>
+                                {detIdx + 1}
+                              </span>
+                              <span style={{
                                 flex: 1,
-                                fontFamily: "var(--font-body)",
+                                fontFamily: "var(--font-ui)",
                                 fontSize: 13,
-                                color: "#C8C0D8",
+                                fontWeight: val.verdict === "BUY" ? 600 : 400,
+                                color: val.verdict === "BUY" ? "#E5E0F0" : "#C8C0D8",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
-                              }}
-                            >
-                              {displayName}
-                            </span>
-                            {isAnchor && members.length > 0 && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (!val.groupId) return;
-                                  const gid = val.groupId;
-                                  setExpandedLots((prev) => {
-                                    const next = new Set(prev);
-                                    if (next.has(gid)) next.delete(gid);
-                                    else next.add(gid);
-                                    return next;
-                                  });
-                                }}
-                                style={{
-                                  flexShrink: 0,
-                                  background: "rgba(92,224,184,0.10)",
-                                  border: "1px solid rgba(92,224,184,0.25)",
-                                  borderRadius: 4,
-                                  color: "#5CE0B8",
-                                  fontFamily: "var(--font-label)",
-                                  fontSize: 9,
-                                  fontWeight: 700,
-                                  letterSpacing: "0.06em",
-                                  padding: "2px 6px",
-                                  cursor: "pointer",
-                                  lineHeight: 1.4,
-                                }}
-                              >
-                                {members.length + 1} vols{" "}
-                                {isExpanded ? "▾" : "▸"}
-                              </button>
-                            )}
-                            {val.needsVerify ? (
-                              <span
-                                style={{
-                                  flexShrink: 0,
-                                  fontSize: 9,
-                                  fontWeight: "bold",
-                                  fontFamily: "var(--font-label)",
-                                  color: "#f59e0b",
-                                  border: "1px solid rgba(245,158,11,0.5)",
-                                  borderRadius: 4,
-                                  padding: "1px 5px",
-                                }}
-                              >
-                                VERIFY
+                              }}>
+                                {displayName}
                               </span>
-                            ) : (
-                              <span
-                                style={{
-                                  flexShrink: 0,
-                                  fontSize: 9,
-                                  fontWeight: "bold",
+                              {isAnchor && members.length > 0 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!val.groupId) return;
+                                    const gid = val.groupId;
+                                    setExpandedLots((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(gid)) next.delete(gid);
+                                      else next.add(gid);
+                                      return next;
+                                    });
+                                  }}
+                                  style={{
+                                    flexShrink: 0,
+                                    background: "rgba(92,224,184,0.08)",
+                                    border: "1px solid rgba(92,224,184,0.20)",
+                                    borderRadius: 4,
+                                    color: "#5CE0B8",
+                                    fontFamily: "var(--font-label)",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    padding: "2px 6px",
+                                    cursor: "pointer",
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {members.length + 1} vols {isExpanded ? "▾" : "▸"}
+                                </button>
+                              )}
+                              {/* Verdict pill */}
+                              {val.needsVerify ? (
+                                <span style={{
+                                  flexShrink: 0, fontSize: 9, fontWeight: "bold",
+                                  fontFamily: "var(--font-label)", color: "#f59e0b",
+                                  border: "1px solid rgba(245,158,11,0.5)", borderRadius: 4, padding: "1px 5px",
+                                }}>
+                                  VERIFY
+                                </span>
+                              ) : val.verdict === "BUY" ? (
+                                <span style={{
+                                  flexShrink: 0, fontSize: 9, fontWeight: "bold",
                                   fontFamily: "var(--font-label)",
-                                  color,
-                                  border: `1px solid ${color}`,
-                                  borderRadius: 4,
-                                  padding: "1px 5px",
-                                }}
-                              >
-                                {val.verdict}
-                              </span>
-                            )}
-                            <span
-                              style={{
+                                  background: "#5CE0B8", color: "#000",
+                                  borderRadius: 4, padding: "2px 6px",
+                                  boxShadow: "0 0 8px rgba(92,224,184,0.45)",
+                                }}>
+                                  BUY
+                                </span>
+                              ) : val.verdict === "MAYBE" ? (
+                                <span style={{
+                                  flexShrink: 0, fontSize: 9, fontWeight: "bold",
+                                  fontFamily: "var(--font-label)",
+                                  background: "rgba(245,197,24,0.14)", color: "#F5C518",
+                                  border: "1px solid rgba(245,197,24,0.35)",
+                                  borderRadius: 4, padding: "1px 5px",
+                                }}>
+                                  MAYBE
+                                </span>
+                              ) : (
+                                <span style={{
+                                  flexShrink: 0, fontSize: 9, fontWeight: "bold",
+                                  fontFamily: "var(--font-label)",
+                                  background: "rgba(107,114,128,0.12)", color: "#6b7280",
+                                  border: "1px solid rgba(107,114,128,0.25)",
+                                  borderRadius: 4, padding: "1px 5px",
+                                }}>
+                                  PASS
+                                </span>
+                              )}
+                              <span style={{
                                 flexShrink: 0,
-                                fontFamily: "var(--font-label)",
-                                fontSize: 11,
-                                color: "#9ca3af",
-                                minWidth: 56,
-                                textAlign: "right",
-                              }}
-                            >
-                              {priceStr}
-                            </span>
-                          </div>
-
-                          {/* Line 2: sell speed · demand · platform */}
-                          <div
-                            style={{
+                                fontFamily: "var(--font-data)",
+                                fontSize: 11, color: "#9ca3af",
+                                minWidth: 56, textAlign: "right",
+                              }}>
+                                {priceStr}
+                              </span>
+                            </div>
+                            {/* Line 2: metrics as data texture */}
+                            <div style={{
                               paddingLeft: 28,
-                              fontFamily: "var(--font-label)",
-                              fontSize: 10,
-                              color: "#4b5563",
+                              fontFamily: "var(--font-data)",
+                              fontSize: 9,
+                              color: "#374151",
                               letterSpacing: "0.04em",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
-                            }}
-                          >
-                            {val.sellSpeed} · {val.demand} demand ·{" "}
-                            {val.platform}
+                            }}>
+                              {val.sellSpeed} · {val.demand} · {val.platform}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Expanded lot members — indented, dimmed, read-only */}
-                        {isExpanded &&
-                          members.map((member) => (
-                            <div
-                              key={member.index}
-                              ref={(el) => {
-                                if (el)
-                                  shelfRowRefs.current.set(member.index, el);
-                                else
-                                  shelfRowRefs.current.delete(member.index);
-                              }}
-                              style={{
-                                marginLeft: 16,
-                                padding: "4px 10px",
-                                borderLeft:
-                                  "2px solid rgba(92,224,184,0.15)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                opacity: 0.5,
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: 16,
-                                  height: 16,
-                                  borderRadius: "50%",
-                                  background: "rgba(92,224,184,0.20)",
-                                  color: "#5CE0B8",
-                                  fontSize: 8,
-                                  fontWeight: "bold",
-                                  fontFamily: "monospace",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {member.index + 1}
-                              </span>
-                              <span
-                                style={{
-                                  flex: 1,
-                                  fontFamily: "var(--font-body)",
-                                  fontSize: 12,
-                                  color: "#9ca3af",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {member.name}
-                              </span>
-                              <span
-                                style={{
-                                  fontFamily: "var(--font-label)",
-                                  fontSize: 10,
-                                  color: "#4b5563",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {member.resaleLow > 0 && member.resaleHigh > 0
-                                  ? `$${member.resaleLow}–$${member.resaleHigh}`
-                                  : member.estResale > 0
-                                    ? `$${member.estResale}`
-                                    : "—"}
-                              </span>
-                            </div>
-                          ))}
+                        {/* Expanded lot members — indented, dimmed */}
+                        {isExpanded && members.map((member) => (
+                          <div
+                            key={member.index}
+                            ref={(el) => {
+                              if (el) shelfRowRefs.current.set(member.index, el);
+                              else shelfRowRefs.current.delete(member.index);
+                            }}
+                            style={{
+                              marginLeft: 16,
+                              padding: "4px 10px",
+                              borderLeft: "2px solid rgba(92,224,184,0.12)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              opacity: 0.5,
+                            }}
+                          >
+                            <span style={{
+                              width: 16, height: 16, borderRadius: "50%",
+                              background: "rgba(92,224,184,0.15)", color: "#5CE0B8",
+                              fontSize: 8, fontWeight: "bold", fontFamily: "monospace",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              flexShrink: 0,
+                            }}>
+                              {member.index + 1}
+                            </span>
+                            <span style={{
+                              flex: 1, fontFamily: "var(--font-ui)", fontSize: 12, color: "#9ca3af",
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            }}>
+                              {member.name}
+                            </span>
+                            <span style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#4b5563", flexShrink: 0 }}>
+                              {member.resaleLow > 0 && member.resaleHigh > 0
+                                ? `$${member.resaleLow}–$${member.resaleHigh}`
+                                : member.estResale > 0 ? `$${member.estResale}` : "—"}
+                            </span>
+                          </div>
+                        ))}
 
                         {/* Full verdict callout for selected row */}
                         {isSel && (
-                          <div
-                            style={{
-                              marginTop: 4,
-                              padding: "10px 12px",
-                              background: "rgba(255,255,255,0.03)",
-                              borderRadius: 6,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 8,
-                            }}
-                          >
+                          <div style={{
+                            marginTop: 4,
+                            padding: "10px 12px",
+                            background: "rgba(255,255,255,0.03)",
+                            borderRadius: 6,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}>
                             {val.reasoning && (
-                              <div
-                                style={{
-                                  fontFamily: "var(--font-body)",
-                                  fontSize: 12,
-                                  color: "#6b7280",
-                                  lineHeight: 1.5,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    color: "#4b5563",
-                                    marginRight: 6,
-                                  }}
-                                >
-                                  #{detIdx + 1}
-                                </span>
+                              <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "#6b7280", lineHeight: 1.5 }}>
+                                <span style={{ color: "#4b5563", marginRight: 6 }}>#{detIdx + 1}</span>
                                 {val.reasoning}
                               </div>
                             )}
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 8,
-                                alignItems: "center",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  flex: 1,
-                                  height: 36,
-                                  backgroundColor: "rgba(0,0,0,0.3)",
-                                  border: "1px solid rgba(255,255,255,0.06)",
-                                  boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
-                                  borderRadius: 8,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  paddingLeft: 10,
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontFamily: "var(--font-body)",
-                                    fontSize: 13,
-                                    color: "#5A4E70",
-                                    marginRight: 4,
-                                  }}
-                                >
-                                  $
-                                </span>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                              <div style={{
+                                flex: 1, height: 36,
+                                backgroundColor: "rgba(0,0,0,0.3)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
+                                borderRadius: 8,
+                                display: "flex", alignItems: "center", paddingLeft: 10,
+                              }}>
+                                <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "#5A4E70", marginRight: 4 }}>$</span>
                                 <input
                                   type="number"
                                   inputMode="decimal"
                                   step="0.01"
                                   min="0"
                                   value={shelfItemCostInput}
-                                  onChange={(e) =>
-                                    setShelfItemCostInput(e.target.value)
-                                  }
+                                  onChange={(e) => setShelfItemCostInput(e.target.value)}
                                   placeholder="your cost"
                                   style={{
-                                    flex: 1,
-                                    background: "transparent",
-                                    border: "none",
-                                    outline: "none",
-                                    fontFamily: "var(--font-body)",
-                                    fontSize: 13,
-                                    color: "#e5e7eb",
-                                    minWidth: 0,
+                                    flex: 1, background: "transparent", border: "none", outline: "none",
+                                    fontFamily: "var(--font-body)", fontSize: 13, color: "#e5e7eb", minWidth: 0,
                                   }}
                                 />
                               </div>
                               <button
                                 onClick={() => {
                                   const item = shelfItems[detIdx];
-                                  if (item)
-                                    void handleFullVerdict(detIdx, item);
+                                  if (item) void handleFullVerdict(detIdx, item);
                                 }}
                                 disabled={shelfVerdictLoading}
                                 style={{
-                                  height: 36,
-                                  padding: "0 14px",
-                                  borderRadius: 8,
-                                  background: shelfVerdictLoading
-                                    ? "rgba(92,224,184,0.05)"
-                                    : "rgba(92,224,184,0.10)",
+                                  height: 36, padding: "0 14px", borderRadius: 8,
+                                  background: shelfVerdictLoading ? "rgba(92,224,184,0.05)" : "rgba(92,224,184,0.10)",
                                   border: "1px solid rgba(92,224,184,0.25)",
                                   color: "#5CE0B8",
-                                  fontFamily: "var(--font-label)",
-                                  fontSize: 10,
-                                  fontWeight: 700,
+                                  fontFamily: "var(--font-label)", fontSize: 10, fontWeight: 700,
                                   letterSpacing: "0.08em",
-                                  cursor: shelfVerdictLoading
-                                    ? "not-allowed"
-                                    : "pointer",
+                                  cursor: shelfVerdictLoading ? "not-allowed" : "pointer",
                                   opacity: shelfVerdictLoading ? 0.6 : 1,
                                   whiteSpace: "nowrap",
-                                  transition:
-                                    "opacity 150ms ease, background 150ms ease",
+                                  transition: "opacity 150ms ease, background 150ms ease",
                                 }}
                               >
                                 {shelfVerdictLoading ? "…" : "FULL VERDICT"}
@@ -1670,16 +1638,12 @@ export default function ScanOverlay({
                   <button
                     onClick={() => setPhase({ kind: "framing" })}
                     style={{
-                      marginTop: 8,
-                      alignSelf: "center",
-                      padding: "8px 20px",
-                      borderRadius: 8,
+                      marginTop: 8, alignSelf: "center",
+                      padding: "8px 20px", borderRadius: 8,
                       background: "transparent",
                       border: "1px solid rgba(255,255,255,0.08)",
                       color: "#5A4E70",
-                      fontFamily: "var(--font-label)",
-                      fontSize: 10,
-                      letterSpacing: "0.10em",
+                      fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.10em",
                       cursor: "pointer",
                     }}
                   >

@@ -115,6 +115,10 @@
      ============================================================ */
   --font-label: var(--font-jetbrains-mono), monospace;
   --font-body: var(--font-outfit), sans-serif;
+  /* Shelf-results display fonts — scoped to shelf result panel only. */
+  --font-display: var(--font-bebas-neue), var(--font-outfit), sans-serif;
+  --font-ui: var(--font-manrope), var(--font-outfit), sans-serif;
+  --font-data: var(--font-space-mono), var(--font-jetbrains-mono), monospace;
 
   /* ============================================================
      VOICE RULE (marketing/body copy)
