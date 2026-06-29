@@ -63,17 +63,19 @@ type DotCluster = {
 function clusterDots(
   items: MultiDetectItem[],
   vals: Map<number, BatchValuation>,
-  renderedSize: { w: number; h: number },
+  renderedSize: { w: number; h: number; drawnX: number; drawnY: number; drawnW: number; drawnH: number },
   radius = 28,
 ): DotCluster[] {
   const VERDICT_PRIORITY: Record<string, number> = { BUY: 0, MAYBE: 1, PASS: 2 };
+  const { drawnX, drawnY, drawnW, drawnH } = renderedSize;
   const points = items.map((item, idx) => {
     const [bx, by, bw, bh] = item.bbox;
-    return {
-      idx,
-      cx: (bx + bw / 2) * renderedSize.w,
-      cy: Math.min(Math.max((by + bh / 2) * renderedSize.h, 12), renderedSize.h - 12),
-    };
+    const cx = drawnX + (bx + bw / 2) * drawnW;
+    const cy = Math.min(Math.max(drawnY + (by + bh / 2) * drawnH, 12), renderedSize.h - 12);
+    if (idx === 0) {
+      console.log("[DOTS] item1 bbox=", item.bbox, "-> screen=", cx.toFixed(1), cy.toFixed(1));
+    }
+    return { idx, cx, cy };
   });
 
   const used = new Set<number>();
@@ -110,6 +112,20 @@ function clusterDots(
   }
 
   return clusters;
+}
+
+// Row display name: strip AI hedge clauses + long parentheticals for tight rows.
+// Full name is preserved for copy-haul and the callout drill-down.
+function cleanDisplayName(rawName: string): string {
+  // Lot-anchor names ("Series — N vols") are already clean.
+  if (/\s—\s\d+ vols$/.test(rawName)) return rawName;
+  let n = rawName;
+  n = n.replace(/\s+or similar.*$/i, "");
+  n = n.replace(/\s+\(likely\s[^)]*\)\s*$/i, "");
+  n = n.replace(/\s+-\s*likely\s+.*$/i, "");
+  // For long names strip the trailing parenthetical series tag — it's in the data already.
+  if (n.length > 34) n = n.replace(/\s*\([^)]{8,}\)\s*$/, "");
+  return n.trim();
 }
 
 // Light haptic — Android Chrome only, silent no-op everywhere else.
@@ -342,8 +358,8 @@ export default function ScanOverlay({
   const shelfRowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [shelfSelectedIndex, setShelfSelectedIndex] = useState<number | null>(null);
   const [shelfImgRenderedSize, setShelfImgRenderedSize] = useState<{
-    w: number;
-    h: number;
+    w: number; h: number;
+    drawnX: number; drawnY: number; drawnW: number; drawnH: number;
   } | null>(null);
   const [shelfItemCostInput, setShelfItemCostInput] = useState("");
   const [shelfVerdictLoading, setShelfVerdictLoading] = useState(false);
@@ -522,6 +538,44 @@ export default function ScanOverlay({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+  }, [phase.kind]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Effect 4: compute dot coordinate mapping with objectFit awareness; recompute on resize.
+  useEffect(() => {
+    const el = shelfImgRef.current;
+    if (!el || phase.kind !== "shelf-done") return;
+
+    const update = () => {
+      const nw = el.naturalWidth;
+      const nh = el.naturalHeight;
+      const cw = el.clientWidth;
+      const ch = el.clientHeight;
+      if (cw === 0 || ch === 0 || nw === 0 || nh === 0) return;
+      const fit = window.getComputedStyle(el).objectFit || "fill";
+      let drawnX = 0, drawnY = 0, drawnW = cw, drawnH = ch;
+      if (fit === "contain") {
+        const scale = Math.min(cw / nw, ch / nh);
+        drawnW = nw * scale; drawnH = nh * scale;
+        drawnX = (cw - drawnW) / 2; drawnY = (ch - drawnH) / 2;
+      } else if (fit === "cover") {
+        const scale = Math.max(cw / nw, ch / nh);
+        drawnW = nw * scale; drawnH = nh * scale;
+        drawnX = (cw - drawnW) / 2; drawnY = (ch - drawnH) / 2;
+      }
+      console.log("[DOTS] imgNatural=", nw, nh, "rendered=", cw, ch,
+        "objectFit=", fit, "drawnArea=", drawnX.toFixed(1), drawnY.toFixed(1),
+        drawnW.toFixed(1), drawnH.toFixed(1));
+      setShelfImgRenderedSize({ w: cw, h: ch, drawnX, drawnY, drawnW, drawnH });
+    };
+
+    if (el.complete && el.naturalWidth > 0) update();
+    el.addEventListener("load", update);
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("load", update);
+      ro.disconnect();
+    };
   }, [phase.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switch active mode within an open session.
@@ -1247,11 +1301,6 @@ export default function ScanOverlay({
                     ref={shelfImgRef}
                     src={phase.capturedImage}
                     alt="shelf"
-                    onLoad={() => {
-                      const el = shelfImgRef.current;
-                      if (!el) return;
-                      setShelfImgRenderedSize({ w: el.clientWidth, h: el.clientHeight });
-                    }}
                     style={{ width: "100%", display: "block" }}
                   />
                   {shelfImgRenderedSize &&
@@ -1352,7 +1401,7 @@ export default function ScanOverlay({
                         ? `$${val.resaleLow}–$${val.resaleHigh}`
                         : val.estResale > 0 ? `$${val.estResale}` : "—";
 
-                    const displayName = val.name;
+                    const displayName = cleanDisplayName(val.name);
 
                     return (
                       <div key={detIdx} style={{ animation: `rowIn 280ms ease ${rowIdx * 35}ms both` }}>
@@ -1385,35 +1434,36 @@ export default function ScanOverlay({
                             background: `linear-gradient(to bottom, ${color}, ${color}55)`,
                             transition: "background 300ms ease",
                           }} />
-                          {/* Card body: three-zone layout — never clips */}
+                          {/* Card body: CSS grid — right rail is pixel-fixed, physically cannot be pushed */}
                           <div style={{
                             flex: 1,
-                            padding: "8px 10px",
+                            padding: "7px 10px",
                             background: isPressed
                               ? "rgba(255,255,255,0.065)"
                               : isSel
                                 ? "rgba(255,255,255,0.052)"
                                 : "rgba(255,255,255,0.026)",
-                            display: "flex",
+                            display: "grid",
+                            gridTemplateColumns: "28px 1fr 96px",
                             alignItems: "center",
-                            gap: 8,
+                            columnGap: 6,
                             minWidth: 0,
                             transition: "background 120ms ease",
                           }}>
-                            {/* Zone 1: index dot — fixed */}
+                            {/* Col 1: index dot (28px column) */}
                             <span style={{
                               width: 20, height: 20, borderRadius: "50%",
                               background: color, color: "#000",
                               fontSize: 9, fontWeight: "bold", fontFamily: "monospace",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              flexShrink: 0,
+                              justifySelf: "center",
                               boxShadow: val.verdict === "BUY" ? "0 0 6px rgba(92,224,184,0.50)" : "none",
                             }}>
                               {detIdx + 1}
                             </span>
 
-                            {/* Zone 2: name + meta line — absorbs compression */}
-                            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                            {/* Col 2: name + meta line (1fr — overflow hidden) */}
+                            <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                               <span style={{
                                 fontFamily: "var(--font-ui)",
                                 fontSize: 13,
@@ -1422,9 +1472,11 @@ export default function ScanOverlay({
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
+                                display: "block",
                               }}>
                                 {displayName}
                               </span>
+                              {/* Meta line: lot chip + speed/demand/platform */}
                               <div style={{ display: "flex", alignItems: "center", gap: 5, overflow: "hidden" }}>
                                 {isAnchor && members.length > 0 && (
                                   <button
@@ -1452,9 +1504,10 @@ export default function ScanOverlay({
                                       padding: "1px 5px",
                                       cursor: "pointer",
                                       lineHeight: 1.4,
+                                      whiteSpace: "nowrap",
                                     }}
                                   >
-                                    {isExpanded ? "▾" : "▸"}
+                                    {members.length + 1} vols {isExpanded ? "▾" : "▸"}
                                   </button>
                                 )}
                                 <span style={{
@@ -1472,13 +1525,14 @@ export default function ScanOverlay({
                               </div>
                             </div>
 
-                            {/* Zone 3: verdict pill + price — never shrinks */}
-                            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                            {/* Col 3: verdict pill + price (96px FIXED — can never be pushed) */}
+                            <div style={{ overflow: "hidden", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
                               {val.needsVerify ? (
                                 <span style={{
                                   fontSize: 9, fontWeight: "bold",
                                   fontFamily: "var(--font-label)", color: "#f59e0b",
                                   border: "1px solid rgba(245,158,11,0.5)", borderRadius: 4, padding: "1px 5px",
+                                  whiteSpace: "nowrap",
                                 }}>
                                   VERIFY
                                 </span>
@@ -1489,6 +1543,7 @@ export default function ScanOverlay({
                                   background: "#5CE0B8", color: "#000",
                                   borderRadius: 4, padding: "2px 6px",
                                   boxShadow: "0 0 8px rgba(92,224,184,0.45)",
+                                  whiteSpace: "nowrap",
                                 }}>
                                   BUY
                                 </span>
@@ -1499,6 +1554,7 @@ export default function ScanOverlay({
                                   background: "rgba(245,197,24,0.14)", color: "#F5C518",
                                   border: "1px solid rgba(245,197,24,0.35)",
                                   borderRadius: 4, padding: "1px 5px",
+                                  whiteSpace: "nowrap",
                                 }}>
                                   MAYBE
                                 </span>
@@ -1509,13 +1565,20 @@ export default function ScanOverlay({
                                   background: "rgba(107,114,128,0.12)", color: "#6b7280",
                                   border: "1px solid rgba(107,114,128,0.25)",
                                   borderRadius: 4, padding: "1px 5px",
+                                  whiteSpace: "nowrap",
                                 }}>
                                   PASS
                                 </span>
                               )}
                               <span style={{
                                 fontFamily: "var(--font-data)",
-                                fontSize: 10, color: "#9ca3af",
+                                fontSize: priceStr.length > 10 ? 9 : 10,
+                                color: "#9ca3af",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "100%",
+                                textAlign: "right",
                               }}>
                                 {priceStr}
                               </span>
