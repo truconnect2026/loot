@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BottomSheet from "@/components/shared/BottomSheet";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { ListingResponse } from "@/app/api/listing/route";
@@ -487,12 +487,41 @@ function PlatformRanking({
   );
 }
 
+interface CompsResult {
+  low: number;
+  high: number;
+  median: number;
+  count: number;
+  note: string;
+}
+
+type CompsState = CompsResult | null | "loading";
+
 export default function VerdictSheet({
   open,
   onClose,
   data,
   onGradeCondition,
 }: VerdictSheetProps) {
+  const [comps, setComps] = useState<CompsState>("loading");
+
+  useEffect(() => {
+    if (!open || !data) {
+      setComps("loading");
+      return;
+    }
+    setComps("loading");
+    const name = data.name;
+    fetch("/api/comps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemName: name }),
+    })
+      .then((r) => r.json())
+      .then((j: { comps: CompsResult | null }) => setComps(j.comps ?? null))
+      .catch(() => setComps(null));
+  }, [open, data?.name]);
+
   if (!data) return null;
 
   const colors = VERDICT_COLORS[data.verdict];
@@ -838,6 +867,73 @@ export default function VerdictSheet({
               {data.confidence}
             </div>
           </div>
+        </div>
+
+        {/* RECENT SOLD — async eBay comps, fires when sheet opens */}
+        <div
+          style={{
+            marginTop: 8,
+            padding: "10px 12px",
+            backgroundColor: "var(--bg-recessed)",
+            borderRadius: 10,
+            boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-label)",
+              fontSize: 8,
+              letterSpacing: "0.12em",
+              color: "var(--text-muted)",
+              marginBottom: 5,
+              textTransform: "uppercase" as const,
+            }}
+          >
+            RECENT SOLD
+          </div>
+          {comps === "loading" ? (
+            <div
+              style={{
+                height: 13,
+                borderRadius: 4,
+                background:
+                  "linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%)",
+                backgroundSize: "200% 100%",
+                animation: "ctaShimmer 1.5s infinite",
+              }}
+            />
+          ) : comps === null ? (
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 11,
+                color: "#5A4E70",
+              }}
+            >
+              no recent sold data
+            </div>
+          ) : (
+            <div
+              style={{
+                fontFamily: "var(--font-data)",
+                fontSize: 12,
+                color: "#5CE0B8",
+                letterSpacing: "0.02em",
+              }}
+            >
+              ${comps.low}–${comps.high} · median ${comps.median} · {comps.count} sold
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 9,
+                  color: "#5A4E70",
+                  marginLeft: 6,
+                }}
+              >
+                {comps.note}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* WHERE TO SELL — top-3 platform ranking from Claude. The

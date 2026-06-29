@@ -850,6 +850,32 @@ export default function ScanOverlay({
       ? (buyGrossResale / haulCostNum).toFixed(1)
       : null;
 
+  // Best BUY by estResale; tiebreak: demand (High>Med>Low) then speed (FAST>MODERATE>SLOW).
+  const bestGrab = buyMain.reduce<BatchValuation | null>((best, v) => {
+    if (!best) return v;
+    if (v.estResale !== best.estResale) return v.estResale > best.estResale ? v : best;
+    const dem = (x: BatchValuation) => x.demand === "High" ? 2 : x.demand === "Medium" ? 1 : 0;
+    const spd = (x: BatchValuation) => x.sellSpeed === "FAST" ? 2 : x.sellSpeed === "MODERATE" ? 1 : 0;
+    if (dem(v) !== dem(best)) return dem(v) > dem(best) ? v : best;
+    return spd(v) > spd(best) ? v : best;
+  }, null);
+
+  // Profit projection timeline — humanized max daysToSell across BUYs.
+  // daysToSell is a model string like "2-4 weeks"; take the numeric max then scale.
+  const parseDTS = (s: string) => {
+    const nums = (s.match(/\d+/g) ?? []).map(Number);
+    const n = nums.length > 0 ? Math.max(...nums) : 14;
+    if (/month/i.test(s)) return n * 30;
+    if (/week/i.test(s)) return n * 7;
+    return n;
+  };
+  const maxDays = buyMain.reduce((m, v) => Math.max(m, parseDTS(v.daysToSell)), 0);
+  const timeline =
+    maxDays <= 0 ? "" :
+    maxDays <= 7 ? `${maxDays}d` :
+    maxDays < 45 ? `~${Math.round(maxDays / 7)}wk` :
+    `~${Math.round(maxDays / 30)}mo`;
+
   // Filtered list — ALL shows every anchor/single; tier chip narrows by verdict.
   const filteredMain =
     activeFilter === "ALL"
@@ -1173,6 +1199,17 @@ export default function ScanOverlay({
                       <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#4b5563", marginTop: 3, letterSpacing: "0.04em" }}>
                         {heroMaybeCount} maybe · {heroPassCount} pass · {shelfItems.length} items
                       </div>
+                      {bestGrab && (
+                        <div
+                          onClick={() => {
+                            setShelfSelectedIndex(bestGrab.index);
+                            shelfRowRefs.current.get(bestGrab.index)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                          }}
+                          style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#5CE0B8", marginTop: 5, letterSpacing: "0.04em", cursor: "pointer" }}
+                        >
+                          👑 best grab — {cleanDisplayName(bestGrab.name)} · ${bestGrab.resaleLow}–${bestGrab.resaleHigh}
+                        </div>
+                      )}
                     </div>
 
                     {/* COPY HAUL — primary action */}
@@ -1259,6 +1296,11 @@ export default function ScanOverlay({
                     <div style={{ fontFamily: "var(--font-data)", fontSize: 9, color: "#374151", marginTop: 5, letterSpacing: "0.03em" }}>
                       est. after ~13% fees · BUYs only
                     </div>
+                    {haulNet !== null && buyMain.length > 0 && timeline && (
+                      <div style={{ fontFamily: "var(--font-data)", fontSize: 9, color: haulNet >= 0 ? "#5CE0B8" : "#E8636B", marginTop: 3, letterSpacing: "0.03em" }}>
+                        flip all {buyMain.length} BUYs → {haulNet >= 0 ? `~$${haulNet}` : `~-$${Math.abs(haulNet)}`} over {timeline}
+                      </div>
+                    )}
                   </div>
 
                   {/* FILTER CHIPS: ALL · BUY · MAYBE · PASS */}

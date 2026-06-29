@@ -1469,6 +1469,44 @@ async function callFeedToolWithSearch(
       : [];
 }
 
+const COMPS_SYSTEM = `You are a resale pricing expert. Use web search to find REAL recently sold eBay listings for the given item. Return ONLY real sold prices from completed eBay listings you find via search.
+
+Respond with ONLY valid JSON, no markdown, no prose:
+{ "prices": [12.50, 15.00, 18.00] }
+
+Rules:
+- Only SOLD (completed) listings, not active ones
+- Maximum 10 prices; omit shipping unless clearly bundled
+- If no real sold data found, return { "prices": [] }`;
+
+export async function fetchSoldComps(itemName: string): Promise<{
+  low: number; high: number; median: number; count: number; note: string;
+} | null> {
+  try {
+    const message = await getClient().messages.create({
+      model: HAIKU,
+      max_tokens: 512,
+      system: COMPS_SYSTEM,
+      messages: [{ role: "user", content: `Find recent sold eBay prices for: ${itemName}` }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] as any,
+    });
+    const text = extractText(message);
+    const parsed = parseFeedJson(text) as { prices?: unknown[] } | null;
+    const prices = Array.isArray(parsed?.prices)
+      ? (parsed.prices as unknown[]).map(Number).filter((n) => n > 0 && isFinite(n))
+      : [];
+    if (prices.length === 0) return null;
+    prices.sort((a, b) => a - b);
+    const low = Math.round(prices[0] * 100) / 100;
+    const high = Math.round(prices[prices.length - 1] * 100) / 100;
+    const median = Math.round(prices[Math.floor(prices.length / 2)] * 100) / 100;
+    return { low, high, median, count: prices.length, note: "eBay sold, recent" };
+  } catch {
+    return null;
+  }
+}
+
 function parseFeedJson(raw: string): unknown {
   // Strip markdown code fences — handles both closed fences and truncated
   // responses where the closing ``` is missing.
