@@ -1,6 +1,7 @@
 import { groupSeries } from "../src/lib/groupSeries";
 import { normalizeMetrics } from "../src/lib/normalizeMetrics";
 import { deriveMetrics, inferCategory } from "../src/lib/deriveMetrics";
+import { correctName } from "../src/lib/correctNames";
 import type { BatchValuation } from "../src/lib/claude";
 
 function item(
@@ -84,10 +85,42 @@ const INPUT: BatchValuation[] = [
   item(25, "Goku DragonBall Z Figure",                       10.00, "High", "MAYBE"), // figure MODERATE → eBay
 ];
 
-console.log(`\n=== INPUT: ${INPUT.length} items ===\n`);
+// ── Correction check — deliberately mangled names ──────────────────────────
+
+const MANGLED_INPUTS: Array<{ raw: string; estResale: number }> = [
+  { raw: "Children of the Vengeance",   estResale:  5.00 },  // missing "Virtue and"
+  { raw: "Soullater Manga Vol 1-5",     estResale: 30.00 },  // OCR merge: "Soullater" ≠ "Soul Eater"
+  { raw: "City of Heavnly Fire",        estResale:  4.00 },  // missing 'e' in Heavenly
+  { raw: "Clockwrok Princess",          estResale:  4.50 },  // transposed 'r' and 'o'
+  { raw: "Briggerton Series",           estResale: 10.00 },  // double 'g' typo
+];
+
+console.log(`\n=== CORRECTION CHECK ===\n`);
+const RAW_COL = 35, COR_COL = 40;
+console.log(
+  "raw".padEnd(RAW_COL) + "-> corrected".padEnd(COR_COL) + "corrected?",
+);
+console.log("-".repeat(RAW_COL + COR_COL + 10));
+
+const mangledItems: BatchValuation[] = [];
+for (let i = 0; i < MANGLED_INPUTS.length; i++) {
+  const { raw, estResale } = MANGLED_INPUTS[i];
+  const { name: corrected, corrected: wasCorrected } = correctName(raw);
+  console.log(
+    raw.padEnd(RAW_COL) +
+    ("-> " + corrected).padEnd(COR_COL) +
+    (wasCorrected ? "✓ true" : "  false"),
+  );
+  mangledItems.push(item(26 + i, corrected, estResale));
+}
+
+// Extend the INPUT with corrected mangled items so we can verify grouping.
+const EXTENDED_INPUT = [...INPUT, ...mangledItems];
+
+console.log(`\n=== INPUT: ${EXTENDED_INPUT.length} items (${INPUT.length} original + ${mangledItems.length} corrected) ===\n`);
 
 // Pipeline: deriveMetrics → normalizeMetrics → groupSeries
-const WITH_METRICS = INPUT.map((v) => ({ ...v, ...deriveMetrics(v) }));
+const WITH_METRICS = EXTENDED_INPUT.map((v) => ({ ...v, ...deriveMetrics(v) }));
 const NORMALIZED   = normalizeMetrics(WITH_METRICS);
 const OUTPUT       = groupSeries(NORMALIZED);
 

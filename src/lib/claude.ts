@@ -476,6 +476,7 @@ export async function identifyMultiFromImageDebug(imageBase64: string): Promise<
 export interface BatchValuation {
   index: number;
   name: string;
+  rawName?: string; // original before correctName(), present only when a correction was made
   verdict: "BUY" | "PASS" | "MAYBE";
   sellPrice: number;
   sellSpeed: "FAST" | "MODERATE" | "SLOW";

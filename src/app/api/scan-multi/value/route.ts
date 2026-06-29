@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { valuateBatch, type BatchValuation } from "@/lib/claude";
+import { correctName } from "@/lib/correctNames";
 import { deriveMetrics } from "@/lib/deriveMetrics";
 import { normalizeMetrics } from "@/lib/normalizeMetrics";
 import { groupSeries } from "@/lib/groupSeries";
@@ -37,8 +38,20 @@ export async function POST(
   }
 
   try {
-    const valuations = await valuateBatch(items);
-    const withMetrics = valuations.map((v) => ({ ...v, ...deriveMetrics(v) }));
+    // Correct garbled names before Claude prices them and before grouping.
+    const rawNameMap = new Map<number, string>();
+    const correctedItems = items.map((it) => {
+      const result = correctName(it.name);
+      if (result.corrected) rawNameMap.set(it.index, it.name);
+      return { ...it, name: result.name };
+    });
+
+    const valuations = await valuateBatch(correctedItems);
+    const withMetrics = valuations.map((v) => ({
+      ...v,
+      rawName: rawNameMap.get(v.index),
+      ...deriveMetrics(v),
+    }));
     const normalized = normalizeMetrics(withMetrics);
     const grouped = groupSeries(normalized);
     const buyCount = grouped.filter((v) => v.verdict === "BUY").length;
