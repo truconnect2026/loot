@@ -178,3 +178,11 @@ const fmt = (obj: Record<string, number>) =>
 console.log(
   `SPREAD CHECK: speeds={${fmt(speeds)}} demand={${fmt(demands)}} platforms={${fmt(platforms)}} categories={${fmt(categories)}}`,
 );
+
+// ── Anchor names ───────────────────────────────────────────────────────────
+
+const anchors = OUTPUT.filter((v) => v.groupRole === "lot-anchor");
+console.log(`\n=== ANCHOR NAMES (${anchors.length}) ===`);
+for (const a of anchors) {
+  console.log(`  "${a.name}"  [groupId: ${a.groupId ?? "?"}]`);
+}

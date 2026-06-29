@@ -111,6 +111,38 @@ function foldPrefixKeys(buckets: Map<string, number[]>): void {
   }
 }
 
+// Known series → proper display name. Falls back to title-case of the key.
+const SERIES_PROPER_CASE: Record<string, string> = {
+  "mortal instruments": "The Mortal Instruments",
+  "infernal devices": "The Infernal Devices",
+  "dark artifices": "The Dark Artifices",
+  "last hours": "The Last Hours",
+  "shadowhunter chronicles": "Shadowhunter Chronicles",
+  "bridgerton": "Bridgerton",
+  "one piece": "One Piece",
+  "sailor moon": "Sailor Moon",
+  "soul eater": "Soul Eater",
+  "naruto": "Naruto",
+  "dragon ball": "Dragon Ball",
+  "fullmetal alchemist": "Fullmetal Alchemist",
+  "attack on titan": "Attack on Titan",
+  "harry potter": "Harry Potter",
+  "hunger games": "The Hunger Games",
+  "divergent": "Divergent",
+  "maze runner": "The Maze Runner",
+  "percy jackson": "Percy Jackson",
+  "wheel of time": "The Wheel of Time",
+  "witcher": "The Witcher",
+  "discworld": "Discworld",
+};
+
+function anchorDisplayName(groupId: string, n: number): string {
+  const proper =
+    SERIES_PROPER_CASE[groupId] ??
+    groupId.replace(/\b\w/g, (c) => c.toUpperCase());
+  return `${proper} — ${n} vols`;
+}
+
 function median(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
@@ -183,7 +215,7 @@ export function groupSeries(items: BatchValuation[]): BatchValuation[] {
 
       result[anchorIdx] = {
         ...result[anchorIdx],
-        name: `${result[anchorIdx].name} (full set, ${n} vols)`,
+        name: anchorDisplayName(groupId, n),
         groupId,
         groupRole: "lot-anchor",
         estResale: Math.round(lotPrice * 100) / 100,
