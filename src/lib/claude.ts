@@ -1474,39 +1474,70 @@ async function callFeedToolWithSearch(
       : [];
 }
 
-const COMPS_SYSTEM = `You are a resale pricing expert. Use web search to find REAL recently sold eBay listings for the given item. Return ONLY real sold prices from completed eBay listings you find via search.
+const COMPS_SYSTEM = `You are a resale pricing researcher. Use web search to find recent real prices for the given item from any online marketplace (eBay, Discogs, Poshmark, Mercari, WorthPoint, Facebook Marketplace, etc.).
+
+Return ONLY prices you actually find via search — never invent data.
 
 Respond with ONLY valid JSON, no markdown, no prose:
-{ "prices": [12.50, 15.00, 18.00] }
+{ "comps": [
+    { "price": 45.00, "source": "eBay", "label": "sold", "date": "May 2025" },
+    { "price": 52.00, "source": "Discogs", "label": "listed" }
+] }
 
-Rules:
-- Only SOLD (completed) listings, not active ones
-- Maximum 10 prices; omit shipping unless clearly bundled
-- If no real sold data found, return { "prices": [] }`;
+Label rules (strict):
+- "sold": ONLY when the source clearly shows a completed transaction (eBay completed listing, Discogs "last sold", auction result with confirmed sale)
+- "listed": when the source shows an asking or buy-it-now price — when in doubt, use "listed"
 
-export async function fetchSoldComps(itemName: string): Promise<{
-  low: number; high: number; median: number; count: number; note: string;
-} | null> {
+Max 6 comps. Omit shipping unless clearly bundled. If nothing found, return { "comps": [] }.`;
+
+export interface CompItem {
+  price: number;
+  source: string;
+  label: "sold" | "listed";
+  date?: string;
+}
+
+export interface SoldCompsResult {
+  items: CompItem[];
+  low: number;
+  high: number;
+  median: number;
+  count: number;
+}
+
+export async function fetchSoldComps(itemName: string): Promise<SoldCompsResult | null> {
   try {
     const message = await getClient().messages.create({
       model: HAIKU,
       max_tokens: 512,
       system: COMPS_SYSTEM,
-      messages: [{ role: "user", content: `Find recent sold eBay prices for: ${itemName}` }],
+      messages: [{ role: "user", content: `Find recent prices for: ${itemName}` }],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] as any,
     });
     const text = extractText(message);
-    const parsed = parseFeedJson(text) as { prices?: unknown[] } | null;
-    const prices = Array.isArray(parsed?.prices)
-      ? (parsed.prices as unknown[]).map(Number).filter((n) => n > 0 && isFinite(n))
-      : [];
-    if (prices.length === 0) return null;
-    prices.sort((a, b) => a - b);
+    const parsed = parseFeedJson(text) as { comps?: unknown[] } | null;
+    const rawItems = Array.isArray(parsed?.comps) ? parsed.comps : [];
+
+    const items: CompItem[] = rawItems
+      .filter((r): r is Record<string, unknown> => r !== null && typeof r === "object")
+      .map((r) => ({
+        price: Number(r.price),
+        source: typeof r.source === "string" ? r.source : "Unknown",
+        label: r.label === "sold" ? ("sold" as const) : ("listed" as const),
+        date: typeof r.date === "string" ? r.date : undefined,
+      }))
+      .filter((c) => c.price > 0 && isFinite(c.price))
+      .slice(0, 6);
+
+    if (items.length === 0) return null;
+
+    const prices = items.map((c) => c.price).sort((a, b) => a - b);
     const low = Math.round(prices[0] * 100) / 100;
     const high = Math.round(prices[prices.length - 1] * 100) / 100;
     const median = Math.round(prices[Math.floor(prices.length / 2)] * 100) / 100;
-    return { low, high, median, count: prices.length, note: "eBay sold, recent" };
+
+    return { items, low, high, median, count: items.length };
   } catch {
     return null;
   }

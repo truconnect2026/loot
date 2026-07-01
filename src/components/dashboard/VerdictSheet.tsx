@@ -542,12 +542,19 @@ function PlatformRanking({
   );
 }
 
+interface CompItem {
+  price: number;
+  source: string;
+  label: "sold" | "listed";
+  date?: string;
+}
+
 interface CompsResult {
+  items: CompItem[];
   low: number;
   high: number;
   median: number;
   count: number;
-  note: string;
 }
 
 type CompsState = CompsResult | null | "loading";
@@ -924,70 +931,143 @@ export default function VerdictSheet({
           </div>
         </div>
 
-        {/* RECENT SOLD — async eBay comps, fires when sheet opens */}
+        {/* RECENT COMPS — web-search-grounded price evidence, fires when sheet opens */}
         <div
           style={{
             marginTop: 8,
-            padding: "10px 12px",
-            backgroundColor: "var(--bg-recessed)",
-            borderRadius: 10,
-            boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
+            backgroundColor: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: 12,
+            padding: "12px 14px",
+            boxShadow: "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 1px 3px rgba(0,0,0,0.20)",
           }}
         >
-          <div
-            style={{
-              fontFamily: "var(--font-label)",
-              fontSize: 8,
-              letterSpacing: "0.12em",
-              color: "var(--text-muted)",
-              marginBottom: 5,
-              textTransform: "uppercase" as const,
-            }}
-          >
-            RECENT SOLD
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+            <div style={{ width: 2, height: 8, borderRadius: 1, backgroundColor: "rgba(92,224,184,0.28)", flexShrink: 0 }} />
+            <span
+              style={{
+                fontFamily: "var(--font-label)",
+                fontSize: 8,
+                color: "rgba(200,192,216,0.40)",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase" as const,
+              }}
+            >
+              RECENT COMPS
+            </span>
           </div>
           {comps === "loading" ? (
-            <div
-              style={{
-                height: 13,
-                borderRadius: 4,
-                background:
-                  "linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%)",
-                backgroundSize: "200% 100%",
-                animation: "ctaShimmer 1.5s infinite",
-              }}
-            />
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    height: 18,
+                    borderRadius: 4,
+                    background:
+                      "linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%)",
+                    backgroundSize: "200% 100%",
+                    animation: "ctaShimmer 1.5s ease-in-out infinite",
+                    opacity: 1 - i * 0.2,
+                  }}
+                />
+              ))}
+            </div>
           ) : comps === null ? (
-            <div
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 11,
-                color: "#5A4E70",
-              }}
-            >
-              no recent sold data
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "rgba(90,78,112,0.8)" }}>
+              no comps found — estimate is AI-based
             </div>
           ) : (
-            <div
-              style={{
-                fontFamily: "var(--font-data)",
-                fontSize: 12,
-                color: "#5CE0B8",
-                letterSpacing: "0.02em",
-              }}
-            >
-              ${comps.low}–${comps.high} · median ${comps.median} · {comps.count} sold
-              <span
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {comps.items.slice(0, 4).map((c, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-data)",
+                        fontSize: 13,
+                        color: "var(--text-primary)",
+                        fontFeatureSettings: '"tnum"',
+                        minWidth: 42,
+                      }}
+                    >
+                      ${c.price % 1 === 0 ? c.price.toFixed(0) : c.price.toFixed(2)}
+                    </span>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        padding: "1px 6px",
+                        borderRadius: 4,
+                        fontFamily: "var(--font-label)",
+                        fontSize: 7,
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        flexShrink: 0,
+                        ...(c.label === "sold"
+                          ? {
+                              backgroundColor: "rgba(92,224,184,0.10)",
+                              border: "1px solid rgba(92,224,184,0.22)",
+                              color: "#5CE0B8",
+                            }
+                          : {
+                              backgroundColor: "rgba(255,255,255,0.05)",
+                              border: "1px solid rgba(255,255,255,0.10)",
+                              color: "var(--text-muted)",
+                            }),
+                      }}
+                    >
+                      {c.label.toUpperCase()}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-body)",
+                        fontSize: 11,
+                        color: "var(--text-muted)",
+                        flex: 1,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap" as const,
+                      }}
+                    >
+                      {c.source}
+                    </span>
+                    {c.date && (
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "rgba(90,78,112,0.8)", flexShrink: 0 }}>
+                        {c.date}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div
                 style={{
+                  marginTop: 8,
                   fontFamily: "var(--font-body)",
-                  fontSize: 9,
-                  color: "#5A4E70",
-                  marginLeft: 6,
+                  fontSize: 11,
+                  color: "var(--text-secondary)",
                 }}
               >
-                {comps.note}
-              </span>
-            </div>
+                range ${comps.low}–${comps.high}
+                {" · "}
+                {comps.items.filter((c) => c.label === "sold").length > 0
+                  ? `${comps.items.filter((c) => c.label === "sold").length} sold`
+                  : `${comps.count} found`}
+                {comps.items.some((c) => c.label === "listed") &&
+                comps.items.some((c) => c.label === "sold")
+                  ? ` · ${comps.items.filter((c) => c.label === "listed").length} listed`
+                  : null}
+              </div>
+              {data.sell > comps.high * 1.1 && (
+                <div style={{ marginTop: 6, fontFamily: "var(--font-body)", fontSize: 10, color: "#D4A574" }}>
+                  estimate above recent comps
+                </div>
+              )}
+              {data.sell < comps.low * 0.9 && (
+                <div style={{ marginTop: 6, fontFamily: "var(--font-body)", fontSize: 10, color: "#D4A574" }}>
+                  estimate below recent comps
+                </div>
+              )}
+            </>
           )}
         </div>
 
