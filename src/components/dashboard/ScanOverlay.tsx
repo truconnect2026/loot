@@ -20,7 +20,7 @@ export interface VerdictPayload extends ScanResponse {
 
 interface ScanOverlayProps {
   open: boolean;
-  mode: "barcode" | "vision" | "shelf";
+  mode: "barcode" | "vision" | "shelf" | "crate";
   onResult: (verdict: VerdictPayload) => void;
   onCancel: () => void;
   onPaywall?: (info: { used: number; limit: number }) => void;
@@ -30,6 +30,7 @@ const ACCENT = {
   barcode: { hex: "#5CE0B8", rgb: "92,224,184" },
   vision: { hex: "#D4A574", rgb: "212,165,116" },
   shelf: { hex: "#5CE0B8", rgb: "92,224,184" },
+  crate: { hex: "#5CE0B8", rgb: "92,224,184" },
 };
 
 const SHELF_VERDICT_COLOR: Record<"BUY" | "PASS" | "MAYBE", string> = {
@@ -342,6 +343,215 @@ function CancelButton({
   );
 }
 
+// ─── Crate mode components ────────────────────────────────────────────────────
+// Phase 1: user manually arms slots to indicate which covers to analyze.
+// Phase 2 will auto-detect covers from a captured frame and arm them.
+
+const CRATE_SLOT_COUNT = 5;
+const CRATE_SLOT_W = 52;   // px — sliver of visible cover front
+const CRATE_SLOT_H = 132;  // px — LP-sleeve tall aspect
+const CRATE_SKEW = -8;     // deg — covers lean right; negative skewX lifts left edge
+const CRATE_STEP = 40;     // px between slot left-edges → 12px visual overlap
+
+interface CrateOverlayProps {
+  armedSlots: Set<number>;
+  justArmedSlot: number | null;
+  onToggleSlot: (i: number) => void;
+  slotRefs: { current: Array<HTMLDivElement | null> };
+}
+
+function CrateOverlay({ armedSlots, justArmedSlot, onToggleSlot, slotRefs }: CrateOverlayProps) {
+  const MINT = "#5CE0B8";
+  const totalW = CRATE_SLOT_W + (CRATE_SLOT_COUNT - 1) * CRATE_STEP;
+
+  return (
+    <div
+      aria-label="Crate slot selector — tap covers to arm"
+      style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "none",
+        zIndex: 3,
+      }}
+    >
+      <div style={{ position: "relative", width: totalW, height: CRATE_SLOT_H }}>
+        {Array.from({ length: CRATE_SLOT_COUNT }, (_, i) => {
+          const armed = armedSlots.has(i);
+          const pulseNow = justArmedSlot === i && armed;
+          return (
+            <div
+              key={i}
+              ref={(el) => { slotRefs.current[i] = el; }}
+              onClick={() => onToggleSlot(i)}
+              role="button"
+              aria-pressed={armed}
+              aria-label={`Cover ${i + 1}`}
+              style={{
+                position: "absolute",
+                left: i * CRATE_STEP,
+                top: 0,
+                width: CRATE_SLOT_W,
+                height: CRATE_SLOT_H,
+                // skewX(-8deg): left edge stays plumb, top-right corner
+                // shifts left — gives LP-cover lean-into-crate silhouette
+                transform: `skewX(${CRATE_SKEW}deg)`,
+                transformOrigin: "bottom left",
+                background: armed ? "rgba(92,224,184,0.12)" : "transparent",
+                borderLeft: `1.5px solid ${MINT}`,
+                borderTop: `1px solid rgba(92,224,184,0.22)`,
+                borderBottom: `1px solid rgba(92,224,184,0.22)`,
+                borderRight: `1.5px dashed rgba(92,224,184,0.4)`,
+                boxShadow: armed
+                  ? "inset 0 0 0 0.5px rgba(92,224,184,0.25), 0 0 14px rgba(92,224,184,0.15)"
+                  : "none",
+                cursor: "pointer",
+                pointerEvents: "all",
+                // Rightmost slot visually on top (higher z = front of crate)
+                zIndex: i,
+                animation: pulseNow
+                  ? `slotArm 320ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards`
+                  : "none",
+                transition: "background 120ms ease, box-shadow 120ms ease",
+              }}
+            >
+              {/* Spine hairline — the alignment guide on the left edge */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  left: 5,
+                  top: 0,
+                  bottom: 0,
+                  width: 1,
+                  background: armed
+                    ? "rgba(92,224,184,0.55)"
+                    : "rgba(92,224,184,0.20)",
+                  pointerEvents: "none",
+                  transition: "background 120ms ease",
+                }}
+              />
+              {/* Cover number — counter-skewed so it reads upright */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  bottom: 10,
+                  left: 0,
+                  right: 0,
+                  textAlign: "center",
+                  fontFamily: "var(--font-label)",
+                  fontSize: 8,
+                  letterSpacing: "0.06em",
+                  color: armed ? "rgba(92,224,184,0.85)" : "rgba(92,224,184,0.28)",
+                  transform: `skewX(${-CRATE_SKEW}deg)`,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  transition: "color 120ms ease",
+                }}
+              >
+                {i + 1}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface CrateCaptureButtonProps {
+  armedCount: number;
+  onTap: () => void;
+}
+
+function CrateCaptureButton({ armedCount, onTap }: CrateCaptureButtonProps) {
+  const enabled = armedCount >= 2;
+  const [pressed, setPressed] = useState(false);
+  const MINT = "#5CE0B8";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      <div style={{ position: "relative", width: 68, height: 68 }}>
+        {/* Breathing Saturn ring — visible only when ≥2 slots armed */}
+        {enabled && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: -8,
+              borderRadius: "50%",
+              border: `1.5px solid rgba(92,224,184,0.50)`,
+              animation: "crateBreath 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite",
+              pointerEvents: "none",
+            }}
+          />
+        )}
+        <button
+          type="button"
+          aria-label={enabled ? `Capture ${armedCount} covers` : "Arm 2 or more covers to capture"}
+          onClick={enabled ? onTap : undefined}
+          onPointerDown={() => { if (enabled) setPressed(true); }}
+          onPointerUp={() => setPressed(false)}
+          onPointerLeave={() => setPressed(false)}
+          disabled={!enabled}
+          style={{
+            width: 68,
+            height: 68,
+            borderRadius: "50%",
+            backgroundColor: enabled ? "rgba(92,224,184,0.12)" : "rgba(92,224,184,0.04)",
+            border: `3px solid ${MINT}`,
+            boxShadow: enabled
+              ? "0 0 0 1px rgba(92,224,184,0.10), 0 0 28px -4px rgba(92,224,184,0.45)"
+              : "none",
+            cursor: enabled ? "pointer" : "not-allowed",
+            opacity: enabled ? 1 : 0.40,
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition:
+              "box-shadow 220ms cubic-bezier(0.16,1,0.3,1), opacity 220ms cubic-bezier(0.16,1,0.3,1), transform 100ms cubic-bezier(0.16,1,0.3,1)",
+            transform: pressed ? "scale(0.93)" : "scale(1)",
+          }}
+        >
+          <svg
+            width={30}
+            height={30}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke={MINT}
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx={12} cy={12} r={5} />
+            <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
+          </svg>
+        </button>
+      </div>
+
+      <div
+        style={{
+          fontFamily: "var(--font-label)",
+          fontSize: 9,
+          color: enabled ? MINT : "#5A4E70",
+          letterSpacing: "0.10em",
+          textTransform: "uppercase",
+          transition: "color 200ms ease",
+        }}
+      >
+        {enabled ? `CAPTURE ${armedCount} COVERS` : "ARM 2+ COVERS"}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ScanOverlay({
   open,
   mode,
@@ -353,7 +563,7 @@ export default function ScanOverlay({
   const [costInput, setCostInput] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
-  const [activeMode, setActiveMode] = useState<"barcode" | "vision" | "shelf">(mode);
+  const [activeMode, setActiveMode] = useState<"barcode" | "vision" | "shelf" | "crate">(mode);
 
   // Shelf-specific overlay UI state — separate from phase so they survive
   // the valuing→done transition without resetting.
@@ -379,6 +589,12 @@ export default function ScanOverlay({
   const [haulCost, setHaulCost] = useState("");
   const [shelfRevealCount, setShelfRevealCount] = useState(0);
   const [pressedRowIdx, setPressedRowIdx] = useState<number | null>(null);
+
+  // Crate-mode state — armed slots (Phase 1 manual selection stand-in for Phase 2 vision)
+  const [armedSlots, setArmedSlots] = useState<Set<number>>(new Set());
+  const [justArmedSlot, setJustArmedSlot] = useState<number | null>(null);
+  const [crateToast, setCrateToast] = useState<string | null>(null);
+  const slotRefs = useRef<Array<HTMLDivElement | null>>(Array(5).fill(null));
 
   const flagError = (stage: string, err: unknown) => {
     const message =
@@ -423,6 +639,9 @@ export default function ScanOverlay({
     setHaulCost("");
     setShelfRevealCount(0);
     setPressedRowIdx(null);
+    setArmedSlots(new Set());
+    setJustArmedSlot(null);
+    setCrateToast(null);
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -587,7 +806,7 @@ export default function ScanOverlay({
   }, [phase.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Switch active mode within an open session.
-  const switchMode = (m: "barcode" | "vision" | "shelf") => {
+  const switchMode = (m: "barcode" | "vision" | "shelf" | "crate") => {
     if (m === activeMode) return;
     setPhase({ kind: "framing" });
     setInlineError(null);
@@ -598,6 +817,9 @@ export default function ScanOverlay({
     setHaulCost("");
     setPressedRowIdx(null);
     shelfRowRefs.current.clear();
+    setArmedSlots(new Set());
+    setJustArmedSlot(null);
+    setCrateToast(null);
     setActiveMode(m);
   };
 
@@ -625,6 +847,23 @@ export default function ScanOverlay({
       const message = flagError("capture", err);
       setPhase({ kind: "error", message });
     }
+  };
+
+  // Phase 1 crate capture stub — collects armed-slot DOM rects and logs them.
+  // Phase 2 will replace this with vision detection of each cover's metadata.
+  const handleCrateCapture = () => {
+    if (armedSlots.size < 2) return;
+    const armedRects = slotRefs.current
+      .map((el, i) => (armedSlots.has(i) && el ? { slot: i, rect: el.getBoundingClientRect() } : null))
+      .filter(Boolean);
+    console.log("[CRATE Phase 1] armed slot rects:", armedRects);
+    haptic([10, 30, 10]);
+    setCrateToast("Detecting… (Phase 2)");
+    setTimeout(() => {
+      setCrateToast(null);
+      setArmedSlots(new Set());
+      setJustArmedSlot(null);
+    }, 1500);
   };
 
   // Two-stage shelf scan: detect → value.
@@ -970,6 +1209,15 @@ export default function ScanOverlay({
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes slotArm {
+          0%   { transform: skewX(-8deg) scale(1);    filter: drop-shadow(0 0 0px rgba(92,224,184,0)); }
+          45%  { transform: skewX(-8deg) scale(1.04); filter: drop-shadow(0 0 10px rgba(92,224,184,0.75)); }
+          100% { transform: skewX(-8deg) scale(1);    filter: drop-shadow(0 0 5px rgba(92,224,184,0.30)); }
+        }
+        @keyframes crateBreath {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50%       { opacity: 0.80; transform: scale(1.06); }
+        }
       `}</style>
 
       <div
@@ -986,6 +1234,34 @@ export default function ScanOverlay({
           justifyContent: "center",
         }}
       >
+        {/* Crate Phase 1 stub toast — shows on capture, clears after 1.5s */}
+        {crateToast && (
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 60,
+              background: "rgba(7,5,16,0.82)",
+              border: "1px solid rgba(92,224,184,0.35)",
+              borderRadius: 14,
+              padding: "14px 28px",
+              fontFamily: "var(--font-label)",
+              fontSize: 11,
+              color: "#5CE0B8",
+              letterSpacing: "0.12em",
+              textAlign: "center",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              boxShadow: "0 0 40px rgba(92,224,184,0.12)",
+              pointerEvents: "none",
+            }}
+          >
+            {crateToast}
+          </div>
+        )}
+
         {/* ── Shelf result panel ── full-screen, all shelf phases ── */}
         {isShelfPhase && (
           <div
@@ -1950,7 +2226,7 @@ export default function ScanOverlay({
                 background: "rgba(0,0,0,0.45)",
                 borderRadius: 10,
                 padding: 3,
-                gap: 2,
+                gap: 1,
               }}
             >
               {(
@@ -1958,6 +2234,7 @@ export default function ScanOverlay({
                   { key: "barcode", label: "BARCODE" },
                   { key: "vision", label: "ITEM" },
                   { key: "shelf", label: "SHELF" },
+                  { key: "crate", label: "CRATE" },
                 ] as const
               ).map(({ key, label }) => {
                 const isActive = activeMode === key;
@@ -1966,7 +2243,7 @@ export default function ScanOverlay({
                     key={key}
                     onClick={() => switchMode(key)}
                     style={{
-                      padding: "6px 14px",
+                      padding: "5px 9px",
                       borderRadius: 7,
                       border: "none",
                       background: isActive
@@ -1974,11 +2251,12 @@ export default function ScanOverlay({
                         : "transparent",
                       color: isActive ? "#e5e7eb" : "#5A4E70",
                       fontFamily: "var(--font-label)",
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: 700,
-                      letterSpacing: "0.08em",
+                      letterSpacing: "0.06em",
                       cursor: "pointer",
                       transition: "background 150ms ease, color 150ms ease",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {label}
@@ -1999,7 +2277,7 @@ export default function ScanOverlay({
             aspectRatio: "4 / 3",
           }}
         >
-          {phase.kind === "framing" && (
+          {phase.kind === "framing" && activeMode !== "crate" && (
             <>
               <CornerBracket
                 corner="tl"
@@ -2060,6 +2338,31 @@ export default function ScanOverlay({
                 />
               ))}
             </>
+          )}
+
+          {/* Crate mode: fanned guide-slot overlay (replaces corner brackets) */}
+          {phase.kind === "framing" && activeMode === "crate" && (
+            <CrateOverlay
+              armedSlots={armedSlots}
+              justArmedSlot={justArmedSlot}
+              slotRefs={slotRefs}
+              onToggleSlot={(i) => {
+                // Phase 2 will auto-detect covers from the live frame.
+                // For Phase 1, user manually arms slots to mark which covers to process.
+                setArmedSlots((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(i)) {
+                    next.delete(i); // disarm — no pulse
+                  } else {
+                    next.add(i);
+                    setJustArmedSlot(i); // arm — one-shot pulse
+                    setTimeout(() => setJustArmedSlot(null), 360);
+                  }
+                  haptic();
+                  return next;
+                });
+              }}
+            />
           )}
 
           {phase.kind === "captured" && phase.payload.type === "vision" && (
@@ -2329,9 +2632,9 @@ export default function ScanOverlay({
           </div>
         )}
 
-        {/* Bottom gradient — vision / shelf framing only */}
+        {/* Bottom gradient — vision / shelf / crate framing */}
         {phase.kind === "framing" &&
-          (activeMode === "vision" || activeMode === "shelf") && (
+          (activeMode === "vision" || activeMode === "shelf" || activeMode === "crate") && (
             <div
               aria-hidden="true"
               style={{
@@ -2364,7 +2667,14 @@ export default function ScanOverlay({
               zIndex: 20,
             }}
           >
-            {phase.kind === "framing" &&
+            {phase.kind === "framing" && activeMode === "crate" && (
+                <CrateCaptureButton
+                  armedCount={armedSlots.size}
+                  onTap={handleCrateCapture}
+                />
+              )}
+
+              {phase.kind === "framing" &&
               (activeMode === "vision" || activeMode === "shelf") && (
                 <>
                   <CaptureShutter
