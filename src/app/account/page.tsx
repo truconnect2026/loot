@@ -17,6 +17,7 @@ import {
   unsubscribeFromPush,
 } from "@/lib/push-client";
 import { DIGISTORE_FIND_ORDER_URL } from "@/lib/digistore-affiliate";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { clearPendingPlan, readPendingPlan } from "@/lib/pending-plan";
 import { withUTM } from "@/lib/utm";
 
@@ -821,14 +822,14 @@ export default function AccountPage() {
           </button>
           <span
             style={{
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              fontSize: 13,
-              letterSpacing: "0.05em",
-              color: "#5A4E70",
+              fontFamily: "var(--font-display)",
+              fontSize: 26,
+              letterSpacing: "0.04em",
+              color: "var(--text-primary)",
+              lineHeight: 1,
             }}
           >
-            Account
+            ACCOUNT
           </span>
         </div>
 
@@ -876,25 +877,12 @@ export default function AccountPage() {
         {/* SETTINGS section label — 28px gap from the upgrade card
             above per the spacing spec; gives the premium tier its
             own breathing room before the functional settings list. */}
-        <div
-          style={{
-            marginTop: 28,
-            marginBottom: 8,
-            // Uppercase section header — stays mono per the font role system.
-            fontFamily: "var(--font-label)",
-            fontSize: 9,
-            color: "#2D2845",
-            letterSpacing: "0.10em",
-            textTransform: "uppercase",
-          }}
-        >
-          SETTINGS
-        </div>
+        <SectionHeader marginTop={28}>SETTINGS</SectionHeader>
 
         {/* Group 1: Location settings — 8px between rows so each
             tile reads as its own card with air around it instead of
             crammed against its neighbors. */}
-        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 8, animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 100ms both" }}>
           {/* Zip code — persists to profiles.zip_code */}
           <ZipInput
             value={profile.zipCode}
@@ -1035,7 +1023,7 @@ export default function AccountPage() {
             stores the endpoint in push_subscriptions; the sub-toggles
             persist to notification_prefs. notifError surfaces the
             most common failure (denied permission) inline. */}
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 8, animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 160ms both" }}>
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={handleTogglePushEnabled}
@@ -1069,20 +1057,8 @@ export default function AccountPage() {
             label mirrors the SETTINGS header above; subtitle copy
             now explains the actual value ("track your flips for tax
             season") instead of the cryptic "CSV for taxes". */}
-        <div
-          style={{
-            marginTop: 24,
-            marginBottom: 8,
-            fontFamily: "var(--font-label)",
-            fontSize: 9,
-            color: "#2D2845",
-            letterSpacing: "0.10em",
-            textTransform: "uppercase",
-          }}
-        >
-          DATA
-        </div>
-        <div>
+        <SectionHeader marginTop={24}>DATA</SectionHeader>
+        <div style={{ animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 200ms both" }}>
           <SettingsTile
             height={64}
             onClick={handleExport}

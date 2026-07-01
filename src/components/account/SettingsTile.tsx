@@ -41,12 +41,12 @@ export default function SettingsTile({
     ? hovered
       ? "rgba(232,99,107,0.06)"
       : "rgba(232,99,107,0.03)"
-    : "rgba(255,255,255,0.02)";
+    : "rgba(255,255,255,0.038)";
   const baseBorder = isDanger
     ? hovered
       ? "1px solid rgba(232,99,107,0.18)"
       : "1px solid rgba(232,99,107,0.12)"
-    : "1px solid rgba(255,255,255,0.04)";
+    : "1px solid rgba(255,255,255,0.07)";
 
   const bg = pressed ? "var(--press-bg)" : baseBg;
   const transform = pressed ? "translateY(1px)" : "translateY(0)";
@@ -71,8 +71,8 @@ export default function SettingsTile({
         backgroundColor: bg,
         border: baseBorder,
         boxShadow: isDanger
-          ? undefined
-          : "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+          ? "0 1px 2px rgba(0,0,0,0.20)"
+          : "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 1px 3px rgba(0,0,0,0.25), 0 4px 12px -2px rgba(0,0,0,0.30)",
         borderRadius: "4px 16px 16px 16px",
         display: "flex",
         alignItems: "center",
