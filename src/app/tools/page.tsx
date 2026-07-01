@@ -329,13 +329,36 @@ export default function ToolsPage() {
 
         {/* ── SOURCE ──────────────────────────────────────────────── */}
         <div style={SECTION_LABEL}>SOURCE</div>
-        <SectionLink
-          icon={<CompassIcon />}
-          accent="#7B8FFF"
-          name="Sourcing Intel"
-          desc="Penny drops, Goodwill color schedule, Target markdowns, yard sales"
-          onTap={() => { haptic(); router.push("/sourcing"); }}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <SectionLink
+            icon={<CompassIcon />}
+            accent="#7B8FFF"
+            name="Sourcing Intel"
+            desc="Penny drops, Goodwill color schedule, Target markdowns, yard sales"
+            onTap={() => { haptic(); router.push("/sourcing"); }}
+          />
+          <ToolTile
+            icon={<TagIcon />}
+            accent="#D4A574"
+            name="Tag Decoder"
+            desc="Decode clearance color tags from any store"
+            onTap={() => { haptic(); setActiveTool("tag-decode"); }}
+          />
+          <ToolTile
+            icon={<PackageIcon />}
+            accent="#5CE0B8"
+            name="Liquidation Analyzer"
+            desc="Paste a manifest URL — get per-unit flip potential"
+            onTap={() => { haptic(); setActiveTool("liquidation"); }}
+          />
+          <ToolTile
+            icon={<RecycleIcon />}
+            accent="#7B8FFF"
+            name="Scrap Finder"
+            desc="Identify recyclable materials and scrap metal value"
+            onTap={() => { haptic(); setActiveTool("scrap-id"); }}
+          />
+        </div>
 
         {/* ── SCAN ────────────────────────────────────────────────── */}
         <div style={{ ...SECTION_LABEL, marginTop: 28 }}>SCAN</div>
@@ -367,27 +390,6 @@ export default function ToolsPage() {
             name="Condition Grade"
             desc="AI letter grade from your photos — MINT to POOR"
             onTap={() => { haptic(); setConditionOpen(true); }}
-          />
-          <ToolTile
-            icon={<TagIcon />}
-            accent="#D4A574"
-            name="Tag Decoder"
-            desc="Decode clearance color tags from any store"
-            onTap={() => { haptic(); setActiveTool("tag-decode"); }}
-          />
-          <ToolTile
-            icon={<PackageIcon />}
-            accent="#5CE0B8"
-            name="Liquidation Analyzer"
-            desc="Paste a manifest URL — get per-unit flip potential"
-            onTap={() => { haptic(); setActiveTool("liquidation"); }}
-          />
-          <ToolTile
-            icon={<RecycleIcon />}
-            accent="#7B8FFF"
-            name="Scrap Finder"
-            desc="Identify recyclable materials and scrap metal value"
-            onTap={() => { haptic(); setActiveTool("scrap-id"); }}
           />
         </div>
 

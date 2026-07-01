@@ -35,7 +35,6 @@ import GoodwillColorSheet from "@/components/dashboard/GoodwillColorSheet";
 import TargetMarkdownsSheet from "@/components/dashboard/TargetMarkdownsSheet";
 import ComingSoonSheet from "@/components/dashboard/ComingSoonSheet";
 import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
-import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import AppMarketingPreview from "@/components/app/AppMarketingPreview";
 import FlipDailyCard from "@/components/dashboard/FlipDailyCard";
 import FeedsEmptyCard from "@/components/dashboard/FeedsEmptyCard";
@@ -362,87 +361,6 @@ const SECTION_LABEL: React.CSSProperties = {
   backgroundSize: "100% 1px",
 };
 
-function FlipCoachFab({ onTap }: { onTap: () => void }) {
-  const [pressed, setPressed] = useState(false);
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: "calc(72px + env(safe-area-inset-bottom))",
-        right: 16,
-        // zIndex 30 sits BELOW the BottomSheet backdrop (zIndex 40)
-        // and panel (zIndex 41) — when any sheet opens, its dark
-        // overlay covers the FAB so the floating button doesn't
-        // bleed through on top of sheet content.
-        zIndex: 30,
-        width: 52,
-        height: 52,
-        // Outer wrapper carries the float animation so the sonar
-        // ring (a positioned sibling) stays anchored relative to
-        // the floating FAB instead of moving independently.
-        animation: "fabFloat 3s ease-in-out infinite",
-      }}
-    >
-      {/* Sonar pulse — expanding ring that fades out, repeating
-          every 2.5s. Sits behind the button so taps pass through. */}
-      <span
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
-          backgroundColor: "rgba(92,224,184,0.12)",
-          animation: "fabSonar 2.5s ease-out infinite",
-          pointerEvents: "none",
-        }}
-      />
-      <button
-        type="button"
-        aria-label="Open Flip Coach"
-        onClick={() => {
-          haptic();
-          onTap();
-        }}
-        onPointerDown={() => setPressed(true)}
-        onPointerUp={() => setPressed(false)}
-        onPointerLeave={() => setPressed(false)}
-        style={{
-          position: "relative",
-          width: "100%",
-          height: "100%",
-          borderRadius: "50%",
-          background:
-            "linear-gradient(135deg, rgba(92,224,184,0.2), rgba(92,224,184,0.1))",
-          border: "1px solid rgba(92,224,184,0.2)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          padding: 0,
-          transform: pressed ? "scale(0.9)" : "scale(1)",
-          transition: "transform 100ms cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-      >
-        <svg
-          width={24}
-          height={24}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#5CE0B8"
-          strokeWidth={1.75}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx={12} cy={12} r={5} />
-          <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
-        </svg>
-      </button>
-    </div>
-  );
-}
 
 /**
  * StatsBorderWrap — 1px animated gradient border around the stats
@@ -1188,7 +1106,6 @@ function DashboardPage() {
     null | "restock-days" | "estate-sales" | "bolo-alerts" | "seasonal-flips"
   >(null);
   const [conditionOpen, setConditionOpen] = useState(false);
-  const [coachOpen, setCoachOpen] = useState(false);
 
   const handleSourcingTap = useCallback((feed: SourcingFeed) => {
     haptic();
@@ -1214,36 +1131,6 @@ function DashboardPage() {
     }
   }, []);
 
-  const handleToolTap = useCallback(
-    (tool: Tool) => {
-      haptic();
-      if (tool.href) {
-        router.push(tool.href);
-        return;
-      }
-      if (tool.toolKind === "shelf-scan") {
-        // Dedicated sheet — see ShelfScanSheet. Routing this through
-        // ToolSheet is now a tsc error, not just a runtime mistake.
-        setShelfOpen(true);
-        return;
-      }
-      if (tool.toolKind === "condition-grade") {
-        setConditionOpen(true);
-        return;
-      }
-      if (tool.toolKind === "flip-coach") {
-        setCoachOpen(true);
-        return;
-      }
-      if (tool.toolKind) {
-        // Explicit narrowing — ToolKind includes the dedicated-sheet
-        // kinds (shelf-scan / condition-grade / flip-coach) which
-        // we already returned on above; ToolSheetTool excludes them.
-        setActiveTool(tool.toolKind as ToolSheetTool);
-      }
-    },
-    [router]
-  );
 
   const handleDealTap = useCallback((deal: Deal) => {
     setSelectedDeal(deal);
@@ -1678,13 +1565,6 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Flip Coach FAB — fixed bottom-right with a slow idle float +
-          a sonar pulse ring expanding behind it. The Saturn glyph
-          serves as the coach's brand mark across the FAB and the
-          MORE TOOLS tile so users associate the icon with the
-          feature. */}
-      <FlipCoachFab onTap={() => setCoachOpen(true)} />
-
       {/* Overlays */}
       <ScanOverlay
         open={scanOpen}
@@ -1869,17 +1749,6 @@ function DashboardPage() {
         }}
       />
 
-      <FlipCoachSheet
-        open={coachOpen}
-        onClose={() => setCoachOpen(false)}
-        onPaywall={() => {
-          setPaywallInfo({
-            used: scanCount?.used ?? 0,
-            limit: scanCount?.limit ?? 5,
-          });
-          setPaywallOpen(true);
-        }}
-      />
     </>
   );
 }

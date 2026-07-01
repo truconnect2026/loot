@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
+import { CHAIN_PATTERNS } from "@/lib/sourcingPatterns";
 
 // ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
 interface StoreRecord {
@@ -221,8 +222,34 @@ export default function SourcingPage() {
     d.entries.some((e) => e.confidence !== "unknown"),
   );
 
-  // Cards for selected day
+  // Cards for selected day (real store data)
   const dayCards = selPlan ? groupEntries(selPlan.entries) : [];
+
+  // Preview plan — shown when the user has no stores yet so the week strip
+  // is legible and the value of adding stores is immediately obvious.
+  // Only Goodwill + Savers patterns; never presented as personalized.
+  const previewPlan = useMemo(() => {
+    if (hasStores || weekPlan.length === 0) return [];
+    const PREVIEW_STORES: Record<string, DayEntry["store"]> = {
+      Goodwill:  { id: "preview-goodwill", name: "Goodwill",  chain: "Goodwill",  location_label: null },
+      Savers:    { id: "preview-savers",   name: "Savers",    chain: "Savers",    location_label: null },
+    };
+    return weekPlan.map((day) => ({
+      ...day,
+      entries: CHAIN_PATTERNS
+        .filter((p) => (p.chain === "Goodwill" || p.chain === "Savers") && p.weekday === day.weekday)
+        .map((p) => ({
+          store: PREVIEW_STORES[p.chain] ?? PREVIEW_STORES.Goodwill!,
+          label: p.label,
+          confidence: "pattern" as const,
+        })),
+    }));
+  }, [hasStores, weekPlan]);
+
+  // Use preview when no user stores; preview day cards for selected day
+  const displayPlan      = hasStores ? weekPlan : previewPlan;
+  const displaySelPlan   = displayPlan[selDay];
+  const displayDayCards  = displaySelPlan ? groupEntries(displaySelPlan.entries) : [];
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -321,10 +348,22 @@ export default function SourcingPage() {
       </div>
 
       {/* ═══ WEEK STRIP ═════════════════════════════════════════════════════ */}
-      {hasStores && (
+      {/* Always rendered — preview shows Goodwill + Savers typical patterns
+          so the feature is legible before any store is added. */}
+      {!hasStores && displayPlan.length > 0 && (
+        <div style={{
+          marginLeft: 20, marginRight: 20, marginBottom: 8,
+          fontFamily: "var(--font-label, monospace)",
+          fontSize: 8, letterSpacing: "0.12em",
+          color: "#D4A574", textTransform: "uppercase",
+        }}>
+          TYPICAL · ADD A STORE TO CONFIRM
+        </div>
+      )}
+      {displayPlan.length > 0 && (
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <div style={{ display: "flex", gap: 6, padding: "0 20px 16px", width: "max-content" }}>
-            {weekPlan.map((day, idx) => {
+            {displayPlan.map((day, idx) => {
               const isToday    = idx === 0;
               const isSel      = idx === selDay;
               const hasDeals   = day.entries.some((e) => e.confidence !== "unknown");
@@ -376,22 +415,23 @@ export default function SourcingPage() {
       )}
 
       {/* ═══ SELECTED DAY PLAN ══════════════════════════════════════════════ */}
-      {hasStores && selPlan && (
+      {displaySelPlan && (
         <div style={{ padding: "0 16px 16px" }}>
           {/* Day label */}
           <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.13em", color: "#5A4E70", marginBottom: 12, textTransform: "uppercase" }}>
-            {selDay === 0 ? "today" : WEEKDAY_FULL[selPlan.weekday]} · {selPlan.date}
+            {selDay === 0 ? "today" : WEEKDAY_FULL[displaySelPlan.weekday]} · {displaySelPlan.date}
           </div>
 
-          {dayCards.length === 0 ? (
+          {displayDayCards.length === 0 ? (
             <div style={{ textAlign: "center", padding: "24px 0", fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#374151" }}>
               nothing tracked this day
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {dayCards.map((card) => {
+              {displayDayCards.map((card) => {
                 const isToday     = selDay === 0;
-                const alreadyLogged = logged[card.store.id];
+                // No logging for preview cards (store ids start with "preview-")
+                const alreadyLogged = card.store.id.startsWith("preview-") ? undefined : logged[card.store.id];
                 return (
                   <div key={card.store.id} style={{
                     background: "rgba(255,255,255,0.028)",
@@ -438,8 +478,8 @@ export default function SourcingPage() {
                       <ConfidencePill confidence={card.confidence} />
                     </div>
 
-                    {/* One-tap log — today only */}
-                    {isToday && (
+                    {/* One-tap log — today only, real stores only */}
+                    {isToday && !card.store.id.startsWith("preview-") && (
                       alreadyLogged ? (
                         <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 10, color: MINT, letterSpacing: "0.06em" }}>
                           ✓ logged {alreadyLogged === "yes" ? "(on sale)" : "(not on sale)"}
