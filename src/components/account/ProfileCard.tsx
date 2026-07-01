@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+// Minimum count before social proof copy renders.
+const SOCIAL_PROOF_MIN = 500;
+
 interface ProfileCardProps {
   name: string;
   email: string;
@@ -16,6 +19,9 @@ interface ProfileCardProps {
    * users see "Manage via Digistore" instead of "Manage plan",
    * matching the rail their subscription actually lives on. */
   manageLabel?: string;
+  /** Real registered-user count from the profiles table. Undefined until
+   *  the parent's async fetch resolves. */
+  memberCount?: number;
 }
 
 // Cool blue-purple, zero red, zero green warmth — OLED can't shift this
@@ -58,6 +64,7 @@ export default function ProfileCard({
   scansLabel,
   onCancel,
   manageLabel = "Manage plan",
+  memberCount,
 }: ProfileCardProps) {
   const { local, domain } = splitEmail(email);
 
@@ -400,38 +407,20 @@ export default function ProfileCard({
           </div>
         </div>
 
-        {/* PRO members benchmark — promoted from a footnote to the
-            second-most-prominent line in the plan card after the price.
-            This is the most persuasive copy in the app (it's what a
-            reseller is paying for) and it should read as a confident
-            stat, not a caption. Body now at 15px / 80% white; the
-            $1,200/mo span is mint at 800 weight so the dollar number
-            is unambiguously the hero of the line. Static at launch;
-            backed by a Supabase aggregate (avg monthly realized profit
-            across active PRO accounts) once that view exists. */}
-        {isPro && (
+        {/* Real community size — only shown once the count crosses
+            SOCIAL_PROOF_MIN so we never display a misleadingly small
+            or fabricated number. */}
+        {isPro && memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
           <div
             style={{
               marginTop: 12,
               fontFamily: "var(--font-body)",
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: 500,
-              color: "rgba(255,255,255,0.80)",
-              lineHeight: 1.35,
+              color: "#5CE0B8",
             }}
           >
-            PRO members average{" "}
-            <span
-              style={{
-                color: "var(--money)",
-                fontWeight: 800,
-                fontSize: 16,
-                fontFeatureSettings: '"tnum"',
-              }}
-            >
-              $1,200/mo
-            </span>
-            {" "}in flips found
+            join {Math.floor(memberCount / 100) * 100}+ flippers
           </div>
         )}
 

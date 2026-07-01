@@ -2,12 +2,19 @@
 
 import { useState, type ReactNode } from "react";
 
+// Minimum count before social proof copy renders. Below this threshold
+// nothing is displayed — no guesses, no fabricated stats.
+const SOCIAL_PROOF_MIN = 500;
+
 interface UpgradeCardProps {
   /** Stripe price IDs — pulled from the build-time
    * NEXT_PUBLIC_STRIPE_PRICE_{MONTHLY,ANNUAL} env vars by the parent. */
   monthlyPriceId: string;
   annualPriceId: string;
   onSubscribe: (priceId: string) => void;
+  /** Real registered-user count from the profiles table. Undefined until
+   *  the parent's async fetch resolves. */
+  memberCount?: number;
 }
 
 /**
@@ -40,6 +47,7 @@ export default function UpgradeCard({
   monthlyPriceId,
   annualPriceId,
   onSubscribe,
+  memberCount,
 }: UpgradeCardProps) {
   const handleTap = (priceId: string) => {
     onSubscribe(priceId);
@@ -146,44 +154,19 @@ export default function UpgradeCard({
           >
             unlimited scans, unlocked feeds
           </div>
-          <div
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: 13,
-              color: "rgba(255,255,255,0.62)",
-              lineHeight: 1.4,
-              marginBottom: 16,
-            }}
-          >
-            PRO members average{" "}
-            {/* Hero price call-out — JBMono 18/700 mint number,
-                Outfit /mo suffix at 12/400 muted. The number is the
-                hook; the suffix recedes. */}
-            <span style={{ display: "inline-flex", alignItems: "baseline" }}>
-              <span
-                style={{
-                  fontFamily: "var(--font-jetbrains-mono)",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "#5CE0B8",
-                  fontFeatureSettings: '"tnum"',
-                }}
-              >
-                $1,200
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 12,
-                  fontWeight: 400,
-                  color: "#5A4E70",
-                }}
-              >
-                /mo
-              </span>
-            </span>{" "}
-            in flips found
-          </div>
+          {memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                color: "#5CE0B8",
+                marginBottom: 16,
+                fontWeight: 500,
+              }}
+            >
+              join {Math.floor(memberCount / 100) * 100}+ flippers
+            </div>
+          )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <PriceOption

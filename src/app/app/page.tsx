@@ -8,7 +8,6 @@ import CoinRain from "@/components/shared/CoinRain";
 import SplashScreen from "@/components/shared/SplashScreen";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
-import WinsTicker from "@/components/dashboard/WinsTicker";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
 import { readPendingPlan } from "@/lib/pending-plan";
 import ContextCard from "@/components/dashboard/ContextCard";
@@ -22,6 +21,8 @@ import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import SourcingCarousel, {
   type SourcingFeed,
 } from "@/components/dashboard/SourcingCarousel";
+// WinsTicker removed — it contained hardcoded "near you" claims that
+// contradicted the honest empty-state copy when no real deals existed.
 import ToolSheet, {
   type ToolKind,
   type ToolSheetTool,
@@ -751,15 +752,28 @@ function DashboardPage() {
   const dayOfWeek = now ? now.getDay() : 0;
   const hour = now ? now.getHours() : 0;
 
-  // Auto-open shelf scan when navigating from the tab-bar SCAN button.
+  // Two-step shelf-scan auto-open from the tab-bar SCAN button:
+  // 1) Read the URL param on mount (before scanCount resolves).
+  // 2) Once scanCount resolves, gate on Pro status — non-Pro → paywall.
+  const pendingShelfScanRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("scan") === "shelf") {
-      setShelfOpen(true);
       window.history.replaceState(null, "", "/app");
+      pendingShelfScanRef.current = true;
     }
   }, []);
+  useEffect(() => {
+    if (!pendingShelfScanRef.current || scanCount === null) return;
+    pendingShelfScanRef.current = false;
+    if (!scanCount.isPro) {
+      setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
+      setPaywallOpen(true);
+    } else {
+      setShelfOpen(true);
+    }
+  }, [scanCount]);
 
 
   // Deal detail sheet state
@@ -1083,9 +1097,16 @@ function DashboardPage() {
 
   const startScan = useCallback((mode: "barcode" | "vision") => {
     haptic();
+    // FREE_SCAN_LIMIT = 0 — non-Pro users go straight to the paywall.
+    // No scan overlay, no camera, no API call.
+    if (scanCount !== null && !scanCount.isPro) {
+      setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
+      setPaywallOpen(true);
+      return;
+    }
     setScanMode(mode);
     setScanOpen(true);
-  }, []);
+  }, [scanCount]);
 
   const handleScanResult = useCallback(
     (result: VerdictPayload) => {
@@ -1478,80 +1499,38 @@ function DashboardPage() {
           <div style={{ marginTop: 16 }}>
             <FlipDailyCard />
           </div>
-          {/* Free-user quota counter — sits below the scan zone,
-              hidden for Pro members and during the loading window
-              before the first /api/scan-count response.
-              Three states:
-                remaining > 1  → mint pill "X/N free scans"
-                remaining = 1  → red pill "X/N free scans" (running low)
-                remaining = 0  → red pill "upgrade for unlimited" —
-                  the entire pill becomes a tap target that opens the
-                  PaywallSheet. The exhausted state turns into a
-                  conversion point instead of an error message. The
-                  red surface softens to 0.06 / 0.10 alpha so the
-                  CTA reads as inviting, not alarmed. */}
+          {/* FREE_SCAN_LIMIT = 0 means no free tier. Non-Pro users see a
+              FLIP OR SKIP nudge in this slot instead of a quota counter. */}
           {scanCount && !scanCount.isPro && (
-            (() => {
-              const exhausted = scanCount.remaining <= 0;
-              const urgent = exhausted || scanCount.remaining === 1;
-              const handleExhaustedTap = () => {
-                if (!exhausted) return;
-                setPaywallInfo({
-                  used: scanCount.used,
-                  limit: scanCount.limit,
-                });
-                setPaywallOpen(true);
-              };
-              return (
-                <div
-                  style={{
-                    marginTop: 12,
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={handleExhaustedTap}
-                    disabled={!exhausted}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "6px 16px",
-                      borderRadius: 20,
-                      backgroundColor: exhausted
-                        ? "rgba(232, 99, 107, 0.06)"
-                        : urgent
-                          ? "rgba(232, 99, 107, 0.08)"
-                          : "rgba(92, 224, 184, 0.08)",
-                      border: exhausted
-                        ? "1px solid rgba(232, 99, 107, 0.10)"
-                        : urgent
-                          ? "1px solid rgba(232, 99, 107, 0.12)"
-                          : "1px solid rgba(92, 224, 184, 0.12)",
-                      fontFamily: "var(--font-body)",
-                      fontWeight: 500,
-                      fontSize: 11,
-                      color: urgent ? "#E8636B" : "#5CE0B8",
-                      letterSpacing: "0.02em",
-                      fontFeatureSettings: '"tnum"',
-                      cursor: exhausted ? "pointer" : "default",
-                    }}
-                  >
-                    {exhausted
-                      ? "upgrade for unlimited"
-                      : `${scanCount.remaining}/${scanCount.limit} free scans`}
-                  </button>
-                </div>
-              );
-            })()
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <a
+                href="/flip"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "6px 16px",
+                  borderRadius: 20,
+                  backgroundColor: "rgba(92, 224, 184, 0.08)",
+                  border: "1px solid rgba(92, 224, 184, 0.12)",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 500,
+                  fontSize: 11,
+                  color: "#5CE0B8",
+                  letterSpacing: "0.02em",
+                  textDecoration: "none",
+                }}
+              >
+                play FLIP OR SKIP free daily →
+              </a>
+            </div>
           )}
         </div>
-
-        {/* WinsTicker is no longer a standalone section — it's nested
-            inside the first carousel's header below as a `liveSignal`,
-            so the ticker reads as that section's activity feed rather
-            than as an orphaned line floating between sections. */}
 
         {/* 6 + 7. Carousels — order swaps for first-time users.
             New user: Free & Clearance first (lowest-barrier entry point —
@@ -1572,7 +1551,7 @@ function DashboardPage() {
             ~80px of dead space; one card is ~140px and gives the user
             an actionable CTA. */}
         {!feedsLoading && nearbyDeals.length === 0 && freeDeals.length === 0 ? (
-          <FeedsEmptyCard />
+          <FeedsEmptyCard radius={userRadius} />
         ) : isNewUser ? (
           <>
             <div
@@ -1591,7 +1570,6 @@ function DashboardPage() {
                 icon={<SectionIcon kind="free" />}
                 deals={freeDeals}
                 onDealTap={handleDealTap}
-                liveSignal={<WinsTicker />}
                 loading={feedsLoading}
                 emptyMessage="no free finds nearby — try expanding your radius"
               />
@@ -1634,7 +1612,6 @@ function DashboardPage() {
                 icon={<SectionIcon kind="deals" />}
                 deals={nearbyDeals}
                 onDealTap={handleDealTap}
-                liveSignal={<WinsTicker />}
                 loading={feedsLoading}
                 emptyMessage="no deals nearby — try expanding your radius"
               />

@@ -9,9 +9,16 @@
  * lands in one file.
  */
 
-export const FREE_DAILY_LIMIT = 3;
+/** Free-tier single-scan allowance. Set to 0 to remove the free tier entirely.
+ *  A non-Pro user hitting /api/scan or /api/shelf-scan always gets 403. */
+export const FREE_SCAN_LIMIT = 0;
 
 /** Hard monthly ceiling on shelf scans for Pro users.
  *  Only applies to /api/scan-multi/detect (the expensive vision call).
  *  Single scans (/api/scan) stay unlimited for Pro. */
 export const PRO_MONTHLY_SHELF_SCAN_LIMIT = 500;
+
+/** Minimum registered-user count before social proof copy is shown on the
+ *  upgrade and profile cards. Below this number nothing renders — no
+ *  fabricated stats, no guesses. */
+export const SOCIAL_PROOF_MIN = 500;

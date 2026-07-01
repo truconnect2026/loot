@@ -13,9 +13,15 @@ import { useRouter } from "next/navigation";
  * Surface language matches the EmptyHero / SAMPLE SCAN card so the
  * dashboard reads consistently when there's no live content yet.
  */
-export default function FeedsEmptyCard() {
+interface FeedsEmptyCardProps {
+  /** User's current search radius in miles. Shown in the empty-state copy. */
+  radius?: number;
+}
+
+export default function FeedsEmptyCard({ radius }: FeedsEmptyCardProps) {
   const router = useRouter();
   const [pressed, setPressed] = useState(false);
+  const radiusLabel = radius ? `${radius}mi` : "your area";
 
   return (
     <div
@@ -58,7 +64,7 @@ export default function FeedsEmptyCard() {
           marginBottom: 12,
         }}
       >
-        set your zip code and radius to see deals near you
+        no deals within {radiusLabel} — try widening your radius
       </div>
       <button
         type="button"

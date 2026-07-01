@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { FREE_DAILY_LIMIT } from "@/lib/limits";
+import { FREE_SCAN_LIMIT } from "@/lib/limits";
 
 export interface ScanCountResponse {
   isPro: boolean;
@@ -29,8 +29,8 @@ export async function GET(): Promise<NextResponse<ScanCountResponse>> {
     return NextResponse.json({
       isPro: false,
       used: 0,
-      limit: FREE_DAILY_LIMIT,
-      remaining: FREE_DAILY_LIMIT,
+      limit: FREE_SCAN_LIMIT,
+      remaining: FREE_SCAN_LIMIT,
     });
   }
 
@@ -68,7 +68,7 @@ export async function GET(): Promise<NextResponse<ScanCountResponse>> {
   return NextResponse.json({
     isPro: false,
     used,
-    limit: FREE_DAILY_LIMIT,
-    remaining: Math.max(0, FREE_DAILY_LIMIT - used),
+    limit: FREE_SCAN_LIMIT,
+    remaining: Math.max(0, FREE_SCAN_LIMIT - used),
   });
 }

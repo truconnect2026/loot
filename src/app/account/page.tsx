@@ -272,6 +272,10 @@ export default function AccountPage() {
     "idle" | "loading" | "done"
   >("idle");
 
+  // Real member count for social-proof copy (ProfileCard / UpgradeCard).
+  // Fetched once on mount; null while loading.
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+
   // Back arrow state
   const [backPressed, setBackPressed] = useState(false);
 
@@ -655,6 +659,20 @@ export default function AccountPage() {
     [],
   );
 
+  // Fetch the total registered-user count for honest social proof.
+  // No auth needed — profiles is public-readable for count.
+  useEffect(() => {
+    const supabase = createClient();
+    void (async () => {
+      try {
+        const { count } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true });
+        if (typeof count === "number") setMemberCount(count);
+      } catch { /* non-fatal */ }
+    })();
+  }, []);
+
   // Pending-plan auto-launch: if the visitor clicked a /pro CTA while
   // signed out, we stashed their plan choice + UTMs in sessionStorage.
   // Once they sign in and land here (via /onboarding or /app), fire
@@ -838,6 +856,7 @@ export default function AccountPage() {
                   ? "Manage via Digistore"
                   : "Manage plan"
               }
+              memberCount={memberCount ?? undefined}
             />
           ) : (
             <UpgradeCard
@@ -848,6 +867,7 @@ export default function AccountPage() {
                 process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""
               }
               onSubscribe={handleSubscribe}
+              memberCount={memberCount ?? undefined}
             />
           )}
         </div>

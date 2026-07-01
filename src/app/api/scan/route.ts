@@ -8,7 +8,7 @@ import {
   type PlatformRankEntry,
   type SellSpeed,
 } from "@/lib/claude";
-import { FREE_DAILY_LIMIT } from "@/lib/limits";
+import { FREE_SCAN_LIMIT } from "@/lib/limits";
 
 interface ScanRequestBody {
   type: "barcode" | "vision" | "known";
@@ -64,7 +64,7 @@ export async function POST(
   const cost = typeof body.cost === "number" && body.cost >= 0 ? body.cost : 0;
 
   // Subscription gate — Pro users skip; free users capped at the
-  // FREE_DAILY_LIMIT centralized in lib/limits.ts.
+  // FREE_SCAN_LIMIT centralized in lib/limits.ts.
   // Anonymous (logged-out) callers fall through with no gate; the
   // route does not insert a haul-log row for them either, so the
   // worst case is a free verdict to a non-user.
@@ -88,13 +88,13 @@ export async function POST(
           .eq("user_id", user.id)
           .gte("created_at", startOfDay.toISOString());
         const used = count ?? 0;
-        if (used >= FREE_DAILY_LIMIT) {
+        if (used >= FREE_SCAN_LIMIT) {
           return NextResponse.json(
             {
               error:
                 "Daily scan limit reached. Upgrade to Pro for unlimited scans.",
               scans_used: used,
-              scans_limit: FREE_DAILY_LIMIT,
+              scans_limit: FREE_SCAN_LIMIT,
             },
             { status: 403 },
           );

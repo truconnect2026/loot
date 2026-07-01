@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { shelfScan, type ShelfScanResult } from "@/lib/claude";
-import { FREE_DAILY_LIMIT } from "@/lib/limits";
+import { FREE_SCAN_LIMIT } from "@/lib/limits";
 
 interface ShelfScanBody {
   image?: string;
@@ -45,13 +45,13 @@ async function checkScanGate(
       .eq("user_id", user.id)
       .gte("created_at", startOfDay.toISOString());
     const used = count ?? 0;
-    if (used >= FREE_DAILY_LIMIT) {
+    if (used >= FREE_SCAN_LIMIT) {
       return NextResponse.json(
         {
           error:
             "Daily scan limit reached. Upgrade to Pro for unlimited scans.",
           scans_used: used,
-          scans_limit: FREE_DAILY_LIMIT,
+          scans_limit: FREE_SCAN_LIMIT,
         },
         { status: 403 },
       );
