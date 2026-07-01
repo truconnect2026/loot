@@ -157,7 +157,8 @@ type Phase =
       items: MultiDetectItem[];
       valuations: Map<number, BatchValuation>;
     }
-  | { kind: "shelf-empty"; capturedImage: string };
+  | { kind: "shelf-empty"; capturedImage: string }
+  | { kind: "shelf-limit"; used: number; limit: number };
 
 function safelyCaptureFrame(video: HTMLVideoElement | null): string | null {
   if (!video) return null;
@@ -646,6 +647,10 @@ export default function ScanOverlay({
         body: JSON.stringify({ image }),
       });
       const json = await res.json();
+      if (res.status === 429 && json.error === "monthly_limit") {
+        setPhase({ kind: "shelf-limit", used: json.used ?? 0, limit: json.limit ?? 500 });
+        return;
+      }
       if (!res.ok) throw new Error(json.error ?? "Detection failed");
       items = json.items ?? [];
     } catch (err) {
@@ -805,7 +810,8 @@ export default function ScanOverlay({
     phase.kind === "shelf-detecting" ||
     phase.kind === "shelf-valuing" ||
     phase.kind === "shelf-done" ||
-    phase.kind === "shelf-empty";
+    phase.kind === "shelf-empty" ||
+    phase.kind === "shelf-limit";
 
   const shelfItems =
     phase.kind === "shelf-valuing" || phase.kind === "shelf-done"
@@ -1136,6 +1142,79 @@ export default function ScanOverlay({
                   }}
                 >
                   RETAKE
+                </button>
+              </div>
+            )}
+
+            {/* Monthly Pro limit hit */}
+            {phase.kind === "shelf-limit" && (
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  padding: 32,
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 36, lineHeight: 1 }}>📦</div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: 22,
+                    color: "#5CE0B8",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  shelf-scan limit reached
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 14,
+                    color: "#C8C0D8",
+                    lineHeight: 1.5,
+                    maxWidth: 260,
+                  }}
+                >
+                  You&apos;ve used {phase.used}/{phase.limit} shelf scans this month.
+                </div>
+                <div
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    color: "#5A4E70",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Resets{" "}
+                  {(() => {
+                    const d = new Date();
+                    const first = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+                    return first.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+                  })()}
+                </div>
+                <button
+                  onClick={onCancel}
+                  style={{
+                    marginTop: 8,
+                    padding: "10px 28px",
+                    borderRadius: 10,
+                    background: "rgba(92,224,184,0.08)",
+                    border: "1px solid rgba(92,224,184,0.20)",
+                    color: "#5CE0B8",
+                    fontFamily: "var(--font-label)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.10em",
+                    cursor: "pointer",
+                  }}
+                >
+                  CLOSE
                 </button>
               </div>
             )}

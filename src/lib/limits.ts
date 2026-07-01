@@ -10,3 +10,8 @@
  */
 
 export const FREE_DAILY_LIMIT = 3;
+
+/** Hard monthly ceiling on shelf scans for Pro users.
+ *  Only applies to /api/scan-multi/detect (the expensive vision call).
+ *  Single scans (/api/scan) stay unlimited for Pro. */
+export const PRO_MONTHLY_SHELF_SCAN_LIMIT = 500;
