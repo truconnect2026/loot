@@ -347,11 +347,25 @@ function CancelButton({
 // Phase 1: user manually arms slots to indicate which covers to analyze.
 // Phase 2 will auto-detect covers from a captured frame and arm them.
 
-const CRATE_SLOT_COUNT = 5;
-const CRATE_SLOT_W = 52;   // px — sliver of visible cover front
-const CRATE_SLOT_H = 132;  // px — LP-sleeve tall aspect
-const CRATE_SKEW = -8;     // deg — covers lean right; negative skewX lifts left edge
-const CRATE_STEP = 40;     // px between slot left-edges → 12px visual overlap
+// ─── Crate cascade geometry ───────────────────────────────────────────────────
+// Mental model: phone held ABOVE the crate pointing DOWN. Records recede away
+// from the user (upward in frame). Card 0 = front (nearest, bottom of frame,
+// largest strip). Card 4 = back (furthest, top of frame, smallest strip).
+// Only each card's top strip is visible; the body is occluded by the card
+// immediately in front (higher z-index = front).
+
+const CRATE_CARD_COUNT = 5;
+// Visible strip height per card — index 0=front to 4=back
+const CRATE_STRIPS  = [22, 20, 18, 17, 16] as const;
+// Width scale per card (front widest, back narrowest — sells depth recession)
+const CRATE_SCALES  = [1.00, 0.96, 0.92, 0.88, 0.84] as const;
+const CRATE_MAX_W   = 224;  // px — widest card (front)
+const CRATE_BODY_H  = 52;   // px — card body below strip (occluded by front cards)
+// Precomputed top offset for each card within the cascade container
+// topOf(4)=0, topOf(3)=16, topOf(2)=33, topOf(1)=51, topOf(0)=71
+const CRATE_TOPS    = [71, 51, 33, 16, 0] as const;
+// Total container height = TOPS[0] + STRIPS[0] + BODY_H = 71+22+52 = 145
+const CRATE_H       = CRATE_TOPS[0] + CRATE_STRIPS[0] + CRATE_BODY_H;
 
 interface CrateOverlayProps {
   armedSlots: Set<number>;
@@ -361,12 +375,9 @@ interface CrateOverlayProps {
 }
 
 function CrateOverlay({ armedSlots, justArmedSlot, onToggleSlot, slotRefs }: CrateOverlayProps) {
-  const MINT = "#5CE0B8";
-  const totalW = CRATE_SLOT_W + (CRATE_SLOT_COUNT - 1) * CRATE_STEP;
-
   return (
     <div
-      aria-label="Crate slot selector — tap covers to arm"
+      aria-label="Crate cover selector — tap a strip to arm"
       style={{
         position: "absolute",
         inset: 0,
@@ -377,10 +388,22 @@ function CrateOverlay({ armedSlots, justArmedSlot, onToggleSlot, slotRefs }: Cra
         zIndex: 3,
       }}
     >
-      <div style={{ position: "relative", width: totalW, height: CRATE_SLOT_H }}>
-        {Array.from({ length: CRATE_SLOT_COUNT }, (_, i) => {
-          const armed = armedSlots.has(i);
-          const pulseNow = justArmedSlot === i && armed;
+      <div style={{ position: "relative", width: CRATE_MAX_W, height: CRATE_H }}>
+        {Array.from({ length: CRATE_CARD_COUNT }, (_, i) => {
+          const armed   = armedSlots.has(i);
+          const pulsing = justArmedSlot === i && armed;
+
+          const top     = CRATE_TOPS[i];
+          const stripH  = CRATE_STRIPS[i];
+          const cardW   = Math.round(CRATE_MAX_W * CRATE_SCALES[i]);
+          const leftOff = Math.round((CRATE_MAX_W - cardW) / 2);
+          const cardH   = stripH + CRATE_BODY_H;
+
+          // Depth fade: back cards are dimmer so they read as receding
+          const depth       = i / (CRATE_CARD_COUNT - 1); // 0=front 1=back
+          const edgeAlpha   = armed ? 0.90 : Math.round((0.55 - depth * 0.25) * 100) / 100;
+          const sideAlpha   = Math.max(0.06, 0.18 - depth * 0.12);
+
           return (
             <div
               key={i}
@@ -391,62 +414,43 @@ function CrateOverlay({ armedSlots, justArmedSlot, onToggleSlot, slotRefs }: Cra
               aria-label={`Cover ${i + 1}`}
               style={{
                 position: "absolute",
-                left: i * CRATE_STEP,
-                top: 0,
-                width: CRATE_SLOT_W,
-                height: CRATE_SLOT_H,
-                // skewX(-8deg): left edge stays plumb, top-right corner
-                // shifts left — gives LP-cover lean-into-crate silhouette
-                transform: `skewX(${CRATE_SKEW}deg)`,
-                transformOrigin: "bottom left",
-                background: armed ? "rgba(92,224,184,0.12)" : "transparent",
-                borderLeft: `1.5px solid ${MINT}`,
-                borderTop: `1px solid rgba(92,224,184,0.22)`,
-                borderBottom: `1px solid rgba(92,224,184,0.22)`,
-                borderRight: `1.5px dashed rgba(92,224,184,0.4)`,
+                left: leftOff,
+                top,
+                width: cardW,
+                height: cardH,
+                // Front cards (low i) occlude back cards (high i)
+                zIndex: CRATE_CARD_COUNT - i,
+                background: armed
+                  ? "rgba(92,224,184,0.12)"
+                  : `rgba(14,10,20,${0.52 + depth * 0.22})`,
+                borderTop: `${armed ? 2 : 1.5}px solid rgba(92,224,184,${edgeAlpha})`,
+                borderLeft:   `1px solid rgba(92,224,184,${sideAlpha})`,
+                borderRight:  `1px solid rgba(92,224,184,${sideAlpha})`,
+                borderBottom: "none",
                 boxShadow: armed
-                  ? "inset 0 0 0 0.5px rgba(92,224,184,0.25), 0 0 14px rgba(92,224,184,0.15)"
+                  ? "0 -2px 16px rgba(92,224,184,0.22), inset 0 0 0 0.5px rgba(92,224,184,0.18)"
                   : "none",
                 cursor: "pointer",
                 pointerEvents: "all",
-                // Rightmost slot visually on top (higher z = front of crate)
-                zIndex: i,
-                animation: pulseNow
-                  ? `slotArm 320ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards`
+                animation: pulsing
+                  ? "slotArm 320ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards"
                   : "none",
-                transition: "background 120ms ease, box-shadow 120ms ease",
+                transition: "background 120ms ease, box-shadow 120ms ease, border-color 120ms ease",
               }}
             >
-              {/* Spine hairline — the alignment guide on the left edge */}
+              {/* Slot number — right-aligned within the visible strip */}
               <div
                 aria-hidden="true"
                 style={{
                   position: "absolute",
-                  left: 5,
-                  top: 0,
-                  bottom: 0,
-                  width: 1,
-                  background: armed
-                    ? "rgba(92,224,184,0.55)"
-                    : "rgba(92,224,184,0.20)",
-                  pointerEvents: "none",
-                  transition: "background 120ms ease",
-                }}
-              />
-              {/* Cover number — counter-skewed so it reads upright */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: "absolute",
-                  bottom: 10,
-                  left: 0,
-                  right: 0,
-                  textAlign: "center",
+                  top: Math.max(2, Math.round(stripH / 2 - 5)),
+                  right: 7,
                   fontFamily: "var(--font-label)",
                   fontSize: 8,
                   letterSpacing: "0.06em",
-                  color: armed ? "rgba(92,224,184,0.85)" : "rgba(92,224,184,0.28)",
-                  transform: `skewX(${-CRATE_SKEW}deg)`,
+                  color: armed
+                    ? "rgba(92,224,184,0.90)"
+                    : `rgba(92,224,184,${Math.round((0.55 - depth * 0.30) * 100) / 100})`,
                   pointerEvents: "none",
                   userSelect: "none",
                   transition: "color 120ms ease",
@@ -1210,9 +1214,9 @@ export default function ScanOverlay({
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes slotArm {
-          0%   { transform: skewX(-8deg) scale(1);    filter: drop-shadow(0 0 0px rgba(92,224,184,0)); }
-          45%  { transform: skewX(-8deg) scale(1.04); filter: drop-shadow(0 0 10px rgba(92,224,184,0.75)); }
-          100% { transform: skewX(-8deg) scale(1);    filter: drop-shadow(0 0 5px rgba(92,224,184,0.30)); }
+          0%   { transform: scale(1);    filter: drop-shadow(0 0 0px rgba(92,224,184,0)); }
+          45%  { transform: scale(1.04); filter: drop-shadow(0 0 12px rgba(92,224,184,0.85)); }
+          100% { transform: scale(1);    filter: drop-shadow(0 0 4px rgba(92,224,184,0.35)); }
         }
         @keyframes crateBreath {
           0%, 100% { opacity: 0.35; transform: scale(1); }
@@ -2207,6 +2211,44 @@ export default function ScanOverlay({
           />
         )}
 
+        {/* ── Persistent close — top-left, all modes ──────────────── */}
+        <button
+          aria-label="Close scanner"
+          onClick={onCancel}
+          style={{
+            position: "absolute",
+            top: "calc(max(16px, env(safe-area-inset-top)) + 8px)",
+            left: 16,
+            zIndex: 50,
+            width: 44,
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.38)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: "50%",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            cursor: "pointer",
+            color: "rgba(229,231,235,0.90)",
+            padding: 0,
+          }}
+        >
+          <svg
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          >
+            <line x1={18} y1={6} x2={6} y2={18} />
+            <line x1={6} y1={6} x2={18} y2={18} />
+          </svg>
+        </button>
+
         {/* ── Mode toggle — BARCODE · ITEM · SHELF ────────────────── */}
         {phase.kind === "framing" && (
           <div
@@ -2656,8 +2698,7 @@ export default function ScanOverlay({
           <div
             style={{
               position: "absolute",
-              bottom:
-                "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
+              bottom: "calc(88px + env(safe-area-inset-bottom))",
               left: 0,
               right: 0,
               display: "flex",
