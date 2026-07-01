@@ -58,7 +58,14 @@ export async function POST(
       .select("is_pro")
       .eq("id", user.id)
       .maybeSingle();
-    const isPro = profileRow?.is_pro === true;
+    const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const isTestPro = user.email
+      ? testProEmails.includes(user.email.toLowerCase())
+      : false;
+    const isPro = profileRow?.is_pro === true || isTestPro;
     if (!isPro) {
       return NextResponse.json(
         { error: "Condition grading requires Pro." },

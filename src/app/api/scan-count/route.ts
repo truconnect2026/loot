@@ -40,7 +40,18 @@ export async function GET(): Promise<NextResponse<ScanCountResponse>> {
     .eq("id", user.id)
     .maybeSingle();
 
-  const isPro = profileRow?.is_pro === true;
+  // PRO_TEST_EMAILS — server-only env var, comma-separated list of emails
+  // that always resolve as Pro regardless of DB state. Used for dev/test
+  // accounts so you can test the Pro UX without a real Stripe/Digistore sub.
+  const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const isTestPro = user.email
+    ? testProEmails.includes(user.email.toLowerCase())
+    : false;
+
+  const isPro = profileRow?.is_pro === true || isTestPro;
 
   if (isPro) {
     return NextResponse.json({

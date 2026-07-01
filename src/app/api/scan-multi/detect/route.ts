@@ -45,7 +45,14 @@ export async function POST(
         .select("is_pro")
         .eq("id", user.id)
         .maybeSingle();
-      isPro = profileRow?.is_pro === true;
+      const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      const isTestPro = user.email
+        ? testProEmails.includes(user.email.toLowerCase())
+        : false;
+      isPro = profileRow?.is_pro === true || isTestPro;
 
       if (isPro) {
         // Count method='shelf' rows this calendar month (UTC).

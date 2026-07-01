@@ -35,7 +35,14 @@ async function checkScanGate(
       .select("is_pro")
       .eq("id", user.id)
       .maybeSingle();
-    if (profileRow?.is_pro === true) return null;
+    const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const isTestPro = user.email
+      ? testProEmails.includes(user.email.toLowerCase())
+      : false;
+    if (profileRow?.is_pro === true || isTestPro) return null;
 
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);

@@ -73,7 +73,7 @@ export default function PaywallSheet({
             marginBottom: 6,
           }}
         >
-          DAILY LIMIT REACHED
+          {limit === 0 ? "GO PRO" : "DAILY LIMIT REACHED"}
         </div>
         <div
           style={{
@@ -85,7 +85,9 @@ export default function PaywallSheet({
             marginBottom: 8,
           }}
         >
-          {used}/{limit} free scans used today
+          {limit === 0
+            ? "Unlock unlimited scans"
+            : `${used}/${limit} free scans used today`}
         </div>
         <div
           style={{
