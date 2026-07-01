@@ -5,6 +5,7 @@ import BottomSheet from "@/components/shared/BottomSheet";
 import type { ScanResponse } from "@/app/api/scan/route";
 import type { ListingResponse } from "@/app/api/listing/route";
 import { formatErrorMessage } from "@/lib/formatError";
+import { saveHaul } from "@/lib/hauls";
 
 // VerdictData = API ScanResponse + the client-captured thumbnail.
 // The thumbnail is grabbed in ScanOverlay (UPC: at decode time;
@@ -351,6 +352,60 @@ function ListingCta({ data }: ListingCtaProps) {
           {formatErrorMessage(error)}
         </span>
       )}
+    </button>
+  );
+}
+
+// Save-to-haul button — flips to "SAVED ✓" for the sheet's lifetime.
+// Ghost/secondary so it doesn't compete with the primary listing CTA.
+function SaveHaulButton({ data }: { data: VerdictData }) {
+  const [saved, setSaved]   = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (saved || saving) return;
+    setSaving(true);
+    const result = await saveHaul({
+      name:            data.name,
+      buy_price:       data.cost,
+      est_resale_low:  data.sell,
+      est_resale_high: data.sell,
+      verdict:         data.verdict.toLowerCase() as "buy" | "maybe" | "pass",
+      source:          "scan_single",
+    });
+    setSaving(false);
+    if (result.ok) setSaved(true);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleSave}
+      disabled={saved || saving}
+      style={{
+        marginTop: 10,
+        width: "100%",
+        padding: "9px 12px",
+        borderRadius: 8,
+        backgroundColor: saved ? "rgba(92,224,184,0.06)" : "transparent",
+        border: saved
+          ? "1px solid rgba(92,224,184,0.22)"
+          : "1px solid rgba(255,255,255,0.10)",
+        color: saved ? "#5CE0B8" : "var(--text-muted)",
+        fontFamily: "var(--font-label)",
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.10em",
+        textTransform: "uppercase",
+        cursor: saved ? "default" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        transition: "all 200ms cubic-bezier(0.16,1,0.3,1)",
+      }}
+    >
+      {saved ? "✓  SAVED TO HAUL" : saving ? "SAVING…" : "SAVE TO HAUL"}
     </button>
   );
 }
@@ -979,6 +1034,9 @@ export default function VerdictSheet({
             );
           })}
         </div>
+
+        {/* Save to Haul — ghost secondary before the listing CTA */}
+        <SaveHaulButton data={data} />
 
         {/* CTA — hero button with top-edge shine + glow on press */}
         <ListingCta data={data} />

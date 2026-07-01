@@ -1,241 +1,621 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import { createClient } from "@/lib/supabase";
+import { VerdictBadge } from "@/components/ui/VerdictBadge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { elevation } from "@/lib/design/tokens";
 
-interface ScanRow {
-  id: string;
-  method: "barcode" | "vision";
-  item_name: string | null;
-  cost: number | null;
-  sell_price: number | null;
-  profit: number | null;
-  verdict: "BUY" | "PASS" | "MAYBE" | null;
-  platform: string | null;
-  sold: boolean | null;
-  sold_price: number | null;
-  created_at: string;
-  /** comps_data carries category + conditionGrade fields written by
-   * the verdict pipeline. Selected here so the mark-sold handler can
-   * forward those into the sold_comps row without an extra round-trip. */
-  comps_data: Record<string, unknown> | null;
+type HaulStatus  = "saved" | "bought" | "listed" | "sold";
+type HaulVerdict = "buy" | "maybe" | "pass";
+type FilterKind  = "all" | HaulStatus;
+
+interface HaulRow {
+  id:              string;
+  created_at:      string;
+  name:            string;
+  image_url:       string | null;
+  buy_price:       number | null;
+  est_resale_low:  number | null;
+  est_resale_high: number | null;
+  verdict:         HaulVerdict | null;
+  status:          HaulStatus;
+  sold_price:      number | null;
+  sold_at:         string | null;
+  source:          string;
+  notes:           string | null;
 }
 
-const VERDICT_COLOR: Record<string, string> = {
-  BUY: "var(--accent-mint)",
-  PASS: "var(--accent-red)",
-  MAYBE: "var(--accent-camel)",
+const STATUS_SEQ: HaulStatus[] = ["saved", "bought", "listed", "sold"];
+
+const STATUS_LABEL: Record<HaulStatus, string> = {
+  saved:  "SAVED",
+  bought: "BOUGHT",
+  listed: "LISTED",
+  sold:   "SOLD",
 };
+
+const STATUS_COLORS: Record<HaulStatus, { bg: string; border: string; text: string }> = {
+  saved:  { bg: "rgba(123,143,255,0.10)", border: "rgba(123,143,255,0.24)", text: "#7B8FFF" },
+  bought: { bg: "rgba(212,165,116,0.10)", border: "rgba(212,165,116,0.24)", text: "#D4A574" },
+  listed: { bg: "rgba(255,255,255,0.06)",  border: "rgba(255,255,255,0.12)", text: "#C8C0D8" },
+  sold:   { bg: "rgba(92,224,184,0.10)",  border: "rgba(92,224,184,0.24)",  text: "#5CE0B8" },
+};
+
+const FILTER_TINT: Record<FilterKind, { text: string; rgba: string }> = {
+  all:    { text: "#C8C0D8", rgba: "200,192,216" },
+  saved:  { text: "#7B8FFF", rgba: "123,143,255" },
+  bought: { text: "#D4A574", rgba: "212,165,116" },
+  listed: { text: "#C8C0D8", rgba: "200,192,216" },
+  sold:   { text: "#5CE0B8", rgba: "92,224,184"  },
+};
+
+function nextStatus(s: HaulStatus): HaulStatus | null {
+  const i = STATUS_SEQ.indexOf(s);
+  return i < STATUS_SEQ.length - 1 ? STATUS_SEQ[i + 1] : null;
+}
+
+function fmt(n: number): string {
+  return `$${Math.round(Math.abs(n))}`;
+}
+
+// ── Icons ──────────────────────────────────────────────────────────
 
 function ChevronLeft() {
   return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="15 18 9 12 15 6" />
     </svg>
   );
 }
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso.slice(0, 10);
-  }
+function BoxIcon() {
+  return (
+    <svg width={40} height={40} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={1.25} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="21 8 21 21 3 21 3 8" />
+      <rect x={1} y={3} width={22} height={5} />
+      <line x1={10} y1={12} x2={14} y2={12} />
+    </svg>
+  );
 }
+
+// ── Stat cell ────────────────────────────────────────────────────────
+
+interface StatCellProps {
+  label: string;
+  value: number | null;
+  prefix?: string;
+  subLabel?: string;
+  isMint?: boolean;
+}
+
+function StatCell({ label, value, prefix = "", subLabel, isMint }: StatCellProps) {
+  return (
+    <div style={{
+      background: "rgba(23,18,42,0.85)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 12,
+      boxShadow: elevation[2],
+      padding: "10px 12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 3,
+      minWidth: 0,
+    }}>
+      <div style={{
+        fontFamily: "var(--font-label)",
+        fontSize: 7,
+        color: "rgba(200,192,216,0.40)",
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+      }}>
+        {label}
+      </div>
+      <div style={{
+        fontFamily: "var(--font-data)",
+        fontSize: 20,
+        fontWeight: 700,
+        color: value == null ? "var(--text-dim)" : isMint ? "#5CE0B8" : "var(--text-primary)",
+        fontFeatureSettings: '"tnum"',
+        lineHeight: 1,
+        textShadow: isMint && value != null ? "0 0 20px rgba(92,224,184,0.20)" : "none",
+      }}>
+        {value == null ? "—" : `${prefix}${fmt(value).slice(1)}`}
+      </div>
+      {subLabel && (
+        <div style={{
+          fontFamily: "var(--font-body)",
+          fontSize: 9,
+          color: "var(--text-dim)",
+          lineHeight: 1,
+        }}>
+          {subLabel}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Filter chip ───────────────────────────────────────────────────────
+
+function FilterChip({
+  kind, label, count, active, onTap,
+}: { kind: FilterKind; label: string; count: number; active: boolean; onTap: () => void }) {
+  const tint = FILTER_TINT[kind];
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      style={{
+        flexShrink: 0,
+        height: 28,
+        padding: "0 12px",
+        borderRadius: 20,
+        backgroundColor: active ? `rgba(${tint.rgba},0.15)` : "transparent",
+        border: active ? `1px solid rgba(${tint.rgba},0.30)` : "1px solid rgba(255,255,255,0.08)",
+        color: active ? tint.text : "var(--text-muted)",
+        fontFamily: "var(--font-label)",
+        fontSize: 9,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        cursor: "pointer",
+        transition: "background-color 120ms ease-out, color 120ms ease-out",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {label.toUpperCase()} ({count})
+    </button>
+  );
+}
+
+// ── Haul card ────────────────────────────────────────────────────────
+
+interface HaulCardProps {
+  row: HaulRow;
+  onStatusAdvance: (id: string, next: HaulStatus, price?: number) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}
+
+function HaulCard({ row, onStatusAdvance, onDelete }: HaulCardProps) {
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [promptValue, setPromptValue] = useState("");
+  const [delPending, setDelPending] = useState(false);
+  const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promptInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (promptOpen && promptInputRef.current) {
+      promptInputRef.current.focus();
+    }
+  }, [promptOpen]);
+
+  // Clear del pending timer on unmount
+  useEffect(() => () => { if (delTimer.current) clearTimeout(delTimer.current); }, []);
+
+  const next = nextStatus(row.status);
+  const verdictUp = row.verdict
+    ? (row.verdict.toUpperCase() as "BUY" | "MAYBE" | "PASS")
+    : null;
+
+  const sColor = STATUS_COLORS[row.status];
+
+  function handleStatusTap() {
+    if (!next) return;
+    const needsBuyPrice = next === "bought" && row.buy_price == null;
+    const needsSoldPrice = next === "sold";
+    if (needsBuyPrice || needsSoldPrice) {
+      setPromptValue(
+        needsSoldPrice && row.est_resale_high != null
+          ? String(Math.round(row.est_resale_high))
+          : "",
+      );
+      setPromptOpen(true);
+      return;
+    }
+    void onStatusAdvance(row.id, next);
+  }
+
+  function handleCommitPrice() {
+    const v = parseFloat(promptValue.trim().replace(/[$,]/g, ""));
+    setPromptOpen(false);
+    setPromptValue("");
+    if (!next || !Number.isFinite(v) || v < 0) return;
+    void onStatusAdvance(row.id, next, v);
+  }
+
+  function handleDeleteTap() {
+    if (delPending) {
+      if (delTimer.current) clearTimeout(delTimer.current);
+      void onDelete(row.id);
+      setDelPending(false);
+      return;
+    }
+    setDelPending(true);
+    delTimer.current = setTimeout(() => setDelPending(false), 2000);
+  }
+
+  // Profit display for sold items
+  const realizedProfit =
+    row.status === "sold" && row.sold_price != null && row.buy_price != null
+      ? row.sold_price - row.buy_price
+      : null;
+
+  // Resale range string
+  let resaleStr = "";
+  if (row.est_resale_low != null && row.est_resale_high != null) {
+    resaleStr = row.est_resale_low === row.est_resale_high
+      ? `${fmt(row.est_resale_low)} est`
+      : `${fmt(row.est_resale_low)}–${fmt(row.est_resale_high)} est`;
+  } else if (row.est_resale_high != null) {
+    resaleStr = `${fmt(row.est_resale_high)} est`;
+  } else if (row.est_resale_low != null) {
+    resaleStr = `${fmt(row.est_resale_low)} est`;
+  }
+
+  return (
+    <div style={{
+      backgroundColor: "rgba(255,255,255,0.038)",
+      border: "1px solid rgba(255,255,255,0.07)",
+      borderRadius: "4px 16px 16px 16px",
+      boxShadow: elevation[1],
+      padding: "12px 14px",
+    }}>
+      {/* Row 1: badge + name + delete */}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        {verdictUp && (
+          <div style={{ flexShrink: 0, paddingTop: 1 }}>
+            <VerdictBadge tier={verdictUp} size="sm" />
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontFamily: "var(--font-body)",
+            fontWeight: 600,
+            fontSize: 13,
+            color: "var(--text-primary)",
+            lineHeight: 1.3,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}>
+            {row.name}
+          </div>
+          {/* Price line */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 3,
+            flexWrap: "wrap",
+          }}>
+            {row.buy_price != null ? (
+              <span style={{
+                fontFamily: "var(--font-data)",
+                fontSize: 10,
+                color: "var(--text-muted)",
+                fontFeatureSettings: '"tnum"',
+              }}>
+                paid {fmt(row.buy_price)}
+              </span>
+            ) : (
+              <span style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 10,
+                color: "var(--text-dim)",
+              }}>
+                no buy price
+              </span>
+            )}
+            {resaleStr && (
+              <>
+                <span style={{ color: "var(--text-dim)", fontSize: 9 }}>→</span>
+                <span style={{
+                  fontFamily: "var(--font-data)",
+                  fontSize: 10,
+                  color: "var(--money)",
+                  fontFeatureSettings: '"tnum"',
+                }}>
+                  {resaleStr}
+                </span>
+              </>
+            )}
+            {row.status === "sold" && row.sold_price != null && (
+              <span style={{
+                fontFamily: "var(--font-data)",
+                fontSize: 10,
+                color: "#5CE0B8",
+                fontFeatureSettings: '"tnum"',
+              }}>
+                · sold {fmt(row.sold_price)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Delete button */}
+        <button
+          type="button"
+          onClick={handleDeleteTap}
+          aria-label={delPending ? "Confirm delete" : "Delete haul"}
+          style={{
+            width: 26,
+            height: 26,
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: delPending ? "rgba(232,99,107,0.12)" : "transparent",
+            border: delPending ? "1px solid rgba(232,99,107,0.30)" : "1px solid transparent",
+            borderRadius: "50%",
+            cursor: "pointer",
+            color: delPending ? "#E8636B" : "rgba(255,255,255,0.22)",
+            fontSize: delPending ? 9 : 14,
+            fontFamily: "var(--font-label)",
+            fontWeight: 700,
+            letterSpacing: delPending ? "0.06em" : 0,
+            transition: "color 150ms ease, background 150ms ease, border-color 150ms ease",
+          }}
+        >
+          {delPending ? "DEL?" : "×"}
+        </button>
+      </div>
+
+      {/* Status row / price prompt */}
+      {promptOpen ? (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginTop: 10,
+          flexWrap: "wrap",
+        }}>
+          <span style={{
+            fontFamily: "var(--font-body)",
+            fontSize: 12,
+            color: "var(--text-muted)",
+          }}>
+            {next === "sold" ? "sold for" : "paid"} $
+          </span>
+          <input
+            ref={promptInputRef}
+            type="text"
+            inputMode="decimal"
+            value={promptValue}
+            onChange={e => setPromptValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter") handleCommitPrice();
+              if (e.key === "Escape") { setPromptOpen(false); setPromptValue(""); }
+            }}
+            onBlur={handleCommitPrice}
+            placeholder="0"
+            style={{
+              width: 72,
+              background: "var(--bg-recessed)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              outline: "none",
+              borderRadius: 6,
+              fontFamily: "var(--font-data)",
+              fontSize: 15,
+              color: "var(--text-primary)",
+              textAlign: "right",
+              padding: "3px 8px",
+              fontFeatureSettings: '"tnum"',
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleCommitPrice}
+            style={{
+              height: 26,
+              padding: "0 12px",
+              borderRadius: 8,
+              background: "rgba(92,224,184,0.10)",
+              border: "1px solid rgba(92,224,184,0.24)",
+              color: "#5CE0B8",
+              fontFamily: "var(--font-label)",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+            }}
+          >
+            SAVE
+          </button>
+          <button
+            type="button"
+            onClick={() => { setPromptOpen(false); setPromptValue(""); }}
+            style={{
+              height: 26,
+              padding: "0 10px",
+              borderRadius: 8,
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.10)",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-label)",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+            }}
+          >
+            SKIP
+          </button>
+        </div>
+      ) : (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginTop: 10,
+          flexWrap: "wrap",
+        }}>
+          {/* Status pill — tappable to advance */}
+          <button
+            type="button"
+            onClick={handleStatusTap}
+            disabled={!next}
+            style={{
+              height: 24,
+              padding: "0 10px",
+              borderRadius: 20,
+              backgroundColor: sColor.bg,
+              border: `1px solid ${sColor.border}`,
+              color: sColor.text,
+              fontFamily: "var(--font-label)",
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: "0.10em",
+              cursor: next ? "pointer" : "default",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              transition: "all 150ms ease",
+              flexShrink: 0,
+            }}
+          >
+            {STATUS_LABEL[row.status]}
+            {next && (
+              <span style={{ opacity: 0.55, fontSize: 7 }}>
+                ▸ {STATUS_LABEL[next]}
+              </span>
+            )}
+          </button>
+
+          {/* Realized profit for sold items */}
+          {realizedProfit != null && (
+            <span style={{
+              fontFamily: "var(--font-data)",
+              fontSize: 11,
+              color: realizedProfit >= 0 ? "#5CE0B8" : "#E8636B",
+              fontFeatureSettings: '"tnum"',
+            }}>
+              {realizedProfit >= 0 ? "+" : "−"}{fmt(realizedProfit)} profit
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────
 
 export default function HaulLogPage() {
   const router = useRouter();
-  const supabase = createClient();
-  const [rows, setRows] = useState<ScanRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [hauls, setHauls] = useState<HaulRow[] | null>(null);
+  const [filter, setFilter] = useState<FilterKind>("all");
   const [backPressed, setBackPressed] = useState(false);
 
-  // Clear the tab-bar SCAN badge when the haul log is viewed.
+  // Clear haul-pending badge from tab bar when page opens
   useEffect(() => {
     try { localStorage.removeItem("loot_haul_pending"); } catch { /* private mode */ }
   }, []);
 
+  // Load hauls — newest first
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
+      const supabase = createClient();
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
-        if (!cancelled) {
-          setRows([]);
-        }
+        if (!cancelled) setHauls([]);
         return;
       }
-      const { data, error } = await supabase
-        .from("scans")
-        .select(
-          "id, method, item_name, cost, sell_price, profit, verdict, platform, sold, sold_price, created_at, comps_data"
-        )
+      const { data } = await supabase
+        .from("hauls")
+        .select("*")
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false })
         .limit(200);
-      if (cancelled) return;
-      if (error) {
-        setError(error.message);
-        setRows([]);
-        return;
-      }
-      setRows((data ?? []) as ScanRow[]);
+      if (!cancelled) setHauls((data ?? []) as HaulRow[]);
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [supabase]);
+    return () => { cancelled = true; };
+  }, []);
 
-  // Mark-sold UI state. `markingId` selects which row is in input
-  // mode; `markDraft` holds the in-progress sell-price string. `saving`
-  // gates double-taps while the update is in flight.
-  const [markingId, setMarkingId] = useState<string | null>(null);
-  const [markDraft, setMarkDraft] = useState("");
-  const [saving, setSaving] = useState(false);
-  const markInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (markingId && markInputRef.current) {
-      markInputRef.current.focus();
-      markInputRef.current.select();
-    }
-  }, [markingId]);
-
-  async function commitSold(row: ScanRow) {
-    if (saving) return;
-    const trimmed = markDraft.trim();
-    if (!trimmed) {
-      setMarkingId(null);
-      return;
-    }
-    const price = Number(trimmed);
-    if (!Number.isFinite(price) || price <= 0) {
-      setMarkingId(null);
-      return;
-    }
-    setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      setSaving(false);
-      return;
-    }
-    const { error: updateErr } = await supabase
-      .from("scans")
-      .update({
-        sold: true,
-        sold_price: price,
-        sold_at: new Date().toISOString(),
-      })
-      .eq("id", row.id)
-      .eq("user_id", userData.user.id);
-    if (!updateErr) {
-      setRows((prev) =>
-        prev
-          ? prev.map((r) =>
-              r.id === row.id ? { ...r, sold: true, sold_price: price } : r,
-            )
-          : prev,
-      );
-
-      // Crowdsource the comp — every successful mark-sold writes a
-      // row to sold_comps so future verdicts can ground on real sold
-      // prices. Wrapped in try/catch so a comps insert failure never
-      // blocks the user-facing mark-sold flow. user_id, sold_price,
-      // and item_name are required; everything else is best-effort.
-      try {
-        const itemName = row.item_name?.trim();
-        if (itemName) {
-          // Pull the user's zip lazily — only on the first mark-sold
-          // of the session. Skipping if the profile lookup fails is
-          // fine; the comp row just won't carry a zip.
-          let zip: string | null = null;
-          try {
-            const { data: profileRow } = await supabase
-              .from("profiles")
-              .select("zip_code")
-              .eq("id", userData.user.id)
-              .maybeSingle();
-            zip = profileRow?.zip_code ?? null;
-          } catch {
-            /* profile read can fail silently — zip stays null */
-          }
-
-          const comps = (row.comps_data ?? {}) as Record<string, unknown>;
-          const conditionGrade =
-            typeof comps.conditionGrade === "string"
-              ? comps.conditionGrade
-              : null;
-          const category =
-            typeof comps.category === "string" ? comps.category : null;
-
-          const createdMs = row.created_at
-            ? new Date(row.created_at).getTime()
-            : NaN;
-          // Date.now() inside an async event handler is fine; the
-          // react-hooks/purity rule fires on the literal call site
-          // because `commitSold` is declared inside the component
-          // body. Disabled rather than refactored — the function
-          // is only ever called via user tap, never during render.
-          // eslint-disable-next-line react-hooks/purity
-          const nowMs = Date.now();
-          const daysToSell = Number.isFinite(createdMs)
-            ? Math.max(0, Math.round((nowMs - createdMs) / 86_400_000))
-            : null;
-
-          await supabase.from("sold_comps").insert({
-            user_id: userData.user.id,
-            item_name: itemName,
-            item_category: category,
-            platform: row.platform,
-            sold_price: price,
-            days_to_sell: daysToSell,
-            condition_grade: conditionGrade,
-            zip_code: zip,
-          });
+  const handleStatusAdvance = useCallback(
+    async (id: string, next: HaulStatus, price?: number) => {
+      const update: Record<string, unknown> = { status: next };
+      if (price != null) {
+        if (next === "bought") update.buy_price = price;
+        if (next === "sold") {
+          update.sold_price = price;
+          update.sold_at    = new Date().toISOString();
         }
-      } catch (compsErr) {
-        console.error("[haul] sold_comps insert failed:", compsErr);
       }
-    }
-    setMarkingId(null);
-    setMarkDraft("");
-    setSaving(false);
-  }
+      // Optimistic
+      setHauls(prev =>
+        prev?.map(h => h.id === id ? { ...h, ...(update as Partial<HaulRow>) } : h) ?? null,
+      );
+      const supabase = createClient();
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+      await supabase.from("hauls").update(update).eq("id", id).eq("user_id", userData.user.id);
+    },
+    [],
+  );
 
-  // Aggregate footer numbers. Realized = sold_price - cost on items
-  // marked sold (the actual money made, not the projected number from
-  // scan time). Projected = profit on un-sold BUY-verdict scans.
-  const realized =
-    rows
-      ?.filter((r) => r.sold && r.sold_price != null)
-      .reduce(
-        (sum, r) => sum + Number(r.sold_price) - Number(r.cost ?? 0),
-        0,
-      ) ?? 0;
-  const projected =
-    rows
-      ?.filter((r) => !r.sold && r.verdict === "BUY" && r.profit != null)
-      .reduce((sum, r) => sum + Number(r.profit), 0) ?? 0;
+  const handleDelete = useCallback(async (id: string) => {
+    setHauls(prev => prev?.filter(h => h.id !== id) ?? null);
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+    await supabase.from("hauls").delete().eq("id", id).eq("user_id", userData.user.id);
+  }, []);
+
+  // ── Stats ──────────────────────────────────────────────────────────
+  const totalItems = hauls?.length ?? 0;
+  const moneyIn = hauls?.reduce((s, h) => s + (h.buy_price ?? 0), 0) ?? 0;
+
+  let realizedProfit  = 0;
+  let projectedProfit = 0;
+  let hasRealized     = false;
+  let hasProjected    = false;
+  for (const h of hauls ?? []) {
+    if (h.status === "sold" && h.sold_price != null && h.buy_price != null) {
+      realizedProfit += h.sold_price - h.buy_price;
+      hasRealized = true;
+    } else if (h.status !== "sold" && h.est_resale_low != null && h.buy_price != null) {
+      projectedProfit += h.est_resale_low - h.buy_price;
+      hasProjected = true;
+    }
+  }
+  const totalProfit  = realizedProfit + projectedProfit;
+  const profitLabel  = hasRealized && !hasProjected ? "REALIZED" : "PROJECTED";
+  const profitSubLabel = hasRealized && hasProjected ? "realized + proj" : undefined;
+  const hasAnyProfit = hasRealized || hasProjected;
+
+  // ── Filter ─────────────────────────────────────────────────────────
+  const counts: Record<FilterKind, number> = {
+    all:    hauls?.length ?? 0,
+    saved:  hauls?.filter(h => h.status === "saved").length  ?? 0,
+    bought: hauls?.filter(h => h.status === "bought").length ?? 0,
+    listed: hauls?.filter(h => h.status === "listed").length ?? 0,
+    sold:   hauls?.filter(h => h.status === "sold").length   ?? 0,
+  };
+  const filtered = hauls?.filter(h => filter === "all" || h.status === filter) ?? [];
 
   return (
     <>
-      <DotGridBackground />
+      <DotGridBackground variant="grid" />
+
+      {/* Ambient blue wash — matches Account page temperature */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          background:
+            "radial-gradient(circle 350px at 50% 10%, rgba(123,143,255,0.025) 0%, transparent 70%)",
+        }}
+      />
 
       <div
         style={{
@@ -244,36 +624,17 @@ export default function HaulLogPage() {
           padding: "0 18px",
           position: "relative",
           zIndex: 1,
+          animation: "vaultReveal 280ms cubic-bezier(0.22,1,0.36,1) both",
         }}
       >
-        {/* Crowdsource banner — sits above the page title so the
-            "every sale helps" framing is the first thing users see
-            when they land on their haul. Quietly muted; it's a
-            value-prop note, not a CTA. */}
-        <div
-          style={{
-            paddingTop: 8,
-            marginBottom: 12,
-            padding: 8,
-            textAlign: "center",
-            fontFamily: "var(--font-body)",
-            fontSize: 11,
-            color: "#5A4E70",
-          }}
-        >
-          every sale you log improves pricing for all Loot users 🤝
-        </div>
-
-        {/* Back arrow + title */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            paddingTop: 16,
-            marginBottom: 16,
-          }}
-        >
+        {/* ── Header ── */}
+        <div style={{
+          marginTop: 16,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 20,
+        }}>
           <button
             onClick={() => router.push("/app")}
             onPointerDown={() => setBackPressed(true)}
@@ -285,367 +646,165 @@ export default function HaulLogPage() {
               cursor: "pointer",
               padding: 4,
               display: "flex",
-              color: backPressed
-                ? "var(--text-primary)"
-                : "var(--text-muted)",
-              transition: "color 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+              color: backPressed ? "var(--text-primary)" : "var(--text-muted)",
+              transition: "color 100ms cubic-bezier(0.16,1,0.3,1)",
             }}
           >
             <ChevronLeft />
           </button>
-          <span
-            style={{
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              fontSize: 17,
-              color: "var(--text-primary)",
-            }}
-          >
-            Haul Log
+          <span style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 36,
+            letterSpacing: "0.04em",
+            color: "var(--text-primary)",
+            lineHeight: 1,
+          }}>
+            HAUL
           </span>
+          {hauls !== null && (
+            <span style={{
+              fontFamily: "var(--font-label)",
+              fontSize: 9,
+              color: "rgba(200,192,216,0.35)",
+              letterSpacing: "0.10em",
+              paddingTop: 2,
+            }}>
+              {totalItems} ITEM{totalItems !== 1 ? "S" : ""}
+            </span>
+          )}
         </div>
 
-        {/* Aggregate row */}
-        {rows && rows.length > 0 && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "var(--bg-recessed)",
-                borderRadius: 10,
-                padding: 12,
-                boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 9,
-                  color: "var(--text-muted)",
-                  letterSpacing: "0.10em",
-                  marginBottom: 4,
-                }}
-              >
-                REALIZED
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontWeight: 300,
-                  fontSize: 22,
-                  color: "var(--accent-mint)",
-                  textShadow: "0 0 24px rgba(92,224,184,0.20)",
-                }}
-              >
-                ${realized.toFixed(0)}
-              </div>
-            </div>
-            <div
-              style={{
-                backgroundColor: "var(--bg-recessed)",
-                borderRadius: 10,
-                padding: 12,
-                boxShadow: "inset 0 1px 2px 0 rgba(0,0,0,0.4)",
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: 9,
-                  color: "var(--text-muted)",
-                  letterSpacing: "0.10em",
-                  marginBottom: 4,
-                }}
-              >
-                PROJECTED
-              </div>
-              <div
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontWeight: 300,
-                  fontSize: 22,
-                  color: "var(--text-primary)",
-                }}
-              >
-                ${projected.toFixed(0)}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {rows === null && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              paddingTop: 80,
-            }}
-          >
+        {/* ── Loading ── */}
+        {hauls === null && (
+          <div style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}>
             <CoinMarkSpinner />
           </div>
         )}
 
-        {rows && rows.length === 0 && !error && (
-          <div
-            style={{
-              textAlign: "center",
-              paddingTop: 64,
-              fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "var(--text-dim)",
-              letterSpacing: "0.10em",
-            }}
-          >
-            NO SCANS YET — TAP SCAN UPC TO START
-          </div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              textAlign: "center",
-              paddingTop: 32,
-              fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "var(--accent-red)",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        {/* Scan list */}
-        {rows && rows.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {rows.map((row) => {
-              const verdictColor = row.verdict
-                ? VERDICT_COLOR[row.verdict]
-                : "var(--text-muted)";
-              // Profit-tier accent ribbon — same color cadence as
-              // deal cards and shelf scanner. Mint above $20, camel
-              // $5-$20, red on negative, hairline 0-$5.
-              const profitVal = Number(row.profit ?? 0);
-              const accent =
-                profitVal < 0
-                  ? "#E8636B"
-                  : profitVal > 20
-                    ? "#5CE0B8"
-                    : profitVal >= 5
-                      ? "#D4A574"
-                      : "rgba(255,255,255,0.06)";
-              return (
-                <div
-                  key={row.id}
+        {/* ── Empty state ── */}
+        {hauls !== null && hauls.length === 0 && (
+          <div style={{ animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) both" }}>
+            <EmptyState
+              icon={<BoxIcon />}
+              headline="No hauls yet"
+              body="save your first find from a scan to start tracking it through the pipeline"
+              action={
+                <button
+                  type="button"
+                  onClick={() => router.push("/app")}
                   style={{
-                    position: "relative",
-                    backgroundColor: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.04)",
-                    // Elevated card stack to match the rest of the
-                    // app's primary-card depth.
-                    boxShadow:
-                      "0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.03) inset, inset 0 1px 0 0 rgba(255,255,255,0.04)",
-                    borderRadius: "4px 14px 14px 14px",
-                    padding: 14,
-                    paddingLeft: 16,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    borderLeft: `2px solid ${accent}`,
+                    height: 36,
+                    padding: "0 20px",
+                    borderRadius: 10,
+                    background: "rgba(92,224,184,0.10)",
+                    border: "1px solid rgba(92,224,184,0.24)",
+                    color: "#5CE0B8",
+                    fontFamily: "var(--font-label)",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.10em",
+                    cursor: "pointer",
                   }}
                 >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontWeight: 600,
-                        fontSize: 13,
-                        color: "var(--text-primary)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {row.item_name ?? "Unknown item"}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: 9,
-                        color: "var(--text-muted)",
-                        letterSpacing: "0.06em",
-                        marginTop: 2,
-                      }}
-                    >
-                      {formatDate(row.created_at)}
-                      {" · "}
-                      {row.method === "barcode" ? "UPC" : "AI"}
-                      {row.cost != null && ` · $${Number(row.cost).toFixed(0)} cost`}
-                      {row.sell_price != null &&
-                        ` · $${Number(row.sell_price).toFixed(0)} sell`}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-end",
-                      flexShrink: 0,
-                      gap: 4,
-                    }}
-                  >
-                    {row.verdict && (
-                      <span
-                        style={{
-                          fontFamily: "var(--font-body)",
-                          fontWeight: 700,
-                          fontSize: 10,
-                          color: verdictColor,
-                          letterSpacing: "0.10em",
-                        }}
-                      >
-                        {row.verdict}
-                      </span>
-                    )}
-                    {row.profit != null && !row.sold && (
-                      <span
-                        style={{
-                          fontFamily: "var(--font-body)",
-                          fontWeight: 700,
-                          fontSize: 14,
-                          color: verdictColor,
-                          fontFeatureSettings: '"tnum"',
-                        }}
-                      >
-                        ${Number(row.profit).toFixed(0)}
-                      </span>
-                    )}
-
-                    {/* Sold pill — proper mono-uppercase badge with
-                        a tinted surface + border so it reads as a
-                        deliberate state badge instead of inline
-                        prose. Sale price stays inline so the user
-                        still sees what the item went for. */}
-                    {row.sold && row.sold_price != null && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          fontFamily: "var(--font-jetbrains-mono)",
-                          fontWeight: 700,
-                          fontSize: 8,
-                          letterSpacing: "0.10em",
-                          textTransform: "uppercase",
-                          color: "#5CE0B8",
-                          backgroundColor: "rgba(92,224,184,0.10)",
-                          border: "1px solid rgba(92,224,184,0.20)",
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                          fontFeatureSettings: '"tnum"',
-                        }}
-                      >
-                        SOLD · ${Number(row.sold_price).toFixed(0)}
-                      </span>
-                    )}
-
-                    {/* Mark-sold input — appears when this row's
-                        "$" button is tapped. Numeric input with
-                        Enter/blur to commit, Escape to cancel. */}
-                    {!row.sold && markingId === row.id && (
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 4,
-                          marginTop: 2,
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontFamily: "var(--font-body)",
-                            fontSize: 12,
-                            color: "var(--text-muted)",
-                          }}
-                        >
-                          $
-                        </span>
-                        <input
-                          ref={markInputRef}
-                          type="text"
-                          inputMode="decimal"
-                          value={markDraft}
-                          onChange={(e) => setMarkDraft(e.target.value)}
-                          onBlur={() => commitSold(row)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") commitSold(row);
-                            if (e.key === "Escape") {
-                              setMarkingId(null);
-                              setMarkDraft("");
-                            }
-                          }}
-                          placeholder="0"
-                          style={{
-                            width: 56,
-                            background: "var(--bg-recessed)",
-                            border: "1px solid var(--ui-border-focus)",
-                            outline: "none",
-                            borderRadius: 6,
-                            fontFamily: "var(--font-body)",
-                            fontWeight: 700,
-                            fontSize: 16,
-                            color: "var(--ui-primary)",
-                            textAlign: "right",
-                            padding: "2px 6px",
-                            fontFeatureSettings: '"tnum"',
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Mark-sold trigger — small "$" button on
-                        unsold rows. Tap → swap the right column to
-                        the input above. */}
-                    {!row.sold && markingId !== row.id && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMarkingId(row.id);
-                          setMarkDraft(
-                            row.sell_price != null
-                              ? String(Number(row.sell_price).toFixed(0))
-                              : "",
-                          );
-                        }}
-                        style={{
-                          background: "rgba(92,224,184,0.06)",
-                          border: "1px solid rgba(92,224,184,0.18)",
-                          borderRadius: 6,
-                          padding: "2px 8px",
-                          cursor: "pointer",
-                          fontFamily: "var(--font-body)",
-                          fontWeight: 600,
-                          fontSize: 9,
-                          color: "var(--accent-mint)",
-                          letterSpacing: "0.08em",
-                        }}
-                      >
-                        MARK SOLD
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                  OPEN SCANNER
+                </button>
+              }
+            />
           </div>
         )}
 
-        <div style={{ paddingBottom: 40 }} />
+        {/* ── Stats strip ── */}
+        {hauls !== null && hauls.length > 0 && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 8,
+            marginBottom: 16,
+            animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 80ms both",
+          }}>
+            <StatCell label="ITEMS" value={totalItems} />
+            <StatCell label="MONEY IN" value={moneyIn > 0 ? moneyIn : null} prefix="$" />
+            <StatCell
+              label={profitLabel}
+              value={hasAnyProfit ? totalProfit : null}
+              prefix="$"
+              subLabel={profitSubLabel}
+              isMint={hasAnyProfit && totalProfit >= 0}
+            />
+          </div>
+        )}
+
+        {/* ── Filter chips ── */}
+        {hauls !== null && hauls.length > 0 && (
+          <div style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 14,
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            WebkitOverflowScrolling: "touch",
+            animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 110ms both",
+          }}>
+            {(["all", "saved", "bought", "listed", "sold"] as FilterKind[]).map(f => (
+              <FilterChip
+                key={f}
+                kind={f}
+                label={f}
+                count={counts[f]}
+                active={filter === f}
+                onTap={() => setFilter(f)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* ── No items in this filter ── */}
+        {hauls !== null && hauls.length > 0 && filtered.length === 0 && (
+          <div style={{
+            textAlign: "center",
+            padding: "32px 0",
+            fontFamily: "var(--font-body)",
+            fontSize: 13,
+            color: "var(--text-muted)",
+          }}>
+            no {filter} items
+          </div>
+        )}
+
+        {/* ── Haul list ── */}
+        {filtered.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {filtered.map((h, i) => (
+              <div
+                key={h.id}
+                style={{
+                  animation: `fadeInUp 350ms cubic-bezier(0.16,1,0.3,1) ${140 + i * 35}ms both`,
+                }}
+              >
+                <HaulCard
+                  row={h}
+                  onStatusAdvance={handleStatusAdvance}
+                  onDelete={handleDelete}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Crowdsource note ── */}
+        {hauls !== null && hauls.length > 0 && (
+          <div style={{
+            marginTop: 24,
+            textAlign: "center",
+            fontFamily: "var(--font-body)",
+            fontSize: 11,
+            color: "var(--text-dim)",
+          }}>
+            every sale you log improves pricing for all loot users
+          </div>
+        )}
+
+        <div style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }} />
       </div>
     </>
   );

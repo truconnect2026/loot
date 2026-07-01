@@ -9,6 +9,7 @@ import type {
 } from "@/lib/claude";
 import type { ListingResponse } from "@/app/api/listing/route";
 import { formatErrorMessage } from "@/lib/formatError";
+import { saveHaul } from "@/lib/hauls";
 
 /**
  * Shelf Scanner sheet — one photo in, ranked items out.
@@ -703,6 +704,24 @@ function ResultsView({
   batchProgress,
   onNewScan,
 }: ResultsViewProps) {
+  const [savedItems, setSavedItems]   = useState<Set<number>>(new Set());
+  const [savingItems, setSavingItems] = useState<Set<number>>(new Set());
+
+  async function handleSaveItem(idx: number, item: ShelfScanItem) {
+    if (savedItems.has(idx) || savingItems.has(idx)) return;
+    setSavingItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+    const result = await saveHaul({
+      name:            item.name,
+      buy_price:       item.cost > 0 ? item.cost : null,
+      est_resale_low:  Math.min(item.sellFBLocal, item.sellFBShipped, item.sellEbay),
+      est_resale_high: Math.max(item.sellFBLocal, item.sellFBShipped, item.sellEbay),
+      verdict:         item.verdict.toLowerCase() as "buy" | "maybe" | "pass",
+      source:          "scan_shelf",
+    });
+    setSavingItems(prev => { const n = new Set(prev); n.delete(idx); return n; });
+    if (result.ok) setSavedItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+  }
+
   // Sort: verdict BUY > MAYBE > PASS, then sellSpeed FAST > MOD > SLOW,
   // then profit desc. memoized on the input array so re-renders during
   // expand/filter changes don't redo the comparator pass. Sorted view
@@ -901,6 +920,9 @@ function ResultsView({
                 onToggle={() => onToggleExpanded(realIdx)}
                 listing={listings.get(realIdx) ?? null}
                 onGenerate={() => onGenerate(realIdx, item)}
+                onSave={() => handleSaveItem(realIdx, item)}
+                saved={savedItems.has(realIdx)}
+                saving={savingItems.has(realIdx)}
               />
             );
           })
@@ -1005,6 +1027,9 @@ interface ItemCardProps {
   onToggle: () => void;
   listing: ListingResponse | null;
   onGenerate: () => void;
+  onSave?: () => void;
+  saved?: boolean;
+  saving?: boolean;
 }
 
 function ItemCard({
@@ -1013,6 +1038,9 @@ function ItemCard({
   onToggle,
   listing,
   onGenerate,
+  onSave,
+  saved,
+  saving,
 }: ItemCardProps) {
   const tint = VERDICT_TINT[item.verdict];
   const isBuy = item.verdict === "BUY";
@@ -1165,6 +1193,38 @@ function ItemCard({
           >
             {item.verdict}
           </div>
+
+          {/* Save-to-haul button — stopPropagation so expand doesn't fire */}
+          {onSave && (
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onSave(); }}
+              disabled={saved || saving}
+              aria-label={saved ? "Saved to haul" : "Save to haul"}
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                border: saved
+                  ? "1px solid rgba(92,224,184,0.32)"
+                  : "1px solid rgba(255,255,255,0.14)",
+                background: saved ? "rgba(92,224,184,0.10)" : "rgba(255,255,255,0.04)",
+                color: saved ? "#5CE0B8" : "rgba(200,192,216,0.55)",
+                fontFamily: "var(--font-body)",
+                fontSize: 14,
+                fontWeight: 700,
+                lineHeight: 1,
+                cursor: saved ? "default" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                transition: "all 200ms cubic-bezier(0.16,1,0.3,1)",
+              }}
+            >
+              {saving ? "·" : saved ? "✓" : "+"}
+            </button>
+          )}
         </div>
       </div>
 
