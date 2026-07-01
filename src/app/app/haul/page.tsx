@@ -66,6 +66,11 @@ export default function HaulLogPage() {
   const [error, setError] = useState<string | null>(null);
   const [backPressed, setBackPressed] = useState(false);
 
+  // Clear the tab-bar SCAN badge when the haul log is viewed.
+  useEffect(() => {
+    try { localStorage.removeItem("loot_haul_pending"); } catch { /* private mode */ }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {

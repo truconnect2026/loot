@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono, Bebas_Neue, Manrope, Space_Mono } from "next/fo
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import SplashGate from "@/components/shared/SplashGate";
+import { TabBarMount } from "@/components/nav/TabBar";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -130,6 +131,7 @@ export default function RootLayout({
             backgroundImage: NOISE_SVG,
           }}
         />
+        <TabBarMount />
         <Analytics />
       </body>
     </html>

@@ -1115,8 +1115,8 @@ export default function AccountPage() {
             tactile cue without bouncing or scaling. */}
         <SignOutLink onTap={handleSignOut} />
 
-        {/* Bottom padding — 48px so the sign-out has air below it */}
-        <div style={{ paddingBottom: 48 }} />
+        {/* Bottom padding — tab bar + air above sign-out */}
+        <div style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }} />
       </div>
     </>
   );

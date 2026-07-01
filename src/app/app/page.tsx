@@ -367,7 +367,7 @@ function FlipCoachFab({ onTap }: { onTap: () => void }) {
     <div
       style={{
         position: "fixed",
-        bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 12px)",
+        bottom: "calc(72px + env(safe-area-inset-bottom))",
         right: 16,
         // zIndex 30 sits BELOW the BottomSheet backdrop (zIndex 40)
         // and panel (zIndex 41) — when any sheet opens, its dark
@@ -738,9 +738,6 @@ function DashboardPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
-  // Tools drawer expansion
-  const [showAllTools, setShowAllTools] = useState(false);
-
   // Press feedback for header avatar — inlined since it's a one-off button.
   const [avatarPressed, setAvatarPressed] = useState(false);
 
@@ -754,8 +751,16 @@ function DashboardPage() {
   const dayOfWeek = now ? now.getDay() : 0;
   const hour = now ? now.getHours() : 0;
 
-  // Tools drawer reverse-stagger close.
-  const [toolsExiting, setToolsExiting] = useState(false);
+  // Auto-open shelf scan when navigating from the tab-bar SCAN button.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("scan") === "shelf") {
+      setShelfOpen(true);
+      window.history.replaceState(null, "", "/app");
+    }
+  }, []);
+
 
   // Deal detail sheet state
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -1092,6 +1097,7 @@ function DashboardPage() {
         haptic([50, 30, 50]);
         setCoinRainActive(false);
         requestAnimationFrame(() => setCoinRainActive(true));
+        try { localStorage.setItem("loot_haul_pending", "1"); } catch { /* private mode */ }
       }
 
       // Pull fresh totals — the scan row was just inserted server-side.
@@ -1231,18 +1237,6 @@ function DashboardPage() {
   // Gated on !statsLoading so the page doesn't flicker between layouts
   // while Supabase is still resolving.
   const isNewUser = !statsLoading && lifetimeScans === 0;
-
-  const toggleTools = useCallback(() => {
-    if (!showAllTools) {
-      setShowAllTools(true);
-      return;
-    }
-    setToolsExiting(true);
-    window.setTimeout(() => {
-      setShowAllTools(false);
-      window.setTimeout(() => setToolsExiting(false), TOOL_COLLAPSE_MS);
-    }, TOOL_EXIT_TOTAL_MS);
-  }, [showAllTools]);
 
   // Splash gate — covers the brief async window between mount and the
   // zip-code check resolving. Reuses the layout-level SplashScreen so
@@ -1691,101 +1685,11 @@ function DashboardPage() {
         {/* 8.5. FLIP OR SKIP daily-drop CTA — removed during /flip rebuild;
             new dashboard card lands in a follow-up prompt. */}
 
-        {/* 9. Tools drawer — also wrapped in ScrollReveal for the
-            same scroll-triggered reveal as sourcing above. */}
-        <ScrollReveal>
+        {/* Bottom tagline — scroll-end bookend mirroring the splash brand signature. */}
         <div
           style={{
-            padding: "0 18px",
-            marginTop: 24,
-            overflow: "hidden",
-          }}
-        >
-          {/* "MORE TOOLS" label — same anchored-underline treatment
-              as SOURCING and the carousel headers below. Replaces
-              the previous flanking-hairlines variant so every
-              section reads with the same visual rhythm. */}
-          <div style={SECTION_LABEL}>
-            <SectionIcon kind="tools" />
-            MORE TOOLS
-          </div>
-
-          {/* Top 4 tools */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-            }}
-          >
-            {TOP_TOOLS.map((tool) => (
-              <ToolTile
-                key={tool.name}
-                name={tool.name}
-                icon={tool.icon}
-                accent={tool.accent}
-                onTap={() => handleToolTap(tool)}
-              />
-            ))}
-          </div>
-
-          {/* Hidden extras — animated max-height reveal with reverse-stagger
-              fade-out on close */}
-          <div
-            style={{
-              overflow: "hidden",
-              maxHeight: showAllTools ? 400 : 0,
-              transition: `max-height ${TOOL_COLLAPSE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 8,
-                marginTop: 8,
-              }}
-            >
-              {EXTRA_TOOLS.map((tool, index) => {
-                const reverseIndex = EXTRA_TOOLS.length - 1 - index;
-                return (
-                  <div
-                    key={tool.name}
-                    style={{
-                      opacity: toolsExiting ? 0 : 1,
-                      transition: `opacity ${TOOL_EXIT_FADE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`,
-                      transitionDelay: toolsExiting
-                        ? `${reverseIndex * TOOL_EXIT_STEP_MS}ms`
-                        : "0ms",
-                    }}
-                  >
-                    <ToolTile
-                      name={tool.name}
-                      icon={tool.icon}
-                      onTap={() => handleToolTap(tool)}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Show all toggle — proper button with chevron */}
-          <ShowAllToolsButton
-            expanded={showAllTools}
-            onToggle={toggleTools}
-          />
-        </div>
-        </ScrollReveal>
-
-        {/* Bottom pad — 24px from "Show all tools" pill to the
-            tagline below, then the tagline acts as a satisfying
-            scroll-end bookend mirroring the splash screen's brand
-            signature. */}
-        <div style={{ height: 24 }} />
-        <div
-          style={{
-            paddingBottom: 40,
+            paddingTop: 24,
+            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
             textAlign: "center",
             fontFamily: "var(--font-body)",
             fontSize: 11,

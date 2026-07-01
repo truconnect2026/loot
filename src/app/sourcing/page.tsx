@@ -669,6 +669,8 @@ export default function SourcingPage() {
           </form>
         </div>
       )}
+      {/* Bottom padding for tab bar */}
+      <div style={{ height: 80 }} />
     </div>
   );
 }
