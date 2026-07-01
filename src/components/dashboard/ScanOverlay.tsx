@@ -72,9 +72,11 @@ function clusterDots(
     const [bx, by, bw, bh] = item.bbox;
     const cx = drawnX + (bx + bw / 2) * drawnW;
     const cy = Math.min(Math.max(drawnY + (by + bh / 2) * drawnH, 12), renderedSize.h - 12);
-    if (idx === 0) {
-      console.log("[DOTS] item1 bbox=", item.bbox, "-> screen=", cx.toFixed(1), cy.toFixed(1));
-    }
+    console.log(
+      "[DOTS]", idx, "bbox=", item.bbox,
+      "drawn=", { drawnX: drawnX.toFixed(1), drawnY: drawnY.toFixed(1), drawnW: drawnW.toFixed(1), drawnH: drawnH.toFixed(1) },
+      "screen=", { x: cx.toFixed(1), y: cy.toFixed(1) },
+    );
     return { idx, cx, cy };
   });
 
@@ -361,6 +363,11 @@ export default function ScanOverlay({
     w: number; h: number;
     drawnX: number; drawnY: number; drawnW: number; drawnH: number;
   } | null>(null);
+  // ?debug=1 query param shows raw bbox rectangles over the shelf image
+  // so misplaced dots can be diagnosed: wrong bbox (model error) vs wrong mapping (code error).
+  const debugBbox =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("debug") === "1";
   const [shelfItemCostInput, setShelfItemCostInput] = useState("");
   const [shelfVerdictLoading, setShelfVerdictLoading] = useState(false);
   const [shelfVerdictOpen, setShelfVerdictOpen] = useState(false);
@@ -850,15 +857,21 @@ export default function ScanOverlay({
       ? (buyGrossResale / haulCostNum).toFixed(1)
       : null;
 
-  // Best BUY by estResale; tiebreak: demand (High>Med>Low) then speed (FAST>MODERATE>SLOW).
-  const bestGrab = buyMain.reduce<BatchValuation | null>((best, v) => {
-    if (!best) return v;
-    if (v.estResale !== best.estResale) return v.estResale > best.estResale ? v : best;
-    const dem = (x: BatchValuation) => x.demand === "High" ? 2 : x.demand === "Medium" ? 1 : 0;
-    const spd = (x: BatchValuation) => x.sellSpeed === "FAST" ? 2 : x.sellSpeed === "MODERATE" ? 1 : 0;
-    if (dem(v) !== dem(best)) return dem(v) > dem(best) ? v : best;
-    return spd(v) > spd(best) ? v : best;
-  }, null);
+  // Best BUY by estResale; prefer confident items (exclude needsVerify / low idConfidence).
+  // Tiebreak: demand (High>Med>Low) then speed (FAST>MODERATE>SLOW).
+  const confidentBuys = buyMain.filter((v) => !v.needsVerify && v.idConfidence !== "low");
+  const grabPool = confidentBuys.length > 0 ? confidentBuys : buyMain;
+  const grabIsUnverified = confidentBuys.length === 0 && buyMain.length > 0;
+  const pickBest = (pool: BatchValuation[]) =>
+    pool.reduce<BatchValuation | null>((best, v) => {
+      if (!best) return v;
+      if (v.estResale !== best.estResale) return v.estResale > best.estResale ? v : best;
+      const dem = (x: BatchValuation) => x.demand === "High" ? 2 : x.demand === "Medium" ? 1 : 0;
+      const spd = (x: BatchValuation) => x.sellSpeed === "FAST" ? 2 : x.sellSpeed === "MODERATE" ? 1 : 0;
+      if (dem(v) !== dem(best)) return dem(v) > dem(best) ? v : best;
+      return spd(v) > spd(best) ? v : best;
+    }, null);
+  const bestGrab = pickBest(grabPool);
 
   // Profit projection timeline — humanized max daysToSell across BUYs.
   // daysToSell is a model string like "2-4 weeks"; take the numeric max then scale.
@@ -1207,7 +1220,7 @@ export default function ScanOverlay({
                           }}
                           style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#5CE0B8", marginTop: 5, letterSpacing: "0.04em", cursor: "pointer" }}
                         >
-                          👑 best grab — {cleanDisplayName(bestGrab.name)} · ${bestGrab.resaleLow}–${bestGrab.resaleHigh}
+                          👑 best grab — {cleanDisplayName(bestGrab.name)} · ${bestGrab.resaleLow}–${bestGrab.resaleHigh}{grabIsUnverified ? " (verify first)" : ""}
                         </div>
                       )}
                     </div>
@@ -1407,6 +1420,32 @@ export default function ScanOverlay({
                         </button>
                       );
                     })}
+                  {/* DEV: ?debug=1 — draw raw bbox rects to distinguish model bbox error vs. mapping error */}
+                  {debugBbox && shelfImgRenderedSize && shelfItems.map((item, idx) => {
+                    const { drawnX, drawnY, drawnW, drawnH } = shelfImgRenderedSize;
+                    const [bx, by, bw, bh] = item.bbox;
+                    return (
+                      <div
+                        key={`dbg-${idx}`}
+                        style={{
+                          position: "absolute",
+                          left: drawnX + bx * drawnW,
+                          top: drawnY + by * drawnH,
+                          width: bw * drawnW,
+                          height: bh * drawnH,
+                          border: "2px solid rgba(255, 80, 80, 0.85)",
+                          background: "rgba(255, 80, 80, 0.12)",
+                          pointerEvents: "none",
+                          boxSizing: "border-box",
+                          zIndex: 20,
+                        }}
+                      >
+                        <span style={{ fontSize: 8, color: "#ff5050", fontFamily: "monospace", lineHeight: 1, padding: "1px 2px", background: "rgba(0,0,0,0.6)", display: "inline-block" }}>
+                          {idx}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* ── SORTED ITEM LIST — staggered reveal, elevated cards ── */}

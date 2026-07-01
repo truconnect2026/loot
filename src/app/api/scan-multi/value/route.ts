@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { valuateBatch, type BatchValuation } from "@/lib/claude";
 import { correctName } from "@/lib/correctNames";
-import { deriveMetrics } from "@/lib/deriveMetrics";
+import { deriveMetrics, applyValueFloors } from "@/lib/deriveMetrics";
 import { normalizeMetrics } from "@/lib/normalizeMetrics";
 import { groupSeries } from "@/lib/groupSeries";
 
@@ -53,7 +53,8 @@ export async function POST(
       ...deriveMetrics(v),
     }));
     const normalized = normalizeMetrics(withMetrics);
-    const grouped = groupSeries(normalized);
+    const floored = applyValueFloors(normalized);
+    const grouped = groupSeries(floored);
     const buyCount = grouped.filter((v) => v.verdict === "BUY").length;
     const maybeCount = grouped.filter((v) => v.verdict === "MAYBE").length;
     const passCount = grouped.filter((v) => v.verdict === "PASS").length;

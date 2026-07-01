@@ -1,6 +1,13 @@
 import type { BatchValuation } from "./claude";
 
-export type InferredCategory = "figure" | "card" | "lot" | "media" | "book";
+export type InferredCategory =
+  | "figure"
+  | "card"
+  | "lot"
+  | "media"
+  | "book"
+  | "vhs"
+  | "bulky-appliance";
 
 export function inferCategory(item: BatchValuation): InferredCategory {
   const n = (item.name ?? "").toLowerCase();
@@ -19,10 +26,17 @@ export function inferCategory(item: BatchValuation): InferredCategory {
   )
     return "lot";
 
-  // 4. Media — manga, disc, vinyl, etc.
+  // 4. VHS tape (checked before generic media so it gets its own floor)
+  if (/\bvhs\b|\bcassette\b/.test(n)) return "vhs";
+
+  // 5. Bulky appliance — heavy items that belong on FB Local
+  if (/\b(?:heaters?|humidifiers?|lamps?|kettles?|printers?|monitors?|fans?|speakers?)\b/.test(n))
+    return "bulky-appliance";
+
+  // 6. Media — manga, disc, vinyl, etc.
   if (/manga|dvd|blu-ray|vinyl|\bcd\b/.test(n)) return "media";
 
-  // 5. Default — single book or unrecognised item
+  // 7. Default — single book or unrecognised item
   return "book";
 }
 
@@ -39,16 +53,18 @@ export function deriveMetrics(item: BatchValuation): {
     // ── 1. Speed by category ─────────────────────────────────────
     let sellSpeed: "FAST" | "MODERATE" | "SLOW";
     switch (category) {
-      case "figure": sellSpeed = verdict === "BUY" ? "FAST" : "MODERATE"; break;
-      case "card":   sellSpeed = "FAST"; break;
-      case "lot":    sellSpeed = "MODERATE"; break;
-      case "media":  sellSpeed = "MODERATE"; break;
-      default:       sellSpeed = "SLOW"; // book
+      case "figure":          sellSpeed = verdict === "BUY" ? "FAST" : "MODERATE"; break;
+      case "card":            sellSpeed = "FAST"; break;
+      case "lot":             sellSpeed = "MODERATE"; break;
+      case "media":           sellSpeed = "MODERATE"; break;
+      case "vhs":             sellSpeed = "SLOW"; break;
+      case "bulky-appliance": sellSpeed = verdict === "PASS" ? "SLOW" : "MODERATE"; break;
+      default:                sellSpeed = "SLOW"; // book
     }
 
-    // Bump: only lots slow down when expensive (figures/cards stay Fast)
+    // Lots slow down when expensive (figures/cards stay Fast)
     if (category === "lot" && estResale >= 40) {
-      sellSpeed = "SLOW"; // lots are already MODERATE; bump to SLOW
+      sellSpeed = "SLOW";
     }
 
     // PASS verdict always slow
@@ -68,6 +84,8 @@ export function deriveMetrics(item: BatchValuation): {
     let platform: string;
     if (category === "figure" || category === "card") {
       platform = "eBay";
+    } else if (category === "vhs" || category === "bulky-appliance") {
+      platform = "Facebook Local";
     } else if (category === "lot" || category === "media") {
       platform = estResale >= 25 ? "Mercari" : "Facebook Local";
     } else {
@@ -84,4 +102,62 @@ export function deriveMetrics(item: BatchValuation): {
   } catch {
     return { sellSpeed: "MODERATE", demand: "Medium", platform: "eBay" };
   }
+}
+
+// Patterns that signal a rare / collectible VHS (worth MAYBE or BUY).
+const VHS_RARITY_RE = /sealed|rare|black.?diamond|first.?edition|horror|a24|oop|out.?of.?print/i;
+
+/**
+ * applyValueFloors — post-process pass that can only make verdicts more
+ * conservative, never upgrade them.  Run after normalizeMetrics, before
+ * groupSeries so the group anchor's verdict is correct.
+ *
+ * Rules:
+ *  - Common VHS → PASS, resale clamped $1-3.
+ *  - Bulky-appliance BUY without real margin → MAYBE.
+ *  - Common single book under $5 → PASS (belt-and-suspenders).
+ */
+export function applyValueFloors(items: BatchValuation[]): BatchValuation[] {
+  return items.map((item) => {
+    const cat = inferCategory(item);
+
+    if (cat === "vhs") {
+      if (!VHS_RARITY_RE.test(item.name ?? "")) {
+        // Common VHS: always PASS, clamp resale to $1-3.
+        const clamped = Math.min(item.estResale, 2);
+        return {
+          ...item,
+          verdict: "PASS" as const,
+          demand: "Low" as const,
+          estResale: clamped,
+          sellPrice: clamped,
+          resaleLow: 1,
+          resaleHigh: 3,
+        };
+      }
+      // Rare VHS: never let PASS stand — floor at MAYBE.
+      if (item.verdict === "PASS") return { ...item, verdict: "MAYBE" as const };
+      return item;
+    }
+
+    if (cat === "bulky-appliance") {
+      // BUY requires estResale >= $35 AND High demand; anything less → MAYBE.
+      if (item.verdict === "BUY" && !(item.estResale >= 35 && item.demand === "High")) {
+        return { ...item, verdict: "MAYBE" as const };
+      }
+      return item;
+    }
+
+    // Common single book under $5 → PASS.
+    if (
+      cat === "book" &&
+      item.groupRole === "single" &&
+      item.estResale < 5 &&
+      item.verdict !== "PASS"
+    ) {
+      return { ...item, verdict: "PASS" as const };
+    }
+
+    return item;
+  });
 }

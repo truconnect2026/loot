@@ -1,6 +1,6 @@
 import { groupSeries } from "../src/lib/groupSeries";
 import { normalizeMetrics } from "../src/lib/normalizeMetrics";
-import { deriveMetrics, inferCategory } from "../src/lib/deriveMetrics";
+import { deriveMetrics, inferCategory, applyValueFloors } from "../src/lib/deriveMetrics";
 import { correctName } from "../src/lib/correctNames";
 import type { BatchValuation } from "../src/lib/claude";
 
@@ -119,10 +119,11 @@ const EXTENDED_INPUT = [...INPUT, ...mangledItems];
 
 console.log(`\n=== INPUT: ${EXTENDED_INPUT.length} items (${INPUT.length} original + ${mangledItems.length} corrected) ===\n`);
 
-// Pipeline: deriveMetrics → normalizeMetrics → groupSeries
+// Pipeline: deriveMetrics → normalizeMetrics → applyValueFloors → groupSeries
 const WITH_METRICS = EXTENDED_INPUT.map((v) => ({ ...v, ...deriveMetrics(v) }));
 const NORMALIZED   = normalizeMetrics(WITH_METRICS);
-const OUTPUT       = groupSeries(NORMALIZED);
+const FLOORED      = applyValueFloors(NORMALIZED);
+const OUTPUT       = groupSeries(FLOORED);
 
 // ── Grouping table ─────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ for (const v of NORMALIZED) {
 
 // ── Sanity checks ──────────────────────────────────────────────────────────
 
-const rangeViolations = NORMALIZED.filter(
+const rangeViolations = FLOORED.filter(
   (v) => v.resaleLow > 0 && v.resaleHigh > Math.round(v.resaleLow * 1.6 * 100) / 100 + 0.01,
 );
 console.log(
@@ -197,7 +198,7 @@ const demands: Record<string, number>    = { High: 0, Medium: 0, Low: 0 };
 const platforms: Record<string, number>  = {};
 const categories: Record<string, number> = {};
 
-for (const v of NORMALIZED) {
+for (const v of FLOORED) {
   const cat = inferCategory(v);
   speeds[v.sellSpeed]    = (speeds[v.sellSpeed]    ?? 0) + 1;
   demands[v.demand]      = (demands[v.demand]      ?? 0) + 1;
@@ -219,3 +220,66 @@ console.log(`\n=== ANCHOR NAMES (${anchors.length}) ===`);
 for (const a of anchors) {
   console.log(`  "${a.name}"  [groupId: ${a.groupId ?? "?"}]`);
 }
+
+// ── Phase 7a VERDICT CHECK — real-world Goodwill trip simulation ────────────
+
+const PHASE_7A: BatchValuation[] = [
+  // 5 common VHS (should all be PASS after floors)
+  item(100, "Lion King (VHS)",                                    2.00, "Low"),
+  item(101, "Jurassic Park (VHS)",                                2.00, "Low"),
+  item(102, "Fantasia (VHS)",                                     2.00, "Low"),
+  item(103, "Free Willy (VHS)",                                   1.50, "Low"),
+  item(104, "Sister Act (VHS)",                                   1.50, "Low"),
+
+  // Bulky appliances (should be MAYBE at most, 0 BUY under $35)
+  item(110, "Vornado Space Heater 660",                          22.00, "Medium", "BUY"), // BUY → floor to MAYBE
+  item(111, "Floor Lamp (IKEA Ranarp)",                          18.00, "Low",    "BUY"), // BUY → floor to MAYBE
+  item(112, "Crane Ultrasonic Humidifier EE-5301",               12.00, "Low",    "MAYBE"),
+  item(113, "Logitech Z313 Computer Speakers",                   10.00, "Medium", "MAYBE"),
+
+  // Common paperbacks (should be PASS)
+  item(120, "The Girl on the Train (mass-market)",                4.00, "Low"),
+  item(121, "Twilight (mass-market paperback)",                   3.00, "Low"),
+
+  // Legit BUYs for contrast (should survive floors unchanged)
+  item(130, "Attack on Titan Manga Series (multiple volumes)",   30.00, "High", "BUY"),
+  item(131, "Dragon Ball Z Goku Funko Pop #14",                  20.00, "High", "BUY"),
+  item(132, "Dyson V8 Animal Cordless Vacuum",                   95.00, "High", "BUY"), // bulky but $95 + High → BUY survives
+];
+
+const P7A_METRICS = PHASE_7A.map((v) => ({ ...v, ...deriveMetrics(v) }));
+const P7A_NORM    = normalizeMetrics(P7A_METRICS);
+const P7A_FLOORED = applyValueFloors(P7A_NORM);
+
+console.log("\n=== PHASE 7A — VERDICT CHECK ===\n");
+
+const VC = [44, 16, 7, 10];
+const vcHeader = [
+  "name".padEnd(VC[0]),
+  "category".padEnd(VC[1]),
+  "verdict".padEnd(VC[2]),
+  "estResale",
+].join(" | ");
+console.log(vcHeader);
+console.log("-".repeat(vcHeader.length));
+
+for (const v of P7A_FLOORED) {
+  const cat = inferCategory(v);
+  console.log([
+    v.name.slice(0, VC[0]).padEnd(VC[0]),
+    cat.padEnd(VC[1]),
+    v.verdict.padEnd(VC[2]),
+    `$${v.estResale.toFixed(2)}`,
+  ].join(" | "));
+}
+
+const vhsItems     = P7A_FLOORED.filter((v) => inferCategory(v) === "vhs");
+const bulkyItems   = P7A_FLOORED.filter((v) => inferCategory(v) === "bulky-appliance");
+const vhsPass      = vhsItems.filter((v) => v.verdict === "PASS").length;
+const bulkyBuyHigh = bulkyItems.filter((v) => v.verdict === "BUY" && v.estResale >= 35).length;
+const bulkyBuyLow  = bulkyItems.filter((v) => v.verdict === "BUY" && v.estResale < 35).length;
+
+console.log(`\nVHS:   ${vhsPass}/${vhsItems.length} are PASS (should be ${vhsItems.length}/${vhsItems.length})`);
+console.log(`BULKY: ${bulkyBuyLow} BUY under $35 (should be 0) · ${bulkyBuyHigh} BUY at $35+ (allowed)`);
+console.log(`FLOORS: ${vhsPass === vhsItems.length && bulkyBuyLow === 0 ? "✓ PASS" : "✗ FAIL"}`);
+

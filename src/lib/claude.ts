@@ -525,6 +525,8 @@ Required fields per object:
 === TASK 1: METRICS — be conservative and honest, use SOLD prices not listing prices ===
 - Single mass-market paperback: $1-5 typical resale. Common hardcover: $3-8.
 - Common household items, basic clothing, oversaturated categories: often near-zero resale value.
+- VHS tapes are nearly always worthless ($1-3 resale). Common Disney/Hollywood VHS reissues and 90s family titles (Lion King, Jurassic Park, Sister Act, Fantasia, etc.): estResale $1-2. Only rare VHS (Black Diamond Disney, sealed OOP horror, limited releases) can exceed this.
+- Bulky appliances (space heaters, fans, humidifiers, floor lamps, computer speakers, printers, monitors): heavy, poor shipping economics, high commodity competition. Sub-$30 resale is marginal. BUY only if estResale >= $35 AND demand is High — otherwise MAYBE at most.
 - estResale is your best point estimate. resaleLow/resaleHigh bracket the realistic range.
 
 === TASK 2: CALIBRATED VERDICT — commit to the right call, use the FULL range ===
@@ -535,6 +537,9 @@ BUY when genuinely desirable — do NOT hedge into MAYBE:
 - MAYBE means a real margin coin-flip: the item is sellable but profit depends heavily on the buyer's cost. Do NOT use MAYBE to hedge on items that are clearly desirable and fast-moving — those are BUY.
 PASS when the item nets little after time cost — keep this tight:
 - Single common novel volumes (romance, thriller, YA, mass-market series) → PASS. Single volumes net under $5 after listing time.
+- VHS tapes (common titles — Disney reissues, 90s family movies, Hollywood blockbusters): PASS. These are worth $1-2 at most.
+- Bulky appliances under $30 resale: MAYBE at most, never BUY. Shipping is impractical, local buyers are price-sensitive, and the market is saturated.
+- BUY sanity gate: SLOW sell speed + Facebook Local platform + estResale < $20 = MAYBE at best (never BUY). These items don't turn capital fast enough. Exception: lot-anchors, graded cards, and licensed figures can BUY regardless of platform.
 - estResale < $8 OR (SLOW AND Low/Medium demand) OR item unlikely to sell locally → PASS.
 - A typical thrift shelf WILL have multiple PASS verdicts. Zero PASS across many common items is wrong. But zero BUY across collectible figures + complete series is equally wrong.
 
