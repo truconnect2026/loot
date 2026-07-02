@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CheckIcon, Eyebrow, FadeUp, ShimmerText } from "./atoms.jsx";
+import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
 
 const HERO_STYLES = `
 .pro-hero-grid { display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; }
@@ -78,12 +78,10 @@ export default function HeroSection() {
             margin: 0,
           }}
         >
-          STOP <ShimmerText>LEAVING</ShimmerText>
-          <br />
-          MONEY
+          KNOW WHAT IT&apos;S WORTH
         </h1>
-        {/* Line 3 — italic gold, ~75% size so the preposition "ON THE SHELF" stays
-            with what it modifies and the sentence resolves rather than competing. */}
+        {/* Line 2 — mint, ~75% size so it resolves as the payoff line rather
+            than competing with the headline above. */}
         <p
           className="pro-hero-italic"
           style={{
@@ -92,11 +90,11 @@ export default function HeroSection() {
             lineHeight: 1.0,
             letterSpacing: "-0.01em",
             fontStyle: "italic",
-            color: C.gold,
+            color: C.mint,
             margin: "0.1em 0 40px",
           }}
         >
-          ON THE SHELF.
+          BEFORE YOU GRAB IT.
         </p>
       </FadeUp>
 
@@ -111,8 +109,8 @@ export default function HeroSection() {
             marginBottom: 48,
           }}
         >
-          every thrift run, every yard sale, every estate find. real comps in 1.4 seconds. maps. alerts.
-          the unfair advantage every flipper has been waiting for.
+          point your phone at anything in the bins. real comps in about a second. you&apos;ve already got
+          the eye. this is the part that&apos;s faster than the picker reaching next to you.
         </p>
       </FadeUp>
 
@@ -182,6 +180,28 @@ export default function HeroSection() {
           </div>
         </div>
 
+        {/* Money-back line — sits directly under the CLAIM PRO button since
+            it's the objection that matters most right where the click happens. */}
+        <div
+          style={{
+            display: "flex",
+            gap: 24,
+            flexWrap: "wrap",
+            fontFamily: "var(--font-mono), monospace",
+            fontSize: 12,
+            color: "rgba(255,255,255,0.5)",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day money-back, no questions
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
+          </span>
+        </div>
+
         {/* Annual alternative caption — SAVE $80 lives in a mint pill so it
             reads as a chip-style affordance, not body text. */}
         <p
@@ -214,49 +234,15 @@ export default function HeroSection() {
             SAVE $80
           </span>
         </p>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 24,
-            flexWrap: "wrap",
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 12,
-            color: "rgba(255,255,255,0.5)",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day refund
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> pays for itself in 1 flip*
-          </span>
-        </div>
-        {/* Compliance caveat for the "pays for itself in 1 flip" claim. */}
-        <p
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 10,
-            letterSpacing: "0.08em",
-            color: "rgba(255,255,255,0.35)",
-            marginTop: 12,
-          }}
-        >
-          *based on average flip profit. results vary.
-        </p>
       </FadeUp>
         </div>
 
-        {/* Product visualization — proves the verdict-in-1.4s claim is real. */}
+        {/* Product visualization — shows a live-scan verdict card. */}
         <FadeUp delay={0.6}>
           <div className="pro-hero-visual">
             <img
               src="/kit/scan-ui-mockup-optimized.png"
-              alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — verdict in 1.45s: $4 buy, $35 resell, 21× ROI, FLIP IT"
+              alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — $4 buy, $35 resell, 21× ROI, FLIP IT"
               className="pro-hero-mockup"
               width={1024}
               height={1536}

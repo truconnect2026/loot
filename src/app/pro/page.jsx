@@ -12,10 +12,12 @@
  *   <CosmicBackground />
  *   <TopStrip />
  *   <HeroSection />          smooth-scrolls to #pricing
- *   <GutPunch />             counts to 487 on first scroll-into-view
+ *   <TheEdgeSection />       "the picker next to you is guessing"
+ *   <GutPunch />             old-way-vs-loot head-to-head (despite the name,
+ *                            no longer a shame/stat section — see file)
  *   <FeatureMatrix />
- *   <ROICalculator />
- *   <Testimonials />
+ *   <ROICalculator />        single defensible line, no income projection
+ *   <Testimonials />         HIDDEN — commented out below, no real quotes yet
  *   <PricingSection onCTA={handleCTA} />
  *   <FAQSection />
  *   <CloserSection onCTA={handleCTA} />  ← annual_closer UTM
@@ -42,10 +44,11 @@ import "./pro.module.css";
 import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
 import HeroSection from "./components/HeroSection.jsx";
+import TheEdgeSection from "./components/TheEdgeSection.jsx";
 import GutPunch from "./components/GutPunch.jsx";
 import FeatureMatrix from "./components/FeatureMatrix.jsx";
 import ROICalculator from "./components/ROICalculator.jsx";
-import Testimonials from "./components/Testimonials.jsx";
+// import Testimonials from "./components/Testimonials.jsx"; // HIDDEN pending real testimonials with handles + specific item/price
 import PricingSection from "./components/PricingSection.jsx";
 import FAQSection from "./components/FAQSection.jsx";
 import CloserSection from "./components/CloserSection.jsx";
@@ -170,6 +173,7 @@ export default function ProPage() {
       <TopStrip />
       <main>
         <HeroSection />
+        <TheEdgeSection />
         <hr className="pro-section-divider" />
         <GutPunch />
         <hr className="pro-section-divider" />
@@ -177,8 +181,8 @@ export default function ProPage() {
         <hr className="pro-section-divider" />
         <ROICalculator />
         <hr className="pro-section-divider" />
-        <Testimonials />
-        <hr className="pro-section-divider" />
+        {/* HIDDEN pending real testimonials with handles + specific item/price */}
+        {/* <Testimonials /> */}
         <PricingSection onCTA={handleCTA} />
         <hr className="pro-section-divider" />
         <FAQSection />

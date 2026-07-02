@@ -4,18 +4,21 @@ import { useState } from "react";
 import { C } from "../lib/colors.js";
 import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
 
+// FREE tier is the daily FLIP OR SKIP game only — no scans, no comps, no
+// alerts. Verified against FREE_SCAN_LIMIT = 0 in src/lib/limits.ts: a
+// non-Pro user hitting /api/scan or /api/shelf-scan always gets 403.
 const featureRows = [
-  { f: "Daily scans", free: "3", pro: "Unlimited", a: "mint" },
-  { f: "AI vision identification", free: "check", pro: "check", a: null },
-  { f: "Live eBay sold comps", free: "Limited", pro: "Real-time", a: "mint" },
   { f: "FLIP OR SKIP daily game", free: "check", pro: "check", a: null },
-  { f: "Haul tracking", free: "Last 7 days", pro: "Full history", a: "mint" },
+  { f: "Daily scans", free: "—", pro: "Unlimited", a: "gold" },
+  { f: "AI vision identification", free: "—", pro: "check", a: "gold" },
+  { f: "Live eBay sold comps", free: "—", pro: "Real-time", a: "gold" },
+  { f: "Haul tracking", free: "—", pro: "Full history", a: "gold" },
   { f: "Yard sale map", free: "—", pro: "Live + alerts", a: "gold" },
   { f: "BOLO alerts", free: "—", pro: "Push + email", a: "gold" },
   { f: "Price trend graphs", free: "—", pro: "90-day history", a: "gold" },
   { f: "Brand authenticator", free: "—", pro: "AI-powered", a: "gold" },
   { f: "Export to spreadsheet", free: "—", pro: "CSV / Sheets", a: "gold" },
-  { f: "Community BOLO feed", free: "Read-only", pro: "Post + react", a: "mint" },
+  { f: "Community BOLO feed", free: "—", pro: "Post + react", a: "gold" },
   { f: "Priority support", free: "—", pro: "24h response", a: "gold" },
 ];
 

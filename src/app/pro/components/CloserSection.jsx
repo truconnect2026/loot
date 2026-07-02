@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CoinMark, FadeUp, ShimmerText } from "./atoms.jsx";
+import { CoinMark, FadeUp } from "./atoms.jsx";
 
 export default function CloserSection({ onCTA }) {
   return (
@@ -64,27 +64,27 @@ export default function CloserSection({ onCTA }) {
         <h2
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: "clamp(56px,11vw,160px)",
-            lineHeight: 1.0,
+            fontSize: "clamp(48px,9vw,128px)",
+            lineHeight: 1.1,
             margin: 0,
             padding: 0,
           }}
         >
-          EVERY <ShimmerText>WEEKEND</ShimmerText>
+          the next find is
           <br />
-          WITHOUT PRO IS
+          already in the bin.
         </h2>
         <p
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: "clamp(56px,11vw,160px)",
-            lineHeight: 1.0,
+            fontSize: "clamp(48px,9vw,128px)",
+            lineHeight: 1.1,
             color: C.gold,
             margin: "0 0 48px",
             padding: 0,
           }}
         >
-          MONEY MISSED.
+          get to it first.
         </p>
       </FadeUp>
 

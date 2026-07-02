@@ -79,7 +79,7 @@ export default function Footer() {
               margin: 0,
             }}
           >
-            AI thrift arbitrage. Real eBay comps in 1.4 seconds.
+            AI thrift arbitrage. Real eBay comps in about a second.
           </p>
         </div>
 
