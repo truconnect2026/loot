@@ -2497,7 +2497,9 @@ export default function ScanOverlay({
           />
         )}
 
-        {/* ── Persistent close — top-left, all modes ──────────────── */}
+        {/* ── Persistent close — top-left, camera/framing modes only ──
+             (shelf/crate result panels render their own top-right close) */}
+        {!isShelfPhase && !isCratePhase && (
         <button
           aria-label="Close scanner"
           onClick={onCancel}
@@ -2534,6 +2536,7 @@ export default function ScanOverlay({
             <line x1={6} y1={6} x2={18} y2={18} />
           </svg>
         </button>
+        )}
 
         {/* ── Mode toggle — BARCODE · ITEM · SHELF ────────────────── */}
         {phase.kind === "framing" && (

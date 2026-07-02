@@ -188,6 +188,32 @@ export default function SourcingPage() {
     if (res.ok) setLogged((p) => ({ ...p, [storeId]: wasOnSale ? "yes" : "no" }));
   }
 
+  // ── Derived state (hooks must run unconditionally, before any early return) ─
+  const weekPlan  = plan?.weekPlan ?? [];
+  const bestStop  = plan?.bestStop ?? null;
+  const hasStores = stores.length > 0;
+
+  // Preview plan — shown when the user has no stores yet so the week strip
+  // is legible and the value of adding stores is immediately obvious.
+  // Only Goodwill + Savers patterns; never presented as personalized.
+  const previewPlan = useMemo(() => {
+    if (hasStores || weekPlan.length === 0) return [];
+    const PREVIEW_STORES: Record<string, DayEntry["store"]> = {
+      Goodwill:  { id: "preview-goodwill", name: "Goodwill",  chain: "Goodwill",  location_label: null },
+      Savers:    { id: "preview-savers",   name: "Savers",    chain: "Savers",    location_label: null },
+    };
+    return weekPlan.map((day) => ({
+      ...day,
+      entries: CHAIN_PATTERNS
+        .filter((p) => (p.chain === "Goodwill" || p.chain === "Savers") && p.weekday === day.weekday)
+        .map((p) => ({
+          store: PREVIEW_STORES[p.chain] ?? PREVIEW_STORES.Goodwill!,
+          label: p.label,
+          confidence: "pattern" as const,
+        })),
+    }));
+  }, [hasStores, weekPlan]);
+
   // ── Loading / auth guards ──────────────────────────────────────────────────
   if (loading) {
     return (
@@ -211,11 +237,8 @@ export default function SourcingPage() {
     );
   }
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-  const weekPlan   = plan?.weekPlan ?? [];
-  const bestStop   = plan?.bestStop ?? null;
-  const hasStores  = stores.length > 0;
-  const selPlan    = weekPlan[selDay];
+  // ── More derived state (plain values — fine after the early returns) ───────
+  const selPlan = weekPlan[selDay];
 
   // Next future day with any deal (for empty-today message)
   const nextDealDay = weekPlan.slice(1).find((d) =>
@@ -224,27 +247,6 @@ export default function SourcingPage() {
 
   // Cards for selected day (real store data)
   const dayCards = selPlan ? groupEntries(selPlan.entries) : [];
-
-  // Preview plan — shown when the user has no stores yet so the week strip
-  // is legible and the value of adding stores is immediately obvious.
-  // Only Goodwill + Savers patterns; never presented as personalized.
-  const previewPlan = useMemo(() => {
-    if (hasStores || weekPlan.length === 0) return [];
-    const PREVIEW_STORES: Record<string, DayEntry["store"]> = {
-      Goodwill:  { id: "preview-goodwill", name: "Goodwill",  chain: "Goodwill",  location_label: null },
-      Savers:    { id: "preview-savers",   name: "Savers",    chain: "Savers",    location_label: null },
-    };
-    return weekPlan.map((day) => ({
-      ...day,
-      entries: CHAIN_PATTERNS
-        .filter((p) => (p.chain === "Goodwill" || p.chain === "Savers") && p.weekday === day.weekday)
-        .map((p) => ({
-          store: PREVIEW_STORES[p.chain] ?? PREVIEW_STORES.Goodwill!,
-          label: p.label,
-          confidence: "pattern" as const,
-        })),
-    }));
-  }, [hasStores, weekPlan]);
 
   // Use preview when no user stores; preview day cards for selected day
   const displayPlan      = hasStores ? weekPlan : previewPlan;
