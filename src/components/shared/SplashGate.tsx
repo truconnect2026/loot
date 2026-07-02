@@ -26,11 +26,12 @@ const EXIT_MS = 400;
 
 export default function SplashGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  // /marketing-screens/* renders idealized phone-mockup content captured
-  // for the brand kit. The splash overlay would leak into the captures,
-  // so suppress it on those routes — they are never linked from anywhere
-  // user-facing.
-  const skipSplash = pathname?.startsWith("/marketing-screens") ?? false;
+  // /marketing-screens/* and /adcard render idealized phone-mockup / ad
+  // -still content captured for the brand kit and ad compositing. The
+  // splash overlay would leak into the captures, so suppress it on
+  // those routes — they are never linked from anywhere user-facing.
+  const skipSplash =
+    (pathname?.startsWith("/marketing-screens") || pathname?.startsWith("/adcard")) ?? false;
 
   // mounted: render the SplashScreen at all
   // exiting: drives the splashExit fade
