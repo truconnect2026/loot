@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CrateResultsStack, type StripRect } from "@/components/dashboard/CrateResultsStack";
 
 import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import {
@@ -14,7 +15,6 @@ import type { ScanResponse } from "@/app/api/scan/route";
 import type { MultiDetectItem, BatchValuation } from "@/lib/claude";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import { VerdictBadge } from "@/components/ui/VerdictBadge";
-import { saveHaul } from "@/lib/hauls";
 
 export interface VerdictPayload extends ScanResponse {
   capturedImage?: string | null;
@@ -606,8 +606,9 @@ export default function ScanOverlay({
   const [armedSlots, setArmedSlots] = useState<Set<number>>(new Set());
   const [justArmedSlot, setJustArmedSlot] = useState<number | null>(null);
   const [crateToast, setCrateToast] = useState<string | null>(null);
-  const [crateSavedItems, setCrateSavedItems] = useState<Set<number>>(new Set());
-  const [crateSavingItems, setCrateSavingItems] = useState<Set<number>>(new Set());
+  const [crateFullFrame, setCrateFullFrame] = useState<string>("");
+  const [crateCrops, setCrateCrops] = useState<string[]>([]);
+  const [crateStripRects, setCrateStripRects] = useState<StripRect[]>([]);
   const slotRefs = useRef<Array<HTMLDivElement | null>>(Array(5).fill(null));
 
   const flagError = (stage: string, err: unknown) => {
@@ -656,8 +657,9 @@ export default function ScanOverlay({
     setArmedSlots(new Set());
     setJustArmedSlot(null);
     setCrateToast(null);
-    setCrateSavedItems(new Set());
-    setCrateSavingItems(new Set());
+    setCrateFullFrame("");
+    setCrateCrops([]);
+    setCrateStripRects([]);
     /* eslint-enable react-hooks/set-state-in-effect */
     shelfRowRefs.current.clear();
     cameraReadyRef.current = false;
@@ -836,8 +838,9 @@ export default function ScanOverlay({
     setArmedSlots(new Set());
     setJustArmedSlot(null);
     setCrateToast(null);
-    setCrateSavedItems(new Set());
-    setCrateSavingItems(new Set());
+    setCrateFullFrame("");
+    setCrateCrops([]);
+    setCrateStripRects([]);
     setActiveMode(m);
   };
 
@@ -903,6 +906,7 @@ export default function ScanOverlay({
 
     const armedArr = [...armedSlots].sort((a, b) => a - b);
     const crops: string[] = [];
+    const stripRects: StripRect[] = [];
 
     for (const slotIdx of armedArr) {
       const el = slotRefs.current[slotIdx];
@@ -927,7 +931,9 @@ export default function ScanOverlay({
       const cropCtx = cropCanvas.getContext("2d");
       if (!cropCtx) continue;
       cropCtx.drawImage(fullCanvas, nx, ny, nw, nh, 0, 0, nw, nh);
+      // Push crop and its matching viewport rect together so indices stay aligned
       crops.push(cropCanvas.toDataURL("image/jpeg", 0.85));
+      stripRects.push({ left: sr.left, top: sr.top, width: sr.width, height: sr.height });
     }
 
     if (crops.length < 2) {
@@ -936,13 +942,29 @@ export default function ScanOverlay({
       return;
     }
 
+    // Capture resized full frame for FLIP background (800px max dim keeps data URL small)
+    let fullFrame = "";
+    {
+      const maxDim = 800;
+      const ratio = Math.min(maxDim / nativeW, maxDim / nativeH, 1);
+      const dCanvas = document.createElement("canvas");
+      dCanvas.width = Math.round(nativeW * ratio);
+      dCanvas.height = Math.round(nativeH * ratio);
+      const dCtx = dCanvas.getContext("2d");
+      if (dCtx) {
+        dCtx.drawImage(fullCanvas, 0, 0, dCanvas.width, dCanvas.height);
+        fullFrame = dCanvas.toDataURL("image/jpeg", 0.70);
+      }
+    }
+    setCrateFullFrame(fullFrame);
+    setCrateCrops(crops);
+    setCrateStripRects(stripRects);
+
     // Stop camera feed, reset slot state
     stopStream(streamRef.current);
     streamRef.current = null;
     setArmedSlots(new Set());
     setJustArmedSlot(null);
-    setCrateSavedItems(new Set());
-    setCrateSavingItems(new Set());
 
     // ── Stage 1: detecting (gray markers shown immediately) ─────────
     setPhase({ kind: "crate-scanning" });
@@ -2348,20 +2370,29 @@ export default function ScanOverlay({
 
             {/* Loading states */}
             {(phase.kind === "crate-scanning" || phase.kind === "crate-valuing") && (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "40px 20px 32px" }}>
-                <CoinMarkSpinner />
-                <span
-                  className="shelf-pulse"
-                  style={{ color: "#f59e0b", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
-                >
-                  {phase.kind === "crate-scanning"
-                    ? "READING STRIPS…"
-                    : `PRICING ${phase.items.length} RECORD${phase.items.length === 1 ? "" : "S"}…`}
-                </span>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "#4b5563", textAlign: "center", maxWidth: 240 }}>
-                  {phase.kind === "crate-scanning"
-                    ? "Identifying each cover strip"
-                    : "All results will need edition verification"}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "40px 20px 32px", position: "relative" }}>
+                {/* Frozen camera frame dims behind the spinner */}
+                {crateFullFrame && (
+                  <div style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={crateFullFrame} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.18 }} />
+                  </div>
+                )}
+                <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+                  <CoinMarkSpinner />
+                  <span
+                    className="shelf-pulse"
+                    style={{ color: "#f59e0b", fontFamily: "var(--font-label)", fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}
+                  >
+                    {phase.kind === "crate-scanning"
+                      ? "READING STRIPS…"
+                      : `PRICING ${phase.items.length} RECORD${phase.items.length === 1 ? "" : "S"}…`}
+                  </span>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "#4b5563", textAlign: "center", maxWidth: 240 }}>
+                    {phase.kind === "crate-scanning"
+                      ? "Identifying each cover strip"
+                      : "All results will need edition verification"}
+                  </div>
                 </div>
               </div>
             )}
@@ -2397,155 +2428,19 @@ export default function ScanOverlay({
               </div>
             )}
 
-            {/* Done: results */}
+            {/* Done: results — three-beat FLIP animation via CrateResultsStack */}
             {phase.kind === "crate-done" && (
-              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {/* Header stats */}
-                <div style={{ padding: "0 18px 10px", flexShrink: 0 }}>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                    <span style={{ fontFamily: "var(--font-display)", fontSize: 52, lineHeight: 1, color: "#5CE0B8", letterSpacing: "-0.01em" }}>
-                      {crateReadable.length}
-                    </span>
-                    <span style={{ fontFamily: "var(--font-ui)", fontSize: 16, fontWeight: 600, color: "#9ca3af", paddingBottom: 3 }}>
-                      {crateReadable.length === 1 ? "record" : "records"} identified
-                    </span>
-                  </div>
-                  {crateUnreadable.length > 0 && (
-                    <div style={{ fontFamily: "var(--font-data)", fontSize: 10, color: "#4b5563", marginTop: 3 }}>
-                      {crateUnreadable.length} strip{crateUnreadable.length > 1 ? "s" : ""} unreadable
-                    </div>
-                  )}
-                  {/* Confidence disclaimer */}
-                  <div style={{
-                    marginTop: 10,
-                    padding: "8px 10px",
-                    backgroundColor: "rgba(123,143,255,0.06)",
-                    border: "1px solid rgba(123,143,255,0.18)",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                  }}>
-                    <VerdictBadge tier="VERIFY" size="sm" />
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "#9ca3af", lineHeight: 1.5 }}>
-                      Sliver ID is low-confidence. Verify edition + deadwax before buying — pressing matters for value.
-                    </span>
-                  </div>
-                </div>
-
-                {/* Results list */}
-                <div style={{ padding: "4px 12px 32px", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {crateSortedRows.map((val, rowIdx) => {
-                    const isUnreadable = val.name.toLowerCase().includes("unreadable");
-                    const displayName = isUnreadable
-                      ? "couldn't read this one"
-                      : val.name.length > 40 ? val.name.slice(0, 38) + "…" : val.name;
-                    const priceStr =
-                      val.resaleLow > 0 && val.resaleHigh > 0
-                        ? `$${val.resaleLow}–$${val.resaleHigh}`
-                        : val.estResale > 0 ? `$${val.estResale}` : "";
-                    const accentColor =
-                      val.verdict === "BUY" ? "#5CE0B8" :
-                      val.verdict === "MAYBE" ? "#D4A574" :
-                      isUnreadable ? "#374151" : "#6b7280";
-                    const isSaved = crateSavedItems.has(val.index);
-                    const isSaving = crateSavingItems.has(val.index);
-
-                    return (
-                      <div key={val.index} style={{ animation: `rowIn 280ms ease ${rowIdx * 35}ms both` }}>
-                        <div style={{
-                          display: "flex",
-                          borderRadius: "0 10px 10px 0",
-                          overflow: "hidden",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.22)",
-                        }}>
-                          {/* Verdict-colored accent bar */}
-                          <div style={{ width: 3, flexShrink: 0, background: `linear-gradient(to bottom, ${accentColor}, ${accentColor}55)` }} />
-                          <div style={{
-                            flex: 1,
-                            padding: "9px 10px",
-                            background: "rgba(255,255,255,0.026)",
-                            minWidth: 0,
-                          }}>
-                            {/* Row 1: VERIFY badge + name + save button */}
-                            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                              <VerdictBadge tier="VERIFY" size="sm" />
-                              <span style={{
-                                flex: 1,
-                                fontFamily: "var(--font-ui)",
-                                fontSize: 13,
-                                fontWeight: isUnreadable ? 400 : 500,
-                                color: isUnreadable ? "#4b5563" : "#E5E0F0",
-                                fontStyle: isUnreadable ? "italic" : "normal",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}>
-                                {displayName}
-                              </span>
-                              {/* Save button — only for readable items */}
-                              {!isUnreadable && (
-                                <button
-                                  onClick={async () => {
-                                    if (isSaved || isSaving) return;
-                                    setCrateSavingItems((prev) => new Set([...prev, val.index]));
-                                    const result = await saveHaul({
-                                      name: val.name,
-                                      est_resale_low: val.resaleLow > 0 ? val.resaleLow : val.estResale > 0 ? val.estResale : null,
-                                      est_resale_high: val.resaleHigh > 0 ? val.resaleHigh : val.estResale > 0 ? val.estResale : null,
-                                      verdict: val.verdict.toLowerCase() as "buy" | "maybe" | "pass",
-                                      source: "scan_crate",
-                                    });
-                                    setCrateSavingItems((prev) => { const n = new Set(prev); n.delete(val.index); return n; });
-                                    if (result.ok) setCrateSavedItems((prev) => new Set([...prev, val.index]));
-                                  }}
-                                  style={{
-                                    flexShrink: 0,
-                                    width: 22,
-                                    height: 22,
-                                    borderRadius: "50%",
-                                    border: isSaved ? "1px solid rgba(92,224,184,0.40)" : "1px solid rgba(255,255,255,0.14)",
-                                    backgroundColor: isSaved ? "rgba(92,224,184,0.12)" : "rgba(255,255,255,0.04)",
-                                    color: isSaved ? "#5CE0B8" : "#6b7280",
-                                    fontSize: 12,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: isSaved || isSaving ? "default" : "pointer",
-                                    transition: "all 150ms ease",
-                                  }}
-                                >
-                                  {isSaving ? "…" : isSaved ? "✓" : "+"}
-                                </button>
-                              )}
-                            </div>
-                            {/* Row 2: price range + edition line */}
-                            {!isUnreadable && (
-                              <div style={{ marginTop: 3, display: "flex", alignItems: "center", gap: 8 }}>
-                                {priceStr && (
-                                  <span style={{ fontFamily: "var(--font-data)", fontSize: 11, color: "#5CE0B8", letterSpacing: "0.03em" }}>
-                                    {priceStr}
-                                  </span>
-                                )}
-                                <span style={{ fontFamily: "var(--font-body)", fontSize: 10, color: "#4b5563", fontStyle: "italic" }}>
-                                  edition unconfirmed — flip to check deadwax/matrix
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  <button
-                    onClick={() => { setArmedSlots(new Set()); setJustArmedSlot(null); setPhase({ kind: "framing" }); }}
-                    style={{ marginTop: 8, alignSelf: "center", padding: "8px 20px", borderRadius: 8, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#5A4E70", fontFamily: "var(--font-label)", fontSize: 10, letterSpacing: "0.10em", cursor: "pointer" }}
-                  >
-                    RESCAN
-                  </button>
-                </div>
-              </div>
+              <CrateResultsStack
+                sortedRows={crateSortedRows}
+                crops={crateCrops}
+                stripRects={crateStripRects}
+                fullFrame={crateFullFrame}
+                onRetry={() => {
+                  setArmedSlots(new Set());
+                  setJustArmedSlot(null);
+                  setPhase({ kind: "framing" });
+                }}
+              />
             )}
           </div>
         )}

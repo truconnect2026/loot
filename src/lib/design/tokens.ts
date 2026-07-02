@@ -132,6 +132,8 @@ export const elevation = {
     "0 0 0 0.5px rgba(92,224,184,0.08)",
     "0 -8px 40px -4px rgba(0,0,0,0.50)",          // negative-Y lift (sheets)
   ].join(", "),
+  // Mint rim-light — combine with elevation[2] or [3] for top-card glow
+  rim: "inset 0 0 0 1.5px rgba(92,224,184,0.35), 0 0 24px -4px rgba(92,224,184,0.22)",
 } as const;
 
 // ── Motion ────────────────────────────────────────────────────────────────────
@@ -149,4 +151,11 @@ export const motion = {
 
   // List stagger step
   stagger: 40,
+
+  // Crate mode Phase 3 — three-beat lift-off sequence
+  crateBeat1:   120,  // ms — "pick up" pause (strips desaturate + lift)
+  crateBeat2:   350,  // ms — FLIP travel (spring, staggered per card)
+  crateBeat3:   200,  // ms — spring overshoot resolution + CountUp fire
+  crateStagger: 45,   // ms per card, front-to-back physical order
+  cratePeek:    56,   // px — visible strip of each "under" card in the fan
 } as const;
