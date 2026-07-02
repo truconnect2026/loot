@@ -90,9 +90,9 @@ export function CrateResultsStack({
       const end = endRects[sortedI];
       if (!start || !end || end.width === 0) return;
 
-      // -8px: BEAT 1 lift pre-applied so cards appear already lifted at strip pos
+      // BEAT 1 lift pre-applied so cards appear already lifted at strip pos
       const startCX = start.left + start.width / 2;
-      const startCY = start.top + start.height / 2 - 8;
+      const startCY = start.top + start.height / 2 - motion.crateLift;
       const endCX = end.left + end.width / 2;
       const endCY = end.top + end.height / 2;
 
@@ -103,7 +103,7 @@ export function CrateResultsStack({
 
       el.style.transition = "none";
       el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
-      el.style.filter = "saturate(0.55)";
+      el.style.filter = `saturate(${motion.crateDesaturate})`;
       el.style.opacity = "0.9";
       el.style.willChange = "transform, filter, opacity";
     });
@@ -346,7 +346,7 @@ export function CrateResultsStack({
                         transform: isFocused
                           ? `translate3d(0, ${-sortedI * STEP}px, 0)`
                           : "translate3d(0, 0, 0)",
-                        transition: `transform ${motion.base}ms ${motion.spring}, box-shadow ${motion.base}ms ease`,
+                        transition: `transform ${motion.base}ms ${motion.spring}, box-shadow ${motion.base}ms ${motion.easeOut}`,
                       }
                     : {}),
                   borderRadius: radius.lg,
@@ -427,7 +427,7 @@ export function CrateResultsStack({
                           alignItems: "center",
                           justifyContent: "center",
                           cursor: isSaved || isSaving ? "default" : "pointer",
-                          transition: `all ${motion.fast}ms ease`,
+                          transition: `all ${motion.fast}ms ${motion.easeOut}`,
                         }}
                       >
                         {isSaving ? "…" : isSaved ? "✓" : "+"}

@@ -158,4 +158,6 @@ export const motion = {
   crateBeat3:   200,  // ms — spring overshoot resolution + CountUp fire
   crateStagger: 45,   // ms per card, front-to-back physical order
   cratePeek:    56,   // px — visible strip of each "under" card in the fan
+  crateLift:    8,    // px — BEAT 1 "pick up" lift toward viewer
+  crateDesaturate: 0.55, // saturate() multiplier during detach/travel (~40% desaturated)
 } as const;
