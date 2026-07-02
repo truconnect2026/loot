@@ -1,3 +1,5 @@
+import { KNOWN_PRESSINGS } from "./knownPressings";
+
 // Canonical title dictionary — curated for thrift/niche books + manga.
 const KNOWN_TITLES: readonly string[] = [
   "Children of Blood and Bone",
@@ -95,11 +97,36 @@ function extractSuffix(raw: string): string {
   return "";
 }
 
+// Fuzzy match against KNOWN_PRESSINGS for vinyl category items.
+function findVinylMatch(rawName: string): string | null {
+  if (rawName.length < 3) return null;
+  const normRaw = normalise(rawName);
+  for (const pressing of KNOWN_PRESSINGS) {
+    const normCanon = normalise(pressing.canonical);
+    const dist = levenshtein(normRaw, normCanon);
+    const threshold = Math.max(3, Math.ceil(normCanon.length * 0.22));
+    const overlap = tokenOverlap(normRaw, normCanon);
+    if (dist <= threshold || overlap >= 0.55) return pressing.canonical;
+    for (const alias of pressing.aliases) {
+      if (tokenOverlap(normRaw, normalise(alias)) >= 0.65) return pressing.canonical;
+    }
+  }
+  return null;
+}
+
 /**
  * Attempt to snap a garbled/misspelled item name to the nearest canonical title.
+ * Pass category="vinyl" to check against KNOWN_PRESSINGS instead of KNOWN_TITLES.
  * Returns the corrected name plus a flag. Never throws.
  */
-export function correctName(rawName: string): { name: string; corrected: boolean } {
+export function correctName(rawName: string, category?: string): { name: string; corrected: boolean } {
+  // Vinyl path: check against known pressings dictionary
+  if (category === "vinyl") {
+    const match = findVinylMatch(rawName);
+    if (match && match !== rawName) return { name: match, corrected: true };
+    return { name: rawName, corrected: false };
+  }
+
   // Defensive: too short to be meaningful
   if (!rawName || rawName.length < 4) return { name: rawName, corrected: false };
 

@@ -473,6 +473,91 @@ export async function identifyMultiFromImageDebug(imageBase64: string): Promise<
   return { items, rawText, parsedCount: items.length };
 }
 
+const CRATE_DETECT_SYSTEM = `You are identifying vinyl record covers from top-down crate images.
+
+You will be shown numbered strips — each is a crop of the top portion of one vinyl record as seen from above in a crate, where records stand upright and only their top edge, label area, and upper cover art are visible.
+
+For each numbered strip, identify the album and artist from any visible art, text, typography, colors, or logo. Confidence will be inherently low — that is expected and honest.
+
+Return ONLY a JSON array with exactly one object per numbered strip, in order:
+[
+  { "name": "Artist – Album Title", "brand": "Artist", "category": "vinyl", "bbox": [0, 0, 1, 1], "confidence": "low" }
+]
+
+Rules:
+- "name" format: "Artist – Album Title" using en-dash (–). If you can only read the album, use "Unknown – Album Title". If completely unreadable, use "Unknown – Unreadable".
+- "confidence": use "medium" if text is clearly legible; "low" if inferred from partial art/colors/text.
+- Return exactly N items for N strips shown — never skip a strip, even if unreadable.
+- Never invent an album that you cannot see evidence of in the image.`;
+
+export async function identifyCrateStripsDebug(crops: string[]): Promise<{
+  items: MultiDetectItem[];
+  rawText: string;
+  parsedCount: number;
+}> {
+  if (crops.length === 0) return { items: [], rawText: "", parsedCount: 0 };
+
+  type ContentPart =
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/gif" | "image/webp"; data: string } };
+
+  const content: ContentPart[] = [];
+  for (let i = 0; i < crops.length; i++) {
+    const raw = crops[i];
+    const mimeMatch = raw.match(/^data:(image\/\w+);base64,/);
+    const detectedType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const media_type = (allowed.includes(detectedType) ? detectedType : "image/jpeg") as
+      "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+    const data = raw.replace(/^data:image\/\w+;base64,/, "");
+    content.push({ type: "text", text: `Strip ${i + 1} of ${crops.length}:` });
+    content.push({ type: "image", source: { type: "base64", media_type, data } });
+  }
+  content.push({ type: "text", text: `Identify each numbered strip. Return a JSON array with exactly ${crops.length} items, one per strip in order.` });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const message = await getClient().messages.create({
+    model: SONNET,
+    max_tokens: 2048,
+    system: CRATE_DETECT_SYSTEM,
+    messages: [{ role: "user", content: content as any }],
+  });
+
+  const rawText = extractText(message);
+  console.log("[CRATE-DETECT] raw response:", rawText.slice(0, 2000));
+
+  let rawItems: unknown[] = [];
+  try {
+    const parsed = parseFeedJson(rawText);
+    rawItems = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    rawItems = [];
+  }
+
+  // Pad or trim to match crop count
+  while (rawItems.length < crops.length) {
+    rawItems.push({ name: "Unknown – Unreadable", brand: "Unknown", category: "vinyl", bbox: [0, 0, 1, 1], confidence: "low" });
+  }
+  rawItems = rawItems.slice(0, crops.length);
+
+  const items: MultiDetectItem[] = rawItems.map((it) => {
+    const obj = (it ?? {}) as Record<string, unknown>;
+    const confRaw = obj.confidence;
+    const confidence: MultiDetectItem["confidence"] =
+      confRaw === "high" || confRaw === "medium" ? confRaw : "low";
+    return {
+      name: String(obj.name ?? "Unknown – Unreadable"),
+      brand: String(obj.brand ?? "Unknown"),
+      category: String(obj.category ?? "vinyl"),
+      bbox: [0, 0, 1, 1] as [number, number, number, number],
+      confidence,
+    };
+  });
+
+  console.log("[CRATE-DETECT] parsed item count:", items.length);
+  return { items, rawText, parsedCount: items.length };
+}
+
 export interface BatchValuation {
   index: number;
   name: string;

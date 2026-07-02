@@ -41,7 +41,7 @@ export async function POST(
     // Correct garbled names before Claude prices them and before grouping.
     const rawNameMap = new Map<number, string>();
     const correctedItems = items.map((it) => {
-      const result = correctName(it.name);
+      const result = correctName(it.name, it.category);
       if (result.corrected) rawNameMap.set(it.index, it.name);
       return { ...it, name: result.name };
     });

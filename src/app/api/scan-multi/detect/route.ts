@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { identifyMultiFromImageDebug, type MultiDetectItem } from "@/lib/claude";
+import { identifyMultiFromImageDebug, identifyCrateStripsDebug, type MultiDetectItem } from "@/lib/claude";
 import { PRO_MONTHLY_SHELF_SCAN_LIMIT } from "@/lib/limits";
 
 export interface DetectResponse {
@@ -11,17 +11,25 @@ export interface DetectResponse {
 export async function POST(
   req: NextRequest,
 ): Promise<NextResponse<DetectResponse | { error: string; used?: number; limit?: number }>> {
-  let body: { image?: string };
+  let body: { image?: string; mode?: string; crops?: string[] };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { image } = body;
-  if (!image || typeof image !== "string") {
+  const { image, mode, crops } = body;
+  const isCrate = mode === "crate";
+
+  if (!isCrate && (!image || typeof image !== "string")) {
     return NextResponse.json(
-      { error: "Provide { image: base64string }" },
+      { error: "Provide { image: base64string } or { mode: 'crate', crops: [] }" },
+      { status: 400 },
+    );
+  }
+  if (isCrate && (!Array.isArray(crops) || crops.length === 0)) {
+    return NextResponse.json(
+      { error: "Crate mode requires { crops: string[] }" },
       { status: 400 },
     );
   }
@@ -64,12 +72,12 @@ export async function POST(
           .from("scans")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .eq("method", "shelf")
+          .in("method", ["shelf", "crate"])
           .gte("created_at", startOfMonth.toISOString());
 
         const used = count ?? 0;
         console.log(
-          `[SHELF-LIMIT] pro=${isPro} used=${used}/${PRO_MONTHLY_SHELF_SCAN_LIMIT}`,
+          `[SHELF-LIMIT] pro=${isPro} used=${used}/${PRO_MONTHLY_SHELF_SCAN_LIMIT} (includes crate)`,
         );
 
         if (used >= PRO_MONTHLY_SHELF_SCAN_LIMIT) {
@@ -91,7 +99,7 @@ export async function POST(
           .from("scans")
           .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
-          .eq("method", "shelf")
+          .in("method", ["shelf", "crate"])
           .gte("created_at", startOfMonth.toISOString());
         console.log(
           `[SHELF-LIMIT] pro=${isPro} used=${count ?? 0}/${PRO_MONTHLY_SHELF_SCAN_LIMIT}`,
@@ -106,19 +114,23 @@ export async function POST(
 
   // ── Run detection ───────────────────────────────────────────────────────────
   try {
-    const { items, rawText, parsedCount } = await identifyMultiFromImageDebug(image);
+    const { items, rawText, parsedCount } = isCrate
+      ? await identifyCrateStripsDebug(crops!)
+      : await identifyMultiFromImageDebug(image!);
 
-    // Record the shelf scan so the monthly count stays accurate.
+    // Record the scan so the monthly count stays accurate.
     if (authedUserId) {
       try {
         const supabase = await createServerSupabaseClient();
+        const scanMethod = isCrate ? "crate" : "shelf";
         await supabase.from("scans").insert({
           user_id: authedUserId,
-          method: "shelf",
-          item_name: `Shelf scan: ${items.length} item${items.length === 1 ? "" : "s"} detected`,
+          method: scanMethod,
+          item_name: isCrate
+            ? `Crate scan: ${items.length} strip${items.length === 1 ? "" : "s"} identified`
+            : `Shelf scan: ${items.length} item${items.length === 1 ? "" : "s"} detected`,
         });
       } catch (writeErr) {
-        // Non-fatal — don't block the response if the write fails.
         console.error("[SHELF-LIMIT] scan write failed:", writeErr);
       }
     }
