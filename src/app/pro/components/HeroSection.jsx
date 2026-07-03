@@ -17,19 +17,41 @@ const HERO_STYLES = `
   align-items: center;
   margin: 0 auto;
   width: 100%;
-  max-width: 380px;
+  max-width: 460px;
+}
+@media (max-width: 640px) {
+  /* Hero proof element — bleed most (not all) of the section's side
+     padding so it reads as near full-width, while leaving a sliver of
+     room for the glow behind it to actually show rather than being
+     clipped by the viewport edge (html/body are overflow-x: hidden). */
+  .pro-hero-visual {
+    max-width: none;
+    width: calc(100% + 32px);
+    margin: 24px -16px 0;
+    padding: 16px 0;
+  }
 }
 @media (min-width: 1024px) {
-  .pro-hero-visual { max-width: 460px; margin: 0; justify-content: flex-end; }
+  .pro-hero-visual { max-width: 560px; margin: 0; justify-content: flex-end; }
 }
 .pro-hero-visual::before {
   content: '';
   position: absolute;
-  inset: -8% -4% -8% -4%;
-  background: radial-gradient(ellipse at center, rgba(92,224,184,0.18) 0%, rgba(92,224,184,0.05) 35%, transparent 65%);
-  filter: blur(28px);
+  inset: -10% -6% -10% -6%;
+  background: radial-gradient(ellipse at center, rgba(92,224,184,0.22) 0%, rgba(92,224,184,0.07) 40%, transparent 70%);
+  filter: blur(32px);
   z-index: 0;
   pointer-events: none;
+}
+.pro-hero-ring {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
 }
 .pro-hero-mockup {
   position: relative;
@@ -37,7 +59,7 @@ const HERO_STYLES = `
   width: 100%;
   height: auto;
   display: block;
-  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.5)) drop-shadow(0 0 32px rgba(92,224,184,0.18));
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.5)) drop-shadow(0 0 40px rgba(92,224,184,0.22));
 }
 /* On desktop, dial headline down slightly so it lives alongside the
    mockup instead of pushing it off-screen. */
@@ -237,15 +259,24 @@ export default function HeroSection() {
       </FadeUp>
         </div>
 
-        {/* Product visualization — shows a live-scan verdict card. */}
+        {/* Product visualization — real verdict screen, not a rendered mockup. */}
         <FadeUp delay={0.6}>
           <div className="pro-hero-visual">
+            {/* Faint Saturn-ring motif ties the proof shot back to the
+                brand's cosmic system — same ellipse-ring language as the
+                closer's background decoration, just quieter here. */}
+            <div className="pro-hero-ring" aria-hidden="true">
+              <svg viewBox="0 0 400 400" style={{ width: "140%", height: "140%" }}>
+                <ellipse cx="200" cy="200" rx="190" ry="52" stroke={C.mint} strokeWidth="0.6" fill="none" />
+                <ellipse cx="200" cy="200" rx="160" ry="42" stroke={C.mint} strokeWidth="0.4" fill="none" opacity="0.6" />
+              </svg>
+            </div>
             <img
-              src="/kit/scan-ui-mockup-optimized.png"
-              alt="loot.works Pro mid-scan on a Pyrex Butterprint 403 — $4 buy, $35 resell, 21× ROI, FLIP IT"
+              src="/loot_verdict_screen.png"
+              alt="loot.works Pro verdict screen for a Pyrex Butterprint 403 — condition grade, $75–$95 resale range, recent sold comps, verified authentic"
               className="pro-hero-mockup"
-              width={1024}
-              height={1536}
+              width={290}
+              height={510}
               loading="eager"
               decoding="async"
             />
