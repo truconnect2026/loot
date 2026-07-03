@@ -7,8 +7,12 @@ export default function TopStrip() {
   return (
     <header
       style={{
-        position: "sticky",
-        top: 0,
+        // Sits outside .pro-scroll-main (the page's owned scroll container)
+        // as a fixed-height flex sibling, so it's structurally always
+        // visible — no "sticky" positioning needed, which sidesteps
+        // sticky-in-nested-scroll-container quirks on some engines.
+        position: "relative",
+        flexShrink: 0,
         zIndex: 100,
         display: "flex",
         justifyContent: "flex-start",

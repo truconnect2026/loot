@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { Eyebrow, FadeUp } from "./atoms.jsx";
+import { CTAButton, Eyebrow, FadeUp } from "./atoms.jsx";
 
 const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Yard sale map", "Brand authenticator"];
 const annualBullets = ["Everything in Monthly", "Priority support", "Early features access", "Founding member status"];
@@ -105,28 +105,17 @@ export default function PricingSection({ onCTA }) {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => {
-                  track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
-                  onCTA && onCTA("monthly");
-                }}
-                className="cta-btn-outline"
-                style={{
-                  fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: 20,
-                  letterSpacing: "0.04em",
-                  background: "transparent",
-                  color: C.mint,
-                  border: `2px solid ${C.mint}`,
-                  padding: "16px 32px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  width: "100%",
-                  transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-                }}
-              >
-                START MONTHLY →
-              </button>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <CTAButton
+                  variant="outline"
+                  onClick={() => {
+                    track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
+                    onCTA && onCTA("monthly");
+                  }}
+                >
+                  START MONTHLY
+                </CTAButton>
+              </div>
             </div>
           </FadeUp>
 
@@ -229,29 +218,17 @@ export default function PricingSection({ onCTA }) {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={() => {
-                  track("pro_plan_clicked", { plan: "annual", price: 99.99 });
-                  onCTA && onCTA("annual");
-                }}
-                className="cta-btn-primary"
-                style={{
-                  fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: 20,
-                  letterSpacing: "0.04em",
-                  background: C.mint,
-                  color: C.bg,
-                  border: "none",
-                  padding: "16px 32px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  width: "100%",
-                  boxShadow: "0 0 30px rgba(92,224,184,0.18)",
-                  transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
-                }}
-              >
-                CLAIM ANNUAL →
-              </button>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <CTAButton
+                  variant="primary"
+                  onClick={() => {
+                    track("pro_plan_clicked", { plan: "annual", price: 99.99 });
+                    onCTA && onCTA("annual");
+                  }}
+                >
+                  CLAIM ANNUAL
+                </CTAButton>
+              </div>
               <p
                 style={{
                   fontFamily: "var(--font-mono), monospace",

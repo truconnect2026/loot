@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { C } from "../lib/colors.js";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
@@ -64,6 +65,75 @@ export function FadeUp({ delay = 0, children, style = {}, className = "" }) {
     >
       {children}
     </div>
+  );
+}
+
+/* One button system, reused for every CTA on the page (CLAIM PRO, CLAIM
+   PRO NOW, CLAIM ANNUAL, START MONTHLY). Fit-to-label, not full-width;
+   "primary" = mint-gradient fill for the recommended action, "outline" =
+   mint-bordered ghost for the secondary one. Hover/press state lives here
+   (JS + inline style) rather than in CSS so there's a single source of
+   truth for how every CTA looks and feels. Transform/opacity only. */
+export function CTAButton({
+  children,
+  onClick,
+  variant = "primary",
+  type = "button",
+  style = {},
+}) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const isPrimary = variant === "primary";
+  const active = hovered || pressed;
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => {
+        setHovered(false);
+        setPressed(false);
+      }}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        width: "fit-content",
+        maxWidth: "100%",
+        alignSelf: "center",
+        fontFamily: "var(--font-bebas), sans-serif",
+        fontSize: 18,
+        fontWeight: 400,
+        letterSpacing: "0.02em",
+        padding: "14px 30px",
+        borderRadius: 13,
+        cursor: "pointer",
+        color: isPrimary ? C.bg : C.mint,
+        background: isPrimary
+          ? "linear-gradient(180deg, #6FE5C0 0%, #4FD1A5 100%)"
+          : hovered
+            ? "rgba(92,224,184,0.08)"
+            : "transparent",
+        border: isPrimary ? "none" : `1.5px solid ${C.mint}`,
+        boxShadow: isPrimary
+          ? pressed
+            ? "0 2px 10px rgba(92,224,184,0.25), inset 0 1px 0 rgba(255,255,255,0.2)"
+            : "0 6px 22px rgba(92,224,184,0.3), inset 0 1px 0 rgba(255,255,255,0.28)"
+          : "none",
+        transform: pressed ? "translateY(0) scale(0.98)" : hovered ? "translateY(-1px)" : "translateY(0) scale(1)",
+        transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1), box-shadow 0.15s ease-out, background 0.15s ease-out",
+        ...style,
+      }}
+    >
+      <span>{children}</span>
+      <span aria-hidden="true" style={{ fontSize: "0.7em", lineHeight: 1 }}>
+        &rarr;
+      </span>
+    </button>
   );
 }
 

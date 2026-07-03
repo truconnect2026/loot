@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
+import { CheckIcon, CTAButton, Eyebrow, FadeUp } from "./atoms.jsx";
 import VerdictCard from "./VerdictCard.jsx";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
@@ -191,28 +191,15 @@ export default function HeroSection() {
             borderRadius: 10,
           }}
         >
-          <button
+          <CTAButton
+            variant="primary"
             onClick={() => {
               track("pro_hero_cta_clicked", { location: "hero", plan_target: "pricing" });
               document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="cta-btn-primary"
-            style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: 28,
-              letterSpacing: "0.04em",
-              background: C.mint,
-              color: C.bg,
-              border: "none",
-              padding: "24px 48px",
-              borderRadius: 6,
-              cursor: "pointer",
-              animation: "pulseGlow 3s ease-in-out infinite",
-              transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
-            }}
           >
-            CLAIM PRO →
-          </button>
+            CLAIM PRO
+          </CTAButton>
 
           <div
             className="hero-price-stack"

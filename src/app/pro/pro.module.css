@@ -4,10 +4,6 @@
    in components rely on these class names + keyframes verbatim).
    ======================================================================== */
 
-:global(html) {
-  scroll-behavior: smooth;
-}
-
 :global(.pro-page-root) {
   background: #070510;
   color: #fff;
@@ -16,6 +12,47 @@
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Scroll-snap: this page OWNS its scroll container ──
+   html/body scrolling differs across contexts (installed standalone
+   PWA vs. mobile browser chrome vs. desktop), which is why snap used
+   to work inconsistently. .pro-scroll-main is an explicit, dedicated
+   scrolling box (height: 100dvh, overflow-y auto) that behaves
+   identically everywhere — the class names are unique to this page,
+   so there's no bare html/body selector to leak onto other routes. */
+:global(.pro-page-root) {
+  height: 100svh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+:global(.pro-scroll-main) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+}
+:global(.pro-snap-section) {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(.pro-scroll-main) {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
 }
 
 /* ── Shimmer single-color sweep (mint → white → mint) ── */
@@ -44,10 +81,6 @@
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
-}
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 40px rgba(92,224,184,0.35); }
-  50%      { box-shadow: 0 0 80px rgba(92,224,184,0.55); }
 }
 @keyframes twinkle {
   0%, 100% { opacity: 0.15; }
@@ -118,12 +151,6 @@
 :global(.pro-page-root .slider-mint::-moz-range-thumb) { background: #5CE0B8; }
 :global(.pro-page-root .slider-gold::-moz-range-thumb) { background: #F5C518; }
 
-/* ── Hover / press on CTA buttons ── */
-:global(.cta-btn-primary:hover)  { transform: scale(1.02) !important; }
-:global(.cta-btn-primary:active) { transform: scale(0.98) !important; }
-:global(.cta-btn-outline:hover)  { background: rgba(92,224,184,0.08) !important; transform: scale(1.02) !important; }
-:global(.cta-btn-outline:active) { transform: scale(0.98) !important; }
-
 /* ── Hover on cards ── */
 :global(.missed-card:hover)   { border-color: rgba(239,68,68,0.25) !important; background: rgba(255,255,255,0.04) !important; }
 :global(.review-card:hover)   { border-color: rgba(59,130,246,0.3) !important; }
@@ -135,12 +162,13 @@
 :global(.pro-page-root ::-webkit-scrollbar-track) { background: transparent; }
 :global(.pro-page-root ::-webkit-scrollbar-thumb) { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
-/* ── Mobile: hide strip stats + stack hero CTA ── */
+/* ── Mobile: hide strip stats + stack hero CTA ──
+   Buttons are fit-to-label now (see CTAButton in atoms.jsx) — centered
+   as a column instead of stretched full-width. */
 @media (max-width: 640px) {
   :global(.strip-stats) { display: none !important; }
-  :global(.hero-cta-row) { flex-direction: column !important; align-items: flex-start !important; }
-  :global(.hero-cta-row .cta-btn-primary) { width: 100% !important; text-align: center !important; }
-  :global(.hero-cta-row .hero-price-stack) { align-self: center !important; text-align: center !important; width: 100% !important; justify-content: center !important; }
+  :global(.hero-cta-row) { flex-direction: column !important; align-items: center !important; }
+  :global(.hero-cta-row .hero-price-stack) { text-align: center !important; }
 }
 
 /* ── Pricing: 2-col at ≥720px ── */
@@ -165,27 +193,3 @@
   }
 }
 
-/* ── Davy-Jones-Locker scroll: native snap between major sections ──
-   Scoped to html.pro-scroll-snap (toggled by page.jsx on mount/unmount)
-   rather than bare html/body, so it can never leak onto other routes.
-   Proximity (not mandatory) + no JS wheel/touch hijacking — the thumb
-   stays in control; this only nudges deceleration toward section
-   boundaries. */
-:global(html.pro-scroll-snap) {
-  scroll-snap-type: y proximity;
-}
-:global(html.pro-scroll-snap .pro-snap-section) {
-  scroll-snap-align: start;
-  scroll-margin-top: 60px;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  box-sizing: border-box;
-}
-@media (prefers-reduced-motion: reduce) {
-  :global(html.pro-scroll-snap) {
-    scroll-snap-type: none;
-    scroll-behavior: auto;
-  }
-}

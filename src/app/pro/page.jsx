@@ -85,26 +85,24 @@ function priceIdFor(plan) {
 export default function ProPage() {
   const [toast, setToast] = useState({ msg: "", vis: false });
 
-  // Scroll-snap scoping — toggling a class on <html> (rather than a bare
-  // global selector in pro.module.css) means the snap behavior can never
-  // leak onto other routes even if a stylesheet lingers across a client
-  // navigation; it's removed the moment this page unmounts.
-  useEffect(() => {
-    document.documentElement.classList.add("pro-scroll-snap");
-    return () => document.documentElement.classList.remove("pro-scroll-snap");
-  }, []);
-
   // Scroll depth tracking — fire once per session per 25/50/75/100 threshold.
   // Uses session-scoped Set so a single visitor doesn't generate four events
   // per minute as they scroll up and down the page.
+  //
+  // Scroll now happens inside .pro-scroll-main (a dedicated, owned scroll
+  // container — see pro.module.css) rather than the document, since relying
+  // on html/body scroll behaved inconsistently across contexts (installed
+  // standalone PWA in particular). Depth is read off that element instead
+  // of window/document.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const scroller = document.querySelector(".pro-scroll-main");
+    if (!scroller) return;
     const fired = new Set();
     const thresholds = [25, 50, 75, 100];
     const onScroll = () => {
-      const doc = document.documentElement;
-      const scrolled = window.scrollY + window.innerHeight;
-      const total = doc.scrollHeight;
+      const scrolled = scroller.scrollTop + scroller.clientHeight;
+      const total = scroller.scrollHeight;
       if (total <= 0) return;
       const pct = (scrolled / total) * 100;
       for (const t of thresholds) {
@@ -114,9 +112,9 @@ export default function ProPage() {
         }
       }
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    scroller.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => scroller.removeEventListener("scroll", onScroll);
   }, []);
 
   const handleCTA = useCallback(async (campaign) => {
@@ -178,7 +176,11 @@ export default function ProPage() {
     <div className="pro-page-root">
       <CosmicBackground />
       <TopStrip />
-      <main>
+      {/* .pro-scroll-main is the one, explicit, owned scroll container —
+          see pro.module.css. TopStrip sits outside it (structurally
+          always visible, no "sticky" needed) and Footer sits inside it
+          as trailing, non-snapped content after the closer. */}
+      <main className="pro-scroll-main">
         <HeroSection />
         <TheEdgeSection />
         <hr className="pro-section-divider" />
@@ -193,8 +195,8 @@ export default function ProPage() {
         <FAQSection />
         <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
+        <Footer />
       </main>
-      <Footer />
       <CookieBanner />
       <Toast message={toast.msg} visible={toast.vis} />
     </div>

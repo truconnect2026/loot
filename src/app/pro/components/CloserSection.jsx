@@ -2,7 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CoinMark, FadeUp } from "./atoms.jsx";
+import { CoinMark, CTAButton, FadeUp } from "./atoms.jsx";
 
 export default function CloserSection({ onCTA }) {
   return (
@@ -90,35 +90,17 @@ export default function CloserSection({ onCTA }) {
       </FadeUp>
 
       <FadeUp delay={0.12}>
-        {/* Chunkiest CTA on the page — the closer punch. Gradient + top-edge
-            highlight gives it a physical-button feel that out-weights every
-            other button (hero CLAIM PRO, pricing CLAIM ANNUAL). */}
-        <button
-          onClick={() => {
-            track("pro_closer_cta_clicked", { location: "closer" });
-            onCTA && onCTA("annual_closer");
-          }}
-          className="cta-btn-primary"
-          style={{
-            fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: "clamp(28px,3.5vw,36px)",
-            letterSpacing: "0.04em",
-            color: C.bg,
-            background: "linear-gradient(180deg, #6FE5C0 0%, #5CE0B8 100%)",
-            border: "none",
-            borderTop: "1px solid rgba(255,255,255,0.3)",
-            padding: "28px 64px",
-            borderRadius: 6,
-            cursor: "pointer",
-            boxShadow:
-              "0 12px 48px rgba(92,224,184,0.45), inset 0 0 0 1px rgba(92,224,184,0.3)",
-            animation: "pulseGlow 3s ease-in-out infinite",
-            transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
-            marginBottom: 20,
-          }}
-        >
-          CLAIM PRO NOW →
-        </button>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <CTAButton
+            variant="primary"
+            onClick={() => {
+              track("pro_closer_cta_clicked", { location: "closer" });
+              onCTA && onCTA("annual_closer");
+            }}
+          >
+            CLAIM PRO NOW
+          </CTAButton>
+        </div>
       </FadeUp>
 
       <FadeUp delay={0.18}>
