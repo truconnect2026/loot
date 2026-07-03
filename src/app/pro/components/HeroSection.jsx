@@ -3,9 +3,11 @@
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
+import VerdictCard from "./VerdictCard.jsx";
+import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 const HERO_STYLES = `
-.pro-hero-grid { display: grid; grid-template-columns: 1fr; gap: 48px; align-items: center; }
+.pro-hero-grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
 @media (min-width: 1024px) {
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
@@ -17,7 +19,7 @@ const HERO_STYLES = `
   align-items: center;
   margin: 0 auto;
   width: 100%;
-  max-width: 460px;
+  max-width: 380px;
 }
 @media (max-width: 640px) {
   /* Hero proof element — bleed most (not all) of the section's side
@@ -27,12 +29,12 @@ const HERO_STYLES = `
   .pro-hero-visual {
     max-width: none;
     width: calc(100% + 32px);
-    margin: 24px -16px 0;
+    margin: 16px -16px 0;
     padding: 16px 0;
   }
 }
 @media (min-width: 1024px) {
-  .pro-hero-visual { max-width: 560px; margin: 0; justify-content: flex-end; }
+  .pro-hero-visual { max-width: 400px; margin: 0; justify-content: flex-end; }
 }
 .pro-hero-visual::before {
   content: '';
@@ -42,7 +44,10 @@ const HERO_STYLES = `
   filter: blur(32px);
   z-index: 0;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1) 0.1s;
 }
+.pro-hero-visual.is-visible::before { opacity: 1; }
 .pro-hero-ring {
   position: absolute;
   inset: 0;
@@ -51,15 +56,43 @@ const HERO_STYLES = `
   justify-content: center;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.35;
+  opacity: 0.3;
 }
-.pro-hero-mockup {
+/* Minimal CSS phone frame — dark bezel, rounded screen, no chrome. */
+.pro-phone-frame {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.5)) drop-shadow(0 0 40px rgba(92,224,184,0.22));
+  aspect-ratio: 9 / 19.5;
+  background: linear-gradient(155deg, #1a1a1e 0%, #0a0a0c 60%);
+  border-radius: 44px;
+  padding: 12px;
+  box-sizing: border-box;
+  box-shadow:
+    0 24px 48px rgba(0,0,0,0.5),
+    0 0 40px rgba(92,224,184,0.18),
+    inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+.pro-phone-screen {
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  border-radius: 32px;
+  background: #070510;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(92,224,184,0.15);
+}
+.pro-phone-btn {
+  position: absolute;
+  background: #232325;
+  border-radius: 3px;
+}
+.pro-phone-btn--power { right: -2px; top: 20%; width: 3px; height: 64px; }
+.pro-phone-btn--vol1  { left: -2px; top: 16%; width: 3px; height: 32px; }
+.pro-phone-btn--vol2  { left: -2px; top: 24%; width: 3px; height: 32px; }
+@media (prefers-reduced-motion: reduce) {
+  .pro-hero-visual::before { opacity: 1 !important; transition: none !important; }
 }
 /* On desktop, dial headline down slightly so it lives alongside the
    mockup instead of pushing it off-screen. */
@@ -70,10 +103,15 @@ const HERO_STYLES = `
 `;
 
 export default function HeroSection() {
+  const [visualRef, visualInView] = useInView();
+  const reducedMotion = usePrefersReducedMotion();
+  const visualShown = reducedMotion || visualInView;
+
   return (
     <section
+      className="pro-snap-section"
       style={{
-        padding: "clamp(64px,10vw,96px) 24px clamp(80px,12vw,128px)",
+        padding: "clamp(42px,6.5vw,62px) 24px clamp(52px,8vw,84px)",
         maxWidth: 1200,
         margin: "0 auto",
         position: "relative",
@@ -88,7 +126,7 @@ export default function HeroSection() {
         <Eyebrow text="Pro Tier · Founding Pricing" color={C.mint} />
       </FadeUp>
 
-      <FadeUp delay={0.3}>
+      <FadeUp delay={0.16}>
         <h1
           className="pro-hero-headline"
           style={{
@@ -120,7 +158,7 @@ export default function HeroSection() {
         </p>
       </FadeUp>
 
-      <FadeUp delay={0.5}>
+      <FadeUp delay={0.22}>
         <p
           style={{
             fontFamily: "var(--font-manrope), sans-serif",
@@ -136,7 +174,7 @@ export default function HeroSection() {
         </p>
       </FadeUp>
 
-      <FadeUp delay={0.8}>
+      <FadeUp delay={0.28}>
         {/* Grouped CTA + price block — subtle mint outline ties them as one unit
             so the eye reads "$14.99 = the price to claim" rather than two
             disconnected components. */}
@@ -259,29 +297,39 @@ export default function HeroSection() {
       </FadeUp>
         </div>
 
-        {/* Product visualization — real verdict screen, not a rendered mockup. */}
-        <FadeUp delay={0.6}>
-          <div className="pro-hero-visual">
-            {/* Faint Saturn-ring motif ties the proof shot back to the
-                brand's cosmic system — same ellipse-ring language as the
-                closer's background decoration, just quieter here. */}
-            <div className="pro-hero-ring" aria-hidden="true">
-              <svg viewBox="0 0 400 400" style={{ width: "140%", height: "140%" }}>
-                <ellipse cx="200" cy="200" rx="190" ry="52" stroke={C.mint} strokeWidth="0.6" fill="none" />
-                <ellipse cx="200" cy="200" rx="160" ry="42" stroke={C.mint} strokeWidth="0.4" fill="none" opacity="0.6" />
-              </svg>
-            </div>
-            <img
-              src="/loot_verdict_screen.png"
-              alt="loot.works Pro verdict screen for a Pyrex Butterprint 403 — condition grade, $75–$95 resale range, recent sold comps, verified authentic"
-              className="pro-hero-mockup"
-              width={290}
-              height={510}
-              loading="eager"
-              decoding="async"
-            />
+        {/* Product visualization — a live-rendered verdict card, not a photo.
+            Slightly stronger entrance (scale + glow bloom) since this is the
+            anchor moment of the page. */}
+        <div
+          ref={visualRef}
+          className={`pro-hero-visual${visualShown ? " is-visible" : ""}`}
+          style={{
+            opacity: visualShown ? 1 : 0,
+            transform: visualShown ? "scale(1)" : "scale(0.96)",
+            transition: reducedMotion
+              ? "none"
+              : "opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",
+          }}
+        >
+          {/* Faint Saturn-ring motif ties the proof shot back to the
+              brand's cosmic system — same ellipse-ring language as the
+              closer's background decoration, just quieter here. */}
+          <div className="pro-hero-ring" aria-hidden="true">
+            <svg viewBox="0 0 400 400" style={{ width: "140%", height: "140%" }}>
+              <ellipse cx="200" cy="200" rx="190" ry="52" stroke={C.mint} strokeWidth="0.6" fill="none" />
+              <ellipse cx="200" cy="200" rx="160" ry="42" stroke={C.mint} strokeWidth="0.4" fill="none" opacity="0.6" />
+            </svg>
           </div>
-        </FadeUp>
+
+          <div className="pro-phone-frame">
+            <div className="pro-phone-screen">
+              <VerdictCard />
+            </div>
+            <div className="pro-phone-btn pro-phone-btn--power" aria-hidden="true" />
+            <div className="pro-phone-btn pro-phone-btn--vol1" aria-hidden="true" />
+            <div className="pro-phone-btn pro-phone-btn--vol2" aria-hidden="true" />
+          </div>
+        </div>
       </div>
     </section>
   );

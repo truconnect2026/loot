@@ -7,47 +7,48 @@ import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
 // FREE tier is the daily FLIP OR SKIP game only — no scans, no comps, no
 // alerts. Verified against FREE_SCAN_LIMIT = 0 in src/lib/limits.ts: a
 // non-Pro user hitting /api/scan or /api/shelf-scan always gets 403.
+// Every PRO cell is mint (the "yes" signal); gold is reserved for the PRO
+// column header / section emphasis only, not sprinkled per row.
 const featureRows = [
-  { f: "FLIP OR SKIP daily game", free: "check", pro: "check", a: null },
-  { f: "Daily scans", free: "—", pro: "Unlimited", a: "gold" },
-  { f: "AI vision identification", free: "—", pro: "check", a: "gold" },
-  { f: "Live eBay sold comps", free: "—", pro: "Real-time", a: "gold" },
-  { f: "Haul tracking", free: "—", pro: "Full history", a: "gold" },
-  { f: "Yard sale map", free: "—", pro: "Live + alerts", a: "gold" },
-  { f: "BOLO alerts", free: "—", pro: "Push + email", a: "gold" },
-  { f: "Price trend graphs", free: "—", pro: "90-day history", a: "gold" },
-  { f: "Brand authenticator", free: "—", pro: "AI-powered", a: "gold" },
-  { f: "Export to spreadsheet", free: "—", pro: "CSV / Sheets", a: "gold" },
-  { f: "Community BOLO feed", free: "—", pro: "Post + react", a: "gold" },
-  { f: "Priority support", free: "—", pro: "24h response", a: "gold" },
+  { f: "FLIP OR SKIP daily game", free: "check", pro: "check" },
+  { f: "Daily scans", free: "—", pro: "Unlimited" },
+  { f: "AI vision identification", free: "—", pro: "check" },
+  { f: "Live eBay sold comps", free: "—", pro: "Real-time" },
+  { f: "Haul tracking", free: "—", pro: "Full history" },
+  { f: "Yard sale map", free: "—", pro: "Live + alerts" },
+  { f: "BOLO alerts", free: "—", pro: "Push + email" },
+  { f: "Price trend graphs", free: "—", pro: "90-day history" },
+  { f: "Brand authenticator", free: "—", pro: "AI-powered" },
+  { f: "Export to spreadsheet", free: "—", pro: "CSV / Sheets" },
+  { f: "Community BOLO feed", free: "—", pro: "Post + react" },
+  { f: "Priority support", free: "—", pro: "24h response" },
 ];
 
 const thBase = {
   fontFamily: "var(--font-mono), monospace",
-  fontSize: 11,
-  letterSpacing: "0.12em",
+  fontSize: 10,
+  letterSpacing: "0.1em",
   textTransform: "uppercase",
-  padding: "16px 12px",
+  padding: "14px 6px",
   borderBottom: "1px solid rgba(255,255,255,0.1)",
   color: "rgba(255,255,255,0.4)",
   textAlign: "center",
 };
 const tdBase = {
   fontFamily: "var(--font-mono), monospace",
-  fontSize: 13,
-  padding: "14px 12px",
+  fontSize: "clamp(11px,3vw,13px)",
+  padding: "12px 6px",
   borderBottom: "1px solid rgba(255,255,255,0.05)",
   verticalAlign: "middle",
 };
 
-function accentClr(a) {
-  return a === "gold" ? C.gold : a === "mint" ? C.mint : "#fff";
-}
-
 export default function FeatureMatrix() {
   const [hov, setHov] = useState(-1);
   return (
-    <section style={{ padding: "clamp(80px,10vw,128px) 24px", position: "relative", zIndex: 1 }}>
+    <section
+      className="pro-snap-section"
+      style={{ padding: "clamp(52px,6.5vw,84px) 24px", position: "relative", zIndex: 1 }}
+    >
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <FadeUp>
           <Eyebrow text="the whole arsenal" color={C.gold} />
@@ -60,7 +61,7 @@ export default function FeatureMatrix() {
               fontSize: "clamp(48px,9vw,96px)",
               lineHeight: 1.3,
               paddingBottom: "0.5em",
-              marginBottom: 48,
+              marginBottom: 40,
             }}
           >
             FREE VS <span style={{ color: C.gold }}>PRO.</span>
@@ -75,12 +76,14 @@ export default function FeatureMatrix() {
               borderRadius: 14,
             }}
           >
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }} role="table">
+            {/* No forced minWidth — both columns must fit and stay legible
+                at 375px without needing to scroll the table sideways. */}
+            <table style={{ width: "100%", borderCollapse: "collapse" }} role="table">
               <thead>
                 <tr>
-                  <th style={{ ...thBase, textAlign: "left", width: "50%" }}>FEATURE</th>
-                  <th style={{ ...thBase, width: "25%" }}>FREE</th>
-                  <th style={{ ...thBase, width: "25%", color: C.gold }}>PRO</th>
+                  <th style={{ ...thBase, textAlign: "left", width: "44%" }}>FEATURE</th>
+                  <th style={{ ...thBase, width: "26%" }}>FREE</th>
+                  <th style={{ ...thBase, width: "30%", color: C.gold }}>PRO</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,8 +102,8 @@ export default function FeatureMatrix() {
                         ...tdBase,
                         textAlign: "left",
                         fontFamily: "var(--font-manrope), sans-serif",
-                        fontWeight: r.a === "gold" ? 600 : 400,
-                        color: r.a === "gold" ? C.gold : "rgba(255,255,255,0.75)",
+                        fontWeight: 500,
+                        color: "rgba(255,255,255,0.78)",
                       }}
                     >
                       {r.f}
@@ -109,20 +112,20 @@ export default function FeatureMatrix() {
                       style={{
                         ...tdBase,
                         textAlign: "center",
-                        color: r.free === "—" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.45)",
+                        color: r.free === "—" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)",
                       }}
                     >
-                      {r.free === "check" ? <CheckIcon color="rgba(255,255,255,0.45)" /> : r.free}
+                      {r.free === "check" ? <CheckIcon color="rgba(255,255,255,0.6)" /> : r.free}
                     </td>
                     <td
                       style={{
                         ...tdBase,
                         textAlign: "center",
-                        color: r.a ? accentClr(r.a) : "#fff",
-                        fontWeight: r.a ? 700 : 400,
+                        color: C.mint,
+                        fontWeight: 700,
                       }}
                     >
-                      {r.pro === "check" ? <CheckIcon color={r.a ? accentClr(r.a) : "#fff"} /> : r.pro}
+                      {r.pro === "check" ? <CheckIcon color={C.mint} /> : r.pro}
                     </td>
                   </tr>
                 ))}

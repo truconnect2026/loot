@@ -7,8 +7,9 @@ import { CoinMark, FadeUp } from "./atoms.jsx";
 export default function CloserSection({ onCTA }) {
   return (
     <section
+      className="pro-snap-section"
       style={{
-        padding: "clamp(120px,14vw,192px) 24px",
+        padding: "clamp(48px,6vw,80px) 24px",
         position: "relative",
         zIndex: 1,
         textAlign: "center",
@@ -41,7 +42,7 @@ export default function CloserSection({ onCTA }) {
             alignItems: "center",
             justifyContent: "center",
             gap: 16,
-            marginBottom: 36,
+            marginBottom: 28,
           }}
         >
           <CoinMark size={18} color="rgba(255,255,255,0.25)" />
@@ -60,7 +61,7 @@ export default function CloserSection({ onCTA }) {
         </div>
       </FadeUp>
 
-      <FadeUp delay={0.2}>
+      <FadeUp delay={0.06}>
         <h2
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
@@ -80,7 +81,7 @@ export default function CloserSection({ onCTA }) {
             fontSize: "clamp(48px,9vw,128px)",
             lineHeight: 1.1,
             color: C.gold,
-            margin: "0 0 48px",
+            margin: "0 0 36px",
             padding: 0,
           }}
         >
@@ -88,7 +89,7 @@ export default function CloserSection({ onCTA }) {
         </p>
       </FadeUp>
 
-      <FadeUp delay={0.4}>
+      <FadeUp delay={0.12}>
         {/* Chunkiest CTA on the page — the closer punch. Gradient + top-edge
             highlight gives it a physical-button feel that out-weights every
             other button (hero CLAIM PRO, pricing CLAIM ANNUAL). */}
@@ -113,14 +114,14 @@ export default function CloserSection({ onCTA }) {
               "0 12px 48px rgba(92,224,184,0.45), inset 0 0 0 1px rgba(92,224,184,0.3)",
             animation: "pulseGlow 3s ease-in-out infinite",
             transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
-            marginBottom: 24,
+            marginBottom: 20,
           }}
         >
           CLAIM PRO NOW →
         </button>
       </FadeUp>
 
-      <FadeUp delay={0.5}>
+      <FadeUp delay={0.18}>
         <p
           style={{
             fontFamily: "var(--font-mono), monospace",
@@ -128,36 +129,12 @@ export default function CloserSection({ onCTA }) {
             letterSpacing: "0.1em",
             textTransform: "uppercase",
             color: "rgba(255,255,255,0.3)",
-            marginBottom: 80,
+            margin: 0,
           }}
         >
           $14.99/MO · $99.99/YR · CANCEL ANYTIME · 60-DAY REFUND
         </p>
       </FadeUp>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <CoinMark size={22} />
-        <span
-          style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 14,
-            color: C.mint,
-            letterSpacing: "0.15em",
-            fontWeight: 700,
-          }}
-        >
-          LOOT.WORKS
-        </span>
-      </div>
     </section>
   );
 }

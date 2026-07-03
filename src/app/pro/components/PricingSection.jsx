@@ -9,7 +9,11 @@ const annualBullets = ["Everything in Monthly", "Priority support", "Early featu
 
 export default function PricingSection({ onCTA }) {
   return (
-    <section id="pricing" style={{ padding: "clamp(80px,10vw,128px) 24px", position: "relative", zIndex: 1 }}>
+    <section
+      id="pricing"
+      className="pro-snap-section"
+      style={{ padding: "clamp(52px,6.5vw,84px) 24px", position: "relative", zIndex: 1 }}
+    >
       <div style={{ maxWidth: 920, margin: "0 auto" }}>
         <FadeUp>
           <Eyebrow text="two ways in" color={C.mint} />

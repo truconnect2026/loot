@@ -1,7 +1,7 @@
 "use client";
 
 import { C } from "../lib/colors.js";
-import { useInView } from "../hooks/usePageHooks.jsx";
+import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 /* Saturn coin glyph — single-color stroke. Used in TopStrip, Closer, etc. */
 export function CoinMark({ size = 24, color = C.mint, style = {} }) {
@@ -43,17 +43,22 @@ export function Eyebrow({ text, color = C.mint }) {
   );
 }
 
-/* Fade-up on scroll using useInView (IntersectionObserver + fallbacks). */
+/* Fade-up on scroll using useInView (IntersectionObserver + fallbacks).
+   Reduced-motion visitors get the end-state immediately, no transition. */
 export function FadeUp({ delay = 0, children, style = {}, className = "" }) {
   const [ref, inView] = useInView();
+  const reduced = usePrefersReducedMotion();
+  const shown = reduced || inView;
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        opacity: inView ? 1 : 0,
-        transform: inView ? "translateY(0)" : "translateY(32px)",
-        transition: `opacity 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.8s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+        opacity: shown ? 1 : 0,
+        transform: shown ? "translateY(0)" : "translateY(24px)",
+        transition: reduced
+          ? "none"
+          : `opacity 0.5s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
         ...style,
       }}
     >

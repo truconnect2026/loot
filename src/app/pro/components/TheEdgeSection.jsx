@@ -61,7 +61,10 @@ function CompareBar({ label, sublabel, color, targetScale, delay }) {
 
 export default function TheEdgeSection() {
   return (
-    <section style={{ padding: "clamp(64px,8vw,96px) 24px", position: "relative", zIndex: 1 }}>
+    <section
+      className="pro-snap-section"
+      style={{ padding: "clamp(42px,5.2vw,62px) 24px", position: "relative", zIndex: 1 }}
+    >
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <FadeUp>
           <Eyebrow text="— the edge" color={C.mint} />

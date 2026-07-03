@@ -85,6 +85,15 @@ function priceIdFor(plan) {
 export default function ProPage() {
   const [toast, setToast] = useState({ msg: "", vis: false });
 
+  // Scroll-snap scoping — toggling a class on <html> (rather than a bare
+  // global selector in pro.module.css) means the snap behavior can never
+  // leak onto other routes even if a stylesheet lingers across a client
+  // navigation; it's removed the moment this page unmounts.
+  useEffect(() => {
+    document.documentElement.classList.add("pro-scroll-snap");
+    return () => document.documentElement.classList.remove("pro-scroll-snap");
+  }, []);
+
   // Scroll depth tracking — fire once per session per 25/50/75/100 threshold.
   // Uses session-scoped Set so a single visitor doesn't generate four events
   // per minute as they scroll up and down the page.

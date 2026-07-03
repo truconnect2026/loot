@@ -114,9 +114,10 @@ export default function FAQSection() {
   const [open, setOpen] = useState(0);
   return (
     <section
+      className="pro-snap-section"
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "clamp(80px,10vw,128px) 24px",
+        padding: "clamp(52px,6.5vw,84px) 24px",
         position: "relative",
         zIndex: 1,
       }}

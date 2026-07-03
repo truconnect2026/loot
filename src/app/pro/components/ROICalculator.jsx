@@ -6,10 +6,11 @@ import { Eyebrow, FadeUp } from "./atoms.jsx";
 export default function ROICalculator() {
   return (
     <section
+      className="pro-snap-section"
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "clamp(80px,10vw,128px) 24px",
+        padding: "clamp(52px,6.5vw,84px) 24px",
         position: "relative",
         zIndex: 1,
         background: "linear-gradient(180deg, rgba(92,224,184,0.025) 0%, transparent 100%)",

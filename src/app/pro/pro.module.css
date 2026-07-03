@@ -164,3 +164,28 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Davy-Jones-Locker scroll: native snap between major sections ──
+   Scoped to html.pro-scroll-snap (toggled by page.jsx on mount/unmount)
+   rather than bare html/body, so it can never leak onto other routes.
+   Proximity (not mandatory) + no JS wheel/touch hijacking — the thumb
+   stays in control; this only nudges deceleration toward section
+   boundaries. */
+:global(html.pro-scroll-snap) {
+  scroll-snap-type: y proximity;
+}
+:global(html.pro-scroll-snap .pro-snap-section) {
+  scroll-snap-align: start;
+  scroll-margin-top: 60px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html.pro-scroll-snap) {
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
+}
