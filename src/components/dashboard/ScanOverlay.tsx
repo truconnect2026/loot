@@ -15,6 +15,7 @@ import type { ScanResponse } from "@/app/api/scan/route";
 import type { MultiDetectItem, BatchValuation } from "@/lib/claude";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import { VerdictBadge } from "@/components/ui/VerdictBadge";
+import SignupWallCard from "@/components/dashboard/SignupWallCard";
 
 export interface VerdictPayload extends ScanResponse {
   capturedImage?: string | null;
@@ -151,6 +152,9 @@ type Phase =
   | { kind: "submitting"; progress: number }
   | { kind: "cameraError" }
   | { kind: "error"; message: string }
+  // Anonymous caller spent their one free scan — signup wall replaces
+  // the result area instead of a paywall/error.
+  | { kind: "signup-wall" }
   // Shelf phases — two-stage detect then value.
   | { kind: "shelf-detecting"; capturedImage: string }
   | { kind: "shelf-valuing"; capturedImage: string; items: MultiDetectItem[] }
@@ -1103,6 +1107,10 @@ export default function ScanOverlay({
       const data = (await res.json()) as
         | ScanResponse
         | { error: string; scans_used?: number; scans_limit?: number };
+      if (res.status === 401 && "error" in data && data.error === "signup_required") {
+        setPhase({ kind: "signup-wall" });
+        return;
+      }
       if (res.status === 403 && "error" in data) {
         if (
           typeof data.scans_used === "number" &&
@@ -1159,6 +1167,12 @@ export default function ScanOverlay({
             scans_limit?: number;
           };
       if (!res.ok || "error" in data) {
+        if (res.status === 401 && "error" in data && data.error === "signup_required") {
+          if (progressTimer.current) clearInterval(progressTimer.current);
+          progressTimer.current = null;
+          setPhase({ kind: "signup-wall" });
+          return;
+        }
         if (
           res.status === 403 &&
           "error" in data &&
@@ -1195,6 +1209,31 @@ export default function ScanOverlay({
   };
 
   if (!open) return null;
+
+  // Anonymous signup wall takes over the whole overlay — it replaces the
+  // scan result area rather than layering over the camera/shelf/crate UI.
+  if (phase.kind === "signup-wall") {
+    return (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(10, 8, 14, 0.95)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          zIndex: 50,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+        }}
+      >
+        <SignupWallCard />
+        <CancelButton onCancel={onCancel} label="not now" />
+      </div>
+    );
+  }
 
   // Derived shelf values — used in shelf-valuing and shelf-done render.
   const isShelfPhase =

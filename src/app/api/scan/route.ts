@@ -9,6 +9,12 @@ import {
   type SellSpeed,
 } from "@/lib/claude";
 import { FREE_SCAN_LIMIT } from "@/lib/limits";
+import {
+  ANON_SCAN_COOKIE,
+  ANON_SCAN_FREE_LIMIT,
+  readAnonScanCount,
+  setAnonScanCookie,
+} from "@/lib/anon-scan-gate";
 
 interface ScanRequestBody {
   type: "barcode" | "vision" | "known";
@@ -49,6 +55,9 @@ interface ScanError {
    * render an accurate "X/N used" label. */
   scans_used?: number;
   scans_limit?: number;
+  /** Set on the 401 signup_required response — user-facing copy for
+   * the anon-scan wall. */
+  message?: string;
 }
 
 export async function POST(
@@ -63,11 +72,13 @@ export async function POST(
 
   const cost = typeof body.cost === "number" && body.cost >= 0 ? body.cost : 0;
 
+  // Anonymous callers get exactly one free scan (signed httpOnly cookie),
+  // then a 401 the frontend turns into a signup wall. Set below the try
+  // block so the success-response handler can stamp the cookie.
+  let stampAnonScanCookie = false;
+
   // Subscription gate — Pro users skip; free users capped at the
   // FREE_SCAN_LIMIT centralized in lib/limits.ts.
-  // Anonymous (logged-out) callers fall through with no gate; the
-  // route does not insert a haul-log row for them either, so the
-  // worst case is a free verdict to a non-user.
   try {
     const supabase = await createServerSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
@@ -107,6 +118,20 @@ export async function POST(
           );
         }
       }
+    } else {
+      const anonCount = readAnonScanCount(
+        req.cookies.get(ANON_SCAN_COOKIE)?.value,
+      );
+      if (anonCount >= ANON_SCAN_FREE_LIMIT) {
+        return NextResponse.json(
+          {
+            error: "signup_required",
+            message: "you've used your free scan",
+          },
+          { status: 401 },
+        );
+      }
+      stampAnonScanCookie = true;
     }
   } catch (gateErr) {
     // If the gate query itself blew up (Supabase outage), let the
@@ -232,7 +257,9 @@ export async function POST(
       retailArbitrage: verdict.retailArbitrage,
     };
 
-    return NextResponse.json(response);
+    const res = NextResponse.json(response);
+    if (stampAnonScanCookie) setAnonScanCookie(res, ANON_SCAN_FREE_LIMIT);
+    return res;
   } catch (err) {
     const message = err instanceof Error ? err.message : "Scan failed";
     console.error("Scan error:", err);

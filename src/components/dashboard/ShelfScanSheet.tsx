@@ -10,6 +10,7 @@ import type {
 import type { ListingResponse } from "@/app/api/listing/route";
 import { formatErrorMessage } from "@/lib/formatError";
 import { saveHaul } from "@/lib/hauls";
+import SignupWallCard from "@/components/dashboard/SignupWallCard";
 
 /**
  * Shelf Scanner sheet — one photo in, ranked items out.
@@ -35,7 +36,7 @@ interface ShelfScanSheetProps {
   onScanned?: () => void;
 }
 
-type Status = "idle" | "loading" | "loaded" | "error";
+type Status = "idle" | "loading" | "loaded" | "error" | "signup-wall";
 
 interface ApiError {
   error?: string;
@@ -320,6 +321,12 @@ export default function ShelfScanSheet({
       const data = (await res.json()) as ShelfScanResult | ApiError;
       if (!res.ok) {
         const err = data as ApiError;
+        // Anonymous caller spent their one free scan — signup wall
+        // replaces the result area instead of a paywall/error.
+        if (res.status === 401 && err.error === "signup_required") {
+          setStatus("signup-wall");
+          return;
+        }
         // 403 paywall — bubble up to the dashboard so it can swap in
         // its PaywallSheet with the right "X/N used" label.
         if (
@@ -464,28 +471,38 @@ export default function ShelfScanSheet({
           boxSizing: "border-box",
         }}
       >
-        <div
-          style={{
-            fontFamily: "var(--font-label)",
-            fontSize: 9,
-            color: "#5CE0B8",
-            letterSpacing: "0.14em",
-            marginBottom: 4,
-          }}
-        >
-          SHELF SCANNER
-        </div>
-        <div
-          style={{
-            fontFamily: "var(--font-body)",
-            fontSize: 13,
-            color: "rgba(255,255,255,0.62)",
-            lineHeight: 1.4,
-            marginBottom: 14,
-          }}
-        >
-          snap a shelf — Claude ranks every visible item by profit
-        </div>
+        {status !== "signup-wall" && (
+          <>
+            <div
+              style={{
+                fontFamily: "var(--font-label)",
+                fontSize: 9,
+                color: "#5CE0B8",
+                letterSpacing: "0.14em",
+                marginBottom: 4,
+              }}
+            >
+              SHELF SCANNER
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 13,
+                color: "rgba(255,255,255,0.62)",
+                lineHeight: 1.4,
+                marginBottom: 14,
+              }}
+            >
+              snap a shelf — Claude ranks every visible item by profit
+            </div>
+          </>
+        )}
+
+        {status === "signup-wall" && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "16px 0 4px" }}>
+            <SignupWallCard />
+          </div>
+        )}
 
         {status === "idle" && (
           <button

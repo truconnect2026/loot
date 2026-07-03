@@ -3,6 +3,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { shelfScan, type ShelfScanResult } from "@/lib/claude";
 import { FREE_SCAN_LIMIT } from "@/lib/limits";
+import {
+  ANON_SCAN_COOKIE,
+  ANON_SCAN_FREE_LIMIT,
+  readAnonScanCount,
+  setAnonScanCookie,
+} from "@/lib/anon-scan-gate";
 
 interface ShelfScanBody {
   image?: string;
@@ -14,21 +20,43 @@ interface ShelfScanError {
    * render an accurate "X/N used" label. */
   scans_used?: number;
   scans_limit?: number;
+  /** Set on the 401 signup_required response — user-facing copy for
+   * the anon-scan wall. */
+  message?: string;
+}
+
+interface ScanGateResult {
+  /** Non-null means the caller must return this response immediately. */
+  block: NextResponse<ShelfScanError> | null;
+  /** True when this is an anonymous caller's first (free) scan — the
+   * success handler needs to stamp the anon-scan cookie. */
+  stampAnonCookie: boolean;
 }
 
 // Shelf scan counts as ONE scan against the daily limit even though
 // it returns N items. Same threshold the barcode/vision route uses;
 // keeping the gate logic literal-copied (rather than factored out)
 // means each route can tune behavior independently if needed.
-async function checkScanGate(
-  req: NextRequest,
-): Promise<NextResponse<ShelfScanError> | null> {
-  void req; // keeping the signature symmetric with the future fanout
+async function checkScanGate(req: NextRequest): Promise<ScanGateResult> {
   try {
     const supabase = await createServerSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
-    if (!user) return null;
+    if (!user) {
+      const anonCount = readAnonScanCount(
+        req.cookies.get(ANON_SCAN_COOKIE)?.value,
+      );
+      if (anonCount >= ANON_SCAN_FREE_LIMIT) {
+        return {
+          block: NextResponse.json(
+            { error: "signup_required", message: "you've used your free scan" },
+            { status: 401 },
+          ),
+          stampAnonCookie: false,
+        };
+      }
+      return { block: null, stampAnonCookie: true };
+    }
 
     const { data: profileRow } = await supabase
       .from("profiles")
@@ -42,7 +70,9 @@ async function checkScanGate(
     const isTestPro = user.email
       ? testProEmails.includes(user.email.toLowerCase())
       : false;
-    if (profileRow?.is_pro === true || isTestPro) return null;
+    if (profileRow?.is_pro === true || isTestPro) {
+      return { block: null, stampAnonCookie: false };
+    }
 
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
@@ -53,23 +83,26 @@ async function checkScanGate(
       .gte("created_at", startOfDay.toISOString());
     const used = count ?? 0;
     if (used >= FREE_SCAN_LIMIT) {
-      return NextResponse.json(
-        {
-          error:
-            "Daily scan limit reached. Upgrade to Pro for unlimited scans.",
-          scans_used: used,
-          scans_limit: FREE_SCAN_LIMIT,
-        },
-        { status: 403 },
-      );
+      return {
+        block: NextResponse.json(
+          {
+            error:
+              "Daily scan limit reached. Upgrade to Pro for unlimited scans.",
+            scans_used: used,
+            scans_limit: FREE_SCAN_LIMIT,
+          },
+          { status: 403 },
+        ),
+        stampAnonCookie: false,
+      };
     }
-    return null;
+    return { block: null, stampAnonCookie: false };
   } catch (gateErr) {
     // If the gate query itself blows up (Supabase outage), let the
     // scan proceed — better to give a free user a freebie than to
     // 500 a paying user mid-flow. Same posture as the barcode route.
     console.error("Shelf-scan gate check failed:", gateErr);
-    return null;
+    return { block: null, stampAnonCookie: false };
   }
 }
 
@@ -87,8 +120,8 @@ export async function POST(
     return NextResponse.json({ error: "Missing image" }, { status: 400 });
   }
 
-  const gateResponse = await checkScanGate(req);
-  if (gateResponse) return gateResponse;
+  const gate = await checkScanGate(req);
+  if (gate.block) return gate.block;
 
   let result: ShelfScanResult;
   try {
@@ -141,5 +174,7 @@ export async function POST(
     console.error("Failed to persist shelf scan:", persistErr);
   }
 
-  return NextResponse.json(result);
+  const res = NextResponse.json(result);
+  if (gate.stampAnonCookie) setAnonScanCookie(res, ANON_SCAN_FREE_LIMIT);
+  return res;
 }
