@@ -8,15 +8,18 @@ import { C } from "../lib/colors.js";
  * film grain. Pure CSS animations driven by keyframes in pro.module.css.
  */
 export default function CosmicBackground() {
+  // Quiet star-field: ~70% fewer dots than the original 82, smaller and
+  // fainter (alpha baked into the color itself, not just the twinkle
+  // keyframe's peak) — clean negative space instead of a dense field.
   const stars = useMemo(() => {
     const out = [];
-    for (let i = 0; i < 82; i++) {
+    for (let i = 0; i < 24; i++) {
       const r = Math.random();
       out.push({
         x: Math.random() * 100,
         y: Math.random() * 100,
-        s: 0.5 + Math.random() * 2,
-        c: r > 0.88 ? C.gold : r > 0.78 ? C.blue : "#fff",
+        s: 0.4 + Math.random() * 1.2,
+        c: r > 0.88 ? "rgba(245,197,24,0.55)" : r > 0.78 ? "rgba(59,130,246,0.55)" : "rgba(255,255,255,0.6)",
         d: Math.random() * 6,
         dur: 2.5 + Math.random() * 5,
       });
@@ -102,14 +105,15 @@ export default function CosmicBackground() {
         />
       ))}
 
-      {/* Mint dot grid */}
+      {/* Mint dot grid — wider spacing, lower opacity than before so it
+          reads as quiet texture, not a dense grid competing with text. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "radial-gradient(circle, rgba(92,224,184,0.45) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-          opacity: 0.08,
+          backgroundImage: "radial-gradient(circle, rgba(92,224,184,0.4) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+          opacity: 0.035,
         }}
       />
 

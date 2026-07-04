@@ -2,14 +2,21 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CoinMark, CTAButton, FadeUp } from "./atoms.jsx";
+import {
+  CoinMark,
+  CTAButton,
+  FadeUp,
+  SECTION_HEADLINE_SIZE,
+  SECTION_PADDING,
+  SectionShell,
+} from "./atoms.jsx";
 
 export default function CloserSection({ onCTA }) {
   return (
     <section
       className="pro-snap-section"
       style={{
-        padding: "clamp(48px,6vw,80px) 24px",
+        padding: SECTION_PADDING,
         position: "relative",
         zIndex: 1,
         textAlign: "center",
@@ -35,6 +42,7 @@ export default function CloserSection({ onCTA }) {
         </div>
       </div>
 
+      <SectionShell style={{ position: "relative" }}>
       <FadeUp>
         <div
           style={{
@@ -65,7 +73,7 @@ export default function CloserSection({ onCTA }) {
         <h2
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: "clamp(48px,9vw,128px)",
+            fontSize: SECTION_HEADLINE_SIZE,
             lineHeight: 1.1,
             margin: 0,
             padding: 0,
@@ -78,7 +86,7 @@ export default function CloserSection({ onCTA }) {
         <p
           style={{
             fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: "clamp(48px,9vw,128px)",
+            fontSize: SECTION_HEADLINE_SIZE,
             lineHeight: 1.1,
             color: C.gold,
             margin: "0 0 36px",
@@ -117,6 +125,7 @@ export default function CloserSection({ onCTA }) {
           $14.99/MO · $99.99/YR · CANCEL ANYTIME · 60-DAY REFUND
         </p>
       </FadeUp>
+      </SectionShell>
     </section>
   );
 }

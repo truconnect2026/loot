@@ -2,7 +2,14 @@
 
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { CTAButton, Eyebrow, FadeUp } from "./atoms.jsx";
+import {
+  CTAButton,
+  Eyebrow,
+  FadeUp,
+  SECTION_HEADLINE_SIZE,
+  SECTION_PADDING,
+  SectionShell,
+} from "./atoms.jsx";
 
 const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Yard sale map", "Brand authenticator"];
 const annualBullets = ["Everything in Monthly", "Priority support", "Early features access", "Founding member status"];
@@ -12,9 +19,16 @@ export default function PricingSection({ onCTA }) {
     <section
       id="pricing"
       className="pro-snap-section"
-      style={{ padding: "clamp(52px,6.5vw,84px) 24px", position: "relative", zIndex: 1 }}
+      style={{
+        padding: SECTION_PADDING,
+        position: "relative",
+        zIndex: 1,
+        // Two pricing cards + fine print reliably exceed one viewport —
+        // top-align + scroll internally rather than center-force.
+        justifyContent: "flex-start",
+      }}
     >
-      <div style={{ maxWidth: 920, margin: "0 auto" }}>
+      <SectionShell maxWidth={920}>
         <FadeUp>
           <Eyebrow text="two ways in" color={C.mint} />
         </FadeUp>
@@ -22,7 +36,7 @@ export default function PricingSection({ onCTA }) {
           <h2
             style={{
               fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: "clamp(48px,9vw,96px)",
+              fontSize: SECTION_HEADLINE_SIZE,
               lineHeight: 1.3,
               paddingBottom: "0.5em",
               marginBottom: 48,
@@ -260,7 +274,7 @@ export default function PricingSection({ onCTA }) {
             SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY DIGISTORE24 + STRIPE
           </p>
         </FadeUp>
-      </div>
+      </SectionShell>
     </section>
   );
 }

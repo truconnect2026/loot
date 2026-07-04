@@ -1,7 +1,14 @@
 "use client";
 
 import { C } from "../lib/colors.js";
-import { Eyebrow, FadeUp } from "./atoms.jsx";
+import {
+  Eyebrow,
+  FadeUp,
+  SECTION_BODY_SIZE,
+  SECTION_HEADLINE_SIZE,
+  SECTION_PADDING,
+  SectionShell,
+} from "./atoms.jsx";
 
 export default function GutPunch() {
   return (
@@ -10,12 +17,12 @@ export default function GutPunch() {
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: "clamp(52px,6.5vw,84px) 24px",
+        padding: SECTION_PADDING,
         position: "relative",
         zIndex: 1,
       }}
     >
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <SectionShell>
         <FadeUp>
           <Eyebrow text="the difference" color={C.blue} />
         </FadeUp>
@@ -24,7 +31,7 @@ export default function GutPunch() {
           <h2
             style={{
               fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: "clamp(48px,9vw,96px)",
+              fontSize: SECTION_HEADLINE_SIZE,
               lineHeight: 1.3,
               paddingBottom: "0.5em",
               marginBottom: 24,
@@ -38,9 +45,8 @@ export default function GutPunch() {
           <p
             style={{
               fontFamily: "var(--font-manrope), sans-serif",
-              fontSize: "clamp(16px,2vw,20px)",
+              fontSize: SECTION_BODY_SIZE,
               color: "rgba(255,255,255,0.65)",
-              maxWidth: 620,
               lineHeight: 1.6,
             }}
           >
@@ -156,7 +162,7 @@ export default function GutPunch() {
             </div>
           </div>
         </FadeUp>
-      </div>
+      </SectionShell>
     </section>
   );
 }

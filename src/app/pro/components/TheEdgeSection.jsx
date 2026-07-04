@@ -1,7 +1,14 @@
 "use client";
 
 import { C } from "../lib/colors.js";
-import { Eyebrow, FadeUp } from "./atoms.jsx";
+import {
+  Eyebrow,
+  FadeUp,
+  SECTION_BODY_SIZE,
+  SECTION_HEADLINE_SIZE,
+  SECTION_PADDING,
+  SectionShell,
+} from "./atoms.jsx";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 // Editorial timeline bar — fills on scroll-into-view (transform: scaleX only),
@@ -61,11 +68,8 @@ function CompareBar({ label, sublabel, color, targetScale, delay }) {
 
 export default function TheEdgeSection() {
   return (
-    <section
-      className="pro-snap-section"
-      style={{ padding: "clamp(42px,5.2vw,62px) 24px", position: "relative", zIndex: 1 }}
-    >
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
+    <section className="pro-snap-section" style={{ padding: SECTION_PADDING, position: "relative", zIndex: 1 }}>
+      <SectionShell>
         <FadeUp>
           <Eyebrow text="— the edge" color={C.mint} />
         </FadeUp>
@@ -74,7 +78,7 @@ export default function TheEdgeSection() {
           <h2
             style={{
               fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: "clamp(36px,6vw,64px)",
+              fontSize: SECTION_HEADLINE_SIZE,
               lineHeight: 1.15,
               margin: "0 0 20px",
               padding: 0,
@@ -89,10 +93,9 @@ export default function TheEdgeSection() {
           <p
             style={{
               fontFamily: "var(--font-manrope), sans-serif",
-              fontSize: "clamp(16px,2vw,20px)",
+              fontSize: SECTION_BODY_SIZE,
               lineHeight: 1.6,
               color: "rgba(255,255,255,0.65)",
-              maxWidth: 620,
               margin: 0,
             }}
           >
@@ -102,7 +105,7 @@ export default function TheEdgeSection() {
         </FadeUp>
 
         <FadeUp delay={0.45}>
-          <div style={{ marginTop: 40, maxWidth: 480 }}>
+          <div style={{ marginTop: 40 }}>
             <CompareBar
               label="THEM"
               sublabel="~90 seconds, guessing"
@@ -119,7 +122,7 @@ export default function TheEdgeSection() {
             />
           </div>
         </FadeUp>
-      </div>
+      </SectionShell>
     </section>
   );
 }

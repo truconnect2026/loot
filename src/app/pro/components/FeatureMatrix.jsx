@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { C } from "../lib/colors.js";
-import { CheckIcon, Eyebrow, FadeUp } from "./atoms.jsx";
+import {
+  CheckIcon,
+  Eyebrow,
+  FadeUp,
+  SECTION_HEADLINE_SIZE,
+  SECTION_PADDING,
+  SectionShell,
+} from "./atoms.jsx";
 
 // FREE tier is the daily FLIP OR SKIP game only — no scans, no comps, no
 // alerts. Verified against FREE_SCAN_LIMIT = 0 in src/lib/limits.ts: a
@@ -47,9 +54,19 @@ export default function FeatureMatrix() {
   return (
     <section
       className="pro-snap-section"
-      style={{ padding: "clamp(52px,6.5vw,84px) 24px", position: "relative", zIndex: 1 }}
+      style={{
+        padding: SECTION_PADDING,
+        position: "relative",
+        zIndex: 1,
+        // This section's content can exceed one viewport (the table grows
+        // with hover/content) — top-align + scroll internally instead of
+        // vertically centering, which would push the heading below the
+        // fold on short viewports. Overrides .pro-snap-section's default
+        // center via higher-specificity inline style.
+        justifyContent: "flex-start",
+      }}
     >
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <SectionShell maxWidth={900}>
         <FadeUp>
           <Eyebrow text="the whole arsenal" color={C.gold} />
         </FadeUp>
@@ -58,7 +75,7 @@ export default function FeatureMatrix() {
           <h2
             style={{
               fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: "clamp(48px,9vw,96px)",
+              fontSize: SECTION_HEADLINE_SIZE,
               lineHeight: 1.3,
               paddingBottom: "0.5em",
               marginBottom: 40,
@@ -133,7 +150,7 @@ export default function FeatureMatrix() {
             </table>
           </div>
         </FadeUp>
-      </div>
+      </SectionShell>
     </section>
   );
 }

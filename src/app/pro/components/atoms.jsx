@@ -24,6 +24,26 @@ export function ShimmerText({ children, style = {} }) {
   );
 }
 
+/* Shared sizing for every NON-hero section — one consistent ramp instead
+   of each component hand-picking its own clamp(). Hero keeps its own
+   (much bigger) scale; it's excepted by design. */
+export const SECTION_PADDING = "clamp(48px,6.5vw,80px) 24px";
+export const SECTION_HEADLINE_SIZE = "clamp(42px,7.5vw,84px)";
+export const SECTION_BODY_SIZE = "clamp(16px,2vw,18px)";
+
+/* One shared outer shell for every snap section's content — same centered
+   column, same box-sizing. Vertical centering itself lives on the
+   .pro-snap-section class (see pro.module.css); sections whose content
+   genuinely exceeds one viewport override that to flex-start inline so
+   they top-align and scroll internally instead of center-forcing. */
+export function SectionShell({ children, maxWidth = 640, style = {} }) {
+  return (
+    <div style={{ width: "100%", maxWidth, margin: "0 auto", boxSizing: "border-box", ...style }}>
+      {children}
+    </div>
+  );
+}
+
 /* Section eyebrow — mint divider line + mono label. */
 export function Eyebrow({ text, color = C.mint }) {
   return (

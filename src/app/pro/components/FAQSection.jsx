@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { Eyebrow, FadeUp } from "./atoms.jsx";
+import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE, SECTION_PADDING, SectionShell } from "./atoms.jsx";
 
 const faqData = [
   {
@@ -117,12 +117,15 @@ export default function FAQSection() {
       className="pro-snap-section"
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "clamp(52px,6.5vw,84px) 24px",
+        padding: SECTION_PADDING,
         position: "relative",
         zIndex: 1,
+        // Six FAQ rows reliably exceed one viewport — top-align + scroll
+        // internally rather than center-force.
+        justifyContent: "flex-start",
       }}
     >
-      <div style={{ maxWidth: 750, margin: "0 auto" }}>
+      <SectionShell maxWidth={750}>
         <FadeUp>
           <Eyebrow text="still on the fence?" color={C.purple} />
         </FadeUp>
@@ -131,7 +134,7 @@ export default function FAQSection() {
             className="faq-headline"
             style={{
               fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: "clamp(48px,9vw,96px)",
+              fontSize: SECTION_HEADLINE_SIZE,
               lineHeight: 1.0,
               paddingBottom: "0.25em",
               marginBottom: 48,
@@ -156,7 +159,7 @@ export default function FAQSection() {
             </FadeUp>
           ))}
         </div>
-      </div>
+      </SectionShell>
     </section>
   );
 }
