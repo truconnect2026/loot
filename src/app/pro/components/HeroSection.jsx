@@ -3,7 +3,7 @@
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { CheckIcon, CTAButton, Eyebrow, FadeUp } from "./atoms.jsx";
-import VerdictCard from "./VerdictCard.jsx";
+import VerdictCardLive from "./VerdictCardLive.jsx";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 const HERO_STYLES = `
@@ -310,7 +310,7 @@ export default function HeroSection() {
 
           <div className="pro-phone-frame">
             <div className="pro-phone-screen">
-              <VerdictCard />
+              <VerdictCardLive />
             </div>
             <div className="pro-phone-btn pro-phone-btn--power" aria-hidden="true" />
             <div className="pro-phone-btn pro-phone-btn--vol1" aria-hidden="true" />
