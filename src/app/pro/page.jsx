@@ -44,6 +44,7 @@ import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
 import HeroSection from "./components/HeroSection.jsx";
 import ShelfScannerDemo from "./components/ShelfScannerDemo.jsx";
+import AuthCheckDemo from "./components/AuthCheckDemo.jsx";
 import TheEdgeSection from "./components/TheEdgeSection.jsx";
 import GutPunch from "./components/GutPunch.jsx";
 import FeatureMatrix from "./components/FeatureMatrix.jsx";
@@ -184,6 +185,7 @@ export default function ProPage() {
       <main className="pro-scroll-main">
         <HeroSection />
         <ShelfScannerDemo />
+        <AuthCheckDemo />
         <TheEdgeSection />
         <hr className="pro-section-divider" />
         <GutPunch />
