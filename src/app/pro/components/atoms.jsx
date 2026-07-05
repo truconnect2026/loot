@@ -64,9 +64,15 @@ export function Eyebrow({ text, color = C.mint }) {
   );
 }
 
-/* Fade-up on scroll using useInView (IntersectionObserver + fallbacks).
-   Reduced-motion visitors get the end-state immediately, no transition. */
-export function FadeUp({ delay = 0, children, style = {}, className = "" }) {
+/* Reveal — THE shared scroll-reveal primitive for the page. Child fades
+   and rises 12px over 450ms on one shared ease when it enters the
+   viewport; `delay` (seconds) staggers eyebrow → headline → body at
+   each call site. Fires ONCE per page load and does not re-fire on
+   re-entry: with mandatory snap, sections re-enter on every scroll
+   pass, and re-firing would blink content each time. Reduced motion
+   renders children immediately with no transition (and useInView's
+   observer is the only "timer"-ish machinery — no setTimeout/RAF). */
+export function Reveal({ delay = 0, children, style = {}, className = "" }) {
   const [ref, inView] = useInView();
   const reduced = usePrefersReducedMotion();
   const shown = reduced || inView;
@@ -76,16 +82,23 @@ export function FadeUp({ delay = 0, children, style = {}, className = "" }) {
       className={className}
       style={{
         opacity: shown ? 1 : 0,
-        transform: shown ? "translateY(0)" : "translateY(24px)",
+        transform: shown ? "translateY(0)" : "translateY(12px)",
         transition: reduced
           ? "none"
-          : `opacity 0.5s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.5s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+          : `opacity 450ms cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 450ms cubic-bezier(0.16,1,0.3,1) ${delay}s`,
         ...style,
       }}
     >
       {children}
     </div>
   );
+}
+
+/* FadeUp — legacy name every section already wraps its eyebrow/headline/
+   body in. Delegates to Reveal so the whole page shares one reveal
+   treatment without touching any section component's internals. */
+export function FadeUp(props) {
+  return <Reveal {...props} />;
 }
 
 /* One button system, reused for every CTA on the page (CLAIM PRO, CLAIM

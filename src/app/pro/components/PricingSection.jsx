@@ -30,7 +30,7 @@ export default function PricingSection({ onCTA }) {
     >
       <SectionShell maxWidth={920}>
         <FadeUp>
-          <Eyebrow text="two ways in" color={C.mint} />
+          <Eyebrow text="— two ways in" color={C.mint} />
         </FadeUp>
         <FadeUp delay={0.15}>
           <h2

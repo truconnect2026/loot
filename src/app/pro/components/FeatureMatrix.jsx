@@ -397,7 +397,7 @@ export default function FeatureMatrix() {
       <style dangerouslySetInnerHTML={{ __html: GRID_STYLES }} />
       <SectionShell maxWidth={900}>
         <FadeUp>
-          <Eyebrow text="the whole arsenal" color={C.mint} />
+          <Eyebrow text="— the whole arsenal" color={C.mint} />
         </FadeUp>
 
         <FadeUp delay={0.15}>

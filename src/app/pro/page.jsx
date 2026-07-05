@@ -52,6 +52,7 @@ import ROICalculator from "./components/ROICalculator.jsx";
 import PricingSection from "./components/PricingSection.jsx";
 import FAQSection from "./components/FAQSection.jsx";
 import CloserSection from "./components/CloserSection.jsx";
+import LegitStrip from "./components/LegitStrip.jsx";
 import Footer from "./components/Footer.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
 import Toast from "./components/Toast.jsx";
@@ -199,7 +200,14 @@ export default function ProPage() {
         <FAQSection />
         <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
-        <Footer />
+        {/* Trailing band + footer share one end-aligned snap box so the
+            mandatory snap scroller has a valid rest position at the very
+            bottom — without it, the viewport re-snaps up to the closer
+            and this content is unreachable at rest. */}
+        <div style={{ scrollSnapAlign: "end" }}>
+          <LegitStrip />
+          <Footer />
+        </div>
       </main>
       <CookieBanner />
       <Toast message={toast.msg} visible={toast.vis} />

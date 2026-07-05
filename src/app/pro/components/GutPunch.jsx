@@ -24,7 +24,7 @@ export default function GutPunch() {
     >
       <SectionShell>
         <FadeUp>
-          <Eyebrow text="the difference" color={C.blue} />
+          <Eyebrow text="— the difference" color={C.blue} />
         </FadeUp>
 
         <FadeUp delay={0.15}>

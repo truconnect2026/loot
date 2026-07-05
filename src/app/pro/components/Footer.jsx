@@ -41,7 +41,7 @@ export default function Footer() {
         zIndex: 1,
         background: "#0F1116",
         borderTop: "1px solid rgba(255,255,255,0.08)",
-        padding: "clamp(48px,7vw,80px) 24px 24px",
+        padding: "clamp(32px,5vw,64px) 24px 20px",
         color: "rgba(255,255,255,0.7)",
         fontFamily: "var(--font-manrope), sans-serif",
       }}
@@ -52,7 +52,7 @@ export default function Footer() {
           margin: "0 auto",
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 40,
+          gap: 28,
         }}
       >
         {/* Column 1 — Brand */}
@@ -130,7 +130,7 @@ export default function Footer() {
       <div
         style={{
           maxWidth: 1200,
-          margin: "40px auto 0",
+          margin: "24px auto 0",
           paddingTop: 24,
           borderTop: "1px solid rgba(255,255,255,0.05)",
           fontFamily: "var(--font-mono), monospace",

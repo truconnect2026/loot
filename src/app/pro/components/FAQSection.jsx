@@ -127,7 +127,7 @@ export default function FAQSection() {
     >
       <SectionShell maxWidth={750}>
         <FadeUp>
-          <Eyebrow text="still on the fence?" color={C.purple} />
+          <Eyebrow text="— still on the fence?" color={C.purple} />
         </FadeUp>
         <FadeUp delay={0.15}>
           <h2
