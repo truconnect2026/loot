@@ -15,19 +15,30 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 import { PyrexBowl } from "../../marketing-screens/_frame";
 
 /**
- * "The whole shelf" — a second live proof moment right after the hero,
- * showing the marquee capability (value several items in one pass, not
- * one at a time). Fully self-contained: its own phase loop, its own
- * visibility tracker, its own icon set — nothing shared is modified.
- * Values are illustrative examples, not earnings claims.
+ * "The whole shelf" — tap-to-price. Each item on the shelf is its own
+ * plain tap target: tap one and its detection box draws, its value tag
+ * pops, and the running total eases up by that amount. Price all five
+ * and the completion line lands under $420, holds ~3s, then the scene
+ * soft-resets to untapped. Values are illustrative examples, not
+ * earnings claims.
  *
- * Loop (~7.4s), transform/opacity only:
- *   settle (0.8s) → detect (1.8s) → value (1.6s) → total (1.2s)
- *   → hold (1.4s) → reset (0.6s)
+ * The old full choreography (settle → detect → value → total → hold →
+ * reset) survives as the idle ATTRACT mode: it plays once after 6s of
+ * no interaction, then rests. It only arms while the shelf is pristine
+ * (zero taps) — attract stomping a visitor's half-priced shelf would
+ * be hostile. Any tap cancels it instantly; because the user-mode
+ * visuals derive purely from the tapped set (never from attract's
+ * phase), cancellation can't leave half-drawn attract boxes behind.
+ *
+ * Reduced motion: full static end-state (all boxes, tags, $420, and
+ * the completion line), zero timers, and taps are DISABLED — the end
+ * state already shows everything priced, so there's nothing for a tap
+ * to add. Buttons are plain click targets (no gesture capture), so
+ * vertical swipes scroll the page normally.
  */
 
-const PHASES = ["settle", "detect", "value", "total", "hold", "reset"];
-const DURATIONS = { settle: 800, detect: 1800, value: 1600, total: 1200, hold: 1400, reset: 600 };
+const ATTRACT_PHASES = ["settle", "detect", "value", "total", "hold", "reset"];
+const ATTRACT_DURATIONS = { settle: 800, detect: 1800, value: 1600, total: 1200, hold: 1400, reset: 600 };
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 
 const ITEMS = [
@@ -45,10 +56,8 @@ const STYLES = `
 .ssd-bracket.ssd-active { animation: ssdBracketPulse 0.6s ease-in-out 3; }
 `;
 
-/* Local, continuously-updating visibility tracker (not the shared
-   useInView, which only ever reports true once) — same approach as
-   VerdictCardLive's useLiveInView, duplicated locally so this section
-   stays fully self-contained. */
+/* Local, continuously-updating visibility tracker — same pattern as the
+   other live demos. */
 function useLiveInView() {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
@@ -64,61 +73,74 @@ function useLiveInView() {
   return [ref, inView];
 }
 
-/* Same timer-chain pattern as VerdictCardLive's usePhaseLoop: advances
-   while `active`, clears pending timers (stops burning cycles) the
-   instant `active` goes false, restarts cleanly from "settle". */
-function usePhaseLoop(active) {
+/* ONE-SHOT attract runner: walks the classic choreography a single time
+   while `active`, then calls onDone. Cleanup kills every pending timer,
+   so leaving the viewport (or tapping) stops it dead. */
+function useAttractRun(active, onDone) {
   const [phase, setPhase] = useState("settle");
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
     let idx = 0;
     let timer = null;
+    setPhase("settle");
     const tick = () => {
       if (cancelled) return;
-      setPhase(PHASES[idx]);
+      setPhase(ATTRACT_PHASES[idx]);
       timer = setTimeout(() => {
-        idx = (idx + 1) % PHASES.length;
+        idx += 1;
+        if (idx >= ATTRACT_PHASES.length) {
+          if (!cancelled) onDoneRef.current();
+          return;
+        }
         tick();
-      }, DURATIONS[PHASES[idx]]);
+      }, ATTRACT_DURATIONS[ATTRACT_PHASES[idx]]);
     };
     tick();
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      setPhase("settle");
     };
   }, [active]);
   return active ? phase : "settle";
 }
 
-/* Running total — counts up while `active` (the "total" beat), holds at
-   target through "hold", resets to 0 the moment the loop leaves those
-   phases. Reduced motion never calls this with active=true; the caller
-   renders the target directly instead. */
-function useTotalCountUp(target, active) {
-  const [value, setValue] = useState(0);
+/* Eased number display — animates from its CURRENT shown value to each
+   new target (per-tap increments ride the same treatment as the old
+   0→420 count-up). Reduced motion snaps instantly with no RAF. */
+function useEasedNumber(target, reduced) {
+  const [value, setValue] = useState(target);
+  const shownRef = useRef(target);
   useEffect(() => {
-    if (!active) {
-      setValue(0);
+    if (reduced) {
+      shownRef.current = target;
+      setValue(target);
       return;
     }
+    const from = shownRef.current;
+    if (from === target) return;
     let raf;
     let start = null;
-    const dur = 750;
+    const dur = 600;
     const step = (ts) => {
       if (!start) start = ts;
       const p = Math.min((ts - start) / dur, 1);
-      setValue(Math.round((1 - Math.pow(1 - p, 3)) * target));
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = Math.round(from + (target - from) * eased);
+      shownRef.current = v;
+      setValue(v);
       if (p < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => raf && cancelAnimationFrame(raf);
-  }, [active, target]);
+  }, [target, reduced]);
   return value;
 }
 
-/* Viewfinder corner brackets framing the whole shelf — same visual
-   language as the hero's Bracket, pulsing while detection runs. */
+/* Viewfinder corner brackets framing the whole shelf. */
 function Bracket({ corner, pulse }) {
   const size = 20;
   const stroke = 2;
@@ -138,9 +160,8 @@ function Bracket({ corner, pulse }) {
   );
 }
 
-/* Simple mint-line silhouettes — lightweight SVG, no raster assets. The
-   bowl reuses the existing PyrexBowl illustration (same item the hero
-   scans, so the two demos read as one continuous story). */
+/* Simple mint-line silhouettes — the bowl reuses the existing PyrexBowl
+   illustration (same item the hero scans). */
 function VinylIcon() {
   return (
     <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ display: "block" }}>
@@ -208,20 +229,76 @@ function ItemIcon({ itemKey }) {
 export default function ShelfScannerDemo() {
   const reduced = usePrefersReducedMotion();
   const [rootRef, inView] = useLiveInView();
-  const phase = usePhaseLoop(!reduced && inView);
 
-  // Reduced motion renders the full end state (boxes + tags + total),
-  // scanning label hidden, zero timers (phase loop and count-up both
-  // stay inactive).
-  const sceneShown = reduced || phase !== "reset";
-  const boxesShown = reduced || phase === "detect" || phase === "value" || phase === "total" || phase === "hold";
-  const tagsShown = reduced || phase === "value" || phase === "total" || phase === "hold";
-  const totalShown = reduced || phase === "total" || phase === "hold";
-  const scanningLabelShown = !reduced && (phase === "settle" || phase === "detect" || phase === "value");
-  const bracketsPulse = !reduced && phase === "detect";
+  const [tapped, setTapped] = useState(() => new Set());
+  const [attract, setAttract] = useState(false);
+  const [fading, setFading] = useState(false);
+  const [lastTouch, setLastTouch] = useState(0);
 
-  const counted = useTotalCountUp(SHELF_TOTAL, !reduced && (phase === "total" || phase === "hold"));
-  const totalValue = reduced ? SHELF_TOTAL : counted;
+  const attractActive = attract && inView && !reduced;
+  const phase = useAttractRun(attractActive, () => {
+    setAttract(false);
+    setLastTouch(Date.now()); // rest, then the idle watcher may re-arm
+  });
+
+  /* Idle watcher — attract arms only while the shelf is pristine (zero
+     taps): replaying the auto show over a half-priced shelf would wipe
+     the visitor's progress. */
+  useEffect(() => {
+    if (reduced || !inView || attract || tapped.size > 0) return;
+    const t = setTimeout(() => setAttract(true), 6000);
+    return () => clearTimeout(t);
+  }, [reduced, inView, attract, tapped, lastTouch]);
+
+  /* Completion: all five priced → hold ~3s → soft fade reset back to
+     untapped. Timers die off-screen and restart on return. */
+  useEffect(() => {
+    if (reduced || !inView || tapped.size !== ITEMS.length) return;
+    let t2;
+    const t1 = setTimeout(() => {
+      setFading(true);
+      t2 = setTimeout(() => {
+        setTapped(new Set());
+        setFading(false);
+        setLastTouch(Date.now());
+      }, 400);
+    }, 3000);
+    return () => {
+      clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      setFading(false);
+    };
+  }, [reduced, inView, tapped]);
+
+  const tapItem = (key) => {
+    if (reduced || fading) return; // reduced motion: end state shown, taps disabled
+    setAttract(false); // cancel attract instantly; user visuals never read phase
+    setLastTouch(Date.now());
+    setTapped((prev) => {
+      if (prev.has(key)) return prev; // re-tap = no-op
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  };
+
+  // Attract drives the classic phase booleans; user mode derives purely
+  // from the tapped set. Reduced motion pins the complete end state.
+  const attractBoxes = attractActive && (phase === "detect" || phase === "value" || phase === "total" || phase === "hold");
+  const attractTags = attractActive && (phase === "value" || phase === "total" || phase === "hold");
+  const attractTotal = attractActive && (phase === "total" || phase === "hold");
+  // Scene fades out during attract's reset beat and during the post-
+  // completion soft reset; reduced motion never fades.
+  const sceneShown = reduced || (!fading && !(attractActive && phase === "reset"));
+
+  const complete = reduced || tapped.size === ITEMS.length;
+  const promptShown = !reduced && !attractActive && tapped.size === 0;
+  const scanningShown = attractActive && (phase === "settle" || phase === "detect" || phase === "value");
+  const totalShown = reduced || attractTotal || (!attractActive && tapped.size > 0);
+
+  const userSum = ITEMS.reduce((s, it) => s + (tapped.has(it.key) ? it.value : 0), 0);
+  const totalTarget = reduced ? SHELF_TOTAL : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
+  const totalValue = useEasedNumber(totalTarget, reduced);
 
   return (
     <section className="pro-snap-section" style={{ padding: SECTION_PADDING, position: "relative", zIndex: 1 }}>
@@ -261,9 +338,6 @@ export default function ShelfScannerDemo() {
         </FadeUp>
 
         <FadeUp delay={0.45}>
-          {/* Camera-view panel — the demo canvas. Corner brackets are static
-              frame decor (pulsing during detect); the scene inside fades as
-              one unit on reset so per-element staggers only play forward. */}
           <div
             ref={rootRef}
             style={{
@@ -278,10 +352,10 @@ export default function ShelfScannerDemo() {
               overflow: "hidden",
             }}
           >
-            <Bracket corner="tl" pulse={bracketsPulse} />
-            <Bracket corner="tr" pulse={bracketsPulse} />
-            <Bracket corner="bl" pulse={bracketsPulse} />
-            <Bracket corner="br" pulse={bracketsPulse} />
+            <Bracket corner="tl" pulse={attractActive && phase === "detect"} />
+            <Bracket corner="tr" pulse={attractActive && phase === "detect"} />
+            <Bracket corner="bl" pulse={attractActive && phase === "detect"} />
+            <Bracket corner="br" pulse={attractActive && phase === "detect"} />
 
             <div
               style={{
@@ -298,96 +372,118 @@ export default function ShelfScannerDemo() {
                   gap: 8,
                 }}
               >
-                {ITEMS.map((item, i) => (
-                  <div key={item.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    {/* Item silhouette — sits on the shelf from the start;
-                        the detection box draws AROUND it, not instead of it. */}
-                    <div
+                {ITEMS.map((item, i) => {
+                  const priced = reduced || tapped.has(item.key);
+                  const boxOn = attractActive ? attractBoxes : priced;
+                  const tagOn = attractActive ? attractTags : priced;
+                  // Stagger only belongs to the attract choreography; a
+                  // user's tap responds immediately.
+                  const boxDelay = attractActive ? i * 350 : 0;
+                  const tagDelay = attractActive ? i * 280 : 0;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => tapItem(item.key)}
+                      aria-label={`price the ${item.label}`}
                       style={{
-                        position: "relative",
-                        width: "100%",
-                        aspectRatio: "1 / 1",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        margin: 0,
+                        cursor: reduced ? "default" : "pointer",
                         display: "flex",
+                        flexDirection: "column",
                         alignItems: "center",
-                        justifyContent: "center",
-                        padding: "10%",
-                        boxSizing: "border-box",
+                        gap: 8,
+                        minWidth: 0,
                       }}
                     >
-                      <ItemIcon itemKey={item.key} />
-
-                      {/* Detection box + tick, staggered draw-on */}
                       <div
-                        aria-hidden="true"
                         style={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: 10,
-                          border: `1.5px solid ${C.mint}`,
-                          opacity: boxesShown ? 1 : 0,
-                          transform: boxesShown ? "scale(1)" : "scale(0.82)",
-                          transition: reduced
-                            ? "none"
-                            : `opacity 360ms ${EASE} ${i * 350}ms, transform 360ms ${EASE} ${i * 350}ms`,
-                          willChange: "transform, opacity",
+                          position: "relative",
+                          width: "100%",
+                          aspectRatio: "1 / 1",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "10%",
+                          boxSizing: "border-box",
                         }}
                       >
+                        <ItemIcon itemKey={item.key} />
+
                         <div
+                          aria-hidden="true"
                           style={{
                             position: "absolute",
-                            top: -6,
-                            right: -6,
-                            width: 16,
-                            height: 16,
-                            borderRadius: "50%",
-                            background: C.mint,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            opacity: boxesShown ? 1 : 0,
-                            transform: boxesShown ? "scale(1)" : "scale(0.4)",
+                            inset: 0,
+                            borderRadius: 10,
+                            border: `1.5px solid ${C.mint}`,
+                            opacity: boxOn ? 1 : 0,
+                            transform: boxOn ? "scale(1)" : "scale(0.82)",
                             transition: reduced
                               ? "none"
-                              : `opacity 300ms ${EASE} ${i * 350 + 150}ms, transform 300ms ${EASE} ${i * 350 + 150}ms`,
+                              : `opacity 360ms ${EASE} ${boxDelay}ms, transform 360ms ${EASE} ${boxDelay}ms`,
+                            willChange: "transform, opacity",
                           }}
                         >
-                          <CheckIcon size={9} color="#070510" />
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: -6,
+                              right: -6,
+                              width: 16,
+                              height: 16,
+                              borderRadius: "50%",
+                              background: C.mint,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              opacity: boxOn ? 1 : 0,
+                              transform: boxOn ? "scale(1)" : "scale(0.4)",
+                              transition: reduced
+                                ? "none"
+                                : `opacity 300ms ${EASE} ${boxDelay + 150}ms, transform 300ms ${EASE} ${boxDelay + 150}ms`,
+                            }}
+                          >
+                            <CheckIcon size={9} color="#070510" />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Value tag — pops in per item, same order as detection */}
-                    <div
-                      style={{
-                        fontFamily: "var(--font-mono), monospace",
-                        fontWeight: 700,
-                        fontSize: "clamp(10px,2.8vw,13px)",
-                        color: "#070510",
-                        background: C.mint,
-                        borderRadius: 999,
-                        padding: "3px 8px",
-                        opacity: tagsShown ? 1 : 0,
-                        transform: tagsShown ? "translateY(0) scale(1)" : "translateY(6px) scale(0.85)",
-                        transition: reduced
-                          ? "none"
-                          : `opacity 320ms ${EASE} ${i * 280}ms, transform 320ms ${EASE} ${i * 280}ms`,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      ${item.value}
-                    </div>
-                  </div>
-                ))}
+                      <div
+                        style={{
+                          fontFamily: "var(--font-mono), monospace",
+                          fontWeight: 700,
+                          fontSize: "clamp(10px,2.8vw,13px)",
+                          color: "#070510",
+                          background: C.mint,
+                          borderRadius: 999,
+                          padding: "3px 8px",
+                          opacity: tagOn ? 1 : 0,
+                          transform: tagOn ? "translateY(0) scale(1)" : "translateY(6px) scale(0.85)",
+                          transition: reduced
+                            ? "none"
+                            : `opacity 320ms ${EASE} ${tagDelay}ms, transform 320ms ${EASE} ${tagDelay}ms`,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        ${item.value}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Bottom strip — "scanning shelf…" while working, running
-                  total slides up once every tag has landed. */}
-              <div style={{ position: "relative", marginTop: 20, minHeight: 56, textAlign: "center" }}>
+              {/* Bottom strip — prompt when untapped, "scanning shelf…"
+                  during attract, running total once pricing starts. */}
+              <div style={{ position: "relative", marginTop: 20, minHeight: 64, textAlign: "center" }}>
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
-                    opacity: scanningLabelShown ? 1 : 0,
+                    opacity: promptShown ? 1 : 0,
                     transition: reduced ? "none" : `opacity 300ms ${EASE}`,
                     display: "flex",
                     alignItems: "center",
@@ -397,6 +493,26 @@ export default function ShelfScannerDemo() {
                     letterSpacing: "0.14em",
                     textTransform: "uppercase",
                     color: "rgba(92,224,184,0.55)",
+                    pointerEvents: "none",
+                  }}
+                >
+                  tap an item to price it
+                </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    opacity: scanningShown ? 1 : 0,
+                    transition: reduced ? "none" : `opacity 300ms ${EASE}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "rgba(92,224,184,0.55)",
+                    pointerEvents: "none",
                   }}
                 >
                   scanning shelf…
@@ -413,6 +529,7 @@ export default function ShelfScannerDemo() {
                     alignItems: "center",
                     justifyContent: "center",
                     willChange: "opacity, transform",
+                    pointerEvents: "none",
                   }}
                 >
                   <div
@@ -437,6 +554,22 @@ export default function ShelfScannerDemo() {
                     }}
                   >
                     ${totalValue}
+                  </div>
+                  {/* Completion line — lands when the visitor prices all
+                      five (always shown under reduced motion). */}
+                  <div
+                    style={{
+                      fontFamily: "var(--font-mono), monospace",
+                      fontSize: 10,
+                      letterSpacing: "0.12em",
+                      color: "rgba(92,224,184,0.6)",
+                      marginTop: 4,
+                      opacity: complete && !attractActive ? 1 : 0,
+                      transform: complete && !attractActive ? "translateY(0)" : "translateY(6px)",
+                      transition: reduced ? "none" : `opacity 340ms ${EASE} 250ms, transform 340ms ${EASE} 250ms`,
+                    }}
+                  >
+                    the whole shelf. one walkthrough.
                   </div>
                 </div>
               </div>
