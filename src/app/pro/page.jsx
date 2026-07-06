@@ -12,14 +12,16 @@
  *   <CosmicBackground />
  *   <TopStrip />
  *   <HeroSection />          smooth-scrolls to #pricing
- *   <TheEdgeSection />       "the picker next to you is guessing"
+ *   <ShelfScannerDemo />     live "value the whole shelf" loop
+ *   <AuthCheckDemo />        interactive drag-to-scan fake check
+ *   <FeatureMatrix />        feature proof grid
+ *   <ROICalculator />        "the math" two-pan balance (legacy filename)
  *   <GutPunch />             old-way-vs-loot head-to-head (despite the name,
  *                            no longer a shame/stat section — see file)
- *   <FeatureMatrix />
- *   <ROICalculator />        single defensible line, no income projection
  *   <PricingSection onCTA={handleCTA} />
  *   <FAQSection />
  *   <CloserSection onCTA={handleCTA} />  ← annual_closer UTM
+ *   <LegitStrip /> + <Footer />          trailing, end-aligned snap box
  *   <Toast />
  *
  * CTA flow forks on auth:
@@ -45,7 +47,6 @@ import TopStrip from "./components/TopStrip.jsx";
 import HeroSection from "./components/HeroSection.jsx";
 import ShelfScannerDemo from "./components/ShelfScannerDemo.jsx";
 import AuthCheckDemo from "./components/AuthCheckDemo.jsx";
-import TheEdgeSection from "./components/TheEdgeSection.jsx";
 import GutPunch from "./components/GutPunch.jsx";
 import FeatureMatrix from "./components/FeatureMatrix.jsx";
 import ROICalculator from "./components/ROICalculator.jsx";
@@ -187,13 +188,12 @@ export default function ProPage() {
         <HeroSection />
         <ShelfScannerDemo />
         <AuthCheckDemo />
-        <TheEdgeSection />
-        <hr className="pro-section-divider" />
-        <GutPunch />
         <hr className="pro-section-divider" />
         <FeatureMatrix />
         <hr className="pro-section-divider" />
         <ROICalculator />
+        <hr className="pro-section-divider" />
+        <GutPunch />
         <hr className="pro-section-divider" />
         <PricingSection onCTA={handleCTA} />
         <hr className="pro-section-divider" />
