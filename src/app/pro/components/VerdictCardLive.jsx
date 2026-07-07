@@ -196,31 +196,72 @@ export default function VerdictCardLive() {
     <div ref={rootRef} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
 
-      {/* Persistent wordmark — stays put through the whole loop instead of
-          re-animating with either layer. */}
+      {/* App-header skin — mirrors the dashboard header (src/app/app/
+          page.tsx: CoinMark + LOOT.WORKS wordmark over a hairline).
+          The app sets it in Outfit; /pro's kit substitutes Manrope at
+          the same size/tracking/color. */}
       <div
         style={{
           position: "absolute",
-          top: "8%",
-          left: "9%",
+          top: 0,
+          left: 0,
+          right: 0,
           zIndex: 2,
           display: "flex",
           alignItems: "center",
-          gap: 6,
+          gap: 8,
+          padding: "12px 14px 10px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(7,5,16,0.85)",
         }}
       >
-        <CoinMark size={16} />
+        <CoinMark size={18} />
         <span
           style={{
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: "0.1em",
+            fontFamily: "var(--font-manrope), sans-serif",
+            fontSize: 15,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
             color: C.mint,
           }}
         >
           LOOT.WORKS
         </span>
+      </div>
+
+      {/* Tab-bar hint — the app really has one (src/components/nav/
+          TabBar.tsx: Home / Sourcing / SCAN / Tools / Me, mint top
+          hairline, blurred dark bar). Simplified, non-interactive. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 3,
+          height: 30,
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          alignItems: "center",
+          borderTop: "1px solid rgba(92,224,184,0.15)",
+          background: "rgba(10,10,10,0.8)",
+        }}
+      >
+        {["HOME", "SOURCING", "SCAN", "TOOLS", "ME"].map((t) => (
+          <span
+            key={t}
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 6.5,
+              letterSpacing: "0.12em",
+              textAlign: "center",
+              color: t === "SCAN" ? C.mint : "rgba(255,255,255,0.4)",
+            }}
+          >
+            {t}
+          </span>
+        ))}
       </div>
 
       {/* Viewfinder layer — phases 1 & 2 (and briefly 5, fading back in). */}
@@ -235,7 +276,7 @@ export default function VerdictCardLive() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "22% 11% 10%",
+          padding: "19% 11% 12%",
           boxSizing: "border-box",
         }}
       >
@@ -301,17 +342,38 @@ export default function VerdictCardLive() {
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          left: 0,
+          right: 0,
+          top: "13%",
+          bottom: 0,
           opacity: verdictShown ? 1 : 0,
           transform: verdictShown ? "translateY(0)" : "translateY(14px)",
           transition: `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
           willChange: "opacity, transform",
           display: "flex",
           flexDirection: "column",
-          padding: "22% 9% 8%",
+          padding: "7% 9% 12%",
           boxSizing: "border-box",
+          // Sheet skin per src/components/shared/BottomSheet.tsx: the
+          // real result presents as a bottom sheet.
+          background: "rgba(18,14,24,0.92)",
+          borderTop: `2px solid ${C.mint}`,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
         }}
       >
+        {/* sheet drag-handle nub, as BottomSheet renders */}
+        <div
+          aria-hidden="true"
+          style={{
+            width: 36,
+            height: 4,
+            borderRadius: 2,
+            background: "rgba(255,255,255,0.15)",
+            margin: "0 auto 6px",
+            flexShrink: 0,
+          }}
+        />
         <div style={{ flex: "1 1 auto" }} />
 
         <Reveal shown={verdictShown} delayMs={0} reduced={reduced}>
