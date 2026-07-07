@@ -15,7 +15,9 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 /**
  * "The whole shelf" — tap-to-price on a thrift-aisle scene: five
- * line-art items sitting on two shelf rails (3 up, 2 down). Tap an item
+ * line-art items standing on ONE continuous shelf rail (two floating
+ * rows contradicted the "whole shelf" claim). Slight size variance
+ * between items for rhythm; all bottom-aligned on the rail. Tap an item
  * and its detection box draws, its tag pops beneath it, and the running
  * total eases up. Price all five: the total row pulses once, the
  * completion line lands, and a quiet micro-CTA to #pricing fades into a
@@ -39,11 +41,13 @@ const ATTRACT_DURATIONS = { settle: 800, detect: 1800, value: 1600, total: 1200,
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 
 const ITEMS = [
-  { key: "oven", label: "dutch oven", value: 85 },
-  { key: "vinyl", label: "vinyl record", value: 40 },
-  { key: "jacket", label: "denim jacket", value: 140 },
-  { key: "camera", label: "film camera", value: 95 },
-  { key: "bag", label: "leather bag", value: 60 },
+  // size: icon px on the shared rail — slight variance for shelf rhythm,
+  // all ≥44 so every silhouette stays readable in a ~62px slot.
+  { key: "oven", label: "dutch oven", value: 85, size: 52 },
+  { key: "vinyl", label: "vinyl record", value: 40, size: 46 },
+  { key: "jacket", label: "denim jacket", value: 140, size: 58 },
+  { key: "camera", label: "film camera", value: 95, size: 48 },
+  { key: "bag", label: "leather bag", value: 60, size: 50 },
 ];
 const SHELF_TOTAL = ITEMS.reduce((sum, i) => sum + i.value, 0); // 420
 
@@ -182,15 +186,17 @@ function OvenIcon() {
 }
 
 function VinylIcon() {
-  // vinyl half out of its sleeve — micro-detail: center label dot
+  // vinyl record beside its sleeve edge — micro-detail: groove ring +
+  // label dot. No overlap, so no dark occlusion fill breaking the
+  // shared line-art language.
   return (
     <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
-      <rect x="6" y="14" width="32" height="32" rx="2" fill={FILL} stroke={C.mint} strokeWidth="2.2" />
-      <path d="M10 20 L26 20" stroke={C.mint} strokeWidth="1.2" opacity="0.5" />
-      <circle cx="40" cy="30" r="15" fill="#0d0a17" stroke={C.mint} strokeWidth="2.2" />
-      <circle cx="40" cy="30" r="9" fill="none" stroke={C.mint} strokeWidth="0.9" opacity="0.45" />
-      <circle cx="40" cy="30" r="4" fill={FILL} stroke={C.mint} strokeWidth="1.4" />
-      <circle cx="40" cy="30" r="1.2" fill={C.mint} />
+      <rect x="6" y="12" width="10" height="40" rx="2" fill={FILL} stroke={C.mint} strokeWidth="2.2" />
+      <path d="M9 18 L13 18" stroke={C.mint} strokeWidth="1.2" opacity="0.5" />
+      <circle cx="37" cy="32" r="17" fill="none" stroke={C.mint} strokeWidth="2.2" />
+      <circle cx="37" cy="32" r="11" fill="none" stroke={C.mint} strokeWidth="0.9" opacity="0.45" />
+      <circle cx="37" cy="32" r="5" fill={FILL} stroke={C.mint} strokeWidth="1.4" />
+      <circle cx="37" cy="32" r="1.2" fill={C.mint} />
     </svg>
   );
 }
@@ -214,9 +220,9 @@ function CameraIcon() {
     <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
       <rect x="8" y="20" width="44" height="28" rx="4" fill={FILL} stroke={C.mint} strokeWidth="2.2" />
       <rect x="22" y="13" width="14" height="7" rx="2" fill="none" stroke={C.mint} strokeWidth="2" />
-      <circle cx="30" cy="34" r="11" fill="#0d0a17" stroke={C.mint} strokeWidth="2.2" />
+      <circle cx="30" cy="34" r="11" fill="none" stroke={C.mint} strokeWidth="2.2" />
       <circle cx="30" cy="34" r="7" fill="none" stroke={C.mint} strokeWidth="1.2" opacity="0.6" />
-      <circle cx="30" cy="34" r="3.5" fill={FILL} stroke={C.mint} strokeWidth="1.2" />
+      <circle cx="30" cy="34" r="3.5" fill="none" stroke={C.mint} strokeWidth="1.2" />
       <rect x="44" y="15" width="5" height="5" rx="1" fill="none" stroke={C.mint} strokeWidth="1.6" />
       <circle cx="14" cy="26" r="1.6" fill={C.mint} />
     </svg>
@@ -244,8 +250,11 @@ function ItemIcon({ itemKey }) {
   return <BagIcon />;
 }
 
-/* One tappable item standing on a shelf rail: icon + detection box +
-   tag slot beneath. Breath = gentle idle scale on the icon only. */
+/* One tappable item standing on the shared rail: size-varied icon,
+   bottom-aligned, detection box hugging the icon itself, tag slot
+   beneath the rail. Breath = gentle idle scale on the icon only.
+   No per-item rail — the continuous shelf line is drawn once by the
+   parent across all five. */
 function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap }) {
   return (
     <button
@@ -261,14 +270,15 @@ function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap })
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        width: 84,
+        flex: "1 1 0",
+        maxWidth: 68,
         minWidth: 0,
       }}
     >
       <div
         style={{
           position: "relative",
-          width: 64,
+          width: "100%",
           height: 64,
           display: "flex",
           alignItems: "flex-end",
@@ -277,54 +287,54 @@ function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap })
       >
         <div
           style={{
-            width: 60,
-            height: 60,
+            position: "relative",
+            width: item.size,
+            height: item.size,
             transform: breathing ? "scale(1.02)" : "scale(1)",
             transition: reduced ? "none" : `transform 900ms ${EASE}`,
             willChange: "transform",
           }}
         >
           <ItemIcon itemKey={item.key} />
-        </div>
-        {/* detection box hugs the icon zone */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: -4,
-            borderRadius: 10,
-            border: `1.5px solid ${C.mint}`,
-            opacity: boxOn ? 1 : 0,
-            transform: boxOn ? "scale(1)" : "scale(0.82)",
-            transition: reduced ? "none" : `opacity 360ms ${EASE} ${delayBase}ms, transform 360ms ${EASE} ${delayBase}ms`,
-            willChange: "transform, opacity",
-          }}
-        >
+          {/* detection box hugs the icon, not the slot */}
           <div
+            aria-hidden="true"
             style={{
               position: "absolute",
-              top: -6,
-              right: -6,
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              background: C.mint,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              inset: -4,
+              borderRadius: 10,
+              border: `1.5px solid ${C.mint}`,
               opacity: boxOn ? 1 : 0,
-              transform: boxOn ? "scale(1)" : "scale(0.4)",
-              transition: reduced ? "none" : `opacity 300ms ${EASE} ${delayBase + 150}ms, transform 300ms ${EASE} ${delayBase + 150}ms`,
+              transform: boxOn ? "scale(1)" : "scale(0.82)",
+              transition: reduced ? "none" : `opacity 360ms ${EASE} ${delayBase}ms, transform 360ms ${EASE} ${delayBase}ms`,
+              willChange: "transform, opacity",
             }}
           >
-            <CheckIcon size={9} color="#070510" />
+            <div
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                background: C.mint,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: boxOn ? 1 : 0,
+                transform: boxOn ? "scale(1)" : "scale(0.4)",
+                transition: reduced ? "none" : `opacity 300ms ${EASE} ${delayBase + 150}ms, transform 300ms ${EASE} ${delayBase + 150}ms`,
+              }}
+            >
+              <CheckIcon size={9} color="#070510" />
+            </div>
           </div>
         </div>
       </div>
-      {/* shelf rail the item stands on */}
-      <div aria-hidden="true" style={{ width: "100%", height: 2, background: "rgba(92,224,184,0.28)", borderRadius: 1 }} />
-      {/* tag slot — height reserved so a popping tag never shifts rows */}
-      <div style={{ height: 26, display: "flex", alignItems: "center" }}>
+      {/* tag slot — height reserved so a popping tag never shifts the row;
+          sits just below the shared rail like a hanging price sticker */}
+      <div style={{ height: 26, marginTop: 2, display: "flex", alignItems: "center" }}>
         <div
           style={{
             fontFamily: "var(--font-mono), monospace",
@@ -480,8 +490,8 @@ export default function ShelfScannerDemo() {
         </FadeUp>
 
         <FadeUp delay={0.45}>
-          {/* Aisle panel — height derives purely from its content (two
-              shelf rows + prompt + total block), never stretched by the
+          {/* Aisle panel — height derives purely from its content (one
+              shelf row + prompt + total block), never stretched by the
               section. */}
           <div
             ref={rootRef}
@@ -510,17 +520,28 @@ export default function ShelfScannerDemo() {
                 willChange: "opacity, transform",
               }}
             >
-              {/* shelf row 1 — three items */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
-                {ITEMS.slice(0, 3).map((item, i) => (
-                  <ShelfItem key={item.key} item={item} {...rowState(item, i)} reduced={reduced} onTap={() => tapItem(item.key)} />
-                ))}
-              </div>
-              {/* shelf row 2 — two items */}
-              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 6 }}>
-                {ITEMS.slice(3).map((item, i) => (
-                  <ShelfItem key={item.key} item={item} {...rowState(item, i + 3)} reduced={reduced} onTap={() => tapItem(item.key)} />
-                ))}
+              {/* ONE continuous shelf — all five items on a single rail.
+                  The rail is drawn once, absolutely, at the icon-zone
+                  baseline (64px), so it runs unbroken beneath every item. */}
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: 2 }}>
+                  {ITEMS.map((item, i) => (
+                    <ShelfItem key={item.key} item={item} {...rowState(item, i)} reduced={reduced} onTap={() => tapItem(item.key)} />
+                  ))}
+                </div>
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: 2,
+                    right: 2,
+                    top: 64,
+                    height: 2,
+                    background: "rgba(92,224,184,0.28)",
+                    borderRadius: 1,
+                    pointerEvents: "none",
+                  }}
+                />
               </div>
 
               {/* prompt / scanning row, directly under the aisle */}

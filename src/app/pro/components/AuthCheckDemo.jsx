@@ -14,10 +14,12 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 /**
  * "The fake check" — interactive authenticate demo. The user drags a
- * mint scanline across an unbranded hoodie; checklist lines assemble as
- * the line crosses their zones, and reaching the right edge slams in a
- * REP DETECTED verdict. Fully scrubbable in both directions because
- * every visual is derived purely from one progress value (0..1).
+ * mint scanline across an unbranded hoodie; the checklist waits as four
+ * dim ghost rows (so the reveal is legible before anyone drags), and
+ * each row ignites to its full ✓/✗ state as the line crosses its zone.
+ * Reaching the right edge slams in a REP DETECTED verdict. Fully
+ * scrubbable in both directions because every visual is derived purely
+ * from one progress value (0..1) — scrub-back de-ignites rows to ghost.
  *
  * Interaction model:
  *   - drag: pointer events, horizontal only. The panel sets
@@ -389,31 +391,31 @@ export default function AuthCheckDemo() {
                     </div>
                   </div>
 
-                  {/* Checklist — each line assembles the moment the
-                      scanline crosses its zone; scrubbing back hides it
-                      again because it's derived from p. */}
+                  {/* Checklist — ghost state at rest: all four rows sit
+                      visible as dim mint placeholders (text only, no
+                      marks), so the visitor can see WHAT dragging will
+                      reveal. Each row ignites to its full colored state
+                      the moment the scanline crosses its zone, and
+                      de-ignites back to ghost on scrub-back because
+                      everything is derived from p. Trigger points (at:)
+                      untouched. */}
                   <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
                     {CHECKS.map((chk) => {
                       const shown = p >= chk.at;
                       const color = chk.pass ? C.mint : RED;
+                      const GHOST = "rgba(92,224,184,0.15)";
                       return (
                         <div
                           key={chk.label}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            opacity: shown ? 1 : 0,
-                            transform: shown ? "translateX(0)" : "translateX(-8px)",
-                            transition: reduced ? "none" : `opacity 280ms ${EASE}, transform 280ms ${EASE}`,
-                          }}
+                          style={{ display: "flex", alignItems: "center", gap: 8 }}
                         >
                           <span
                             style={{
                               fontFamily: "var(--font-mono), monospace",
                               fontSize: "clamp(10px,2.9vw,13px)",
-                              color: chk.pass ? "rgba(255,255,255,0.7)" : color,
+                              color: shown ? (chk.pass ? "rgba(255,255,255,0.7)" : color) : GHOST,
                               whiteSpace: "nowrap",
+                              transition: reduced ? "none" : `color 280ms ${EASE}`,
                             }}
                           >
                             {chk.label}
@@ -426,8 +428,11 @@ export default function AuthCheckDemo() {
                               color,
                               lineHeight: 1,
                               display: "inline-block",
+                              opacity: shown ? 1 : 0,
                               transform: shown ? "scale(1)" : "scale(0.4)",
-                              transition: reduced ? "none" : "transform 260ms cubic-bezier(0.2,1.4,0.4,1)",
+                              transition: reduced
+                                ? "none"
+                                : `opacity 260ms ${EASE}, transform 260ms cubic-bezier(0.2,1.4,0.4,1)`,
                             }}
                             aria-hidden="true"
                           >
