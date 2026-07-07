@@ -49,6 +49,7 @@ export default function VerdictCard() {
           fontFamily: "var(--font-bebas), sans-serif",
           fontSize: "clamp(18px,7cqw,26px)",
           lineHeight: 1.05,
+          letterSpacing: "0.03em", // Bebas sub-32px optical tracking
           color: "#fff",
           margin: "0 0 4px",
         }}
@@ -104,6 +105,8 @@ export default function VerdictCard() {
             fontSize: "clamp(26px,11cqw,40px)",
             color: C.mint,
             lineHeight: 1,
+            letterSpacing: "0.02em",
+            fontVariantNumeric: "tabular-nums",
           }}
         >
           $75&ndash;$95

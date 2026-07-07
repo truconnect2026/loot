@@ -7,6 +7,7 @@ import {
   CTAButton,
   FadeUp,
   SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
@@ -72,9 +73,7 @@ export default function CloserSection({ onCTA }) {
       <FadeUp delay={0.06}>
         <h2
           style={{
-            fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: SECTION_HEADLINE_SIZE,
-            lineHeight: 1.1,
+            ...SECTION_HEADLINE_STYLE,
             margin: 0,
             padding: 0,
           }}
@@ -85,9 +84,7 @@ export default function CloserSection({ onCTA }) {
         </h2>
         <p
           style={{
-            fontFamily: "var(--font-bebas), sans-serif",
-            fontSize: SECTION_HEADLINE_SIZE,
-            lineHeight: 1.1,
+            ...SECTION_HEADLINE_STYLE,
             color: C.gold,
             margin: "0 0 36px",
             padding: 0,

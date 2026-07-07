@@ -29,6 +29,16 @@ export function ShimmerText({ children, style = {} }) {
    (much bigger) scale; it's excepted by design. */
 export const SECTION_PADDING = "clamp(48px,6.5vw,80px) 24px";
 export const SECTION_HEADLINE_SIZE = "clamp(42px,7.5vw,84px)";
+/* THE one H2 spec — every non-hero section headline spreads this so
+   face/size/tracking/line-height cannot drift per section again.
+   (Hero keeps its own display scale + the max-height:700px
+   compressed variants from pro-hero-* classes.) */
+export const SECTION_HEADLINE_STYLE = {
+  fontFamily: "var(--font-bebas), sans-serif",
+  fontSize: SECTION_HEADLINE_SIZE,
+  lineHeight: 1.12,
+  letterSpacing: "0.01em",
+};
 export const SECTION_BODY_SIZE = "clamp(16px,2vw,18px)";
 
 /* One shared outer shell for every snap section's content — same centered
@@ -141,7 +151,7 @@ export function CTAButton({
         fontFamily: "var(--font-bebas), sans-serif",
         fontSize: 18,
         fontWeight: 400,
-        letterSpacing: "0.02em",
+        letterSpacing: "0.04em", // Bebas sub-32px optical tracking
         padding: "14px 30px",
         borderRadius: 13,
         cursor: "pointer",

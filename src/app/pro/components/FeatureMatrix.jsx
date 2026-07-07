@@ -7,6 +7,7 @@ import {
   FadeUp,
   SECTION_BODY_SIZE,
   SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
@@ -140,7 +141,7 @@ function VerdictMicro({ beat, reduced }) {
       >
         EXCELLENT
       </div>
-      <div style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 22, lineHeight: 1, color: C.mint }}>
+      <div style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 22, lineHeight: 1, letterSpacing: "0.03em", fontVariantNumeric: "tabular-nums", color: C.mint }}>
         {/* en-dash for numeric ranges is correct and permanent; the
             no-dash rule applies to em-dashes in prose only */}
         $75&ndash;$95
@@ -177,7 +178,7 @@ function CompsMicro({ beat, reduced }) {
           >
             SOLD
           </span>
-          <span style={{ ...mono, fontSize: 11, color: "rgba(255,255,255,0.75)" }}>{price}</span>
+          <span style={{ ...mono, fontSize: 11, fontVariantNumeric: "tabular-nums", color: "rgba(255,255,255,0.75)" }}>{price}</span>
           <span style={{ ...mono, fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{when}</span>
         </div>
       ))}
@@ -408,9 +409,7 @@ export default function FeatureMatrix() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: SECTION_HEADLINE_SIZE,
-              lineHeight: 1.3,
+              ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.35em",
               marginBottom: 12,
             }}

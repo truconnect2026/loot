@@ -182,7 +182,7 @@
 }
 
 /* ── FAQ headline: single line at ≥768px, wrap-tight below ── */
-:global(.faq-headline) { white-space: normal; line-height: 1.0; }
+:global(.faq-headline) { white-space: normal; }
 @media (min-width: 768px) {
   :global(.faq-headline) { white-space: nowrap; }
 }

@@ -7,6 +7,7 @@ import {
   Eyebrow,
   FadeUp,
   SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
@@ -38,9 +39,7 @@ export default function PricingSection({ onCTA }) {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: SECTION_HEADLINE_SIZE,
-              lineHeight: 1.3,
+              ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.5em",
               marginBottom: 48,
             }}
@@ -86,6 +85,7 @@ export default function PricingSection({ onCTA }) {
                   fontSize: "clamp(48px,8vw,72px)",
                   color: "rgba(255,255,255,0.95)",
                   lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
                   marginBottom: 12,
                 }}
               >
@@ -188,6 +188,7 @@ export default function PricingSection({ onCTA }) {
                   fontSize: "clamp(48px,8vw,72px)",
                   color: "#fff",
                   lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
                   marginBottom: 12,
                   filter: "drop-shadow(0 0 24px rgba(92,224,184,0.4))",
                 }}

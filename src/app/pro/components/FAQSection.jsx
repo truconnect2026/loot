@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
-import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE, SECTION_PADDING, SectionShell } from "./atoms.jsx";
+import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE, SECTION_PADDING, SectionShell } from "./atoms.jsx";
 
 const faqData = [
   {
@@ -136,9 +137,7 @@ export default function FAQSection() {
           <h2
             className="faq-headline"
             style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: SECTION_HEADLINE_SIZE,
-              lineHeight: 1.0,
+              ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.25em",
               marginBottom: 48,
             }}

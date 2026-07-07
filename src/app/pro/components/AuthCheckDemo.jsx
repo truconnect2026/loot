@@ -6,6 +6,7 @@ import {
   Eyebrow,
   FadeUp,
   SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
@@ -268,9 +269,7 @@ export default function AuthCheckDemo() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: SECTION_HEADLINE_SIZE,
-              lineHeight: 1.15,
+              ...SECTION_HEADLINE_STYLE,
               margin: "0 0 28px",
               padding: 0,
               color: "#fff",

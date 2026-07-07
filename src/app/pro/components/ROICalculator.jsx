@@ -6,6 +6,7 @@ import {
   Eyebrow,
   FadeUp,
   SECTION_HEADLINE_SIZE,
+  SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
@@ -178,9 +179,7 @@ export default function ROICalculator() {
         <FadeUp delay={0.15}>
           <h2
             style={{
-              fontFamily: "var(--font-bebas), sans-serif",
-              fontSize: SECTION_HEADLINE_SIZE,
-              lineHeight: 1.15,
+              ...SECTION_HEADLINE_STYLE,
               margin: "0 0 24px",
               padding: 0,
               color: "#fff",
@@ -305,7 +304,7 @@ export default function ROICalculator() {
                 <div style={{ position: "absolute", right: -14, top: 1, width: 120, display: "flex", justifyContent: "center" }}>
                   <Pan counterRotate={-tip} curve={buy.curve} reduced={reduced}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingBottom: 2 }}>
-                      <span style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 24, lineHeight: 1, color: C.mint }}>
+                      <span style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 24, lineHeight: 1, letterSpacing: "0.03em", fontVariantNumeric: "tabular-nums", color: C.mint }}>
                         {PRO_PRICE}
                       </span>
                       <span style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", color: "rgba(92,224,184,0.6)" }}>
