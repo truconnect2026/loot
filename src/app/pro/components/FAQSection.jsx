@@ -74,15 +74,18 @@ function FAQItem({ item, isOpen, onToggle }) {
         <span
           style={{
             fontFamily: "var(--font-mono), monospace",
-            fontSize: 18,
+            // 22px glyph in a 24px box: the old 18px + read as microscopic
+            // on device; the row is full-width tappable, the glyph just
+            // needs to LOOK tappable.
+            fontSize: 22,
             color: C.mint,
             transition: "transform 0.3s ease",
             transform: isOpen ? "rotate(45deg)" : "rotate(0)",
             flexShrink: 0,
             // Fixed square + flex centering so the glyph rotates around its
             // true optical center instead of drifting when it becomes x.
-            width: 20,
-            height: 20,
+            width: 24,
+            height: 24,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",

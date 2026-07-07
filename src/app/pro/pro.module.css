@@ -186,6 +186,15 @@
   :global(.pricing-grid) { grid-template-columns: 1fr 1fr !important; }
 }
 
+/* ── Pricing interior rest points: one per card top, so a short swipe
+   inside the oversized pricing section settles with a whole card (price
+   + bullets + CTA) framed instead of slicing it. snap-stop stays normal
+   so committed swipes still cross the section. ── */
+:global(.pricing-grid > div) {
+  scroll-snap-align: start;
+  scroll-margin-top: 12px;
+}
+
 /* ── FAQ headline: single line at ≥768px, wrap-tight below ── */
 :global(.faq-headline) { white-space: normal; }
 @media (min-width: 768px) {
