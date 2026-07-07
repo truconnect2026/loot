@@ -337,7 +337,9 @@ export default function VerdictCardLive() {
               margin: "0 0 14px",
             }}
           >
-            1957-68 &middot; Pyrex &middot; verified
+            {/* en-dash for numeric ranges is correct and permanent; the
+                no-dash rule applies to em-dashes in prose only */}
+            1957&ndash;68 &middot; Pyrex &middot; verified
           </p>
         </Reveal>
 
@@ -383,7 +385,7 @@ export default function VerdictCardLive() {
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              ${low}-${high}
+              ${low}&ndash;${high}
             </div>
           </div>
         </Reveal>

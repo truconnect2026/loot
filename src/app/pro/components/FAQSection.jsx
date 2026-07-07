@@ -74,7 +74,7 @@ function FAQItem({ item, isOpen, onToggle }) {
           style={{
             fontFamily: "var(--font-mono), monospace",
             fontSize: 18,
-            color: C.purple,
+            color: C.mint,
             transition: "transform 0.3s ease",
             transform: isOpen ? "rotate(45deg)" : "rotate(0)",
             flexShrink: 0,
@@ -143,7 +143,7 @@ export default function FAQSection() {
               marginBottom: 48,
             }}
           >
-            REAL QUESTIONS. <span style={{ color: C.purple }}>REAL ANSWERS.</span>
+            REAL QUESTIONS. <span style={{ color: C.mint }}>REAL ANSWERS.</span>
           </h2>
         </FadeUp>
 

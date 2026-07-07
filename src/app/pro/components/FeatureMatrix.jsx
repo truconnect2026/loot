@@ -141,7 +141,9 @@ function VerdictMicro({ beat, reduced }) {
         EXCELLENT
       </div>
       <div style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 22, lineHeight: 1, color: C.mint }}>
-        $75-$95
+        {/* en-dash for numeric ranges is correct and permanent; the
+            no-dash rule applies to em-dashes in prose only */}
+        $75&ndash;$95
       </div>
     </div>
   );
