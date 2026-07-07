@@ -122,10 +122,10 @@ export default function VerdictCard() {
           }}
         />
 
-      {/* Flexible spacer — the identity block stays pinned near the top,
-          the core verdict cluster below floats toward center instead of
-          hugging the top of the tall 9:19.5 frame. */}
-      <div style={{ flex: "1 1 auto" }} />
+      {/* 0.5 vs 1 spacer bias (matches the live card): the result block
+          sits toward the top of the sheet rather than leaving a dead
+          band above the title on tall 9:19.5 frames. */}
+      <div style={{ flex: "0.5 1 auto" }} />
 
       <h3
         style={{

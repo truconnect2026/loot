@@ -27,6 +27,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Constant reserved band for the mini-CTA bar (bar height + home
+     indicator). The scroller is a flex child, so it always ends above
+     this band — content can never sit under the bar, and showing or
+     hiding the bar cannot shift layout or move a snap rest. */
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
 :global(.pro-scroll-main) {
   flex: 1 1 auto;

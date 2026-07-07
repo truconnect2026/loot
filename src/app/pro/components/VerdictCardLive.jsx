@@ -12,8 +12,10 @@ import VerdictCard from "./VerdictCard.jsx";
  * VerdictCard.jsx (the static card) stays untouched as the reduced-motion
  * fallback and is reused directly for it, not re-implemented.
  *
- * Loop (~5.6s), transform/opacity only:
- *   frame (0.8s) → sweep (0.8s) → assemble (1.6s) → hold (2s) → reset (0.4s)
+ * Loop (~6.6s), transform/opacity only:
+ *   frame (0.6s) → sweep (0.7s) → assemble (1.4s) → hold (3.5s) → reset (0.4s)
+ * Weighted so the fully-assembled verdict owns ≥50% of the loop — the
+ * empty viewfinder is a beat, not the show.
  *
  * Visibility tracking is local to this file (not the shared useInView,
  * which is a one-shot "seen once" hook and can't report going back out of
@@ -22,7 +24,7 @@ import VerdictCard from "./VerdictCard.jsx";
  */
 
 const PHASES = ["frame", "sweep", "assemble", "hold", "reset"];
-const DURATIONS = { frame: 800, sweep: 800, assemble: 1600, hold: 2000, reset: 400 };
+const DURATIONS = { frame: 600, sweep: 700, assemble: 1400, hold: 3500, reset: 400 };
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 
 const comps = ["sold $85 · 3d ago", "sold $78 · 1w ago", "sold $92 · 2w ago"];
@@ -35,7 +37,7 @@ const STYLES = `
   100% { transform: translateY(100%); opacity: 0; }
 }
 .vcl-sweep-track { transform: translateY(-100%); opacity: 0; will-change: transform, opacity; }
-.vcl-sweep-track.vcl-active { animation: vclSweepMove 0.8s ${EASE} 1; }
+.vcl-sweep-track.vcl-active { animation: vclSweepMove 0.7s ${EASE} 1; }
 
 @keyframes vclFlash {
   0%, 74% { opacity: 0; }
@@ -43,11 +45,11 @@ const STYLES = `
   100%    { opacity: 0; }
 }
 .vcl-flash { opacity: 0; }
-.vcl-flash.vcl-active { animation: vclFlash 0.8s ease-out 1; }
+.vcl-flash.vcl-active { animation: vclFlash 0.7s ease-out 1; }
 
 @keyframes vclBracketPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 .vcl-bracket { opacity: 0.5; transition: opacity 0.3s ease; }
-.vcl-bracket.vcl-active { animation: vclBracketPulse 0.4s ease-in-out 2; }
+.vcl-bracket.vcl-active { animation: vclBracketPulse 0.35s ease-in-out 2; }
 `;
 
 /* Live, continuously-updating visibility tracker — local to this file.
@@ -117,17 +119,18 @@ function useCountUp(target, phase) {
       setValue(0);
       return;
     }
-    let raf;
-    let start = null;
+    // setInterval + wall clock, NOT requestAnimationFrame: iOS in-app
+    // webviews (and headless WebKit) throttle rAF hard enough that the
+    // count froze at $0–$0 while the timer-driven phase machine kept
+    // going. Timers are the proven-reliable clock here.
+    const start = Date.now();
     const dur = 700;
-    const step = (ts) => {
-      if (!start) start = ts;
-      const p = Math.min((ts - start) / dur, 1);
+    const id = setInterval(() => {
+      const p = Math.min((Date.now() - start) / dur, 1);
       setValue(Math.round((1 - Math.pow(1 - p, 3)) * target));
-      if (p < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => raf && cancelAnimationFrame(raf);
+      if (p >= 1) clearInterval(id);
+    }, 33);
+    return () => clearInterval(id);
   }, [active, target]);
 
   return value;
@@ -264,39 +267,52 @@ export default function VerdictCardLive() {
         ))}
       </div>
 
-      {/* Viewfinder layer — phases 1 & 2 (and briefly 5, fading back in). */}
+      {/* Viewfinder layer — phases 1 & 2 (and briefly 5, fading back in).
+          Stays dimly visible under the verdict sheet instead of dropping
+          to 0: the real result sheet rises over a live camera, and the
+          band above the sheet must not read as a dead black strip. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          opacity: viewfinderShown ? 1 : 0,
+          opacity: viewfinderShown ? 1 : 0.22,
           transition: `opacity 400ms ${EASE}`,
           willChange: "opacity",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "19% 11% 12%",
+          padding: "16% 11% 12%",
           boxSizing: "border-box",
         }}
       >
         <div
           style={{
             position: "relative",
+            // Height-proportional, not width-derived: on tall screens
+            // (Safari 9/19.5 frame) a width-based square left a giant
+            // black band above and below — the reported "void". The
+            // viewfinder now grows with the screen like a real camera.
             width: "76%",
-            aspectRatio: "1 / 1.05",
+            maxWidth: 300,
+            height: "50%",
+            minHeight: 190,
+            maxHeight: 400,
             borderRadius: 20,
             background: "rgba(255,255,255,0.025)",
             overflow: "hidden",
           }}
         >
+          {/* faint reticle crosshairs — static composition, no motion */}
+          <div aria-hidden="true" style={{ position: "absolute", left: "8%", right: "8%", top: "50%", height: 1, background: "rgba(92,224,184,0.08)" }} />
+          <div aria-hidden="true" style={{ position: "absolute", top: "8%", bottom: "8%", left: "50%", width: 1, background: "rgba(92,224,184,0.08)" }} />
           <Bracket corner="tl" pulse={phase === "sweep"} />
           <Bracket corner="tr" pulse={phase === "sweep"} />
           <Bracket corner="bl" pulse={phase === "sweep"} />
           <Bracket corner="br" pulse={phase === "sweep"} />
 
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: "58%" }}>
+            <div style={{ width: "min(58%, 170px)" }}>
               <PyrexBowl size="100%" />
             </div>
           </div>
@@ -338,14 +354,18 @@ export default function VerdictCardLive() {
         </div>
       </div>
 
-      {/* Verdict layer — phases 3 & 4, staggered per-element reveal. */}
+      {/* Verdict layer — phases 3 & 4, staggered per-element reveal.
+          Bottom-anchored and content-hugging like the real BottomSheet:
+          full-height (top 13%) left a dead band under AUTHENTIC on tall
+          9:19.5 screens; now the dim camera owns the space above. */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: "13%",
+          top: "auto",
           bottom: 0,
+          maxHeight: "87%",
           opacity: verdictShown ? 1 : 0,
           transform: verdictShown ? "translateY(0)" : "translateY(14px)",
           transition: `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
@@ -374,7 +394,9 @@ export default function VerdictCardLive() {
             flexShrink: 0,
           }}
         />
-        <div style={{ flex: "1 1 auto" }} />
+        {/* 0.5 vs 1: bias the result block toward the top of the sheet —
+            equal spacers left a dead band above the title on tall screens */}
+        <div style={{ flex: "0.5 1 auto" }} />
 
         <Reveal shown={verdictShown} delayMs={0} reduced={reduced}>
           <h3

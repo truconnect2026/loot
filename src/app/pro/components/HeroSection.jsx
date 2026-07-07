@@ -11,7 +11,7 @@ const HERO_STYLES = `
 @media (min-width: 1024px) {
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
-.pro-hero-text { min-width: 0; }
+.pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; }
 .pro-hero-visual {
   position: relative;
   display: flex;
@@ -20,6 +20,11 @@ const HERO_STYLES = `
   margin: 0 auto;
   width: 100%;
   max-width: 380px;
+  /* Interior rest point: a swipe that runs out of steam over the hero
+     tail settles with the mockup centered instead of slicing the CTA
+     card / mockup top. snap-stop stays default (normal) so a committed
+     swipe still carries through to the next section. */
+  scroll-snap-align: center;
 }
 @media (max-width: 640px) {
   /* Hero proof element — bleed most (not all) of the section's side

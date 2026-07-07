@@ -42,6 +42,11 @@ const CARD_COUNT = 6;
 const GRID_STYLES = `
 .fpg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 768px) { .fpg-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; } }
+/* Interior rest points at row boundaries: cards sharing a row share a
+   snap offset, so a short swipe inside this oversized section settles
+   on a whole row instead of slicing rows at both fold edges. Default
+   snap-stop (normal) keeps committed swipes moving section-to-section. */
+.fpg-grid > div { scroll-snap-align: start; scroll-margin-top: 14px; }
 `;
 
 /* Local live visibility tracker — same pattern as the demo sections. */

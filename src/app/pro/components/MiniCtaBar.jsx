@@ -70,7 +70,11 @@ export default function MiniCtaBar() {
         alignItems: "center",
         justifyContent: "center",
         gap: 14,
-        padding: "10px 16px calc(10px + env(safe-area-inset-bottom, 0px))",
+        // Pinned to the exact band .pro-page-root reserves (see
+        // pro.module.css) so the bar overlays reserved space only.
+        height: "calc(56px + env(safe-area-inset-bottom, 0px))",
+        boxSizing: "border-box",
+        padding: "0 16px env(safe-area-inset-bottom, 0px)",
         background: "rgba(7,5,16,0.92)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
