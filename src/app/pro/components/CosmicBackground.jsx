@@ -8,16 +8,22 @@ import { C } from "../lib/colors.js";
  * film grain. Pure CSS animations driven by keyframes in pro.module.css.
  */
 export default function CosmicBackground() {
-  // Quiet star-field: ~70% fewer dots than the original 82, smaller and
-  // fainter (alpha baked into the color itself, not just the twinkle
-  // keyframe's peak) — clean negative space instead of a dense field.
+  // Quiet star-field, STRATIFIED: pure-random placement clumps (Poisson),
+  // which left whole viewport regions star-dead — the grid/math/gutpunch
+  // stretches read as near-black voids next to the hero. One jittered
+  // star per 6×5 grid cell keeps it quiet everywhere but present
+  // everywhere. Same sizes, alphas, and twinkle — no new animation.
   const stars = useMemo(() => {
     const out = [];
-    for (let i = 0; i < 24; i++) {
+    const COLS = 6;
+    const ROWS = 5;
+    for (let i = 0; i < COLS * ROWS; i++) {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
       const r = Math.random();
       out.push({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
+        x: ((col + 0.15 + Math.random() * 0.7) / COLS) * 100,
+        y: ((row + 0.15 + Math.random() * 0.7) / ROWS) * 100,
         s: 0.4 + Math.random() * 1.2,
         c: r > 0.88 ? "rgba(245,197,24,0.55)" : r > 0.78 ? "rgba(59,130,246,0.55)" : "rgba(255,255,255,0.6)",
         d: Math.random() * 6,

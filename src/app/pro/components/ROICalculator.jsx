@@ -133,15 +133,37 @@ export default function ROICalculator() {
   const [sel, setSel] = useState(DEFAULT_BUY);
   const [attract, setAttract] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
+  // Entrance beat: the beam arrives LEVEL and settles into its tip with
+  // the weighted ease as the section lands — the argument happens in
+  // front of the visitor instead of being pre-baked. One-shot per entry.
+  // Reduced motion never sees this: it arrives already tipped (below,
+  // `tip` ignores `entered` when reduced).
+  const [entered, setEntered] = useState(false);
 
   const buy = BUYS[sel];
 
-  /* Idle watcher — arm attract after 6s untouched, on-screen only. */
   useEffect(() => {
-    if (reduced || !inView || attract) return;
+    if (!inView) {
+      setEntered(false);
+      return;
+    }
+    if (reduced || entered) return;
+    const t1 = setTimeout(() => setEntered(true), 350);
+    // attract's 6s idle clock counts from settle END — no beat→attract stack
+    const t2 = setTimeout(() => setLastTouch(Date.now()), 1100);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [inView, reduced, entered]);
+
+  /* Idle watcher — arm attract after 6s untouched, on-screen only;
+     waits for the entrance settle. */
+  useEffect(() => {
+    if (reduced || !inView || attract || !entered) return;
     const t = setTimeout(() => setAttract(true), 6000);
     return () => clearTimeout(t);
-  }, [reduced, inView, attract, lastTouch]);
+  }, [reduced, inView, attract, lastTouch, entered]);
 
   /* Attract — cycle chips every 3s; fully stops off-screen. */
   useEffect(() => {
@@ -152,11 +174,15 @@ export default function ROICalculator() {
 
   const pick = (i) => {
     setAttract(false);
+    setEntered(true); // interaction owns the beam — never fight the settle
     setLastTouch(Date.now());
     setSel(i);
   };
 
-  const tip = buy.tip; // beam angle; negative = left (bad buy) side down
+  // Beam angle; negative = left (bad buy) side down. Reduced motion is
+  // pinned to the tipped end-state exactly as before; otherwise the beam
+  // holds level until the entrance settle fires.
+  const tip = reduced ? buy.tip : entered ? buy.tip : 0;
 
   return (
     <section

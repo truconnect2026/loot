@@ -156,6 +156,20 @@ export default function AuthCheckDemo() {
 
   const dragRef = useRef(null);
   const autoRafRef = useRef(null);
+  // Entrance beat: one short partial sweep (~26% travel, out and back)
+  // that ignites and releases the first ghost row — shows the mechanic
+  // during the arrival swipe. One-shot per entry; interval-driven (not
+  // rAF — see the hero count-up WebKit lesson).
+  const beatDoneRef = useRef(false);
+  const beatTimersRef = useRef([]);
+
+  const cancelBeat = useCallback(() => {
+    for (const id of beatTimersRef.current) {
+      clearTimeout(id);
+      clearInterval(id);
+    }
+    beatTimersRef.current = [];
+  }, []);
 
   const cancelAuto = useCallback(() => {
     if (autoRafRef.current) {
@@ -178,6 +192,36 @@ export default function AuthCheckDemo() {
     };
     autoRafRef.current = requestAnimationFrame(step);
   }, [cancelAuto]);
+
+  /* Entrance beat — runs once per entry on a pristine panel. The 6s
+     attract clock restarts from beat END (lastTouch), so beat and
+     attract can never stack. Any pointerdown cancels it (takeControl →
+     cancelBeat). */
+  useEffect(() => {
+    if (!inView) {
+      beatDoneRef.current = false;
+      return;
+    }
+    if (reduced || beatDoneRef.current || nudgeKilled || attract) return;
+    beatDoneRef.current = true;
+    const DUR = 1200;
+    const delay = setTimeout(() => {
+      const t0 = Date.now();
+      const id = setInterval(() => {
+        const t = Math.min((Date.now() - t0) / DUR, 1);
+        const tri = t < 0.5 ? t * 2 : (1 - t) * 2; // out and back
+        setProgress(0.26 * easeInOutCubic(tri));
+        if (t >= 1) {
+          clearInterval(id);
+          setProgress(0);
+          setLastTouch(Date.now());
+        }
+      }, 33);
+      beatTimersRef.current.push(id);
+    }, 400);
+    beatTimersRef.current.push(delay);
+    return cancelBeat;
+  }, [inView, reduced, attract, nudgeKilled, cancelBeat]);
 
   /* Idle watcher — arms the attract loop after 6s without interaction,
      only while on-screen and not already attracting. Gated on `reduced`
@@ -239,9 +283,10 @@ export default function AuthCheckDemo() {
     setNudgeKilled(true);
     setAttract(false);
     cancelAuto();
+    cancelBeat(); // an in-progress entrance beat yields instantly
     setFading(false);
     setLastTouch(Date.now());
-  }, [cancelAuto]);
+  }, [cancelAuto, cancelBeat]);
 
   const onPointerDown = (e) => {
     if (reduced) return;

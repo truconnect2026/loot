@@ -86,11 +86,28 @@ export default function CloserSection({ onCTA }) {
           style={{
             ...SECTION_HEADLINE_STYLE,
             color: C.gold,
-            margin: "0 0 36px",
+            margin: "0 0 20px",
             padding: 0,
           }}
         >
           get to it first.
+        </p>
+      </FadeUp>
+
+      {/* Recap strip — one quiet line naming what the page just proved,
+          right where the decision happens. No new claims, no links. */}
+      <FadeUp delay={0.09}>
+        <p
+          style={{
+            fontFamily: "var(--font-mono), monospace",
+            fontSize: 11,
+            letterSpacing: "0.14em",
+            color: "rgba(92,224,184,0.5)",
+            textAlign: "center",
+            margin: "0 0 18px",
+          }}
+        >
+          scan &middot; shelf &middot; fake check &middot; real comps
         </p>
       </FadeUp>
 

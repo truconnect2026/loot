@@ -379,17 +379,36 @@ export default function FeatureMatrix() {
   const reduced = usePrefersReducedMotion();
   const [rootRef, inView] = useLiveInView();
   const [tick, setTick] = useState(0);
+  // Entrance beat: the FIRST card's micro-beat fires ~400ms after the
+  // grid enters view (instead of the visitor waiting out a silent first
+  // rotation slot), then the shared ticker takes over from it. One-shot
+  // per entry — exiting the viewport re-arms both.
+  const [entered, setEntered] = useState(false);
 
-  // Shared ticker — one interval for the whole grid; cleared the moment
-  // the section leaves the viewport or under reduced motion.
   useEffect(() => {
-    if (reduced || !inView) return;
+    if (!inView) {
+      setEntered(false);
+      setTick(0);
+      return;
+    }
+    if (reduced || entered) return;
+    const t = setTimeout(() => setEntered(true), 400);
+    return () => clearTimeout(t);
+  }, [inView, reduced, entered]);
+
+  // Shared ticker — one interval for the whole grid; starts only after
+  // the entrance beat has fired (so the beat completes before rotation),
+  // cleared the moment the section leaves the viewport or under reduced
+  // motion.
+  useEffect(() => {
+    if (reduced || !inView || !entered) return;
     const t = setInterval(() => setTick((x) => x + 1), TICK_MS);
     return () => clearInterval(t);
-  }, [reduced, inView]);
+  }, [reduced, inView, entered]);
 
-  // One card beats at a time, rotating. Off-screen everything rests.
-  const beatIdx = inView && !reduced ? tick % CARD_COUNT : -1;
+  // One card beats at a time, rotating from the entry beat on card 0.
+  // Off-screen (and pre-entry, and reduced) everything rests.
+  const beatIdx = entered && inView && !reduced ? tick % CARD_COUNT : -1;
   // Haul pipeline stage advances once per rotation, exactly on its beat
   // (card index 4): count how many times slot 4 has come around.
   const haulStage = (tick >= 4 ? Math.floor((tick - 4) / CARD_COUNT) + 1 : 0) % 4;

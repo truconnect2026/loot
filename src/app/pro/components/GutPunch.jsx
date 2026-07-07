@@ -147,14 +147,21 @@ export default function GutPunch() {
                   pointerEvents: "none",
                 }}
               />
+              {/* label pinned to the panel top (mirrors the old-way
+                  card's label position) so the payoff type below can
+                  TRULY center in the remaining space — with the label
+                  in-flow it sat high and left dead space underneath */}
               <div
                 style={{
+                  position: "absolute",
+                  top: 16,
+                  left: 12,
+                  right: 12,
                   fontFamily: "var(--font-mono), monospace",
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
                   color: C.mint,
-                  marginBottom: 16,
                 }}
               >
                 loot
@@ -163,7 +170,7 @@ export default function GutPunch() {
                 style={{
                   fontFamily: "var(--font-bebas), sans-serif",
                   // Scaled up to own the panel instead of floating in it.
-                  fontSize: "clamp(40px,10vw,64px)",
+                  fontSize: "clamp(44px,11.5vw,72px)",
                   lineHeight: 1.05,
                   letterSpacing: "0.03em",
                   color: "#fff",

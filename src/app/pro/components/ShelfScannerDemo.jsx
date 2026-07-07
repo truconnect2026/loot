@@ -367,6 +367,12 @@ export default function ShelfScannerDemo() {
   const [fading, setFading] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
   const [breathIdx, setBreathIdx] = useState(-1);
+  // Entrance beat: on arrival the FIRST item's box+tag draw and release —
+  // a taste of the mechanic while the swipe is still settling. Does NOT
+  // mark the item tapped (totals/attract read `tapped`, which stays
+  // pristine). One-shot per entry; re-arms after the section leaves view.
+  const [entryBeat, setEntryBeat] = useState(false);
+  const beatDoneRef = useRef(false);
 
   const attractActive = attract && inView && !reduced;
   const phase = useAttractRun(attractActive, () => {
@@ -374,24 +380,46 @@ export default function ShelfScannerDemo() {
     setLastTouch(Date.now());
   });
 
-  /* Idle attract — pristine shelf only (unchanged semantics). */
   useEffect(() => {
-    if (reduced || !inView || attract || tapped.size > 0) return;
+    if (!inView) {
+      beatDoneRef.current = false;
+      return;
+    }
+    if (reduced || beatDoneRef.current || attract || tapped.size > 0) return;
+    beatDoneRef.current = true;
+    const t1 = setTimeout(() => setEntryBeat(true), 350);
+    const t2 = setTimeout(() => {
+      setEntryBeat(false);
+      // attract's 6s idle clock starts counting from beat END, so the
+      // beat can never stack into an immediately-following attract run
+      setLastTouch(Date.now());
+    }, 1650);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      setEntryBeat(false);
+    };
+  }, [inView, reduced, attract, tapped]);
+
+  /* Idle attract — pristine shelf only (unchanged semantics); paused
+     while the entrance beat plays. */
+  useEffect(() => {
+    if (reduced || !inView || attract || tapped.size > 0 || entryBeat) return;
     const t = setTimeout(() => setAttract(true), 6000);
     return () => clearTimeout(t);
-  }, [reduced, inView, attract, tapped, lastTouch]);
+  }, [reduced, inView, attract, tapped, lastTouch, entryBeat]);
 
   /* Idle PRESENCE breath — one item at a time, rotating. Runs only while
      truly idle: on-screen, not reduced, not attracting, zero taps.
      Interaction state owns the stage the moment any of those flips. */
   useEffect(() => {
-    if (reduced || !inView || attract || tapped.size > 0 || fading) {
+    if (reduced || !inView || attract || tapped.size > 0 || fading || entryBeat) {
       setBreathIdx(-1);
       return;
     }
     const t = setInterval(() => setBreathIdx((i) => (i + 1) % ITEMS.length), 2000);
     return () => clearInterval(t);
-  }, [reduced, inView, attract, tapped, fading]);
+  }, [reduced, inView, attract, tapped, fading, entryBeat]);
 
   /* Completion: pulse + line + micro-CTA, hold, soft reset. Slightly
      longer hold than before so the CTA is readable; cycle semantics
@@ -448,8 +476,8 @@ export default function ShelfScannerDemo() {
   const totalValue = useEasedNumber(totalTarget, reduced);
 
   const rowState = (item, i) => ({
-    boxOn: attractActive ? attractBoxes : reduced || tapped.has(item.key),
-    tagOn: attractActive ? attractTags : reduced || tapped.has(item.key),
+    boxOn: attractActive ? attractBoxes : reduced || tapped.has(item.key) || (entryBeat && i === 0),
+    tagOn: attractActive ? attractTags : reduced || tapped.has(item.key) || (entryBeat && i === 0),
     delayBase: attractActive ? i * 350 : 0,
     breathing: breathIdx === i,
   });
