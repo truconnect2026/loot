@@ -63,7 +63,7 @@ export default function VerdictCard() {
           margin: "0 0 14px",
         }}
       >
-        1957&ndash;68 &middot; Pyrex &middot; verified
+        1957-68 &middot; Pyrex &middot; verified
       </p>
 
       <div
@@ -104,7 +104,7 @@ export default function VerdictCard() {
             lineHeight: 1,
           }}
         >
-          $75&ndash;$95
+          $75-$95
         </div>
       </div>
 

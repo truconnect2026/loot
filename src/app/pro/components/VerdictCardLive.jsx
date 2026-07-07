@@ -337,7 +337,7 @@ export default function VerdictCardLive() {
               margin: "0 0 14px",
             }}
           >
-            1957&ndash;68 &middot; Pyrex &middot; verified
+            1957-68 &middot; Pyrex &middot; verified
           </p>
         </Reveal>
 
@@ -383,7 +383,7 @@ export default function VerdictCardLive() {
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              ${low}&ndash;${high}
+              ${low}-${high}
             </div>
           </div>
         </Reveal>

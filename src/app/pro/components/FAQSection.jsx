@@ -8,11 +8,11 @@ import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE, SECTION_PADDING, SectionShell }
 const faqData = [
   {
     q: "what if i'm not even a 'real' flipper yet?",
-    a: "perfect — Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike. Pro is most valuable for resellers leveling up.",
+    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike. Pro is most valuable for resellers leveling up.",
   },
   {
     q: "what if i don't like it?",
-    a: "60-day full refund, no questions. you can also cancel anytime from settings — no chat, no email, no friction. you're in control.",
+    a: "60-day full refund, no questions. you can also cancel anytime from settings. no chat, no email, no friction. you're in control.",
   },
   {
     q: "why subscription vs. one-time?",
@@ -130,7 +130,7 @@ export default function FAQSection() {
     >
       <SectionShell maxWidth={750}>
         <FadeUp>
-          <Eyebrow text="— still on the fence?" color={C.purple} />
+          <Eyebrow text="— still on the fence?" color={C.mint} />
         </FadeUp>
         <FadeUp delay={0.15}>
           <h2

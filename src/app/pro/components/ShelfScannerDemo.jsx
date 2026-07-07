@@ -347,7 +347,9 @@ export default function ShelfScannerDemo() {
               border: "1px solid rgba(92,224,184,0.25)",
               background: "rgba(255,255,255,0.02)",
               boxShadow: "0 20px 60px rgba(92,224,184,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
-              padding: "26px 16px 18px",
+              // Balanced vertical padding: the panel hugs its content
+              // (items row + prompt + total), no stretched dead zone.
+              padding: "22px 16px 16px",
               boxSizing: "border-box",
               overflow: "hidden",
             }}
@@ -476,9 +478,11 @@ export default function ShelfScannerDemo() {
                 })}
               </div>
 
-              {/* Bottom strip — prompt when untapped, "scanning shelf…"
-                  during attract, running total once pricing starts. */}
-              <div style={{ position: "relative", marginTop: 20, minHeight: 64, textAlign: "center" }}>
+              {/* Prompt row — sits DIRECTLY under the items so the eye
+                  never crosses a void to find it. Prompt (user idle) and
+                  "scanning shelf…" (attract) share the slot; they're
+                  mutually exclusive states. */}
+              <div style={{ position: "relative", marginTop: 12, height: 18, textAlign: "center" }}>
                 <div
                   style={{
                     position: "absolute",
@@ -517,10 +521,13 @@ export default function ShelfScannerDemo() {
                 >
                   scanning shelf…
                 </div>
+              </div>
+
+              {/* Total row — the lower third of the panel. Stable
+                  minHeight so the tally appearing never shifts layout. */}
+              <div style={{ marginTop: 10, minHeight: 54, textAlign: "center" }}>
                 <div
                   style={{
-                    position: "absolute",
-                    inset: 0,
                     opacity: totalShown ? 1 : 0,
                     transform: totalShown ? "translateY(0)" : "translateY(12px)",
                     transition: reduced ? "none" : `opacity 380ms ${EASE}, transform 380ms ${EASE}`,

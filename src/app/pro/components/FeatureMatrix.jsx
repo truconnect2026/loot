@@ -141,7 +141,7 @@ function VerdictMicro({ beat, reduced }) {
         EXCELLENT
       </div>
       <div style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 22, lineHeight: 1, color: C.mint }}>
-        $75&ndash;$95
+        $75-$95
       </div>
     </div>
   );

@@ -141,7 +141,7 @@ export default function Footer() {
           textAlign: "center",
         }}
       >
-        © 2026 LOOT.WORKS · loot.works
+        © 2026 loot.works
       </div>
     </footer>
   );
