@@ -79,6 +79,14 @@ function FAQItem({ item, isOpen, onToggle }) {
             transition: "transform 0.3s ease",
             transform: isOpen ? "rotate(45deg)" : "rotate(0)",
             flexShrink: 0,
+            // Fixed square + flex centering so the glyph rotates around its
+            // true optical center instead of drifting when it becomes x.
+            width: 20,
+            height: 20,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transformOrigin: "center",
             lineHeight: 1,
           }}
         >
@@ -112,7 +120,9 @@ function FAQItem({ item, isOpen, onToggle }) {
 }
 
 export default function FAQSection() {
-  const [open, setOpen] = useState(0);
+  // -1 = all collapsed on landing so the question list scans at a
+  // glance (item 0 used to auto-expand purely because this was 0).
+  const [open, setOpen] = useState(-1);
   return (
     <section
       className="pro-snap-section"

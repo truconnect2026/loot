@@ -41,7 +41,10 @@ export default function PricingSection({ onCTA }) {
             style={{
               ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.5em",
-              marginBottom: 48,
+              // 58 (not 48): drops the monthly card 10px so the 390x660 fold
+              // lands above START MONTHLY instead of through its label; the
+              // grid marginBottom below gives the 10px back (net-zero).
+              marginBottom: 58,
             }}
           >
             PICK YOUR <span style={{ color: C.mint }}>WEAPON.</span>
@@ -50,7 +53,7 @@ export default function PricingSection({ onCTA }) {
 
         <div
           className="pricing-grid"
-          style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, marginBottom: 40 }}
+          style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, marginBottom: 30 }}
         >
           {/* Monthly */}
           <FadeUp delay={0.25}>

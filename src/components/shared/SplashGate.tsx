@@ -30,7 +30,11 @@ export default function SplashGate({ children }: { children: ReactNode }) {
   // for the brand kit. The splash overlay would leak into the captures,
   // so suppress it on those routes — they are never linked from anywhere
   // user-facing.
-  const skipSplash = pathname?.startsWith("/marketing-screens") ?? false;
+  // /pro is paid-ad landing traffic: a 1.6s forced brand splash is a
+  // pure conversion tax there, and the page is statically prerendered
+  // (instant hero shell) so nothing needs masking.
+  const skipSplash =
+    (pathname?.startsWith("/marketing-screens") || pathname?.startsWith("/pro")) ?? false;
 
   // mounted: render the SplashScreen at all
   // exiting: drives the splashExit fade

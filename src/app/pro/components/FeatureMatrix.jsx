@@ -78,7 +78,11 @@ function Card({ label, copy, children }) {
     >
       <div
         style={{
-          height: 96,
+          // 80 (not 96): at 390x660 the snap landing then puts the fold in
+          // the row gap instead of slicing card copy; at 390x750 it lands
+          // in the haul card's bottom whitespace. Paired with the +48 on
+          // the section paddingBottom below for net-zero section height.
+          height: 80,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -392,7 +396,10 @@ export default function FeatureMatrix() {
         padding: SECTION_PADDING,
         // Internal-scroll section: extra bottom room so an in-app-browser
         // fold (~620px usable) never rests decapitating the last card.
-        paddingBottom: 96,
+        // 144 = 96 + 48: compensates the 3x16px card-visual reduction so
+        // the section's outer height (and every snap rest after it) is
+        // unchanged.
+        paddingBottom: 144,
         position: "relative",
         zIndex: 1,
         // Grid exceeds one viewport on small screens — top-align + scroll
