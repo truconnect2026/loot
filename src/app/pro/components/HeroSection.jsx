@@ -100,6 +100,31 @@ const HERO_STYLES = `
   .pro-hero-headline { font-size: clamp(64px, 8.5vw, 132px) !important; }
   .pro-hero-italic   { font-size: clamp(48px, 6.5vw, 100px) !important; }
 }
+/* In-app browser compression (Instagram/iOS webviews leave ~620-700px
+   of usable height). HEIGHT query, not width: same 390pt iPhone needs
+   the full layout in Safari but the compressed one inside IG. Targets:
+   eyebrow+headline+subhead+CTA card land in swipe one; the live demo
+   phone fully visible by swipe two. The phone frame switches to a
+   shorter "cropped" aspect so VerdictCardLive's flex spacers collapse
+   the empty vertical middle — its internals are untouched; it simply
+   fills a shorter screen. */
+@media (max-height: 700px) {
+  .pro-hero-section { padding: 18px 24px 48px !important; }
+  .pro-hero-grid { gap: 12px !important; }
+  .pro-hero-headline { font-size: clamp(38px, 10.5vw, 56px) !important; line-height: 0.95 !important; }
+  .pro-hero-italic { font-size: clamp(28px, 8vw, 42px) !important; margin: 0.08em 0 14px !important; }
+  .pro-hero-sub { font-size: 14px !important; line-height: 1.45 !important; margin-bottom: 16px !important; }
+  .pro-hero-trust { margin-bottom: 10px !important; }
+  .pro-hero-annual { margin-bottom: 6px !important; }
+  .pro-hero-visual {
+    max-width: 330px !important;
+    width: 100% !important;
+    margin: 4px auto 0 !important;
+    padding: 8px 0 !important;
+  }
+  .pro-phone-frame { aspect-ratio: 9 / 13.6 !important; border-radius: 36px !important; }
+  .pro-phone-screen { border-radius: 26px !important; }
+}
 `;
 
 export default function HeroSection() {
@@ -109,7 +134,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="pro-snap-section"
+      className="pro-snap-section pro-hero-section"
       style={{
         padding: "clamp(42px,6.5vw,62px) 24px clamp(52px,8vw,84px)",
         maxWidth: 1200,
@@ -160,6 +185,7 @@ export default function HeroSection() {
 
       <FadeUp delay={0.22}>
         <p
+          className="pro-hero-sub"
           style={{
             fontFamily: "var(--font-manrope), sans-serif",
             fontSize: "clamp(17px,2.2vw,24px)",
@@ -230,6 +256,7 @@ export default function HeroSection() {
         {/* Money-back line — sits directly under the CLAIM PRO button since
             it's the objection that matters most right where the click happens. */}
         <div
+          className="pro-hero-trust"
           style={{
             display: "flex",
             gap: 24,
@@ -252,6 +279,7 @@ export default function HeroSection() {
         {/* Annual alternative caption — SAVE $80 lives in a mint pill so it
             reads as a chip-style affordance, not body text. */}
         <p
+          className="pro-hero-annual"
           style={{
             display: "flex",
             alignItems: "center",

@@ -387,6 +387,9 @@ export default function FeatureMatrix() {
       className="pro-snap-section"
       style={{
         padding: SECTION_PADDING,
+        // Internal-scroll section: extra bottom room so an in-app-browser
+        // fold (~620px usable) never rests decapitating the last card.
+        paddingBottom: 96,
         position: "relative",
         zIndex: 1,
         // Grid exceeds one viewport on small screens — top-align + scroll

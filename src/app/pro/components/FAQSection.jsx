@@ -118,6 +118,9 @@ export default function FAQSection() {
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
         padding: SECTION_PADDING,
+        // Internal-scroll section: extra bottom room so an in-app-browser
+        // fold (~620px usable) never rests decapitating the last card.
+        paddingBottom: 96,
         position: "relative",
         zIndex: 1,
         // Six FAQ rows reliably exceed one viewport — top-align + scroll

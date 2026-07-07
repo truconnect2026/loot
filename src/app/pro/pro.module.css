@@ -40,8 +40,13 @@
 :global(.pro-snap-section) {
   scroll-snap-align: start;
   scroll-snap-stop: always;
+  /* svh (small viewport height) on purpose, NOT dvh: in-app browsers
+     (Instagram/iOS especially) collapse and expand their chrome mid-
+     gesture, which makes dvh unstable and drifts every snap point.
+     svh is the chrome-VISIBLE height, so a section is never taller
+     than the usable screen. Plain vh is the legacy fallback. */
+  min-height: 100vh;
   min-height: 100svh;
-  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: center;
