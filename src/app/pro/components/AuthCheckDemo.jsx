@@ -38,6 +38,25 @@ const EASE = "cubic-bezier(0.16,1,0.3,1)";
 const SWEEP_MS = 2000;
 const END = 0.95; // progress at which the verdict fires
 
+const NUDGE_STYLES = `
+@keyframes acdNudge {
+  0%, 100% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+}
+.acd-nudge { animation: acdNudge 2s ease-in-out infinite; will-change: transform; }
+@keyframes acdChevron {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.8; }
+}
+.acd-chevron { animation: acdChevron 2s ease-in-out infinite; }
+@keyframes acdStampPulse {
+  0% { opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.acd-stamp-pulse { animation: acdStampPulse 600ms ease-out 1; }
+`;
+
 const CHECKS = [
   { label: "stitch density", pass: true, at: 0.22 },
   { label: "tag print", pass: true, at: 0.42 },
@@ -130,6 +149,8 @@ export default function AuthCheckDemo() {
   const [fading, setFading] = useState(false);
   const [attract, setAttract] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
+  // Pre-interaction nudge dies PERMANENTLY on first pointer interaction.
+  const [nudgeKilled, setNudgeKilled] = useState(false);
 
   const dragRef = useRef(null);
   const autoRafRef = useRef(null);
@@ -213,6 +234,7 @@ export default function AuthCheckDemo() {
   }, [inView, cancelAuto]);
 
   const takeControl = useCallback(() => {
+    setNudgeKilled(true);
     setAttract(false);
     cancelAuto();
     setFading(false);
@@ -258,9 +280,14 @@ export default function AuthCheckDemo() {
   const p = reduced ? 1 : progress;
   const verdict = p >= END;
   const lineShown = !reduced && !verdict;
+  // Nudge contract: killed forever after first interaction, suspended
+  // during attract (attract owns the line), paused off-screen, never
+  // under reduced motion, and only while the line rests at 0.
+  const nudge = !reduced && !nudgeKilled && !attract && inView && progress === 0;
 
   return (
     <section className="pro-snap-section" style={{ padding: SECTION_PADDING, position: "relative", zIndex: 1 }}>
+      <style dangerouslySetInnerHTML={{ __html: NUDGE_STYLES }} />
       <SectionShell maxWidth={720}>
         <FadeUp>
           <Eyebrow text="— the fake check" color={C.mint} />
@@ -295,7 +322,7 @@ export default function AuthCheckDemo() {
                 border: "1px solid rgba(92,224,184,0.25)",
                 background: "rgba(255,255,255,0.02)",
                 boxShadow: "0 20px 60px rgba(92,224,184,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
-                padding: "22px 18px 16px",
+                padding: "16px 18px 8px",
                 boxSizing: "border-box",
                 overflow: "hidden",
                 touchAction: "pan-y",
@@ -346,6 +373,18 @@ export default function AuthCheckDemo() {
                         }}
                       >
                         REP DETECTED
+                        <div
+                          aria-hidden="true"
+                          className={verdict && !reduced ? "acd-stamp-pulse" : ""}
+                          style={{
+                            position: "absolute",
+                            inset: -6,
+                            borderRadius: 9,
+                            border: `2px solid ${RED}`,
+                            opacity: 0,
+                            pointerEvents: "none",
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -403,7 +442,7 @@ export default function AuthCheckDemo() {
                 {/* Verdict subline — the payoff beat */}
                 <div
                   style={{
-                    marginTop: 14,
+                    marginTop: 6,
                     minHeight: 20,
                     textAlign: "center",
                     fontFamily: "var(--font-mono), monospace",
@@ -417,6 +456,39 @@ export default function AuthCheckDemo() {
                 >
                   walk away. keep your $200.
                 </div>
+
+                {/* micro-CTA: reserved slot, anchor only. Appears at full
+                    completion; resets on scrub-back below END and on demo
+                    reset because it derives purely from `verdict`. */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  tabIndex={verdict ? 0 : -1}
+                  aria-hidden={!verdict}
+                  style={{
+                    display: "block",
+                    margin: "2px auto 0",
+                    height: 20,
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: verdict ? "pointer" : "default",
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.1em",
+                    color: C.mint,
+                    opacity: verdict ? 1 : 0,
+                    transform: verdict ? "translateY(0)" : "translateY(6px)",
+                    transition: reduced ? "none" : `opacity 320ms ${EASE} 450ms, transform 320ms ${EASE} 450ms`,
+                    pointerEvents: verdict ? "auto" : "none",
+                  }}
+                >
+                  never eat a $200 mistake again &rarr;
+                </button>
               </div>
 
               {/* Scanline + handle — position driven by transform only.
@@ -434,6 +506,9 @@ export default function AuthCheckDemo() {
                   willChange: "transform, opacity",
                 }}
               >
+              {/* nudge layer: separate element from the progress transform
+                  above, so the idle sway never touches drag math */}
+              <div className={nudge ? "acd-nudge" : ""} style={{ position: "absolute", inset: 0 }}>
                 <div
                   style={{
                     position: "absolute",
@@ -445,27 +520,57 @@ export default function AuthCheckDemo() {
                     boxShadow: "0 0 10px 2px rgba(92,224,184,0.5)",
                   }}
                 />
-                {/* grabbable handle */}
+                {/* grip handle: 44px hit zone centered near the line's
+                    visual x. The zone is empty padding; the scanline's
+                    x-origin and all drag math are untouched. */}
                 <div
                   style={{
                     position: "absolute",
                     top: "50%",
-                    left: 3,
-                    transform: "translateY(-50%)",
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    background: C.mint,
-                    boxShadow: "0 0 14px rgba(92,224,184,0.65)",
+                    left: 14,
+                    transform: "translate(-50%, -50%)",
+                    width: 44,
+                    height: 44,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: 2,
                   }}
                 >
-                  <span style={{ width: 2, height: 8, borderRadius: 1, background: "rgba(7,5,16,0.55)" }} />
-                  <span style={{ width: 2, height: 8, borderRadius: 1, background: "rgba(7,5,16,0.55)" }} />
+                  <div
+                    style={{
+                      width: 18,
+                      height: 32,
+                      borderRadius: 10,
+                      background: C.mint,
+                      boxShadow: "0 0 14px rgba(92,224,184,0.65)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 3,
+                    }}
+                  >
+                    <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(7,5,16,0.6)" }} />
+                    <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(7,5,16,0.6)" }} />
+                    <span style={{ width: 3, height: 3, borderRadius: "50%", background: "rgba(7,5,16,0.6)" }} />
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className={nudge ? "acd-chevron" : ""}
+                    style={{
+                      position: "absolute",
+                      left: 40,
+                      fontFamily: "var(--font-mono), monospace",
+                      fontSize: 16,
+                      color: C.mint,
+                      opacity: 0,
+                      lineHeight: 1,
+                    }}
+                  >
+                    &rsaquo;
+                  </span>
                 </div>
+              </div>
               </div>
             </div>
 

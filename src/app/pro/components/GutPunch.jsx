@@ -123,6 +123,7 @@ export default function GutPunch() {
 
             <div
               style={{
+                position: "relative",
                 background: "rgba(92,224,184,0.06)",
                 border: "1px solid rgba(92,224,184,0.25)",
                 borderRadius: 14,
@@ -132,8 +133,20 @@ export default function GutPunch() {
                 alignItems: "center",
                 justifyContent: "center",
                 textAlign: "center",
+                overflow: "hidden",
               }}
             >
+              {/* faint interior glow so the payoff panel reads charged,
+                  not empty (static, opacity-only) */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "radial-gradient(ellipse at 50% 60%, rgba(92,224,184,0.14) 0%, transparent 70%)",
+                  pointerEvents: "none",
+                }}
+              />
               <div
                 style={{
                   fontFamily: "var(--font-mono), monospace",
@@ -149,10 +162,12 @@ export default function GutPunch() {
               <div
                 style={{
                   fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: "clamp(28px,7vw,44px)",
-                  lineHeight: 1.1,
-                  letterSpacing: "0.03em", // Bebas sub-32px optical tracking
+                  // Scaled up to own the panel instead of floating in it.
+                  fontSize: "clamp(40px,10vw,64px)",
+                  lineHeight: 1.05,
+                  letterSpacing: "0.03em",
                   color: "#fff",
+                  position: "relative",
                 }}
               >
                 point.
