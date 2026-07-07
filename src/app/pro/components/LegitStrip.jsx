@@ -92,7 +92,13 @@ export default function LegitStrip() {
         </Item>
         <Item>
           <Link href="/flip" style={{ ...linkStyle, color: C.mint, borderBottomColor: "rgba(92,224,184,0.5)" }}>
-            play today&apos;s FLIP OR SKIP free {day !== null ? `· day ${day} ` : ""}&rarr;
+            {/* number renders client-side post-mount (static prerender
+                must not bake a build date); width reserved so the line
+                never shifts when N lands */}
+            <span style={{ display: "inline-block", minWidth: "2.2ch", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+              {day !== null ? day : "\u00a0"}
+            </span>{" "}
+            daily drops and counting. play today&apos;s free &rarr;
           </Link>
         </Item>
       </div>

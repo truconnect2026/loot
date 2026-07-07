@@ -108,6 +108,24 @@ export default function CloserSection({ onCTA }) {
         </div>
       </FadeUp>
 
+      <FadeUp delay={0.15}>
+        <p style={{ margin: "0 0 14px" }}>
+          <a
+            href="/flip"
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 11,
+              letterSpacing: "0.08em",
+              color: "rgba(92,224,184,0.65)",
+              textDecoration: "none",
+              borderBottom: "1px solid rgba(92,224,184,0.3)",
+            }}
+          >
+            not ready? play today&apos;s flip or skip free &rarr;
+          </a>
+        </p>
+      </FadeUp>
+
       <FadeUp delay={0.18}>
         <p
           style={{

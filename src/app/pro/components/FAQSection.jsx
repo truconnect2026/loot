@@ -9,7 +9,7 @@ import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE,
 const faqData = [
   {
     q: "what if i'm not even a 'real' flipper yet?",
-    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike. Pro is most valuable for resellers leveling up.",
+    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike.",
   },
   {
     q: "what if i don't like it?",

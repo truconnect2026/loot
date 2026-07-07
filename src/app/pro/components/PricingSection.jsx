@@ -12,8 +12,8 @@ import {
   SectionShell,
 } from "./atoms.jsx";
 
-const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Yard sale map", "Brand authenticator"];
-const annualBullets = ["Everything in Monthly", "Priority support", "Early features access", "Founding member status"];
+const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Yard sale map", "Fake check"];
+const annualBullets = ["Everything in Monthly", "Priority support", "New features first", "Founding member status"];
 
 export default function PricingSection({ onCTA }) {
   return (
@@ -55,95 +55,14 @@ export default function PricingSection({ onCTA }) {
           className="pricing-grid"
           style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, marginBottom: 30 }}
         >
-          {/* Monthly */}
-          <FadeUp delay={0.25}>
-            <div
-              className="pricing-card"
-              style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 20,
-                padding: "clamp(28px,4vw,40px)",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                transition: "border-color 0.25s",
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.4)",
-                  marginBottom: 16,
-                }}
-              >
-                MONTHLY
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: "clamp(48px,8vw,72px)",
-                  color: "rgba(255,255,255,0.95)",
-                  lineHeight: 1,
-                  fontVariantNumeric: "tabular-nums",
-                  marginBottom: 12,
-                }}
-              >
-                $14.99
-                <span style={{ fontSize: "0.4em", color: "rgba(255,255,255,0.35)" }}>/mo</span>
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-manrope), sans-serif",
-                  fontSize: 15,
-                  color: "rgba(255,255,255,0.45)",
-                  marginBottom: 32,
-                  lineHeight: 1.4,
-                }}
-              >
-                pay as you flip. cancel whenever.
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, flex: 1, marginBottom: 32 }}>
-                {monthlyBullets.map((f, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontFamily: "var(--font-manrope), sans-serif",
-                      fontSize: 15,
-                      color: "rgba(255,255,255,0.65)",
-                      padding: "10px 0",
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <span style={{ color: C.mint, fontWeight: 700 }}>→</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <CTAButton
-                  variant="outline"
-                  onClick={() => {
-                    track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
-                    onCTA && onCTA("monthly");
-                  }}
-                >
-                  START MONTHLY
-                </CTAButton>
-              </div>
-            </div>
-          </FadeUp>
-
           {/* Annual */}
-          <FadeUp delay={0.35}>
+          <FadeUp delay={0.25}>
             <div
               className="pricing-card pricing-card--annual"
               style={{
+                // dominant card: annual leads on mobile and carries the emphasis
+                transform: "scale(1.015)",
+                transformOrigin: "center top",
                 background: "rgba(92,224,184,0.035)",
                 border: `2px solid ${C.mint}`,
                 borderRadius: 20,
@@ -265,6 +184,91 @@ export default function PricingSection({ onCTA }) {
               </p>
             </div>
           </FadeUp>
+
+          {/* Monthly */}
+          <FadeUp delay={0.35}>
+            <div
+              className="pricing-card"
+              style={{
+                opacity: 0.94,
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 20,
+                padding: "clamp(28px,4vw,40px)",
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                transition: "border-color 0.25s",
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.4)",
+                  marginBottom: 16,
+                }}
+              >
+                MONTHLY
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-bebas), sans-serif",
+                  fontSize: "clamp(48px,8vw,72px)",
+                  color: "rgba(255,255,255,0.95)",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                  marginBottom: 12,
+                }}
+              >
+                $14.99
+                <span style={{ fontSize: "0.4em", color: "rgba(255,255,255,0.35)" }}>/mo</span>
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-manrope), sans-serif",
+                  fontSize: 15,
+                  color: "rgba(255,255,255,0.45)",
+                  marginBottom: 32,
+                  lineHeight: 1.4,
+                }}
+              >
+                pay as you flip. cancel whenever.
+              </p>
+              <ul style={{ listStyle: "none", padding: 0, flex: 1, marginBottom: 32 }}>
+                {monthlyBullets.map((f, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      fontFamily: "var(--font-manrope), sans-serif",
+                      fontSize: 15,
+                      color: "rgba(255,255,255,0.65)",
+                      padding: "10px 0",
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                  >
+                    <span style={{ color: C.mint, fontWeight: 700 }}>→</span> {f}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <CTAButton
+                  variant="outline"
+                  onClick={() => {
+                    track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
+                    onCTA && onCTA("monthly");
+                  }}
+                >
+                  START MONTHLY
+                </CTAButton>
+              </div>
+            </div>
+          </FadeUp>
         </div>
 
         <FadeUp delay={0.4}>
@@ -280,6 +284,14 @@ export default function PricingSection({ onCTA }) {
           >
             SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY DIGISTORE24 + STRIPE
           </p>
+          {/* TODO(David): the eyebrow says "founding pricing" but nothing
+              explains it. SHIP THIS LINE ONLY once you confirm the price
+              genuinely rises later — an undecided urgency claim is
+              fabricated scarcity, so it stays commented until then:
+          <p style={{ fontFamily: "var(--font-mono), monospace", fontSize: 11, letterSpacing: "0.08em", textAlign: "center", color: "rgba(92,224,184,0.55)", marginTop: 10 }}>
+            founding rate. locked while you&apos;re subscribed.
+          </p>
+          */}
         </FadeUp>
       </SectionShell>
     </section>

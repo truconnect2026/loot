@@ -196,7 +196,7 @@ export default function HeroSection() {
           }}
         >
           point your phone at anything in the bins. real comps in about a second. you&apos;ve already got
-          the eye. this is the part that&apos;s faster than the picker reaching next to you.
+          the eye. this is the speed.
         </p>
       </FadeUp>
 
