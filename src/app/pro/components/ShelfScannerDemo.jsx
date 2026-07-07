@@ -7,35 +7,31 @@ import {
   Eyebrow,
   FadeUp,
   SECTION_BODY_SIZE,
-  SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
 import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
-import { PyrexBowl } from "../../marketing-screens/_frame";
 
 /**
- * "The whole shelf" — tap-to-price. Each item on the shelf is its own
- * plain tap target: tap one and its detection box draws, its value tag
- * pops, and the running total eases up by that amount. Price all five
- * and the completion line lands under $420, holds ~3s, then the scene
- * soft-resets to untapped. Values are illustrative examples, not
- * earnings claims.
+ * "The whole shelf" — tap-to-price on a thrift-aisle scene: five
+ * line-art items sitting on two shelf rails (3 up, 2 down). Tap an item
+ * and its detection box draws, its tag pops beneath it, and the running
+ * total eases up. Price all five: the total row pulses once, the
+ * completion line lands, and a quiet micro-CTA to #pricing fades into a
+ * pre-reserved slot (anchor scroll only, zero checkout interaction).
+ * Values illustrative.
  *
- * The old full choreography (settle → detect → value → total → hold →
- * reset) survives as the idle ATTRACT mode: it plays once after 6s of
- * no interaction, then rests. It only arms while the shelf is pristine
- * (zero taps) — attract stomping a visitor's half-priced shelf would
- * be hostile. Any tap cancels it instantly; because the user-mode
- * visuals derive purely from the tapped set (never from attract's
- * phase), cancellation can't leave half-drawn attract boxes behind.
+ * Attract (the classic full choreography) still arms after 6s idle on a
+ * pristine shelf and cancels on tap. A NEW idle-presence loop makes one
+ * item at a time take a gentle scale breath; it runs ONLY while idle:
+ * paused off-screen (same IntersectionObserver), suspended during
+ * attract and from the first tap onward, and never under reduced
+ * motion.
  *
- * Reduced motion: full static end-state (all boxes, tags, $420, and
- * the completion line), zero timers, and taps are DISABLED — the end
- * state already shows everything priced, so there's nothing for a tap
- * to add. Buttons are plain click targets (no gesture capture), so
- * vertical swipes scroll the page normally.
+ * Reduced motion: full static end-state (boxes, tags, $420, completion
+ * line, micro-CTA), zero timers, taps disabled. Items are plain tap
+ * targets, so vertical swipes scroll the page normally.
  */
 
 const ATTRACT_PHASES = ["settle", "detect", "value", "total", "hold", "reset"];
@@ -43,11 +39,11 @@ const ATTRACT_DURATIONS = { settle: 800, detect: 1800, value: 1600, total: 1200,
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 
 const ITEMS = [
-  { key: "bowl", label: "pyrex bowl", value: 85 },
+  { key: "oven", label: "dutch oven", value: 85 },
   { key: "vinyl", label: "vinyl record", value: 40 },
-  { key: "jacket", label: "chore jacket", value: 140 },
-  { key: "camera", label: "camera", value: 95 },
-  { key: "sneaker", label: "sneaker", value: 60 },
+  { key: "jacket", label: "denim jacket", value: 140 },
+  { key: "camera", label: "film camera", value: 95 },
+  { key: "bag", label: "leather bag", value: 60 },
 ];
 const SHELF_TOTAL = ITEMS.reduce((sum, i) => sum + i.value, 0); // 420
 
@@ -55,6 +51,14 @@ const STYLES = `
 @keyframes ssdBracketPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 .ssd-bracket { opacity: 0.5; transition: opacity 0.3s ease; }
 .ssd-bracket.ssd-active { animation: ssdBracketPulse 0.6s ease-in-out 3; }
+@keyframes ssdTotalPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+.ssd-total-pulse { animation: ssdTotalPulse 500ms cubic-bezier(0.2,1.3,0.4,1) 1; }
+@keyframes ssdGlow { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
+.ssd-glow-pulse { animation: ssdGlow 700ms ease-out 1; }
 `;
 
 /* Local, continuously-updating visibility tracker — same pattern as the
@@ -74,9 +78,7 @@ function useLiveInView() {
   return [ref, inView];
 }
 
-/* ONE-SHOT attract runner: walks the classic choreography a single time
-   while `active`, then calls onDone. Cleanup kills every pending timer,
-   so leaving the viewport (or tapping) stops it dead. */
+/* ONE-SHOT attract runner — unchanged semantics. */
 function useAttractRun(active, onDone) {
   const [phase, setPhase] = useState("settle");
   const onDoneRef = useRef(onDone);
@@ -109,9 +111,7 @@ function useAttractRun(active, onDone) {
   return active ? phase : "settle";
 }
 
-/* Eased number display — animates from its CURRENT shown value to each
-   new target (per-tap increments ride the same treatment as the old
-   0→420 count-up). Reduced motion snaps instantly with no RAF. */
+/* Eased running total — unchanged. */
 function useEasedNumber(target, reduced) {
   const [value, setValue] = useState(target);
   const shownRef = useRef(target);
@@ -141,7 +141,7 @@ function useEasedNumber(target, reduced) {
   return value;
 }
 
-/* Viewfinder corner brackets framing the whole shelf. */
+/* Viewfinder corner brackets framing the whole aisle. */
 function Bracket({ corner, pulse }) {
   const size = 20;
   const stroke = 2;
@@ -161,70 +161,191 @@ function Bracket({ corner, pulse }) {
   );
 }
 
-/* Simple mint-line silhouettes — the bowl reuses the existing PyrexBowl
-   illustration (same item the hero scans). */
-function VinylIcon() {
+/* ── Item silhouettes ─────────────────────────────────────────────────
+   One consistent style, matched to the authenticate demo's hoodie: 2.2
+   line weight, mint strokes, selective rgba-mint fills, one micro-
+   detail each. 60×60 viewBoxes; each reads at 60px. */
+const FILL = "rgba(92,224,184,0.12)";
+
+function OvenIcon() {
+  // dutch oven — micro-detail: lid knob + side handles
   return (
-    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ display: "block" }}>
-      <circle cx="50" cy="50" r="44" fill="#120f1a" stroke={C.mint} strokeWidth="2" />
-      <circle cx="50" cy="50" r="33" fill="none" stroke={C.mint} strokeWidth="0.8" opacity="0.4" />
-      <circle cx="50" cy="50" r="23" fill="none" stroke={C.mint} strokeWidth="0.8" opacity="0.4" />
-      <circle cx="50" cy="50" r="13" fill="rgba(92,224,184,0.14)" stroke={C.mint} strokeWidth="1.4" />
-      <circle cx="50" cy="50" r="3" fill={C.mint} />
+    <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
+      <path d="M12 26 L48 26 L46 50 Q30 54 14 50 Z" fill={FILL} stroke={C.mint} strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M12 26 Q30 21 48 26" fill="none" stroke={C.mint} strokeWidth="2.2" />
+      <path d="M15 23 Q30 17 45 23" fill="none" stroke={C.mint} strokeWidth="2" />
+      <rect x="27" y="12" width="6" height="4" rx="2" fill="none" stroke={C.mint} strokeWidth="2" />
+      <path d="M30 16 L30 19" stroke={C.mint} strokeWidth="1.4" />
+      <path d="M8 30 L12 30 M48 30 L52 30" stroke={C.mint} strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function VinylIcon() {
+  // vinyl half out of its sleeve — micro-detail: center label dot
+  return (
+    <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
+      <rect x="6" y="14" width="32" height="32" rx="2" fill={FILL} stroke={C.mint} strokeWidth="2.2" />
+      <path d="M10 20 L26 20" stroke={C.mint} strokeWidth="1.2" opacity="0.5" />
+      <circle cx="40" cy="30" r="15" fill="#0d0a17" stroke={C.mint} strokeWidth="2.2" />
+      <circle cx="40" cy="30" r="9" fill="none" stroke={C.mint} strokeWidth="0.9" opacity="0.45" />
+      <circle cx="40" cy="30" r="4" fill={FILL} stroke={C.mint} strokeWidth="1.4" />
+      <circle cx="40" cy="30" r="1.2" fill={C.mint} />
     </svg>
   );
 }
 
 function JacketIcon() {
+  // denim jacket on a hanger — micro-detail: chest pocket stitches
   return (
-    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ display: "block" }}>
-      <path
-        d="M35 18 L22 26 L27 42 L33 37 L33 84 L67 84 L67 37 L73 42 L78 26 L65 18 L57 24 L43 24 Z"
-        fill="none"
-        stroke={C.mint}
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-      />
-      <line x1="50" y1="26" x2="50" y2="84" stroke={C.mint} strokeWidth="1" opacity="0.4" />
-      <rect x="41" y="46" width="18" height="13" rx="2" fill="none" stroke={C.mint} strokeWidth="1" opacity="0.55" />
+    <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
+      <path d="M30 4 Q34 4 34 8 Q34 10 31 11 L30 14" fill="none" stroke={C.mint} strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M30 14 L14 22 L10 34 L16 36 L18 30 L18 52 L42 52 L42 30 L44 36 L50 34 L46 22 Z" fill={FILL} stroke={C.mint} strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M30 14 L30 52" stroke={C.mint} strokeWidth="1.2" opacity="0.5" />
+      <rect x="22" y="30" width="6" height="6" rx="1" fill="none" stroke={C.mint} strokeWidth="1.2" opacity="0.7" />
+      <rect x="33" y="30" width="6" height="6" rx="1" fill="none" stroke={C.mint} strokeWidth="1.2" opacity="0.7" />
     </svg>
   );
 }
 
 function CameraIcon() {
+  // film camera — micro-detail: concentric lens rings + advance knob
   return (
-    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ display: "block" }}>
-      <rect x="16" y="36" width="68" height="42" rx="6" fill="none" stroke={C.mint} strokeWidth="2.2" />
-      <rect x="35" y="24" width="20" height="13" rx="2" fill="none" stroke={C.mint} strokeWidth="2" />
-      <circle cx="50" cy="57" r="17" fill="none" stroke={C.mint} strokeWidth="2.2" />
-      <circle cx="50" cy="57" r="9" fill="rgba(92,224,184,0.14)" stroke={C.mint} strokeWidth="1" />
-      <circle cx="71" cy="45" r="3" fill={C.mint} />
+    <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
+      <rect x="8" y="20" width="44" height="28" rx="4" fill={FILL} stroke={C.mint} strokeWidth="2.2" />
+      <rect x="22" y="13" width="14" height="7" rx="2" fill="none" stroke={C.mint} strokeWidth="2" />
+      <circle cx="30" cy="34" r="11" fill="#0d0a17" stroke={C.mint} strokeWidth="2.2" />
+      <circle cx="30" cy="34" r="7" fill="none" stroke={C.mint} strokeWidth="1.2" opacity="0.6" />
+      <circle cx="30" cy="34" r="3.5" fill={FILL} stroke={C.mint} strokeWidth="1.2" />
+      <rect x="44" y="15" width="5" height="5" rx="1" fill="none" stroke={C.mint} strokeWidth="1.6" />
+      <circle cx="14" cy="26" r="1.6" fill={C.mint} />
     </svg>
   );
 }
 
-function SneakerIcon() {
+function BagIcon() {
+  // leather bag — micro-detail: flap buckle + long strap
   return (
-    <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ display: "block" }}>
-      <path
-        d="M10 68 Q11 58 23 56 L38 49 Q46 45 56 47 L63 51 Q78 48 89 57 Q94 61 91 68 L89 73 L11 73 Z"
-        fill="none"
-        stroke={C.mint}
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-      />
-      <path d="M30 56 L38 62 M44 51 L52 58 M58 49 L65 56" stroke={C.mint} strokeWidth="1.4" opacity="0.5" />
-      <line x1="11" y1="73" x2="91" y2="73" stroke={C.mint} strokeWidth="2.2" />
+    <svg viewBox="0 0 60 60" width="100%" height="100%" style={{ display: "block" }}>
+      <path d="M14 10 Q30 2 46 10" fill="none" stroke={C.mint} strokeWidth="1.8" />
+      <path d="M12 26 L48 26 L46 52 L14 52 Z" fill={FILL} stroke={C.mint} strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M12 26 L48 26 L46 38 L14 38 Z" fill="none" stroke={C.mint} strokeWidth="2" />
+      <rect x="27" y="34" width="6" height="7" rx="1" fill="none" stroke={C.mint} strokeWidth="1.6" />
+      <circle cx="30" cy="38" r="1" fill={C.mint} />
     </svg>
   );
 }
 
 function ItemIcon({ itemKey }) {
-  if (itemKey === "bowl") return <PyrexBowl size="100%" />;
+  if (itemKey === "oven") return <OvenIcon />;
   if (itemKey === "vinyl") return <VinylIcon />;
   if (itemKey === "jacket") return <JacketIcon />;
   if (itemKey === "camera") return <CameraIcon />;
-  return <SneakerIcon />;
+  return <BagIcon />;
+}
+
+/* One tappable item standing on a shelf rail: icon + detection box +
+   tag slot beneath. Breath = gentle idle scale on the icon only. */
+function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap }) {
+  return (
+    <button
+      type="button"
+      onClick={onTap}
+      aria-label={`price the ${item.label}`}
+      style={{
+        background: "none",
+        border: "none",
+        padding: 0,
+        margin: 0,
+        cursor: reduced ? "default" : "pointer",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        width: 84,
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: 64,
+          height: 64,
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 60,
+            height: 60,
+            transform: breathing ? "scale(1.02)" : "scale(1)",
+            transition: reduced ? "none" : `transform 900ms ${EASE}`,
+            willChange: "transform",
+          }}
+        >
+          <ItemIcon itemKey={item.key} />
+        </div>
+        {/* detection box hugs the icon zone */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: -4,
+            borderRadius: 10,
+            border: `1.5px solid ${C.mint}`,
+            opacity: boxOn ? 1 : 0,
+            transform: boxOn ? "scale(1)" : "scale(0.82)",
+            transition: reduced ? "none" : `opacity 360ms ${EASE} ${delayBase}ms, transform 360ms ${EASE} ${delayBase}ms`,
+            willChange: "transform, opacity",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: -6,
+              right: -6,
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: C.mint,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: boxOn ? 1 : 0,
+              transform: boxOn ? "scale(1)" : "scale(0.4)",
+              transition: reduced ? "none" : `opacity 300ms ${EASE} ${delayBase + 150}ms, transform 300ms ${EASE} ${delayBase + 150}ms`,
+            }}
+          >
+            <CheckIcon size={9} color="#070510" />
+          </div>
+        </div>
+      </div>
+      {/* shelf rail the item stands on */}
+      <div aria-hidden="true" style={{ width: "100%", height: 2, background: "rgba(92,224,184,0.28)", borderRadius: 1 }} />
+      {/* tag slot — height reserved so a popping tag never shifts rows */}
+      <div style={{ height: 26, display: "flex", alignItems: "center" }}>
+        <div
+          style={{
+            fontFamily: "var(--font-mono), monospace",
+            fontWeight: 700,
+            fontSize: "clamp(10px,2.8vw,13px)",
+            fontVariantNumeric: "tabular-nums",
+            color: "#070510",
+            background: C.mint,
+            borderRadius: 999,
+            padding: "3px 8px",
+            opacity: tagOn ? 1 : 0,
+            transform: tagOn ? "translateY(0) scale(1)" : "translateY(-6px) scale(0.85)",
+            transition: reduced ? "none" : `opacity 320ms ${EASE} ${delayBase}ms, transform 320ms ${EASE} ${delayBase}ms`,
+            whiteSpace: "nowrap",
+          }}
+        >
+          ${item.value}
+        </div>
+      </div>
+    </button>
+  );
 }
 
 export default function ShelfScannerDemo() {
@@ -235,24 +356,36 @@ export default function ShelfScannerDemo() {
   const [attract, setAttract] = useState(false);
   const [fading, setFading] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
+  const [breathIdx, setBreathIdx] = useState(-1);
 
   const attractActive = attract && inView && !reduced;
   const phase = useAttractRun(attractActive, () => {
     setAttract(false);
-    setLastTouch(Date.now()); // rest, then the idle watcher may re-arm
+    setLastTouch(Date.now());
   });
 
-  /* Idle watcher — attract arms only while the shelf is pristine (zero
-     taps): replaying the auto show over a half-priced shelf would wipe
-     the visitor's progress. */
+  /* Idle attract — pristine shelf only (unchanged semantics). */
   useEffect(() => {
     if (reduced || !inView || attract || tapped.size > 0) return;
     const t = setTimeout(() => setAttract(true), 6000);
     return () => clearTimeout(t);
   }, [reduced, inView, attract, tapped, lastTouch]);
 
-  /* Completion: all five priced → hold ~3s → soft fade reset back to
-     untapped. Timers die off-screen and restart on return. */
+  /* Idle PRESENCE breath — one item at a time, rotating. Runs only while
+     truly idle: on-screen, not reduced, not attracting, zero taps.
+     Interaction state owns the stage the moment any of those flips. */
+  useEffect(() => {
+    if (reduced || !inView || attract || tapped.size > 0 || fading) {
+      setBreathIdx(-1);
+      return;
+    }
+    const t = setInterval(() => setBreathIdx((i) => (i + 1) % ITEMS.length), 2000);
+    return () => clearInterval(t);
+  }, [reduced, inView, attract, tapped, fading]);
+
+  /* Completion: pulse + line + micro-CTA, hold, soft reset. Slightly
+     longer hold than before so the CTA is readable; cycle semantics
+     unchanged (timers die off-screen). */
   useEffect(() => {
     if (reduced || !inView || tapped.size !== ITEMS.length) return;
     let t2;
@@ -263,7 +396,7 @@ export default function ShelfScannerDemo() {
         setFading(false);
         setLastTouch(Date.now());
       }, 400);
-    }, 3000);
+    }, 4200);
     return () => {
       clearTimeout(t1);
       if (t2) clearTimeout(t2);
@@ -272,8 +405,8 @@ export default function ShelfScannerDemo() {
   }, [reduced, inView, tapped]);
 
   const tapItem = (key) => {
-    if (reduced || fading) return; // reduced motion: end state shown, taps disabled
-    setAttract(false); // cancel attract instantly; user visuals never read phase
+    if (reduced || fading) return;
+    setAttract(false);
     setLastTouch(Date.now());
     setTapped((prev) => {
       if (prev.has(key)) return prev; // re-tap = no-op
@@ -283,16 +416,19 @@ export default function ShelfScannerDemo() {
     });
   };
 
-  // Attract drives the classic phase booleans; user mode derives purely
-  // from the tapped set. Reduced motion pins the complete end state.
+  const goPricing = () => {
+    // Anchor only — scrollIntoView resolves against the nearest scroll
+    // container (.pro-scroll-main), same call the hero CTA already uses.
+    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const attractBoxes = attractActive && (phase === "detect" || phase === "value" || phase === "total" || phase === "hold");
   const attractTags = attractActive && (phase === "value" || phase === "total" || phase === "hold");
   const attractTotal = attractActive && (phase === "total" || phase === "hold");
-  // Scene fades out during attract's reset beat and during the post-
-  // completion soft reset; reduced motion never fades.
   const sceneShown = reduced || (!fading && !(attractActive && phase === "reset"));
 
   const complete = reduced || tapped.size === ITEMS.length;
+  const userComplete = complete && !attractActive;
   const promptShown = !reduced && !attractActive && tapped.size === 0;
   const scanningShown = attractActive && (phase === "settle" || phase === "detect" || phase === "value");
   const totalShown = reduced || attractTotal || (!attractActive && tapped.size > 0);
@@ -300,6 +436,13 @@ export default function ShelfScannerDemo() {
   const userSum = ITEMS.reduce((s, it) => s + (tapped.has(it.key) ? it.value : 0), 0);
   const totalTarget = reduced ? SHELF_TOTAL : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
   const totalValue = useEasedNumber(totalTarget, reduced);
+
+  const rowState = (item, i) => ({
+    boxOn: attractActive ? attractBoxes : reduced || tapped.has(item.key),
+    tagOn: attractActive ? attractTags : reduced || tapped.has(item.key),
+    delayBase: attractActive ? i * 350 : 0,
+    breathing: breathIdx === i,
+  });
 
   return (
     <section className="pro-snap-section" style={{ padding: SECTION_PADDING, position: "relative", zIndex: 1 }}>
@@ -337,18 +480,19 @@ export default function ShelfScannerDemo() {
         </FadeUp>
 
         <FadeUp delay={0.45}>
+          {/* Aisle panel — height derives purely from its content (two
+              shelf rows + prompt + total block), never stretched by the
+              section. */}
           <div
             ref={rootRef}
             style={{
               position: "relative",
-              marginTop: 32,
+              marginTop: 28,
               borderRadius: 20,
               border: "1px solid rgba(92,224,184,0.25)",
               background: "rgba(255,255,255,0.02)",
               boxShadow: "0 20px 60px rgba(92,224,184,0.08), inset 0 1px 0 rgba(255,255,255,0.04)",
-              // Balanced vertical padding: the panel hugs its content
-              // (items row + prompt + total), no stretched dead zone.
-              padding: "22px 16px 16px",
+              padding: "22px 14px 14px",
               boxSizing: "border-box",
               overflow: "hidden",
             }}
@@ -366,122 +510,21 @@ export default function ShelfScannerDemo() {
                 willChange: "opacity, transform",
               }}
             >
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${ITEMS.length}, 1fr)`,
-                  gap: 8,
-                }}
-              >
-                {ITEMS.map((item, i) => {
-                  const priced = reduced || tapped.has(item.key);
-                  const boxOn = attractActive ? attractBoxes : priced;
-                  const tagOn = attractActive ? attractTags : priced;
-                  // Stagger only belongs to the attract choreography; a
-                  // user's tap responds immediately.
-                  const boxDelay = attractActive ? i * 350 : 0;
-                  const tagDelay = attractActive ? i * 280 : 0;
-                  return (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => tapItem(item.key)}
-                      aria-label={`price the ${item.label}`}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        margin: 0,
-                        cursor: reduced ? "default" : "pointer",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
-                        minWidth: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: "relative",
-                          width: "100%",
-                          aspectRatio: "1 / 1",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "10%",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <ItemIcon itemKey={item.key} />
-
-                        <div
-                          aria-hidden="true"
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            borderRadius: 10,
-                            border: `1.5px solid ${C.mint}`,
-                            opacity: boxOn ? 1 : 0,
-                            transform: boxOn ? "scale(1)" : "scale(0.82)",
-                            transition: reduced
-                              ? "none"
-                              : `opacity 360ms ${EASE} ${boxDelay}ms, transform 360ms ${EASE} ${boxDelay}ms`,
-                            willChange: "transform, opacity",
-                          }}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: -6,
-                              right: -6,
-                              width: 16,
-                              height: 16,
-                              borderRadius: "50%",
-                              background: C.mint,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              opacity: boxOn ? 1 : 0,
-                              transform: boxOn ? "scale(1)" : "scale(0.4)",
-                              transition: reduced
-                                ? "none"
-                                : `opacity 300ms ${EASE} ${boxDelay + 150}ms, transform 300ms ${EASE} ${boxDelay + 150}ms`,
-                            }}
-                          >
-                            <CheckIcon size={9} color="#070510" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          fontFamily: "var(--font-mono), monospace",
-                          fontWeight: 700,
-                          fontSize: "clamp(10px,2.8vw,13px)",
-                          color: "#070510",
-                          background: C.mint,
-                          borderRadius: 999,
-                          padding: "3px 8px",
-                          opacity: tagOn ? 1 : 0,
-                          transform: tagOn ? "translateY(0) scale(1)" : "translateY(6px) scale(0.85)",
-                          transition: reduced
-                            ? "none"
-                            : `opacity 320ms ${EASE} ${tagDelay}ms, transform 320ms ${EASE} ${tagDelay}ms`,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        ${item.value}
-                      </div>
-                    </button>
-                  );
-                })}
+              {/* shelf row 1 — three items */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+                {ITEMS.slice(0, 3).map((item, i) => (
+                  <ShelfItem key={item.key} item={item} {...rowState(item, i)} reduced={reduced} onTap={() => tapItem(item.key)} />
+                ))}
+              </div>
+              {/* shelf row 2 — two items */}
+              <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 6 }}>
+                {ITEMS.slice(3).map((item, i) => (
+                  <ShelfItem key={item.key} item={item} {...rowState(item, i + 3)} reduced={reduced} onTap={() => tapItem(item.key)} />
+                ))}
               </div>
 
-              {/* Prompt row — sits DIRECTLY under the items so the eye
-                  never crosses a void to find it. Prompt (user idle) and
-                  "scanning shelf…" (attract) share the slot; they're
-                  mutually exclusive states. */}
-              <div style={{ position: "relative", marginTop: 12, height: 18, textAlign: "center" }}>
+              {/* prompt / scanning row, directly under the aisle */}
+              <div style={{ position: "relative", marginTop: 10, height: 18, textAlign: "center" }}>
                 <div
                   style={{
                     position: "absolute",
@@ -522,10 +565,11 @@ export default function ShelfScannerDemo() {
                 </div>
               </div>
 
-              {/* Total row — the lower third of the panel. Stable
-                  minHeight so the tally appearing never shifts layout. */}
-              <div style={{ marginTop: 10, minHeight: 54, textAlign: "center" }}>
+              {/* total block — heights pre-reserved for the completion
+                  line AND micro-CTA, so nothing shifts when they land */}
+              <div style={{ marginTop: 8, minHeight: 96, textAlign: "center", position: "relative" }}>
                 <div
+                  className={userComplete && !reduced ? "ssd-total-pulse" : ""}
                   style={{
                     opacity: totalShown ? 1 : 0,
                     transform: totalShown ? "translateY(0)" : "translateY(12px)",
@@ -533,11 +577,28 @@ export default function ShelfScannerDemo() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "center",
+                    justifyContent: "flex-start",
                     willChange: "opacity, transform",
-                    pointerEvents: "none",
+                    position: "relative",
                   }}
                 >
+                  {/* one-shot mint glow behind the total on completion */}
+                  <div
+                    aria-hidden="true"
+                    className={userComplete && !reduced ? "ssd-glow-pulse" : ""}
+                    style={{
+                      position: "absolute",
+                      top: -6,
+                      left: "50%",
+                      marginLeft: -70,
+                      width: 140,
+                      height: 64,
+                      borderRadius: "50%",
+                      background: "radial-gradient(ellipse at center, rgba(92,224,184,0.35) 0%, transparent 70%)",
+                      opacity: 0,
+                      pointerEvents: "none",
+                    }}
+                  />
                   <div
                     style={{
                       fontFamily: "var(--font-mono), monospace",
@@ -562,23 +623,48 @@ export default function ShelfScannerDemo() {
                   >
                     ${totalValue}
                   </div>
-                  {/* Completion line — lands when the visitor prices all
-                      five (always shown under reduced motion). */}
-                  <div
-                    style={{
-                      fontFamily: "var(--font-mono), monospace",
-                      fontSize: 10,
-                      letterSpacing: "0.12em",
-                      color: "rgba(92,224,184,0.6)",
-                      marginTop: 4,
-                      opacity: complete && !attractActive ? 1 : 0,
-                      transform: complete && !attractActive ? "translateY(0)" : "translateY(6px)",
-                      transition: reduced ? "none" : `opacity 340ms ${EASE} 250ms, transform 340ms ${EASE} 250ms`,
-                    }}
-                  >
-                    the whole shelf. one walkthrough.
-                  </div>
                 </div>
+                {/* completion line — reserved slot */}
+                <div
+                  style={{
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 10,
+                    letterSpacing: "0.12em",
+                    color: "rgba(92,224,184,0.6)",
+                    marginTop: 4,
+                    height: 14,
+                    opacity: userComplete ? 1 : 0,
+                    transform: userComplete ? "translateY(0)" : "translateY(6px)",
+                    transition: reduced ? "none" : `opacity 340ms ${EASE} 250ms, transform 340ms ${EASE} 250ms`,
+                  }}
+                >
+                  the whole shelf. one walkthrough.
+                </div>
+                {/* micro-CTA — reserved slot, anchor only */}
+                <button
+                  type="button"
+                  onClick={goPricing}
+                  tabIndex={userComplete ? 0 : -1}
+                  aria-hidden={!userComplete}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    marginTop: 4,
+                    height: 20,
+                    padding: 0,
+                    cursor: userComplete ? "pointer" : "default",
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.1em",
+                    color: C.mint,
+                    opacity: userComplete ? 1 : 0,
+                    transform: userComplete ? "translateY(0)" : "translateY(6px)",
+                    transition: reduced ? "none" : `opacity 340ms ${EASE} 550ms, transform 340ms ${EASE} 550ms`,
+                    pointerEvents: userComplete ? "auto" : "none",
+                  }}
+                >
+                  priced in seconds. every aisle, every day &rarr;
+                </button>
               </div>
             </div>
           </div>
