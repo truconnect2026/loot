@@ -115,8 +115,12 @@ function useAttractRun(active, onDone) {
   return active ? phase : "settle";
 }
 
-/* Eased running total — unchanged. */
-function useEasedNumber(target, reduced) {
+/* Eased running total. `instantFromZero`: the FIRST user tap must land
+   on the same frame as its tag — an eased 0→$85 catch-up reads as a
+   $0-vs-$85 contradiction in any screenshot. Ease stays for every
+   subsequent step (and for the attract choreography, which passes
+   false). */
+function useEasedNumber(target, reduced, instantFromZero = false) {
   const [value, setValue] = useState(target);
   const shownRef = useRef(target);
   useEffect(() => {
@@ -127,6 +131,11 @@ function useEasedNumber(target, reduced) {
     }
     const from = shownRef.current;
     if (from === target) return;
+    if (instantFromZero && from === 0 && target > 0) {
+      shownRef.current = target;
+      setValue(target);
+      return;
+    }
     let raf;
     let start = null;
     const dur = 600;
@@ -473,7 +482,7 @@ export default function ShelfScannerDemo() {
 
   const userSum = ITEMS.reduce((s, it) => s + (tapped.has(it.key) ? it.value : 0), 0);
   const totalTarget = reduced ? SHELF_TOTAL : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
-  const totalValue = useEasedNumber(totalTarget, reduced);
+  const totalValue = useEasedNumber(totalTarget, reduced, !attractActive);
 
   const rowState = (item, i) => ({
     boxOn: attractActive ? attractBoxes : reduced || tapped.has(item.key) || (entryBeat && i === 0),

@@ -190,19 +190,6 @@ export default function PricingSection({ onCTA }) {
                   CLAIM ANNUAL
                 </CTAButton>
               </div>
-              <p
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.3)",
-                  textAlign: "center",
-                  marginTop: 12,
-                }}
-              >
-                60-DAY REFUND · NO QUESTIONS
-              </p>
               {/* Founding identity — STATUS-ONLY version shipped: it
                   claims the existing "Founding member status" bullet,
                   nothing about price movement. David has NOT confirmed a
@@ -217,11 +204,24 @@ export default function PricingSection({ onCTA }) {
                   letterSpacing: "0.08em",
                   color: "rgba(92,224,184,0.55)",
                   textAlign: "center",
-                  marginTop: 8,
+                  marginTop: 12,
                   marginBottom: 0,
                 }}
               >
                 you&apos;re early. founding member status, locked in.
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.3)",
+                  textAlign: "center",
+                  marginTop: 8,
+                }}
+              >
+                60-DAY REFUND · NO QUESTIONS
               </p>
             </div>
           </FadeUp>

@@ -448,7 +448,10 @@ export default function AuthCheckDemo() {
                     {CHECKS.map((chk) => {
                       const shown = p >= chk.at;
                       const color = chk.pass ? C.mint : RED;
-                      const GHOST = "rgba(92,224,184,0.15)";
+                      // 0.3 (was 0.15): 0.15 rendered as an illegible smudge on real
+                      // devices. No parent opacity multiplies this — the color alpha
+                      // is the final rendered value.
+                      const GHOST = "rgba(92,224,184,0.3)";
                       return (
                         <div
                           key={chk.label}

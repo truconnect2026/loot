@@ -5,12 +5,17 @@ import { C } from "../lib/colors.js";
 import { CheckIcon, CoinMark } from "./atoms.jsx";
 import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 import { PyrexBowl } from "../../marketing-screens/_frame";
-import VerdictCard from "./VerdictCard.jsx";
 
 /**
- * Live, looping scan→verdict animation for the hero phone. Self-contained:
- * VerdictCard.jsx (the static card) stays untouched as the reduced-motion
- * fallback and is reused directly for it, not re-implemented.
+ * Live, looping scan→verdict animation for the hero phone.
+ *
+ * ONE DOM STRUCTURE UNDER ALL CONDITIONS: reduced motion pins the phase
+ * to "hold" (static assembled verdict, zero timers) inside THIS tree.
+ * The old `if (reduced) return <VerdictCard/>` twin swap was the last
+ * structural conditional on the page — and because the reduced flag
+ * initializes from matchMedia on the client while SSR renders the live
+ * tree, Reduce-Motion devices hydrated into a DIFFERENT structure than
+ * the server painted. That divergence class is dead: same tree, always.
  *
  * Loop (~6.6s), transform/opacity only:
  *   frame (0.6s) → sweep (0.7s) → assemble (1.4s) → hold (3.5s) → reset (0.4s)
@@ -97,22 +102,25 @@ function usePhaseLoop(active) {
   return active ? phase : "frame";
 }
 
-/* Numbers start counting ~400ms into "assemble" (so the reveal is visible
-   before it starts moving), hold at target through "hold", reset to 0
-   once the cycle leaves assemble/hold. Re-fires every loop (no fired-once
-   guard) — that's the point. */
-function useCountUp(target, phase) {
+/* Numbers start counting 250ms into "assemble" and settle FAST (550ms —
+   the comps/AUTHENTIC reveals wait until after it settles, so no frame
+   ever shows a mid-count range next to sold comps). Holds at target
+   through "hold", resets to 0 once the cycle leaves assemble/hold.
+   Re-fires every loop (no fired-once guard) — that's the point.
+   Reduced motion: pinned to target, zero timers. */
+function useCountUp(target, phase, reduced) {
   const [active, setActive] = useState(false);
   const [value, setValue] = useState(0);
 
   useEffect(() => {
+    if (reduced) return;
     if (phase === "assemble") {
-      const t = setTimeout(() => setActive(true), 400);
+      const t = setTimeout(() => setActive(true), 250);
       return () => clearTimeout(t);
     }
     if (phase === "hold") return; // keep counting/holding, no reset
     setActive(false);
-  }, [phase]);
+  }, [phase, reduced]);
 
   useEffect(() => {
     if (!active) {
@@ -124,7 +132,7 @@ function useCountUp(target, phase) {
     // count froze at $0–$0 while the timer-driven phase machine kept
     // going. Timers are the proven-reliable clock here.
     const start = Date.now();
-    const dur = 700;
+    const dur = 550;
     const id = setInterval(() => {
       const p = Math.min((Date.now() - start) / dur, 1);
       setValue(Math.round((1 - Math.pow(1 - p, 3)) * target));
@@ -133,7 +141,7 @@ function useCountUp(target, phase) {
     return () => clearInterval(id);
   }, [active, target]);
 
-  return value;
+  return reduced ? target : value;
 }
 
 function Bracket({ corner, pulse }) {
@@ -179,21 +187,14 @@ export default function VerdictCardLive() {
   const reduced = usePrefersReducedMotion();
   const [rootRef, inView] = useLiveInView();
   const phase = usePhaseLoop(!reduced && inView);
-  const low = useCountUp(75, phase);
-  const high = useCountUp(95, phase);
+  const low = useCountUp(75, phase, reduced);
+  const high = useCountUp(95, phase, reduced);
 
-  // Reduced motion: identical static card, no timers, no loop — reuse the
-  // real fallback component directly rather than re-describing its markup.
-  if (reduced) {
-    return (
-      <div ref={rootRef} style={{ width: "100%", height: "100%" }}>
-        <VerdictCard />
-      </div>
-    );
-  }
-
-  const viewfinderShown = phase === "frame" || phase === "sweep" || phase === "reset";
-  const verdictShown = phase === "assemble" || phase === "hold";
+  // Reduced motion pins the SAME tree to its assembled end-state — no
+  // twin component, no structural swap (see header comment).
+  const effPhase = reduced ? "hold" : phase;
+  const viewfinderShown = effPhase === "frame" || effPhase === "sweep" || effPhase === "reset";
+  const verdictShown = effPhase === "assemble" || effPhase === "hold";
 
   return (
     <div ref={rootRef} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
@@ -296,7 +297,7 @@ export default function VerdictCardLive() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-13%) scale(0.5)",
+            transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-6%) scale(0.38)",
             transformOrigin: "center top",
             transition: `transform 420ms ${EASE}`,
             willChange: "transform",
@@ -309,11 +310,11 @@ export default function VerdictCardLive() {
             // square left a giant black band above and below on tall
             // screens. Min presence 150px per the content-owns-the-stage
             // principle.
-            width: "76%",
-            maxWidth: 300,
-            height: "50%",
+            width: "82%",
+            maxWidth: 310,
+            height: "58%",
             minHeight: 150,
-            maxHeight: 400,
+            maxHeight: 440,
             borderRadius: 20,
             background: "rgba(255,255,255,0.025)",
             overflow: "hidden",
@@ -385,7 +386,10 @@ export default function VerdictCardLive() {
           right: 0,
           top: "auto",
           bottom: 0,
-          maxHeight: "87%",
+          // 72% (was 87%): the camera zone above the held sheet keeps a
+          // composed ≥25%-of-screen presence with the item visible — the
+          // held verdict is the frame people screenshot.
+          maxHeight: "72%",
           opacity: verdictShown ? 1 : 0,
           transform: verdictShown ? "translateY(0)" : "translateY(14px)",
           transition: `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
@@ -433,7 +437,7 @@ export default function VerdictCardLive() {
           </h3>
         </Reveal>
 
-        <Reveal shown={verdictShown} delayMs={130} reduced={reduced}>
+        <Reveal shown={verdictShown} delayMs={60} reduced={reduced}>
           <p
             style={{
               fontFamily: "var(--font-mono), monospace",
@@ -448,7 +452,7 @@ export default function VerdictCardLive() {
           </p>
         </Reveal>
 
-        <Reveal shown={verdictShown} delayMs={280} mode="pop" reduced={reduced}>
+        <Reveal shown={verdictShown} delayMs={120} mode="pop" reduced={reduced}>
           <div
             style={{
               display: "inline-flex",
@@ -468,7 +472,7 @@ export default function VerdictCardLive() {
           </div>
         </Reveal>
 
-        <Reveal shown={verdictShown} delayMs={430} reduced={reduced}>
+        <Reveal shown={verdictShown} delayMs={200} reduced={reduced}>
           <div style={{ textAlign: "center", marginBottom: "8%" }}>
             <div
               style={{
@@ -498,7 +502,7 @@ export default function VerdictCardLive() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: "7%" }}>
           {comps.map((line, i) => (
-            <Reveal key={line} shown={verdictShown} delayMs={600 + i * 60} reduced={reduced}>
+            <Reveal key={line} shown={verdictShown} delayMs={880 + i * 60} reduced={reduced}>
               <div
                 style={{
                   fontFamily: "var(--font-mono), monospace",
@@ -513,7 +517,7 @@ export default function VerdictCardLive() {
           ))}
         </div>
 
-        <Reveal shown={verdictShown} delayMs={900} mode="pop-strong" reduced={reduced}>
+        <Reveal shown={verdictShown} delayMs={1050} mode="pop-strong" reduced={reduced}>
           <div
             style={{
               display: "flex",

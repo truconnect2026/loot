@@ -13,6 +13,7 @@ const HERO_STYLES = `
   /* svh-fluid, no height breakpoint: 12px in a 620px webview, easing
      continuously to 40px by ~700px. IG chrome collapse mid-scroll now
      GLIDES instead of restructuring. */
+  gap: clamp(12px, calc((100vh - 586px) * 0.35), 40px);
   gap: clamp(12px, calc((100svh - 586px) * 0.35), 40px);
   align-items: center;
 }
@@ -20,6 +21,12 @@ const HERO_STYLES = `
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
 .pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; }
+/* svh-fluid section padding with a vh fallback line (engines without svh
+   must still get a bounded value, not a dropped declaration). */
+.pro-hero-section {
+  padding: clamp(18px, calc((100vh - 580px) * 0.45), 62px) 24px clamp(48px, calc((100vh - 530px) * 0.5), 84px) !important;
+  padding: clamp(18px, calc((100svh - 580px) * 0.45), 62px) 24px clamp(48px, calc((100svh - 530px) * 0.5), 84px) !important;
+}
 .pro-hero-visual {
   position: relative;
   display: flex;
@@ -81,6 +88,7 @@ const HERO_STYLES = `
 .pro-phone-frame {
   position: relative;
   z-index: 1;
+  width: min(100%, calc((100vh - 140px) * 0.5625));
   width: min(100%, calc((100svh - 140px) * 0.5625));
   margin: 0 auto;
   aspect-ratio: 9 / 16;
@@ -143,10 +151,6 @@ export default function HeroSection() {
     <section
       className="pro-snap-section pro-hero-section"
       style={{
-        // svh-fluid padding (was a hard @media height switch): 18/48 in a
-        // 620px webview gliding continuously to 62/84 on tall screens.
-        padding:
-          "clamp(18px, calc((100svh - 580px) * 0.45), 62px) 24px clamp(48px, calc((100svh - 530px) * 0.5), 84px)",
         maxWidth: 1200,
         margin: "0 auto",
         position: "relative",
