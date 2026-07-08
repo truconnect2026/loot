@@ -7,7 +7,15 @@ import VerdictCardLive from "./VerdictCardLive.jsx";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
 const HERO_STYLES = `
-.pro-hero-grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+.pro-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* svh-fluid, no height breakpoint: 12px in a 620px webview, easing
+     continuously to 40px by ~700px. IG chrome collapse mid-scroll now
+     GLIDES instead of restructuring. */
+  gap: clamp(12px, calc((100svh - 586px) * 0.35), 40px);
+  align-items: center;
+}
 @media (min-width: 1024px) {
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
@@ -63,14 +71,21 @@ const HERO_STYLES = `
   pointer-events: none;
   opacity: 0.3;
 }
-/* Minimal CSS phone frame — dark bezel, rounded screen, no chrome. */
+/* Minimal CSS phone frame — dark bezel, rounded screen, no chrome.
+   ONE layout at every viewport height (620–900+): a single 9/16 aspect
+   whose WIDTH derives fluidly from 100svh, so shorter webviews get a
+   proportionally smaller framed phone — never a different structure.
+   The old max-height:700px aspect swap (9/19.5 ↔ 9/13.6) restructured
+   the mockup mid-scroll when IG chrome collapsed; that class of bug is
+   what this kills. */
 .pro-phone-frame {
   position: relative;
   z-index: 1;
-  width: 100%;
-  aspect-ratio: 9 / 19.5;
+  width: min(100%, calc((100svh - 140px) * 0.5625));
+  margin: 0 auto;
+  aspect-ratio: 9 / 16;
   background: linear-gradient(155deg, #1a1a1e 0%, #0a0a0c 60%);
-  border-radius: 44px;
+  border-radius: clamp(32px, 11vw, 44px);
   padding: 12px;
   box-sizing: border-box;
   box-shadow:
@@ -82,7 +97,7 @@ const HERO_STYLES = `
   container-type: inline-size;
   width: 100%;
   height: 100%;
-  border-radius: 32px;
+  border-radius: clamp(22px, 8vw, 32px);
   background: #070510;
   overflow: hidden;
   position: relative;
@@ -106,29 +121,16 @@ const HERO_STYLES = `
   .pro-hero-italic   { font-size: clamp(48px, 6.5vw, 100px) !important; }
 }
 /* In-app browser compression (Instagram/iOS webviews leave ~620-700px
-   of usable height). HEIGHT query, not width: same 390pt iPhone needs
-   the full layout in Safari but the compressed one inside IG. Targets:
-   eyebrow+headline+subhead+CTA card land in swipe one; the live demo
-   phone fully visible by swipe two. The phone frame switches to a
-   shorter "cropped" aspect so VerdictCardLive's flex spacers collapse
-   the empty vertical middle — its internals are untouched; it simply
-   fills a shorter screen. */
+   of usable height). TYPE TWEAKS ONLY — every structural rule (section
+   padding, grid gap, mockup width, frame aspect/radius) is now fluid in
+   the base styles, so crossing this boundary mid-scroll can no longer
+   restructure the layout; it only nudges text rhythm. */
 @media (max-height: 700px) {
-  .pro-hero-section { padding: 18px 24px 48px !important; }
-  .pro-hero-grid { gap: 12px !important; }
   .pro-hero-headline { font-size: clamp(38px, 10.5vw, 56px) !important; line-height: 0.95 !important; }
   .pro-hero-italic { font-size: clamp(28px, 8vw, 42px) !important; margin: 0.08em 0 14px !important; }
   .pro-hero-sub { font-size: 14px !important; line-height: 1.45 !important; margin-bottom: 16px !important; }
   .pro-hero-trust { margin-bottom: 10px !important; }
   .pro-hero-annual { margin-bottom: 6px !important; }
-  .pro-hero-visual {
-    max-width: 330px !important;
-    width: 100% !important;
-    margin: 4px auto 0 !important;
-    padding: 8px 0 !important;
-  }
-  .pro-phone-frame { aspect-ratio: 9 / 13.6 !important; border-radius: 36px !important; }
-  .pro-phone-screen { border-radius: 26px !important; }
 }
 `;
 
@@ -141,7 +143,10 @@ export default function HeroSection() {
     <section
       className="pro-snap-section pro-hero-section"
       style={{
-        padding: "clamp(42px,6.5vw,62px) 24px clamp(52px,8vw,84px)",
+        // svh-fluid padding (was a hard @media height switch): 18/48 in a
+        // 620px webview gliding continuously to 62/84 on tall screens.
+        padding:
+          "clamp(18px, calc((100svh - 580px) * 0.45), 62px) 24px clamp(48px, calc((100svh - 530px) * 0.5), 84px)",
         maxWidth: 1200,
         margin: "0 auto",
         position: "relative",

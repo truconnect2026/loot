@@ -2,6 +2,7 @@
 
 import { C } from "../lib/colors.js";
 import { CheckIcon, CoinMark } from "./atoms.jsx";
+import { PyrexBowl } from "../../marketing-screens/_frame";
 
 /**
  * Live-rendered scan-result card — replaces the old phone-in-hand photo
@@ -92,14 +93,52 @@ export default function VerdictCard() {
         ))}
       </div>
 
-      {/* sheet body — identical skin to the live card's verdict layer */}
+      {/* Static camera strip — matches the live card's held-phase
+          composition: the scanned item stays visible in the band above
+          the sheet instead of leaving a dead black strip. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 52,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          opacity: 0.85,
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: 110,
+            height: 116,
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.025)",
+          }}
+        >
+          <div style={{ position: "absolute", top: 4, left: 4, width: 10, height: 10, borderTop: `2px solid ${C.mint}`, borderLeft: `2px solid ${C.mint}`, opacity: 0.5 }} />
+          <div style={{ position: "absolute", top: 4, right: 4, width: 10, height: 10, borderTop: `2px solid ${C.mint}`, borderRight: `2px solid ${C.mint}`, opacity: 0.5 }} />
+          <div style={{ position: "absolute", bottom: 4, left: 4, width: 10, height: 10, borderBottom: `2px solid ${C.mint}`, borderLeft: `2px solid ${C.mint}`, opacity: 0.5 }} />
+          <div style={{ position: "absolute", bottom: 4, right: 4, width: 10, height: 10, borderBottom: `2px solid ${C.mint}`, borderRight: `2px solid ${C.mint}`, opacity: 0.5 }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 64 }}>
+              <PyrexBowl size="100%" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* sheet body — identical skin to the live card's verdict layer:
+          bottom-anchored, content-hugging (content owns the stage) */}
       <div
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          top: "13%",
+          top: "auto",
           bottom: 0,
+          maxHeight: "84%",
           display: "flex",
           flexDirection: "column",
           padding: "7% 9% 12%",

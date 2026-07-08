@@ -620,7 +620,11 @@ export default function ShelfScannerDemo() {
                 <div
                   className={userComplete && !reduced ? "ssd-total-pulse" : ""}
                   style={{
-                    opacity: totalShown ? 1 : 0,
+                    // 0.35, not 0: at rest the total block reads as a quiet
+                    // composed "shelf value $0" instead of leaving the lower
+                    // half of the stage an empty reserved void (composition
+                    // gate). First tap brightens it to full.
+                    opacity: totalShown ? 1 : 0.35,
                     transform: totalShown ? "translateY(0)" : "translateY(12px)",
                     transition: reduced ? "none" : `opacity 380ms ${EASE}, transform 380ms ${EASE}`,
                     display: "flex",

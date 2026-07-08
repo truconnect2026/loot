@@ -157,7 +157,9 @@ export default function FAQSection() {
             style={{
               ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.25em",
-              marginBottom: 48,
+              // 28 (was 48): headline + at least three question rows must
+              // share one 390x844 viewport.
+              marginBottom: 28,
             }}
           >
             REAL QUESTIONS. <span style={{ color: C.mint }}>REAL ANSWERS.</span>

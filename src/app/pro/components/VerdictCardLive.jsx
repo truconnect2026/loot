@@ -267,40 +267,57 @@ export default function VerdictCardLive() {
         ))}
       </div>
 
-      {/* Viewfinder layer — phases 1 & 2 (and briefly 5, fading back in).
-          Stays dimly visible under the verdict sheet instead of dropping
-          to 0: the real result sheet rises over a live camera, and the
-          band above the sheet must not read as a dead black strip. */}
+      {/* Camera layer — ALWAYS visible, every phase. During the scan
+          phases the composition sits centered and large; when the sheet
+          rises the whole composition steps back (transform-only: up +
+          scaled) into the band above the sheet, so the item silhouette
+          stays on screen through assemble/hold instead of dimming into a
+          near-black strip. */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          opacity: viewfinderShown ? 1 : 0.22,
+          opacity: viewfinderShown ? 1 : 0.85,
           transition: `opacity 400ms ${EASE}`,
           willChange: "opacity",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "16% 11% 12%",
+          padding: "15% 11% 12%",
           boxSizing: "border-box",
         }}
       >
         <div
           style={{
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-13%) scale(0.5)",
+            transformOrigin: "center top",
+            transition: `transform 420ms ${EASE}`,
+            willChange: "transform",
+          }}
+        >
+        <div
+          style={{
             position: "relative",
-            // Height-proportional, not width-derived: on tall screens
-            // (Safari 9/19.5 frame) a width-based square left a giant
-            // black band above and below — the reported "void". The
-            // viewfinder now grows with the screen like a real camera.
+            // Height-proportional, not width-derived: a width-based
+            // square left a giant black band above and below on tall
+            // screens. Min presence 150px per the content-owns-the-stage
+            // principle.
             width: "76%",
             maxWidth: 300,
             height: "50%",
-            minHeight: 190,
+            minHeight: 150,
             maxHeight: 400,
             borderRadius: 20,
             background: "rgba(255,255,255,0.025)",
             overflow: "hidden",
+            flexShrink: 0,
           }}
         >
           {/* faint reticle crosshairs — static composition, no motion */}
@@ -348,9 +365,12 @@ export default function VerdictCardLive() {
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "rgba(92,224,184,0.55)",
+            opacity: viewfinderShown ? 1 : 0,
+            transition: `opacity 300ms ${EASE}`,
           }}
         >
           {phase === "sweep" ? "analyzing…" : "scanning…"}
+        </div>
         </div>
       </div>
 
