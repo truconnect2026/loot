@@ -162,6 +162,10 @@ export default function AuthCheckDemo() {
   // rAF — see the hero count-up WebKit lesson).
   const beatDoneRef = useRef(false);
   const beatTimersRef = useRef([]);
+  // >=10s cooldown between entrance-beat fires (see shelf demo note).
+  const lastBeatAtRef = useRef(0);
+  // Attract cap: the loop stops after 2 cycles per section entry.
+  const attractCyclesRef = useRef(0);
 
   const cancelBeat = useCallback(() => {
     for (const id of beatTimersRef.current) {
@@ -200,10 +204,13 @@ export default function AuthCheckDemo() {
   useEffect(() => {
     if (!inView) {
       beatDoneRef.current = false;
+      attractCyclesRef.current = 0;
       return;
     }
     if (reduced || beatDoneRef.current || nudgeKilled || attract) return;
     beatDoneRef.current = true;
+    if (Date.now() - lastBeatAtRef.current < 10000) return; // cooldown
+    lastBeatAtRef.current = Date.now();
     const DUR = 1200;
     const delay = setTimeout(() => {
       const t0 = Date.now();
@@ -228,6 +235,7 @@ export default function AuthCheckDemo() {
      so reduced-motion visitors get zero timers. */
   useEffect(() => {
     if (reduced || !inView || attract) return;
+    if (attractCyclesRef.current >= 2) return; // capped until re-entry
     const t = setTimeout(() => setAttract(true), 6000);
     return () => clearTimeout(t);
   }, [reduced, inView, attract, lastTouch]);
@@ -242,6 +250,11 @@ export default function AuthCheckDemo() {
     let timer = null;
     const cycle = () => {
       if (cancelled) return;
+      attractCyclesRef.current += 1;
+      if (attractCyclesRef.current > 2) {
+        setAttract(false); // rest until the section is re-entered
+        return;
+      }
       const t0 = performance.now();
       const step = (ts) => {
         if (cancelled) return;

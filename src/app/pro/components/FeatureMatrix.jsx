@@ -460,14 +460,22 @@ export default function FeatureMatrix() {
   // rotation slot), then the shared ticker takes over from it. One-shot
   // per entry — exiting the viewport re-arms both.
   const [entered, setEntered] = useState(false);
+  // >=10s cooldown: re-entering within it resumes the rotation quietly
+  // (tick preserved) instead of replaying the card-0 entrance pop.
+  const lastBeatAtRef = useRef(0);
 
   useEffect(() => {
     if (!inView) {
       setEntered(false);
-      setTick(0);
       return;
     }
     if (reduced || entered) return;
+    if (Date.now() - lastBeatAtRef.current < 10000) {
+      setEntered(true);
+      return;
+    }
+    lastBeatAtRef.current = Date.now();
+    setTick(0); // fresh entry: rotation restarts from the entrance beat
     const t = setTimeout(() => setEntered(true), 400);
     return () => clearTimeout(t);
   }, [inView, reduced, entered]);

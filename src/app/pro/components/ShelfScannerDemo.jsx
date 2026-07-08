@@ -382,6 +382,14 @@ export default function ShelfScannerDemo() {
   // pristine). One-shot per entry; re-arms after the section leaves view.
   const [entryBeat, setEntryBeat] = useState(false);
   const beatDoneRef = useRef(false);
+  // >=10s cooldown between entrance-beat fires: snap scrolling crosses
+  // section boundaries constantly, and a beat on EVERY re-entry reads
+  // twitchy. One beat per entry, and only if 10s have passed.
+  const lastBeatAtRef = useRef(0);
+  // Attract frequency cap: max 2 runs per section entry, then the demo
+  // rests until the section is exited and re-entered. Endless 6s
+  // re-fires read as glitching, not inviting.
+  const attractRunsRef = useRef(0);
 
   const attractActive = attract && inView && !reduced;
   const phase = useAttractRun(attractActive, () => {
@@ -392,10 +400,13 @@ export default function ShelfScannerDemo() {
   useEffect(() => {
     if (!inView) {
       beatDoneRef.current = false;
+      attractRunsRef.current = 0;
       return;
     }
     if (reduced || beatDoneRef.current || attract || tapped.size > 0) return;
     beatDoneRef.current = true;
+    if (Date.now() - lastBeatAtRef.current < 10000) return; // cooldown
+    lastBeatAtRef.current = Date.now();
     const t1 = setTimeout(() => setEntryBeat(true), 350);
     const t2 = setTimeout(() => {
       setEntryBeat(false);
@@ -414,7 +425,11 @@ export default function ShelfScannerDemo() {
      while the entrance beat plays. */
   useEffect(() => {
     if (reduced || !inView || attract || tapped.size > 0 || entryBeat) return;
-    const t = setTimeout(() => setAttract(true), 6000);
+    if (attractRunsRef.current >= 2) return; // capped until re-entry
+    const t = setTimeout(() => {
+      attractRunsRef.current += 1;
+      setAttract(true);
+    }, 6000);
     return () => clearTimeout(t);
   }, [reduced, inView, attract, tapped, lastTouch, entryBeat]);
 

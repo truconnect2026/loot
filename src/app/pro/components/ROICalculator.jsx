@@ -139,15 +139,27 @@ export default function ROICalculator() {
   // Reduced motion never sees this: it arrives already tipped (below,
   // `tip` ignores `entered` when reduced).
   const [entered, setEntered] = useState(false);
+  // Beat cooldown + attract cap (shared contract with the other demos):
+  // the settle replays at most once per 10s; attract arms at most twice
+  // per entry, one full chip pass each.
+  const lastSettleAtRef = useRef(0);
+  const attractRunsRef = useRef(0);
+  const attractSwitchesRef = useRef(0);
 
   const buy = BUYS[sel];
 
   useEffect(() => {
     if (!inView) {
       setEntered(false);
+      attractRunsRef.current = 0;
       return;
     }
     if (reduced || entered) return;
+    if (Date.now() - lastSettleAtRef.current < 10000) {
+      setEntered(true); // cooldown: arrive settled, no replay
+      return;
+    }
+    lastSettleAtRef.current = Date.now();
     const t1 = setTimeout(() => setEntered(true), 350);
     // attract's 6s idle clock counts from settle END — no beat→attract stack
     const t2 = setTimeout(() => setLastTouch(Date.now()), 1100);
@@ -161,14 +173,24 @@ export default function ROICalculator() {
      waits for the entrance settle. */
   useEffect(() => {
     if (reduced || !inView || attract || !entered) return;
-    const t = setTimeout(() => setAttract(true), 6000);
+    if (attractRunsRef.current >= 2) return; // capped until re-entry
+    const t = setTimeout(() => {
+      attractRunsRef.current += 1;
+      attractSwitchesRef.current = 0;
+      setAttract(true);
+    }, 6000);
     return () => clearTimeout(t);
   }, [reduced, inView, attract, lastTouch, entered]);
 
-  /* Attract — cycle chips every 3s; fully stops off-screen. */
+  /* Attract — cycle chips every 3s for ONE full pass (3 switches), then
+     rest; fully stops off-screen. */
   useEffect(() => {
     if (!attract || !inView || reduced) return;
-    const t = setInterval(() => setSel((s) => (s + 1) % BUYS.length), 3000);
+    const t = setInterval(() => {
+      setSel((s) => (s + 1) % BUYS.length);
+      attractSwitchesRef.current += 1;
+      if (attractSwitchesRef.current >= BUYS.length) setAttract(false);
+    }, 3000);
     return () => clearInterval(t);
   }, [attract, inView, reduced]);
 

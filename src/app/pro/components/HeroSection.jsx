@@ -21,6 +21,12 @@ const HERO_STYLES = `
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
 .pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; }
+/* Press acknowledgment on the hero anchor CTA (highest-intent tap):
+   quick 120ms scale + brightness dip. !important beats the atom's
+   inline hover/press transform; anchor button only, zero checkout
+   surface touched. */
+.hero-cta-row button { transition: transform 120ms ease, filter 120ms ease, box-shadow 0.15s ease-out, background 0.15s ease-out !important; }
+.hero-cta-row button:active { transform: scale(0.97) !important; filter: brightness(0.92); }
 /* svh-fluid section padding with a vh fallback line (engines without svh
    must still get a bounded value, not a dropped declaration). */
 .pro-hero-section {
