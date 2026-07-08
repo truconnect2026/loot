@@ -9,7 +9,9 @@ import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE,
 const faqData = [
   {
     q: "what if i'm not even a 'real' flipper yet?",
-    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the map finds sales you'd miss, and the alerts catch trends before they spike.",
+    // "the map finds sales / alerts catch trends before they spike"
+    // referenced unbuilt features — aligned to what actually ships.
+    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the planner times your store runs, and the watch list pings you when a grail shows up.",
   },
   {
     q: "what if i don't like it?",
@@ -24,8 +26,11 @@ const faqData = [
     a: "yes. upgrade to annual anytime and we'll prorate. downgrade at any renewal.",
   },
   {
-    q: "how does the yard sale map work?",
-    a: "Pro pulls listings from Craigslist, Facebook Marketplace, Estatesales.net, and local newspapers. filters by date, distance, and item type. push alert when grail items are listed nearby.",
+    // Rewritten to the SHIPPED /sourcing feature. The old answer claimed
+    // Craigslist/FB/estate-sale scraping with distance filters and nearby
+    // push alerts — none of which exists in the app (fabricated claim).
+    q: "how does the sale-day planner work?",
+    a: "add the stores you actually hit. loot knows each chain's rhythm — 50% off days, senior days, restock days — and builds your week around them. your own check-ins confirm the pattern over time.",
   },
   {
     q: "do you sell my data?",

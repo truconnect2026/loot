@@ -26,7 +26,7 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
  * exactly that, and every card in the grid is Pro. Gold appears ONLY as
  * the Pro marker.
  *
- * Motion: one shared ticker rotates a single "beat" across the six
+ * Motion: one shared ticker rotates a single "beat" across the eight
  * cards (one card accents at a time, ~1.1s each), so the grid feels
  * alive but never busy. Transform/opacity only; the ticker is gated on
  * in-view + reduced-motion, so off-screen and reduced-motion mean zero
@@ -37,7 +37,7 @@ const RED = "#ff6b6b";
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 const POP = "cubic-bezier(0.2,1.3,0.4,1)";
 const TICK_MS = 1100;
-const CARD_COUNT = 6;
+const CARD_COUNT = 8;
 
 const GRID_STYLES = `
 .fpg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -337,6 +337,82 @@ function HaulMicro({ stage, reduced }) {
   );
 }
 
+/* 7 — bolo alerts: the REAL shipped behavior is a keyword watch list
+   checked daily with a web-push on match (src/app/api/cron/bolo-check/
+   route.ts — push title literally "BOLO match: …"; keywords managed in
+   src/app/account/page.tsx as the "Watch list"). So the card shows a
+   push notification landing — NOT a trending/"spiking" feed, which is
+   an unbuilt coming-soon tile (src/components/dashboard/
+   SourcingCarousel.tsx). Beat: the notification chip pops. */
+function BoloMicro({ beat, reduced }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path d="M12 3 Q17 3 17 9 L17 13 L19 16 L5 16 L7 13 L7 9 Q7 3 12 3 Z" fill="none" stroke={C.mint} strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M10 18.5 Q12 20.5 14 18.5" fill="none" stroke={C.mint} strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+      <div
+        style={{
+          ...mono,
+          fontSize: 8,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          color: "rgba(255,255,255,0.75)",
+          border: `1px solid ${C.mint}`,
+          borderRadius: 6,
+          padding: "3px 7px",
+          whiteSpace: "nowrap",
+          transform: beat ? "scale(1.12)" : "scale(1)",
+          transition: reduced ? "none" : `transform 300ms ${POP}`,
+        }}
+      >
+        <span style={{ color: C.mint }}>BOLO match:</span> pyrex 403
+      </div>
+    </div>
+  );
+}
+
+/* 8 — sale-day planner: the REAL shipped /sourcing feature (src/app/
+   sourcing/page.tsx + src/lib/sourcingPatterns.ts) — a week strip of
+   thrift-chain discount/restock days, confirmed by your own check-ins.
+   NOT a yard-sale map (that is an unbuilt placeholder sheet). Beat:
+   today's dot pulses. */
+function PlannerMicro({ beat, reduced }) {
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  const SALE = 5; // saturday
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+      <div style={{ display: "flex", gap: 5 }}>
+        {days.map((d, i) => (
+          <span
+            key={i}
+            style={{
+              ...mono,
+              fontSize: 8,
+              fontWeight: 700,
+              width: 15,
+              height: 15,
+              borderRadius: "50%",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: i === SALE ? "#070510" : "rgba(255,255,255,0.4)",
+              background: i === SALE ? C.mint : "rgba(255,255,255,0.05)",
+              transform: beat && i === SALE ? "scale(1.25)" : "scale(1)",
+              transition: reduced ? "none" : `transform 300ms ${POP}`,
+            }}
+          >
+            {d}
+          </span>
+        ))}
+      </div>
+      <div style={{ ...mono, fontSize: 9, color: "rgba(92,224,184,0.8)" }}>
+        goodwill &middot; 50% off saturday
+      </div>
+    </div>
+  );
+}
+
 /* 6 — crate mode: record crate; the front sleeve flips forward on beat. */
 function CrateMicro({ beat, reduced }) {
   return (
@@ -500,6 +576,12 @@ export default function FeatureMatrix() {
             </Card>
             <Card label="crate mode" copy="price a crate without pulling every record.">
               <CrateMicro beat={beatIdx === 5} reduced={reduced} />
+            </Card>
+            <Card label="bolo alerts" copy="set your grails. get pinged on a match.">
+              <BoloMicro beat={beatIdx === 6} reduced={reduced} />
+            </Card>
+            <Card label="sale-day planner" copy="which store's on sale before you drive.">
+              <PlannerMicro beat={beatIdx === 7} reduced={reduced} />
             </Card>
           </div>
         </FadeUp>

@@ -12,7 +12,11 @@ import {
   SectionShell,
 } from "./atoms.jsx";
 
-const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Yard sale map", "Fake check"];
+// "Sale-day planner", not "Yard sale map": the shipped feature is the
+// /sourcing thrift sale-day planner. A yard-sale map does not exist in
+// the app (coming-soon placeholder only) — naming it here would be a
+// fabricated capability.
+const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Sale-day planner", "Fake check"];
 const annualBullets = ["Everything in Monthly", "Priority support", "New features first", "Founding member status"];
 
 export default function PricingSection({ onCTA }) {
@@ -199,6 +203,26 @@ export default function PricingSection({ onCTA }) {
               >
                 60-DAY REFUND · NO QUESTIONS
               </p>
+              {/* Founding identity — STATUS-ONLY version shipped: it
+                  claims the existing "Founding member status" bullet,
+                  nothing about price movement. David has NOT confirmed a
+                  price rise, so the rate-lock variant below stays
+                  commented until he does (an undecided urgency claim is
+                  fabricated scarcity):
+                  you&apos;re early. founding members lock this rate. */}
+              <p
+                style={{
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 11,
+                  letterSpacing: "0.08em",
+                  color: "rgba(92,224,184,0.55)",
+                  textAlign: "center",
+                  marginTop: 8,
+                  marginBottom: 0,
+                }}
+              >
+                you&apos;re early. founding member status, locked in.
+              </p>
             </div>
           </FadeUp>
 
@@ -301,14 +325,6 @@ export default function PricingSection({ onCTA }) {
           >
             SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY DIGISTORE24 + STRIPE
           </p>
-          {/* TODO(David): the eyebrow says "founding pricing" but nothing
-              explains it. SHIP THIS LINE ONLY once you confirm the price
-              genuinely rises later — an undecided urgency claim is
-              fabricated scarcity, so it stays commented until then:
-          <p style={{ fontFamily: "var(--font-mono), monospace", fontSize: 11, letterSpacing: "0.08em", textAlign: "center", color: "rgba(92,224,184,0.55)", marginTop: 10 }}>
-            founding rate. locked while you&apos;re subscribed.
-          </p>
-          */}
         </FadeUp>
       </SectionShell>
     </section>
