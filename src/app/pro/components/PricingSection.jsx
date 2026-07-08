@@ -45,14 +45,55 @@ export default function PricingSection({ onCTA }) {
             style={{
               ...SECTION_HEADLINE_STYLE,
               paddingBottom: "0.5em",
-              // 58 (not 48): drops the monthly card 10px so the 390x660 fold
-              // lands above START MONTHLY instead of through its label; the
-              // grid marginBottom below gives the 10px back (net-zero).
-              marginBottom: 58,
+              // 24: the comparison strip below the headline now carries the
+              // spacing the old 58 provided.
+              marginBottom: 24,
             }}
           >
             PICK YOUR <span style={{ color: C.mint }}>WEAPON.</span>
           </h2>
+        </FadeUp>
+
+        {/* Comparison moment — the two cards never share a screen on
+            mobile, so the head-to-head happens HERE: a toggle-free visual
+            anchor, no interactivity, no CTA. Outside .pricing-grid so it
+            never picks up the per-card snap points. */}
+        <FadeUp delay={0.2}>
+          <div
+            aria-hidden="true"
+            style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: C.mint,
+                border: `1px solid ${C.mint}`,
+                background: "rgba(92,224,184,0.08)",
+                borderRadius: 999,
+                padding: "5px 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              annual $8.33/mo · save $80
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: 11,
+                letterSpacing: "0.06em",
+                color: "rgba(255,255,255,0.4)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: 999,
+                padding: "5px 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              monthly $14.99
+            </span>
+          </div>
         </FadeUp>
 
         <div
@@ -323,7 +364,7 @@ export default function PricingSection({ onCTA }) {
               textTransform: "uppercase",
             }}
           >
-            SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY DIGISTORE24 + STRIPE
+            SECURE CHECKOUT · VISA · MC · AMEX · PAYPAL · POWERED BY STRIPE
           </p>
         </FadeUp>
       </SectionShell>

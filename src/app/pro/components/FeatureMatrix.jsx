@@ -502,12 +502,10 @@ export default function FeatureMatrix() {
       className="pro-snap-section"
       style={{
         padding: SECTION_PADDING,
-        // Internal-scroll section: extra bottom room so an in-app-browser
-        // fold (~620px usable) never rests decapitating the last card.
-        // 144 = 96 + 48: compensates the 3x16px card-visual reduction so
-        // the section's outer height (and every snap rest after it) is
-        // unchanged.
-        paddingBottom: 144,
+        // 96 (was 144): the tail overshoot left the last card row ending
+        // ~35% above the section end at 844. 96 keeps the final row within
+        // ~120px of the end; fold behavior at 660/780 re-verified after.
+        paddingBottom: 96,
         position: "relative",
         zIndex: 1,
         // Grid exceeds one viewport on small screens — top-align + scroll

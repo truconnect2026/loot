@@ -30,6 +30,19 @@ export default function CosmicBackground() {
         dur: 2.5 + Math.random() * 5,
       });
     }
+    // +5 extra mid-band stars (y 33-67%): the math/difference stretches
+    // read a shade sparser than hero/closer, which carry their own
+    // decorative rings — this evens the perceived per-viewport count.
+    for (let i = 0; i < 5; i++) {
+      out.push({
+        x: ((i + 0.2 + Math.random() * 0.6) / 5) * 100,
+        y: 33 + Math.random() * 34,
+        s: 0.4 + Math.random() * 1.2,
+        c: "rgba(255,255,255,0.6)",
+        d: Math.random() * 6,
+        dur: 2.5 + Math.random() * 5,
+      });
+    }
     return out;
   }, []);
 

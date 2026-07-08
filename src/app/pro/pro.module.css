@@ -54,9 +54,23 @@
   min-height: 100svh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* 35/65 slack split via grown pseudo-spacers (below) instead of pure
+     centering: centering dumped ~half the free height ABOVE the eyebrow,
+     opening every section on dead sky. Content biases into the upper
+     third at tall viewports; short viewports have no free space, so the
+     spacers collapse to zero and nothing changes. Sections taller than
+     the viewport (grid/pricing/FAQ) also have zero free space — inert. */
+  justify-content: flex-start;
   box-sizing: border-box;
   flex-shrink: 0;
+}
+:global(.pro-snap-section)::before {
+  content: "";
+  flex: 35 0 0;
+}
+:global(.pro-snap-section)::after {
+  content: "";
+  flex: 65 0 0;
 }
 @media (prefers-reduced-motion: reduce) {
   :global(.pro-scroll-main) {

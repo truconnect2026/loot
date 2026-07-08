@@ -287,7 +287,7 @@ export default function ROICalculator() {
                     the balance reads as one connected object. */}
                 <div style={{ width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: `14px solid rgba(92,224,184,0.6)` }} />
                 <div style={{ width: 4, height: 146, background: "rgba(92,224,184,0.45)", borderRadius: 2 }} />
-                <div style={{ width: 64, height: 3, background: "rgba(92,224,184,0.5)", borderRadius: 2, marginTop: 2 }} />
+                <div style={{ width: 84, height: 3, background: "rgba(92,224,184,0.75)", borderRadius: 2, marginTop: 2 }} />
               </div>
 
               {/* beam group — rotates around center; pans counter-rotate */}

@@ -66,7 +66,6 @@ export default function CloserSection({ onCTA }) {
           >
             the choice
           </span>
-          <CoinMark size={18} color="rgba(255,255,255,0.25)" />
         </div>
       </FadeUp>
 

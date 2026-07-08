@@ -252,13 +252,17 @@ export default function VerdictCardLive() {
           background: "rgba(10,10,10,0.8)",
         }}
       >
-        {["HOME", "SOURCING", "SCAN", "TOOLS", "ME"].map((t) => (
+        {/* Real app labels + tracking (src/components/nav/TabBar.tsx
+            lines 78-82: Home / Sourcing / SCAN / Tools / Me at 0.06em) —
+            the old ALL-CAPS 0.12em rendering crammed SOURCING into SCAN
+            at frame width. */}
+        {["Home", "Sourcing", "SCAN", "Tools", "Me"].map((t) => (
           <span
             key={t}
             style={{
               fontFamily: "var(--font-mono), monospace",
-              fontSize: 6.5,
-              letterSpacing: "0.12em",
+              fontSize: 7,
+              letterSpacing: "0.06em",
               textAlign: "center",
               color: t === "SCAN" ? C.mint : "rgba(255,255,255,0.4)",
             }}
