@@ -17,7 +17,7 @@ import {
 // the app (coming-soon placeholder only) — naming it here would be a
 // fabricated capability.
 const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Sale-day planner", "Fake check"];
-const annualBullets = ["Everything in Monthly", "Priority support", "New features first", "Founding member status"];
+const annualBullets = ["Everything in Monthly", "Priority support", "New features first"];
 
 export default function PricingSection({ onCTA }) {
   return (
@@ -28,7 +28,10 @@ export default function PricingSection({ onCTA }) {
         padding: SECTION_PADDING,
         // Internal-scroll section: extra bottom room so an in-app-browser
         // fold (~620px usable) never rests decapitating the last card.
-        paddingBottom: 96,
+        // 176 = 96 + 80: compensates the founding-line + founding-bullet
+        // removal so the section snap height (and every rest position
+        // after it) is unchanged.
+        paddingBottom: 176,
         position: "relative",
         zIndex: 1,
         // Two pricing cards + fine print reliably exceed one viewport —
@@ -231,26 +234,6 @@ export default function PricingSection({ onCTA }) {
                   CLAIM ANNUAL
                 </CTAButton>
               </div>
-              {/* Founding identity — STATUS-ONLY version shipped: it
-                  claims the existing "Founding member status" bullet,
-                  nothing about price movement. David has NOT confirmed a
-                  price rise, so the rate-lock variant below stays
-                  commented until he does (an undecided urgency claim is
-                  fabricated scarcity):
-                  you&apos;re early. founding members lock this rate. */}
-              <p
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.08em",
-                  color: "rgba(92,224,184,0.55)",
-                  textAlign: "center",
-                  marginTop: 12,
-                  marginBottom: 0,
-                }}
-              >
-                you&apos;re early. founding member status, locked in.
-              </p>
               <p
                 style={{
                   fontFamily: "var(--font-mono), monospace",

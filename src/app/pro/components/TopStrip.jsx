@@ -66,15 +66,6 @@ export default function TopStrip() {
           }}
         />
         <span>BUILT FOR RESELLERS</span>
-        <span
-          style={{
-            width: 1,
-            height: 12,
-            background: "rgba(92,224,184,0.3)",
-            display: "inline-block",
-          }}
-        />
-        <span>FOUNDING COHORT</span>
       </div>
     </header>
   );

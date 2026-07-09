@@ -125,22 +125,23 @@ export default function MiniCtaBar() {
 `,
         }}
       />
-      {/* fixed-width label slot: the three zone labels stack absolutely
-          and crossfade, so a swap can never move the CLAIM button */}
+      {/* Label slot sized by CONTENT, not a guessed px width: all three
+          zone labels stack in the same 1/1 grid cell, so the slot is
+          always exactly as wide as the widest label at the device's real
+          font metrics. (A hard-coded 186px slot was 13px narrower than
+          the longest label and its text painted under the CLAIM button
+          on-device.) Crossfade unchanged; geometry constant. */}
       <span
         style={{
-          position: "relative",
-          display: "inline-block",
-          width: 186,
-          height: 16,
+          display: "inline-grid",
+          whiteSpace: "nowrap",
         }}
       >
         {Object.entries(LABELS).map(([key, text]) => (
           <span
             key={key}
             style={{
-              position: "absolute",
-              inset: 0,
+              gridArea: "1 / 1",
               textAlign: "right",
               whiteSpace: "nowrap",
               fontFamily: "var(--font-mono), monospace",
@@ -163,6 +164,7 @@ export default function MiniCtaBar() {
         tabIndex={visible ? 0 : -1}
         onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
         style={{
+          flexShrink: 0,
           fontFamily: "var(--font-bebas), sans-serif",
           fontSize: 15,
           letterSpacing: "0.06em",

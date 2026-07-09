@@ -168,7 +168,7 @@ export default function HeroSection() {
       <div className="pro-hero-grid">
         <div className="pro-hero-text">
       <FadeUp delay={0.1}>
-        <Eyebrow text="— pro tier · founding pricing" color={C.mint} />
+        <Eyebrow text="— pro tier" color={C.mint} />
       </FadeUp>
 
       <FadeUp delay={0.16}>
