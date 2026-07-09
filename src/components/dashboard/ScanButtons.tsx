@@ -93,7 +93,7 @@ function HeroButton({
   const accentColor = variant === "mint" ? "#5CE0B8" : "rgba(92,224,184,0.72)";
   // Primary glows brighter; secondary is one notch dimmer.
   const borderAlpha = variant === "mint" ? 0.28 : 0.16;
-  const haloAlpha = variant === "mint" ? 0.18 : 0.10;
+  const haloAlpha = variant === "mint" ? 0.14 : 0.08;
   // Ambient under-glow — stacked box-shadows mimic a radial
   // gradient's soft falloff. Larger spreads (24-48px) and higher
   // alphas than the previous tight 20px halo so the buttons
@@ -101,8 +101,8 @@ function HeroButton({
   // rendering artifacts. Primary doubles the alpha of secondary on
   // every layer.
   const glowPrimary = variant === "mint";
-  const glowMid = glowPrimary ? 0.40 : 0.20;
-  const glowFar = glowPrimary ? 0.20 : 0.10;
+  const glowMid = glowPrimary ? 0.30 : 0.15;
+  const glowFar = glowPrimary ? 0.12 : 0.06;
 
   // Foreground-plane shadow — the scan buttons should feel like
   // they're floating above the rest of the dashboard, lit from

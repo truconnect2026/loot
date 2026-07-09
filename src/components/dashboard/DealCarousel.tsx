@@ -158,13 +158,18 @@ export default function DealCarousel({
           // Uppercase carousel category — DEALS NEAR YOU / FREE & CLEARANCE.
           // Stays mono per the font role system.
           fontFamily: "var(--font-label)",
-          fontSize: 9,
-          color: "#3D2E55",
-          letterSpacing: "0.10em",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "#6F678E",
+          letterSpacing: "0.12em",
           paddingBottom: 6,
-          // 0.05 (was 0.03) so the underline actually reads on
-          // OLED phone screens. Matches SECTION_LABEL in page.tsx.
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          // Mint-origin fade rule — matches SECTION_LABEL in page.tsx so
+          // every dashboard section shares one header cadence.
+          backgroundImage:
+            "linear-gradient(to right, rgba(92,224,184,0.22) 0%, rgba(255,255,255,0.05) 40%, transparent 70%)",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "18px 100%",
+          backgroundSize: "calc(100% - 36px) 1px",
           // Tighter bottom margin when liveSignal is rendered below
           // (the ticker reads as part of this header trio).
           marginBottom: liveSignal ? 6 : 10,

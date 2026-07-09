@@ -347,15 +347,18 @@ const SECTION_LABEL: React.CSSProperties = {
   // transparent at 70%, anchoring the section without the heaviness
   // of a flat full-width divider.
   fontFamily: "var(--font-label)",
-  fontSize: 9,
-  color: "#3D2E55",
-  letterSpacing: "0.10em",
+  fontSize: 10,
+  fontWeight: 700,
+  color: "#6F678E",
+  letterSpacing: "0.12em",
   paddingBottom: 6,
   marginBottom: 10,
   display: "flex",
   alignItems: "center",
+  // Faint mint accent at the rule's origin gives each section header a
+  // deliberate anchor without a heavy divider.
   backgroundImage:
-    "linear-gradient(to right, rgba(255,255,255,0.07) 0%, transparent 70%)",
+    "linear-gradient(to right, rgba(92,224,184,0.22) 0%, rgba(255,255,255,0.05) 40%, transparent 70%)",
   backgroundRepeat: "no-repeat",
   backgroundPosition: "0 100%",
   backgroundSize: "100% 1px",
@@ -1192,6 +1195,7 @@ function DashboardPage() {
       <CoinRain active={coinRainActive} />
 
       <div
+        className="hm-root"
         style={{
           maxWidth: 480,
           margin: "0 auto",
@@ -1199,6 +1203,28 @@ function DashboardPage() {
           zIndex: 1,
         }}
       >
+        {/* Entrance stagger — cards rise in sequence on mount. Children
+            1-3 are the style tag, the scroll sentinel, and the sticky
+            header (never animated: transform would break sticky); the
+            content blocks stagger 45ms apart from child 4 on. Transform/
+            opacity only; reduced motion renders everything instantly. */}
+        <style>{`
+          @keyframes hmRise {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .hm-root > *:nth-child(n+4) { animation: hmRise 280ms cubic-bezier(0.22,1,0.36,1) both; }
+          .hm-root > *:nth-child(4) { animation-delay: 0ms; }
+          .hm-root > *:nth-child(5) { animation-delay: 45ms; }
+          .hm-root > *:nth-child(6) { animation-delay: 90ms; }
+          .hm-root > *:nth-child(7) { animation-delay: 135ms; }
+          .hm-root > *:nth-child(8) { animation-delay: 180ms; }
+          .hm-root > *:nth-child(9) { animation-delay: 225ms; }
+          .hm-root > *:nth-child(n+10) { animation-delay: 270ms; }
+          @media (prefers-reduced-motion: reduce) {
+            .hm-root > * { animation: none !important; }
+          }
+        `}</style>
         {/* 1. Scroll sentinel — drives the sticky-header background toggle */}
         <div
           ref={sentinelRef}

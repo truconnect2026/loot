@@ -213,7 +213,7 @@ export default function TabBar() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-.tb-nav { --tb-dur: 220ms; --tb-ease: cubic-bezier(0.4, 0, 0.2, 1); }
+.tb-nav { --tb-dur: 260ms; --tb-ease: cubic-bezier(0.22, 1, 0.36, 1); }
 .tb-pill {
   pointer-events: auto;
   display: grid;

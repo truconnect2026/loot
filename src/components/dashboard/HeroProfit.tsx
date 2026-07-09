@@ -286,7 +286,7 @@ export default function HeroProfit({
         // dashboard grid still can't bleed through.
         backgroundColor: "#120e18",
         backgroundImage: isEmpty
-          ? "linear-gradient(165deg, rgba(92, 224, 184, 0.03) 0%, rgba(23, 18, 42, 0.9) 40%, rgba(23, 18, 42, 0.9) 100%)"
+          ? "linear-gradient(165deg, rgba(92, 224, 184, 0.06) 0%, rgba(23, 18, 42, 0.9) 45%, rgba(16, 12, 30, 0.95) 100%)"
           : "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 20,
@@ -356,6 +356,14 @@ export default function HeroProfit({
         @keyframes heroEmptyPulse {
           0%, 100% { opacity: 0.3; }
           50% { opacity: 0.5; }
+        }
+        @keyframes hpDrift {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(3px); }
+        }
+        .hp-drift { display: inline-block; animation: hpDrift 2.4s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .hp-drift { animation: none; }
         }
       `}</style>
       <div
@@ -435,7 +443,7 @@ export default function HeroProfit({
             }}
           >
             scan your first find{" "}
-            <span style={{ color: "#5CE0B8" }}>↓</span>
+            <span className="hp-drift" style={{ color: "#5CE0B8" }}>↓</span>
           </span>
         )}
       </div>
