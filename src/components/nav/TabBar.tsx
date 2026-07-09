@@ -124,11 +124,10 @@ export default function TabBar() {
         left: 0,
         right: 0,
         zIndex: 50,
-        // Glass bar: blurred brand-dark with a mint-tinted hairline and a
-        // soft lift shadow — separation without a heavy border.
-        background: "rgba(7,5,16,0.92)",
-        backdropFilter: "blur(16px)",
-        WebkitBackdropFilter: "blur(16px)",
+        // Solid to the screen edge: a translucent bar let page content
+        // ghost through the safe-area zone and read as a gap beneath a
+        // floating bar. One opaque surface, hairline + shadow for lift.
+        background: "#070510",
         borderTop: "1px solid rgba(92,224,184,0.10)",
         boxShadow: "0 -8px 28px rgba(0,0,0,0.38)",
         display: "grid",
@@ -146,7 +145,7 @@ export default function TabBar() {
 .tb-ico { display: flex; transition: transform 160ms cubic-bezier(0.2,1.3,0.4,1); }
 .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px); }
 .tb-dot {
-  position: absolute; bottom: 5px; left: 50%; margin-left: -2px;
+  position: absolute; bottom: 2px; left: 50%; margin-left: -2px;
   width: 4px; height: 4px; border-radius: 50%; background: #5CE0B8;
   opacity: 0; transform: scale(0.4);
   transition: opacity 160ms ease, transform 160ms cubic-bezier(0.2,1.3,0.4,1);
@@ -171,7 +170,7 @@ export default function TabBar() {
                 alignItems: "center",
                 justifyContent: "center",
                 paddingTop: 6,
-                paddingBottom: 12,
+                paddingBottom: 6,
               }}
             >
               <button
@@ -243,7 +242,7 @@ export default function TabBar() {
               // ≥52px tap target — taller than the icon+label visual, so
               // thumbs land on the button, never the home indicator.
               minHeight: 52,
-              padding: "9px 0 12px",
+              padding: "9px 0 6px",
               background: "none",
               border: "none",
               cursor: "pointer",
