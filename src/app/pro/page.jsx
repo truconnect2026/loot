@@ -53,6 +53,7 @@ import ROICalculator from "./components/ROICalculator.jsx";
 import PricingSection from "./components/PricingSection.jsx";
 import FAQSection from "./components/FAQSection.jsx";
 import CloserSection from "./components/CloserSection.jsx";
+import PromiseSection from "./components/PromiseSection.jsx";
 import LegitStrip from "./components/LegitStrip.jsx";
 import MiniCtaBar from "./components/MiniCtaBar.jsx";
 import Footer from "./components/Footer.jsx";
@@ -199,6 +200,8 @@ export default function ProPage() {
         <PricingSection onCTA={handleCTA} />
         <hr className="pro-section-divider" />
         <FAQSection />
+        <hr className="pro-section-divider" />
+        <PromiseSection />
         <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
         {/* Trailing band + footer share one end-aligned snap box so the
