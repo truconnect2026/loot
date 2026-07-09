@@ -212,7 +212,7 @@ export default function ZipInput({
                 // #C8C0D8 — so the empty chip reads as "value chip
                 // waiting for input" rather than a separate
                 // button-style affordance.
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontWeight: 500,
                 fontSize: 12,
                 color: "#C8C0D8",
@@ -223,7 +223,7 @@ export default function ZipInput({
           ) : (
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontWeight: 500,
                 fontSize: 12,
                 color: "#C8C0D8",

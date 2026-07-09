@@ -1,21 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, JetBrains_Mono, Bebas_Neue, Manrope, Space_Mono } from "next/font/google";
+import { Bebas_Neue, Manrope, Space_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import SplashGate from "@/components/shared/SplashGate";
 import { TabBarMount } from "@/components/nav/TabBar";
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["300", "500", "600"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["500", "700"],
-});
 
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas-neue",
@@ -109,7 +97,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${jetbrainsMono.variable} ${bebasNeue.variable} ${manrope.variable} ${spaceMono.variable}`}
+      className={`${bebasNeue.variable} ${manrope.variable} ${spaceMono.variable}`}
       // #0A0812 on html/body so there's no perceivable color flash
       // before the splash mounts — the splash uses the same surface
       // color, which then fades to reveal the app's content (which

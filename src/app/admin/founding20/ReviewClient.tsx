@@ -79,7 +79,7 @@ export default function ReviewClient({ rows }: { rows: ApplicationRow[] }) {
         minHeight: "100vh",
         padding: "32px 24px 96px",
         color: "#fff",
-        fontFamily: "system-ui, sans-serif",
+        fontFamily: "var(--font-manrope), sans-serif",
         maxWidth: 960,
         margin: "0 auto",
       }}
@@ -103,7 +103,7 @@ export default function ReviewClient({ rows }: { rows: ApplicationRow[] }) {
                 border: `1px solid ${active ? "#5CE0B8" : "rgba(255,255,255,0.15)"}`,
                 background: active ? "rgba(92,224,184,0.1)" : "transparent",
                 color: active ? "#5CE0B8" : "rgba(255,255,255,0.7)",
-                fontFamily: "ui-monospace, monospace",
+                fontFamily: "var(--font-space-mono), monospace",
                 fontSize: 12,
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
@@ -180,7 +180,7 @@ function Row({
             border: `1px solid ${STATUS_COLORS[row.status]}`,
             color: STATUS_COLORS[row.status],
             fontSize: 10,
-            fontFamily: "ui-monospace, monospace",
+            fontFamily: "var(--font-space-mono), monospace",
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             borderRadius: 4,
@@ -235,7 +235,7 @@ function Row({
           </>
         )}
         <dt style={{ color: "rgba(255,255,255,0.4)" }}>submitted</dt>
-        <dd style={{ fontFamily: "ui-monospace, monospace", fontSize: 12 }}>
+        <dd style={{ fontFamily: "var(--font-space-mono), monospace", fontSize: 12 }}>
           {new Date(row.submitted_at).toLocaleString()}
         </dd>
       </dl>
@@ -252,7 +252,7 @@ function Row({
           color: "#fff",
           padding: 8,
           fontSize: 13,
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: "var(--font-manrope), sans-serif",
           borderRadius: 6,
           resize: "vertical",
           marginBottom: 8,
@@ -283,7 +283,7 @@ function btnStyle(color: string): React.CSSProperties {
     border: `1px solid ${color}`,
     background: "transparent",
     color,
-    fontFamily: "ui-monospace, monospace",
+    fontFamily: "var(--font-space-mono), monospace",
     fontSize: 11,
     letterSpacing: "0.1em",
     textTransform: "uppercase",

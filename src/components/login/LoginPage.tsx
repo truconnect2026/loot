@@ -292,7 +292,7 @@ export default function LoginPage() {
             </div>
             {/* LOOT — base layer (calm) + glow overlay (breathing).
                 Brand-identity exception to the font role system: the
-                logotype stays in JetBrains Mono regardless of the
+                logotype stays in Space Mono regardless of the
                 "monospace = uppercase labels only" rule. */}
             <span
               style={{

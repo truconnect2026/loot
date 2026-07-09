@@ -215,7 +215,7 @@ export default function TabBar() {
             {tab.id === "account"  && <UserIcon color={color} />}
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono, monospace)",
+                fontFamily: "var(--font-space-mono, monospace)",
                 fontSize: 9,
                 fontWeight: 500,
                 letterSpacing: "0.06em",

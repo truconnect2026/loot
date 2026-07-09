@@ -204,14 +204,14 @@ const LADDER_TIERS_STYLES = `
 .lt-section .lt-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 .lt-section .lt-header { text-align: center; margin-bottom: 48px; max-width: 720px; margin-left: auto; margin-right: auto; }
 .lt-section .lt-eyebrow {
-  font: 500 11px/1 var(--mono, 'JetBrains Mono', monospace);
+  font: 500 11px/1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.28em;
   color: #F5C518;
   margin-bottom: 14px;
   text-transform: uppercase;
 }
 .lt-section .lt-headline {
-  font: 600 clamp(36px, 7vw, 72px)/1 var(--display, 'Outfit', sans-serif);
+  font: 600 clamp(36px, 7vw, 72px)/1 var(--display, var(--font-manrope), sans-serif);
   letter-spacing: -0.01em;
   color: #fff;
   margin-bottom: 14px;

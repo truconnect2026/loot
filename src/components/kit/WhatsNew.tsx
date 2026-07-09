@@ -52,14 +52,14 @@ const WN_STYLES = `
 @media (min-width: 768px) { .wn-section { padding: 80px 0; } }
 .wn-section .wn-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 .wn-section .wn-eyebrow {
-  font: 500 11px/1 var(--mono, 'JetBrains Mono', monospace);
+  font: 500 11px/1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.28em;
   color: #7B8FFF;
   margin-bottom: 14px;
   text-transform: uppercase;
 }
 .wn-section .wn-headline {
-  font: 600 clamp(32px, 5vw, 48px)/1 var(--display, 'Outfit', sans-serif);
+  font: 600 clamp(32px, 5vw, 48px)/1 var(--display, var(--font-manrope), sans-serif);
   letter-spacing: -0.01em;
   color: #fff;
   margin-bottom: 32px;

@@ -177,7 +177,7 @@ export default function ScanMultiTestPage() {
         maxWidth: 800,
         margin: "0 auto",
         padding: 24,
-        fontFamily: "monospace",
+        fontFamily: "var(--font-space-mono), monospace",
         color: "#e5e7eb",
         background: "#111",
         minHeight: "100vh",
@@ -254,7 +254,7 @@ export default function ScanMultiTestPage() {
               fontSize: 11,
               cursor: "pointer",
               padding: 0,
-              fontFamily: "monospace",
+              fontFamily: "var(--font-space-mono), monospace",
               textDecoration: "underline",
             }}
           >
@@ -331,7 +331,7 @@ export default function ScanMultiTestPage() {
                     color: color === DOT_GRAY ? "#9ca3af" : "#000",
                     fontSize: 10,
                     fontWeight: "bold",
-                    fontFamily: "monospace",
+                    fontFamily: "var(--font-space-mono), monospace",
                     border: "none",
                     cursor: "pointer",
                     display: "flex",

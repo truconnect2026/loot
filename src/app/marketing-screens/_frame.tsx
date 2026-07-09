@@ -25,7 +25,7 @@ export function ScreenFrame({ children }: { children: ReactNode }) {
         background:
           "radial-gradient(ellipse at top, #0a1612 0%, #000000 60%)",
         color: TOKENS.text,
-        fontFamily: "'Outfit', ui-sans-serif, system-ui, sans-serif",
+        fontFamily: "var(--font-manrope), ui-sans-serif, system-ui, sans-serif",
       }}
     >
       {/* Dot-grid background @ 4% */}
@@ -212,7 +212,7 @@ export function TabBar({
             <span
               style={{
                 fontFamily:
-                  "'JetBrains Mono', ui-monospace, monospace",
+                  "var(--font-space-mono), ui-monospace, monospace",
                 fontSize: 9,
                 fontWeight: 500,
                 letterSpacing: "0.12em",
@@ -231,12 +231,11 @@ export function TabBar({
 export function FontLoader() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
       @keyframes ms-pulse-mint {
         0%, 100% { box-shadow: 0 0 0 0 rgba(92, 224, 184, 0.55); }
         50% { box-shadow: 0 0 0 10px rgba(92, 224, 184, 0); }
       }
-      .ms-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+      .ms-mono { font-family: var(--font-space-mono), ui-monospace, monospace; }
       .ms-pulse { animation: ms-pulse-mint 2.4s infinite; }
       .ms-pulse-dot { animation: ms-pulse-dot 1.6s ease-in-out infinite; }
       @keyframes ms-pulse-dot {

@@ -406,7 +406,7 @@ const GAMIFICATION_STYLES = `
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(92,224,184,0.3);
   border-radius: 999px;
-  font: 500 11px/1 var(--mono, 'JetBrains Mono', monospace);
+  font: 500 11px/1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.04em;
   color: rgba(255,255,255,0.85);
   animation: gm-streak-in 400ms cubic-bezier(0.16,1,0.3,1);
@@ -524,7 +524,7 @@ const GAMIFICATION_STYLES = `
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px 12px 12px 4px;
-  font: 500 12px/1.4 var(--display, 'Outfit', sans-serif);
+  font: 500 12px/1.4 var(--display, var(--font-manrope), sans-serif);
   color: rgba(255,255,255,0.85);
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }

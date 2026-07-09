@@ -35,8 +35,6 @@ const config: Config = {
         "stats": "10px",
       },
       fontFamily: {
-        outfit: ["var(--font-outfit)", "sans-serif"],
-        jetbrains: ["var(--font-jetbrains-mono)", "monospace"],
       },
       boxShadow: {
         "profit-glow": "var(--profit-glow)",

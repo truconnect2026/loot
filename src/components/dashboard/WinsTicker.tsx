@@ -149,7 +149,7 @@ export default function WinsTicker() {
               // Money number — JBMono 13/700 mint. Slightly larger
               // than the surrounding 12px prose so the dollar amount
               // earns peripheral attention.
-              fontFamily: "var(--font-jetbrains-mono)",
+              fontFamily: "var(--font-space-mono)",
               fontSize: 13,
               color: "#5CE0B8",
               fontWeight: 700,

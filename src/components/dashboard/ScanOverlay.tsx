@@ -1973,7 +1973,7 @@ export default function ScanOverlay({
                             color: cluster.color === SHELF_DOT_GRAY ? "#9ca3af" : "#000",
                             fontSize: isSingle ? 10 : 9,
                             fontWeight: "bold",
-                            fontFamily: "monospace",
+                            fontFamily: "var(--font-space-mono), monospace",
                             border: "none",
                             cursor: "pointer",
                             display: "flex",
@@ -2011,7 +2011,7 @@ export default function ScanOverlay({
                           zIndex: 20,
                         }}
                       >
-                        <span style={{ fontSize: 8, color: "#ff5050", fontFamily: "monospace", lineHeight: 1, padding: "1px 2px", background: "rgba(0,0,0,0.6)", display: "inline-block" }}>
+                        <span style={{ fontSize: 8, color: "#ff5050", fontFamily: "var(--font-space-mono), monospace", lineHeight: 1, padding: "1px 2px", background: "rgba(0,0,0,0.6)", display: "inline-block" }}>
                           {idx}
                         </span>
                       </div>
@@ -2106,7 +2106,7 @@ export default function ScanOverlay({
                             <span style={{
                               width: 20, height: 20, borderRadius: "50%",
                               background: color, color: "#000",
-                              fontSize: 9, fontWeight: "bold", fontFamily: "monospace",
+                              fontSize: 9, fontWeight: "bold", fontFamily: "var(--font-space-mono), monospace",
                               display: "flex", alignItems: "center", justifyContent: "center",
                               justifySelf: "center",
                               boxShadow: val.verdict === "BUY" ? "0 0 6px rgba(92,224,184,0.50)" : "none",
@@ -2259,7 +2259,7 @@ export default function ScanOverlay({
                             <span style={{
                               width: 16, height: 16, borderRadius: "50%",
                               background: "rgba(92,224,184,0.15)", color: "#5CE0B8",
-                              fontSize: 8, fontWeight: "bold", fontFamily: "monospace",
+                              fontSize: 8, fontWeight: "bold", fontFamily: "var(--font-space-mono), monospace",
                               display: "flex", alignItems: "center", justifyContent: "center",
                               flexShrink: 0,
                             }}>

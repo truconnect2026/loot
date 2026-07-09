@@ -94,7 +94,7 @@ export default function ComingSoonSheet({
             backgroundColor: "rgba(92,224,184,0.08)",
             border: "1px solid rgba(92,224,184,0.15)",
             borderRadius: 20,
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 10,
             fontWeight: 600,
             letterSpacing: "0.10em",

@@ -316,7 +316,7 @@ const LADDER_STYLES = `
 .ladder-viz .lv-tier--gradient .lv-tier-icon { border-color: rgba(92,224,184,0.6); color: #fff; }
 .ladder-viz .lv-tier-body { flex: 1; min-width: 0; }
 .ladder-viz .lv-tier-label {
-  font: 600 18px/1.05 var(--display, 'Outfit', sans-serif);
+  font: 600 18px/1.05 var(--display, var(--font-manrope), sans-serif);
   letter-spacing: 0.02em;
   color: #fff;
   margin-bottom: 4px;
@@ -329,7 +329,7 @@ const LADDER_STYLES = `
   background-clip: text;
 }
 .ladder-viz .lv-tier-rate {
-  font: 700 11px/1.1 var(--mono, 'JetBrains Mono', monospace);
+  font: 700 11px/1.1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.08em;
   color: #5CE0B8;
   margin-bottom: 4px;

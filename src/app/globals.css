@@ -95,13 +95,13 @@
   /* ============================================================
      FONT ROLE SYSTEM
      ------------------------------------------------------------
-     Monospace (JetBrains Mono) is RESERVED for uppercase
+     Monospace (Space Mono) is RESERVED for uppercase
      section/category labels. Examples that ARE labels:
        PROFIT · TODAY'S PROFIT · DEALS NEAR YOU · FREE & CLEARANCE
        SETTINGS · SOURCING · MORE TOOLS · RENEWS · SCANS
        SCAN UPC · AI VISION
 
-     Everything else uses Outfit, the body sans:
+     Everything else uses Manrope, the body sans:
        body copy, descriptions, subtitles, marketing taglines,
        prices ($9.99, +$70), badges (PRO, FB, CL, ND), button
        sublabels ("point at any barcode"), counters, all numbers.
@@ -110,15 +110,15 @@
        yes → font: var(--font-label)
        no  → font: var(--font-body)
 
-     Brand-identity exception: the LOOT wordmark is a logotype,
-     not a label — it stays in JetBrains Mono regardless.
+     The LOOT wordmark logotype renders in Space Mono — the app
+     carries the three brand fonts only (Bebas/Manrope/Space Mono).
      ============================================================ */
-  --font-label: var(--font-jetbrains-mono), monospace;
-  --font-body: var(--font-outfit), sans-serif;
+  --font-label: var(--font-space-mono), monospace;
+  --font-body: var(--font-manrope), sans-serif;
   /* Shelf-results display fonts — scoped to shelf result panel only. */
-  --font-display: var(--font-bebas-neue), var(--font-outfit), sans-serif;
-  --font-ui: var(--font-manrope), var(--font-outfit), sans-serif;
-  --font-data: var(--font-space-mono), var(--font-jetbrains-mono), monospace;
+  --font-display: var(--font-bebas-neue), sans-serif;
+  --font-ui: var(--font-manrope), sans-serif;
+  --font-data: var(--font-space-mono), monospace;
 
   /* ============================================================
      VOICE RULE (marketing/body copy)
@@ -157,7 +157,7 @@ html {
 
 body {
   color: var(--text-primary);
-  font-family: var(--font-outfit), sans-serif;
+  font-family: var(--font-manrope), sans-serif;
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;

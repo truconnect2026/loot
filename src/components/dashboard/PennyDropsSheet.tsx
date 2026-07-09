@@ -178,7 +178,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
           <TagIcon />
           <span
             style={{
-              fontFamily: "var(--font-jetbrains-mono)",
+              fontFamily: "var(--font-space-mono)",
               fontSize: 10,
               color: "#D4A574",
               letterSpacing: "0.10em",
@@ -200,7 +200,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
         </div>
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 8,
             color: "#3D2E55",
             letterSpacing: "0.10em",
@@ -227,7 +227,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
             best flip:{" "}
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontWeight: 700,
                 color: "#5CE0B8",
               }}
@@ -352,7 +352,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
                   >
                     <span
                       style={{
-                        fontFamily: "var(--font-jetbrains-mono)",
+                        fontFamily: "var(--font-space-mono)",
                         fontSize: 8,
                         fontWeight: 700,
                         letterSpacing: "0.08em",
@@ -369,7 +369,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
                     {isFast && (
                       <span
                         style={{
-                          fontFamily: "var(--font-jetbrains-mono)",
+                          fontFamily: "var(--font-space-mono)",
                           fontSize: 8,
                           fontWeight: 700,
                           letterSpacing: "0.08em",
@@ -404,7 +404,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
                       display: "flex",
                       alignItems: "baseline",
                       gap: 6,
-                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontFamily: "var(--font-space-mono)",
                       fontSize: 14,
                     }}
                   >
@@ -445,7 +445,7 @@ export default function PennyDropsSheet({ open, onClose }: PennyDropsSheetProps)
                         position: "absolute",
                         bottom: 10,
                         right: 10,
-                        fontFamily: "var(--font-jetbrains-mono)",
+                        fontFamily: "var(--font-space-mono)",
                         fontSize: 10,
                         fontWeight: 700,
                         color: "#5CE0B8",

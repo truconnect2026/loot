@@ -68,28 +68,28 @@ const ERR_STYLES = `
     radial-gradient(ellipse 50% 40% at 50% 40%, rgba(239,68,68,0.08) 0%, transparent 60%),
     #000;
   display: flex; align-items: center; justify-content: center;
-  padding: 32px; color: #fff; font-family: 'Outfit', sans-serif;
+  padding: 32px; color: #fff; font-family: var(--font-manrope), sans-serif;
 }
 .fos-err-inner {
   display: flex; flex-direction: column; align-items: center;
   text-align: center; gap: 12px; max-width: 480px;
 }
 .fos-err-head {
-  font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 40px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 900; font-size: 40px;
   color: #ef4444; margin: 8px 0 0; letter-spacing: 0.04em;
 }
 .fos-err-sub {
-  font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 16px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 500; font-size: 16px;
   color: rgba(255,255,255,0.8); margin: 0 0 12px;
 }
 .fos-err-btn {
   width: 100%; max-width: 320px; height: 56px;
   background: #5CE0B8; color: #000; border: 0; cursor: pointer;
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 700; font-size: 14px;
   letter-spacing: 0.22em;
 }
 .fos-err-mail {
-  font-family: 'Outfit', sans-serif; font-size: 13px; color: #5CE0B8;
+  font-family: var(--font-manrope), sans-serif; font-size: 13px; color: #5CE0B8;
   text-decoration: underline; opacity: 0.8;
 }
 .fos-err-trace {

@@ -96,7 +96,7 @@ export default function FlipOrSkipGameScreen() {
               border: `1px solid ${TOKENS.mint}`,
               background: "rgba(0,0,0,0.85)",
               color: TOKENS.mint,
-              fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+              fontFamily: "var(--font-space-mono), ui-monospace, monospace",
               fontSize: 13,
               minHeight: 44,
               maxWidth: 200,

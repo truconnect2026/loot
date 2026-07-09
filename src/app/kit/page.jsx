@@ -430,7 +430,7 @@ export default function KitPage() {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link
-        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@300;500;600;700&display=swap"
+        href=""
         rel="stylesheet"
       />
       <style dangerouslySetInnerHTML={{ __html: PAGE_STYLES }} />
@@ -1259,8 +1259,8 @@ const PAGE_STYLES = `
   --red: #ff6b6b;
   --white: #ffffff;
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
-  --display: 'Outfit', sans-serif;
-  --mono: 'JetBrains Mono', monospace;
+  --display: var(--font-manrope), sans-serif;
+  --mono: var(--font-space-mono), monospace;
   background: var(--bg);
   background-image: radial-gradient(ellipse at 50% 0%, #0a1612 0%, #000 70%);
   background-attachment: fixed;

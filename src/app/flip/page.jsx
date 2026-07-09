@@ -39,7 +39,7 @@ export default function Page() {
           minHeight: "100vh",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           padding: "32px", background: "#000", color: "#fff", textAlign: "center",
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: "var(--font-manrope), sans-serif",
         }}>
           <h1 style={{ color: "#5CE0B8", fontSize: 28, marginBottom: 8 }}>this game needs JavaScript.</h1>
           <p style={{ opacity: 0.8 }}>

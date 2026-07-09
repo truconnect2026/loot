@@ -177,7 +177,7 @@ export default function AppMarketingPreview() {
           </div>
           <div
             style={{
-              fontFamily: "'Outfit', sans-serif",
+              fontFamily: "var(--font-manrope), sans-serif",
               fontSize: 16,
               color: "rgba(255,255,255,0.85)",
               marginBottom: 12,
@@ -188,7 +188,7 @@ export default function AppMarketingPreview() {
           </div>
           <div
             style={{
-              fontFamily: "ui-monospace, monospace",
+              fontFamily: "var(--font-space-mono), monospace",
               fontWeight: 700,
               fontSize: 11,
               letterSpacing: "0.18em",
@@ -363,8 +363,8 @@ const PREVIEW_STYLES = `
   --mint: #5CE0B8;
   --mint-dim: rgba(92,224,184,0.4);
   --mint-faint: rgba(92,224,184,0.15);
-  --display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-space-mono), ui-monospace, monospace;
   background: radial-gradient(ellipse at top, #0a1612 0%, #000 60%);
   color: #fff;
   min-height: 100vh;

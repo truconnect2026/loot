@@ -72,7 +72,7 @@ export default function TargetMarkdownsSheet({
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 10,
             color: "#E8636B",
             letterSpacing: "0.10em",
@@ -119,7 +119,7 @@ export default function TargetMarkdownsSheet({
                 <span
                   style={{
                     width: 36,
-                    fontFamily: "var(--font-jetbrains-mono)",
+                    fontFamily: "var(--font-space-mono)",
                     fontSize: 12,
                     fontWeight: 700,
                     color: isToday ? "#5CE0B8" : "#C8C0D8",

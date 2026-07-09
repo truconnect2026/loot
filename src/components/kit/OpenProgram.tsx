@@ -157,14 +157,14 @@ const OPEN_PROGRAM_STYLES = `
 .op-section .op-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 .op-section .op-header { margin-bottom: 32px; }
 .op-section .op-eyebrow {
-  font: 500 11px/1 var(--mono, 'JetBrains Mono', monospace);
+  font: 500 11px/1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.28em;
   color: #5CE0B8;
   margin-bottom: 12px;
   text-transform: uppercase;
 }
 .op-section .op-headline {
-  font: 600 clamp(36px, 7vw, 72px)/1 var(--display, 'Outfit', sans-serif);
+  font: 600 clamp(36px, 7vw, 72px)/1 var(--display, var(--font-manrope), sans-serif);
   letter-spacing: -0.01em;
   color: #fff;
   margin-bottom: 14px;

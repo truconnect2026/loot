@@ -103,14 +103,14 @@ const CFAQ_STYLES = `
 @media (min-width: 768px) { .cfaq-section { padding: 80px 0; } }
 .cfaq-section .cfaq-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 .cfaq-section .cfaq-eyebrow {
-  font: 500 11px/1 var(--mono, 'JetBrains Mono', monospace);
+  font: 500 11px/1 var(--mono, var(--font-space-mono), monospace);
   letter-spacing: 0.28em;
   color: #5CE0B8;
   margin-bottom: 14px;
   text-transform: uppercase;
 }
 .cfaq-section .cfaq-headline {
-  font: 600 clamp(32px, 5vw, 48px)/1 var(--display, 'Outfit', sans-serif);
+  font: 600 clamp(32px, 5vw, 48px)/1 var(--display, var(--font-manrope), sans-serif);
   letter-spacing: -0.01em;
   color: #fff;
   margin-bottom: 32px;

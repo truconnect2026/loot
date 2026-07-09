@@ -104,7 +104,7 @@ function ChevronRightIcon() {
 // ── Shared components ──────────────────────────────────────────────────────
 
 const SECTION_LABEL: React.CSSProperties = {
-  fontFamily: "var(--font-jetbrains-mono, monospace)",
+  fontFamily: "var(--font-space-mono, monospace)",
   fontSize: 9,
   color: "#3D2E55",
   letterSpacing: "0.12em",
@@ -164,7 +164,7 @@ function ToolTile({ icon, accent, name, desc, onTap }: ToolTileProps) {
       <span style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
         <span
           style={{
-            fontFamily: "var(--font-jetbrains-mono, monospace)",
+            fontFamily: "var(--font-space-mono, monospace)",
             fontSize: 11,
             fontWeight: 700,
             color: "#e2d9f3",
@@ -175,7 +175,7 @@ function ToolTile({ icon, accent, name, desc, onTap }: ToolTileProps) {
         </span>
         <span
           style={{
-            fontFamily: "var(--font-outfit, sans-serif)",
+            fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 11,
             color: "#5A4E70",
             lineHeight: 1.4,
@@ -234,7 +234,7 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
       <span style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
         <span
           style={{
-            fontFamily: "var(--font-jetbrains-mono, monospace)",
+            fontFamily: "var(--font-space-mono, monospace)",
             fontSize: 11,
             fontWeight: 700,
             color: "#e2d9f3",
@@ -245,7 +245,7 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
         </span>
         <span
           style={{
-            fontFamily: "var(--font-outfit, sans-serif)",
+            fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 11,
             color: "#5A4E70",
           }}
@@ -315,7 +315,7 @@ export default function ToolsPage() {
         </div>
         <div
           style={{
-            fontFamily: "var(--font-outfit, sans-serif)",
+            fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 12,
             color: "#5A4E70",
             marginTop: 4,

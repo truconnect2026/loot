@@ -65,7 +65,7 @@ export default function GoodwillColorSheet({
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 10,
             color: "#7B8FFF",
             letterSpacing: "0.10em",
@@ -134,7 +134,7 @@ export default function GoodwillColorSheet({
                 {isActive && (
                   <span
                     style={{
-                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontFamily: "var(--font-space-mono)",
                       fontSize: 9,
                       fontWeight: 700,
                       letterSpacing: "0.08em",

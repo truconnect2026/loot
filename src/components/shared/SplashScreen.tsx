@@ -266,7 +266,7 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
             >
               <span
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontFamily: "var(--font-space-mono)",
                   fontWeight: 700,
                   fontSize: 42,
                   letterSpacing: "0.15em",
@@ -282,7 +282,7 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
                 aria-hidden="true"
                 style={{
                   marginTop: 4,
-                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontFamily: "var(--font-space-mono)",
                   fontWeight: 500,
                   fontSize: 15,
                   letterSpacing: "0.2em",
@@ -302,7 +302,7 @@ export default function SplashScreen({ exiting = false }: SplashScreenProps) {
           <div
             style={{
               marginTop: 12,
-              fontFamily: "var(--font-outfit)",
+              fontFamily: "var(--font-manrope)",
               fontWeight: 400,
               fontSize: 13,
               letterSpacing: "0.08em",

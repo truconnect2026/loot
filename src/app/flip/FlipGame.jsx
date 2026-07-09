@@ -521,8 +521,8 @@ const INLINE_STYLES = `
 :root { --mint: #5CE0B8; --gold: #F5C518; --red: #ef4444; --blue: #3B82F6; --purple: #6B46C1; }
 
 .flip-game-wrap {
-  --display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-space-mono), ui-monospace, monospace;
   position: relative; z-index: 1;
   min-height: 100dvh;
   color: #fff;
@@ -1795,7 +1795,7 @@ body.fos-cursor-active, body.fos-cursor-active * { cursor: none !important; }
   position: absolute; left: -9999px; top: -9999px;
   width: 1080px; height: 1080px;
   background: #0a0a0a; color: #fff; overflow: hidden;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-manrope), sans-serif;
 }
 .fos-share-source-bg {
   position: absolute; inset: 0;

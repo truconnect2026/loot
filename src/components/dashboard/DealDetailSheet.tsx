@@ -212,7 +212,7 @@ function DealSheetContent({ deal, onClose }: DealSheetContentProps) {
             >
               <span
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontFamily: "var(--font-space-mono)",
                   fontSize: 14,
                   fontWeight: 700,
                   fontFeatureSettings: '"tnum"',

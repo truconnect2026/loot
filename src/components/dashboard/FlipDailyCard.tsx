@@ -82,7 +82,7 @@ const STYLES = `
 .fdc-wrap { display: flex; flex-direction: column; gap: 8px; }
 .fdc-streak-boost {
   background: #5CE0B8; color: #000;
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 700; font-size: 13px;
   padding: 8px 14px; letter-spacing: 0.04em; border-radius: 10px;
   box-shadow: 0 0 24px rgba(92,224,184,0.5);
   text-align: center;
@@ -99,9 +99,9 @@ const STYLES = `
 .fdc-glyph { position: absolute; bottom: -10px; right: -10px; opacity: 0.1; }
 .fdc-inner { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; position: relative; z-index: 1; }
 .fdc-eyebrow { font-family: ui-monospace, monospace; font-weight: 700; font-size: 11px; letter-spacing: 0.18em; color: #5CE0B8; }
-.fdc-mid { font-family: 'Outfit', sans-serif; font-size: 16px; color: #fff; line-height: 1.3; }
+.fdc-mid { font-family: var(--font-manrope), sans-serif; font-size: 16px; color: #fff; line-height: 1.3; }
 .fdc-btn {
-  align-self: flex-start; padding: 10px 18px; font-family: 'Outfit', sans-serif;
+  align-self: flex-start; padding: 10px 18px; font-family: var(--font-manrope), sans-serif;
   font-weight: 700; font-size: 12px; letter-spacing: 0.18em; text-decoration: none;
   margin-top: 4px;
 }
@@ -110,7 +110,7 @@ const STYLES = `
 .fdc-foot { font-family: ui-monospace, monospace; font-size: 10px; color: rgba(92,224,184,0.5); letter-spacing: 0.12em; margin-top: 4px; }
 .fdc-streak { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 88px; position: relative; z-index: 1; }
 .fdc-streak-flame { font-size: 24px; animation: fdc-pulse 2s ease-in-out infinite; }
-.fdc-streak-num { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 36px; color: #F5C518; line-height: 1; font-variant-numeric: tabular-nums; }
+.fdc-streak-num { font-family: var(--font-manrope), sans-serif; font-weight: 900; font-size: 36px; color: #F5C518; line-height: 1; font-variant-numeric: tabular-nums; }
 .fdc-streak-label { font-family: ui-monospace, monospace; font-size: 9px; color: rgba(245,197,24,0.7); letter-spacing: 0.12em; }
 @keyframes fdc-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .fdc-streak-flame { animation: none; } }

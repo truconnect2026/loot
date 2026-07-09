@@ -924,7 +924,7 @@ export default function AccountPage() {
             >
               <span
                 style={{
-                  fontFamily: "var(--font-jetbrains-mono)",
+                  fontFamily: "var(--font-space-mono)",
                   fontWeight: 500,
                   fontSize: 12,
                   color: "#C8C0D8",
@@ -979,7 +979,7 @@ export default function AccountPage() {
                 <>
                   <span
                     style={{
-                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontFamily: "var(--font-space-mono)",
                       fontSize: 12,
                       color: "rgba(92, 224, 184, 0.5)",
                       lineHeight: 1,
@@ -1000,7 +1000,7 @@ export default function AccountPage() {
               ) : (
                 <span
                   style={{
-                    fontFamily: "var(--font-jetbrains-mono)",
+                    fontFamily: "var(--font-space-mono)",
                     fontWeight: 500,
                     fontSize: 12,
                     color: "#C8C0D8",

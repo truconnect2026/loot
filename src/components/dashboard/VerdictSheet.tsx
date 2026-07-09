@@ -493,7 +493,7 @@ function PlatformRanking({
                 {isBest && (
                   <span
                     style={{
-                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontFamily: "var(--font-space-mono)",
                       fontSize: 7,
                       fontWeight: 700,
                       letterSpacing: "0.10em",
@@ -525,7 +525,7 @@ function PlatformRanking({
             </div>
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 13,
                 fontWeight: 700,
                 color: isBest ? "#5CE0B8" : "#C8C0D8",
@@ -791,7 +791,7 @@ export default function VerdictSheet({
                 the un-discounted figure if they want it. */}
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 7,
                 color: "#5A4E70",
                 letterSpacing: "0.06em",
@@ -802,7 +802,7 @@ export default function VerdictSheet({
             </div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 7,
                 color: "#3D2E55",
                 letterSpacing: "0.06em",
@@ -866,7 +866,7 @@ export default function VerdictSheet({
             <div style={cellLabel}>SELLS IN</div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 16,
                 fontWeight: 700,
                 color:
@@ -882,7 +882,7 @@ export default function VerdictSheet({
             </div>
             <div
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 8,
                 fontWeight: 700,
                 letterSpacing: "0.10em",
@@ -1136,7 +1136,7 @@ export default function VerdictSheet({
               backgroundColor: "transparent",
               border: "1px solid rgba(212,165,116,0.20)",
               color: "#D4A574",
-              fontFamily: "var(--font-jetbrains-mono)",
+              fontFamily: "var(--font-space-mono)",
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: "0.10em",

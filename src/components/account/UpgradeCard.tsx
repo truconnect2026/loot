@@ -300,7 +300,7 @@ function PriceOption({
             backgroundColor: "rgba(92, 224, 184, 0.15)",
             padding: "2px 8px",
             borderRadius: 6,
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 8,
             fontWeight: 700,
             letterSpacing: "0.08em",

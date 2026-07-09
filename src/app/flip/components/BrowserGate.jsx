@@ -61,7 +61,7 @@ const GATE_STYLES = `
   position: relative; min-height: 100dvh;
   display: flex; align-items: center; justify-content: center;
   padding: 32px; color: #fff;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-manrope), sans-serif;
   background: #000;
 }
 .fos-gate-bg {
@@ -76,11 +76,11 @@ const GATE_STYLES = `
   text-align: center; gap: 12px; max-width: 420px;
 }
 .fos-gate-head {
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 28px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 700; font-size: 28px;
   color: #5CE0B8; margin: 0;
 }
 .fos-gate-sub {
-  font-family: 'Outfit', sans-serif; font-size: 14px;
+  font-family: var(--font-manrope), sans-serif; font-size: 14px;
   color: rgba(255,255,255,0.75); margin: 0;
 }
 .fos-gate-btn {
@@ -88,11 +88,11 @@ const GATE_STYLES = `
   display: inline-flex; align-items: center; justify-content: center;
   width: 100%; max-width: 320px; height: 56px;
   background: #5CE0B8; color: #000; text-decoration: none;
-  font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+  font-family: var(--font-manrope), sans-serif; font-weight: 700; font-size: 14px;
   letter-spacing: 0.22em;
 }
 .fos-gate-link {
-  font-family: 'Outfit', sans-serif; font-size: 12px;
+  font-family: var(--font-manrope), sans-serif; font-size: 12px;
   color: #5CE0B8; text-decoration: underline; opacity: 0.7;
 }
 `;

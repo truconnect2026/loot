@@ -254,7 +254,7 @@ export default function OnboardingPage() {
             <CoinMark size={22} color="#5CE0B8" />
             <span
               style={{
-                fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+                fontFamily: "var(--font-label, var(--font-space-mono), monospace)",
                 fontWeight: 700, fontSize: 13, letterSpacing: "0.16em", color: "#5CE0B8",
               }}
             >
@@ -290,7 +290,7 @@ export default function OnboardingPage() {
               padding: "16px 28px",
               background: "linear-gradient(180deg, #6FE5C0 0%, #5CE0B8 100%)",
               color: "#0A0A0A", textDecoration: "none",
-              fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+              fontFamily: "var(--font-label, var(--font-space-mono), monospace)",
               fontWeight: 700, fontSize: 13, letterSpacing: "0.08em",
               borderRadius: 9999,
               boxShadow: "0 8px 24px rgba(92,224,184,0.3), 0 2px 8px rgba(0,0,0,0.3)",
@@ -302,7 +302,7 @@ export default function OnboardingPage() {
           <p
             style={{
               marginTop: 28,
-              fontFamily: "var(--font-label, 'JetBrains Mono', monospace)",
+              fontFamily: "var(--font-label, var(--font-space-mono), monospace)",
               fontWeight: 500, fontSize: 11, letterSpacing: "0.12em",
               color: "rgba(255,255,255,0.35)", textTransform: "uppercase",
             }}

@@ -32,7 +32,7 @@ export default async function Founding20AdminPage() {
   }
   if (!isAdminEmail(user.email)) {
     return (
-      <main style={{ padding: 64, color: "#fff", fontFamily: "system-ui" }}>
+      <main style={{ padding: 64, color: "#fff", fontFamily: "var(--font-manrope), sans-serif" }}>
         <h1>403</h1>
         <p>Not authorized. Add this email to ADMIN_EMAILS in env to access.</p>
       </main>
@@ -49,7 +49,7 @@ export default async function Founding20AdminPage() {
 
   if (error) {
     return (
-      <main style={{ padding: 64, color: "#fff", fontFamily: "system-ui" }}>
+      <main style={{ padding: 64, color: "#fff", fontFamily: "var(--font-manrope), sans-serif" }}>
         <h1>Database error</h1>
         <p>{error.message}</p>
       </main>

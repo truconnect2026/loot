@@ -586,7 +586,7 @@ export default function ShelfScanSheet({
                 backgroundColor: "rgba(92,224,184,0.08)",
                 border: "1px solid rgba(92,224,184,0.15)",
                 color: "#5CE0B8",
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 10,
                 fontWeight: 600,
                 letterSpacing: "0.10em",
@@ -1275,7 +1275,7 @@ function ItemCard({
           subLabel={
             <span
               style={{
-                fontFamily: "var(--font-jetbrains-mono)",
+                fontFamily: "var(--font-space-mono)",
                 fontSize: 7,
                 color: "#5A4E70",
                 letterSpacing: "0.06em",
@@ -1446,7 +1446,7 @@ function ItemCard({
                   {" · net "}
                   <span
                     style={{
-                      fontFamily: "var(--font-jetbrains-mono)",
+                      fontFamily: "var(--font-space-mono)",
                       fontWeight: 700,
                       color: "#5CE0B8",
                       fontFeatureSettings: '"tnum"',
@@ -1659,7 +1659,7 @@ function SellSpeedPill({
         backgroundColor: tint.bg,
         border: `1px solid ${tint.border}`,
         color: tint.text,
-        fontFamily: "var(--font-jetbrains-mono)",
+        fontFamily: "var(--font-space-mono)",
         fontSize: 8,
         fontWeight: 600,
         letterSpacing: "0.06em",

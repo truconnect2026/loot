@@ -130,7 +130,7 @@ export default function ConditionGradeSheet({
       <div style={{ padding: "16px 18px 28px" }}>
         <div
           style={{
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 10,
             color: "#D4A574",
             letterSpacing: "0.10em",
@@ -195,7 +195,7 @@ export default function ConditionGradeSheet({
               backgroundColor: "rgba(212,165,116,0.10)",
               border: "1px solid rgba(212,165,116,0.20)",
               color: "#D4A574",
-              fontFamily: "var(--font-jetbrains-mono)",
+              fontFamily: "var(--font-space-mono)",
               fontSize: 12,
               fontWeight: 700,
               letterSpacing: "0.10em",
@@ -411,7 +411,7 @@ function ResultView({
         <div
           style={{
             position: "relative",
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 64,
             fontWeight: 800,
             color,
@@ -438,7 +438,7 @@ function ResultView({
         <div
           style={{
             marginTop: 4,
-            fontFamily: "var(--font-jetbrains-mono)",
+            fontFamily: "var(--font-space-mono)",
             fontSize: 12,
             color: "#5A4E70",
           }}
@@ -508,7 +508,7 @@ function ResultView({
           backgroundColor: "transparent",
           border: "1px solid rgba(255,255,255,0.08)",
           color: "#5A4E70",
-          fontFamily: "var(--font-jetbrains-mono)",
+          fontFamily: "var(--font-space-mono)",
           fontSize: 11,
           fontWeight: 700,
           letterSpacing: "0.10em",
@@ -537,7 +537,7 @@ function BulletList({
     <div style={{ marginTop: 14 }}>
       <div
         style={{
-          fontFamily: "var(--font-jetbrains-mono)",
+          fontFamily: "var(--font-space-mono)",
           fontSize: 9,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
