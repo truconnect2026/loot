@@ -22,7 +22,8 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
  * total eases up. Price all five: the total row pulses once, the
  * completion line lands, and a quiet micro-CTA to #pricing fades into a
  * pre-reserved slot (anchor scroll only, zero checkout interaction).
- * Values illustrative.
+ * The completed shelf HOLDS (no auto-reset) with a "price again" pill;
+ * tapping the panel replays. Values illustrative.
  *
  * Attract (the classic full choreography) still arms after 6s idle on a
  * pristine shelf and cancels on tap. A NEW idle-presence loop makes one
@@ -63,6 +64,10 @@ const STYLES = `
 .ssd-total-pulse { animation: ssdTotalPulse 500ms cubic-bezier(0.2,1.3,0.4,1) 1; }
 @keyframes ssdGlow { 0% { opacity: 0; } 40% { opacity: 1; } 100% { opacity: 0; } }
 .ssd-glow-pulse { animation: ssdGlow 700ms ease-out 1; }
+/* idle prompt pulse — same 2.2s opacity language as the scan demo's
+   "tap to scan"; class-gated on in-view + pristine + motion-ok */
+@keyframes ssdTapPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.ssd-tap-pulse { animation: ssdTapPulse 2.2s ease-in-out infinite; }
 `;
 
 /* Local, continuously-updating visibility tracker — same pattern as the
@@ -376,6 +381,10 @@ export default function ShelfScannerDemo() {
   const [fading, setFading] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
   const [breathIdx, setBreathIdx] = useState(-1);
+  // Reduced motion: static end-state by default; panel tap toggles the
+  // static pristine shelf back in — zero timers, zero motion (matches
+  // the scan demo's static-toggle pattern).
+  const [reducedShown, setReducedShown] = useState(true);
   // Entrance beat: on arrival the FIRST item's box+tag draw and release —
   // a taste of the mechanic while the swipe is still settling. Does NOT
   // mark the item tapped (totals/attract read `tapped`, which stays
@@ -445,26 +454,19 @@ export default function ShelfScannerDemo() {
     return () => clearInterval(t);
   }, [reduced, inView, attract, tapped, fading, entryBeat]);
 
-  /* Completion: pulse + line + micro-CTA, hold, soft reset. Slightly
-     longer hold than before so the CTA is readable; cycle semantics
-     unchanged (timers die off-screen). */
-  useEffect(() => {
-    if (reduced || !inView || tapped.size !== ITEMS.length) return;
-    let t2;
-    const t1 = setTimeout(() => {
-      setFading(true);
-      t2 = setTimeout(() => {
-        setTapped(new Set());
-        setFading(false);
-        setLastTouch(Date.now());
-      }, 400);
-    }, 4200);
-    return () => {
-      clearTimeout(t1);
-      if (t2) clearTimeout(t2);
+  /* Replay — ONE source of truth for clearing the shelf (the old 4.2s
+     auto-reset is gone: the completed shelf HOLDS, same "you did it"
+     payoff contract as the scan demo, until the visitor taps the panel
+     to run it again). */
+  const resetShelf = () => {
+    if (fading) return; // debounce: ignore taps during the fade
+    setFading(true);
+    setTimeout(() => {
+      setTapped(new Set());
       setFading(false);
-    };
-  }, [reduced, inView, tapped]);
+      setLastTouch(Date.now());
+    }, 400);
+  };
 
   const tapItem = (key) => {
     if (reduced || fading) return;
@@ -489,19 +491,20 @@ export default function ShelfScannerDemo() {
   const attractTotal = attractActive && (phase === "total" || phase === "hold");
   const sceneShown = reduced || (!fading && !(attractActive && phase === "reset"));
 
-  const complete = reduced || tapped.size === ITEMS.length;
+  const staticComplete = reduced && reducedShown;
+  const complete = staticComplete || tapped.size === ITEMS.length;
   const userComplete = complete && !attractActive;
-  const promptShown = !reduced && !attractActive && tapped.size === 0;
+  const promptShown = reduced ? !reducedShown : !attractActive && tapped.size === 0;
   const scanningShown = attractActive && (phase === "settle" || phase === "detect" || phase === "value");
-  const totalShown = reduced || attractTotal || (!attractActive && tapped.size > 0);
+  const totalShown = staticComplete || attractTotal || (!attractActive && tapped.size > 0);
 
   const userSum = ITEMS.reduce((s, it) => s + (tapped.has(it.key) ? it.value : 0), 0);
-  const totalTarget = reduced ? SHELF_TOTAL : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
+  const totalTarget = reduced ? (reducedShown ? SHELF_TOTAL : 0) : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
   const totalValue = useEasedNumber(totalTarget, reduced, !attractActive);
 
   const rowState = (item, i) => ({
-    boxOn: attractActive ? attractBoxes : reduced || tapped.has(item.key) || (entryBeat && i === 0),
-    tagOn: attractActive ? attractTags : reduced || tapped.has(item.key) || (entryBeat && i === 0),
+    boxOn: attractActive ? attractBoxes : staticComplete || tapped.has(item.key) || (entryBeat && i === 0),
+    tagOn: attractActive ? attractTags : staticComplete || tapped.has(item.key) || (entryBeat && i === 0),
     delayBase: attractActive ? i * 350 : 0,
     breathing: breathIdx === i,
   });
@@ -547,9 +550,19 @@ export default function ShelfScannerDemo() {
               section. */}
           <div
             ref={rootRef}
+            onClick={() => {
+              // Whole-panel replay target (items bubble up): a completed
+              // shelf re-runs on tap; reduced motion toggles statically.
+              if (reduced) {
+                setReducedShown((v) => !v);
+                return;
+              }
+              if (userComplete && !fading) resetShelf();
+            }}
             style={{
               position: "relative",
               marginTop: 28,
+              cursor: "pointer",
               borderRadius: 20,
               border: "1px solid rgba(92,224,184,0.25)",
               background: "rgba(255,255,255,0.02)",
@@ -559,6 +572,31 @@ export default function ShelfScannerDemo() {
               overflow: "hidden",
             }}
           >
+            {/* Replay affordance — same pill language as the scan demo.
+                The TAP TARGET is the whole panel; this is just the cue. */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 38,
+                zIndex: 4,
+                fontFamily: "var(--font-mono), monospace",
+                fontSize: 9,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: C.mint,
+                border: "1px solid rgba(92,224,184,0.4)",
+                borderRadius: 999,
+                padding: "4px 9px",
+                background: "rgba(7,5,16,0.6)",
+                opacity: (reduced ? reducedShown : userComplete && !fading) ? 1 : 0,
+                transition: reduced ? "none" : `opacity 300ms ${EASE} 250ms`,
+                pointerEvents: "none",
+              }}
+            >
+              {reduced ? "tap to reset" : "↻ price again"}
+            </div>
             <Bracket corner="tl" pulse={attractActive && phase === "detect"} />
             <Bracket corner="tr" pulse={attractActive && phase === "detect"} />
             <Bracket corner="bl" pulse={attractActive && phase === "detect"} />
@@ -599,6 +637,7 @@ export default function ShelfScannerDemo() {
               {/* prompt / scanning row, directly under the aisle */}
               <div style={{ position: "relative", marginTop: 10, height: 18, textAlign: "center" }}>
                 <div
+                  className={promptShown && inView && !reduced ? "ssd-tap-pulse" : ""}
                   style={{
                     position: "absolute",
                     inset: 0,
@@ -720,7 +759,10 @@ export default function ShelfScannerDemo() {
                 {/* micro-CTA — reserved slot, anchor only */}
                 <button
                   type="button"
-                  onClick={goPricing}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goPricing();
+                  }}
                   tabIndex={userComplete ? 0 : -1}
                   aria-hidden={!userComplete}
                   style={{

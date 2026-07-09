@@ -57,6 +57,9 @@ const NUDGE_STYLES = `
   100% { opacity: 0; }
 }
 .acd-stamp-pulse { animation: acdStampPulse 600ms ease-out 1; }
+/* idle prompt pulse — same 2.2s opacity language as the scan demo */
+@keyframes acdTapPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.acd-tap-pulse { animation: acdTapPulse 2.2s ease-in-out infinite; }
 `;
 
 const CHECKS = [
@@ -153,6 +156,9 @@ export default function AuthCheckDemo() {
   const [lastTouch, setLastTouch] = useState(0);
   // Pre-interaction nudge dies PERMANENTLY on first pointer interaction.
   const [nudgeKilled, setNudgeKilled] = useState(false);
+  // Reduced motion: static verdict by default; panel tap toggles the
+  // static pristine (ghost) state back in — zero timers, zero motion.
+  const [reducedShown, setReducedShown] = useState(true);
 
   const dragRef = useRef(null);
   const autoRafRef = useRef(null);
@@ -184,9 +190,11 @@ export default function AuthCheckDemo() {
 
   /* One-shot sweep at hero pacing — used by the tap fallback. Runs from
      0 regardless of current position so a tap always tells the full
-     story, then holds the end state. */
+     story, then holds the end state. Debounced: taps landing while a
+     sweep is in flight are ignored (the running sweep continues), same
+     contract as the scan demo. */
   const runSweep = useCallback(() => {
-    cancelAuto();
+    if (autoRafRef.current) return; // debounce, don't restart
     const t0 = performance.now();
     const step = (ts) => {
       const t = Math.min((ts - t0) / SWEEP_MS, 1);
@@ -295,14 +303,19 @@ export default function AuthCheckDemo() {
   const takeControl = useCallback(() => {
     setNudgeKilled(true);
     setAttract(false);
-    cancelAuto();
+    // NOTE: deliberately does NOT cancel a tap-initiated sweep — taps
+    // mid-sweep are debounced away; only an ARMED DRAG takes the line
+    // (cancelAuto lives in onPointerMove's arming branch).
     cancelBeat(); // an in-progress entrance beat yields instantly
     setFading(false);
     setLastTouch(Date.now());
-  }, [cancelAuto, cancelBeat]);
+  }, [cancelBeat]);
 
   const onPointerDown = (e) => {
-    if (reduced) return;
+    if (reduced) {
+      setReducedShown((v) => !v); // static toggle: verdict ↔ ghost state
+      return;
+    }
     takeControl();
     const rect = panelRef.current.getBoundingClientRect();
     dragRef.current = { startX: e.clientX, moved: false, rect };
@@ -317,6 +330,7 @@ export default function AuthCheckDemo() {
     const d = dragRef.current;
     if (!d) return;
     if (!d.moved && Math.abs(e.clientX - d.startX) < 6) return;
+    if (!d.moved) cancelAuto(); // an armed drag takes the line from a sweep
     d.moved = true;
     const p = (e.clientX - d.rect.left) / d.rect.width;
     setProgress(Math.max(0, Math.min(1, p)));
@@ -336,8 +350,9 @@ export default function AuthCheckDemo() {
   };
 
   // Every visual derives from one progress value, so scrubbing backward
-  // resets checks/verdict automatically. Reduced motion pins p to 1.
-  const p = reduced ? 1 : progress;
+  // resets checks/verdict automatically. Reduced motion pins p statically
+  // to 1 (verdict) or 0 (ghost state) via the tap toggle.
+  const p = reduced ? (reducedShown ? 1 : 0) : progress;
   const verdict = p >= END;
   const lineShown = !reduced && !verdict;
   // Nudge contract: killed forever after first interaction, suspended
@@ -391,6 +406,32 @@ export default function AuthCheckDemo() {
                 WebkitUserSelect: "none",
               }}
             >
+              {/* Replay affordance — same pill language as the scan demo.
+                  The TAP TARGET is the whole panel (tap = auto sweep). */}
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 12,
+                  zIndex: 4,
+                  fontFamily: "var(--font-mono), monospace",
+                  fontSize: 9,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: C.mint,
+                  border: "1px solid rgba(92,224,184,0.4)",
+                  borderRadius: 999,
+                  padding: "4px 9px",
+                  background: "rgba(7,5,16,0.6)",
+                  opacity: (reduced ? reducedShown : verdict && !attract) ? 1 : 0,
+                  transition: reduced ? "none" : `opacity 300ms ${EASE} 250ms`,
+                  pointerEvents: "none",
+                }}
+              >
+                {reduced ? "tap to reset" : "↻ scan again"}
+              </div>
+
               {/* Scene content — fades as one unit during attract reset. */}
               <div
                 style={{
@@ -645,6 +686,7 @@ export default function AuthCheckDemo() {
             {!reduced && (
               <button
                 type="button"
+                className={inView && progress === 0 && !attract ? "acd-tap-pulse" : ""}
                 onClick={() => {
                   takeControl();
                   runSweep();
