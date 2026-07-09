@@ -1,329 +1,353 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/**
+ * THE SCAN HERO — one full-width live viewfinder replacing the old
+ * SCAN UPC / AI VISION button pair. The old two-column
+ * `minmax(0, 1fr) minmax(0, 1fr)` grid (with its equal-track idiom
+ * comment) is intentionally gone: a single hero supersedes the
+ * two-button layout, so there are no tracks left to equalize. The
+ * 14px top gap the grid carried is preserved on the hero wrapper so
+ * Home's rhythm doesn't shift.
+ *
+ * It routes into the ONE ScanOverlay in ITEM mode — the exact
+ * startScan("vision") param the old AI VISION button passed — and the
+ * overlay's own BARCODE · ITEM · SHELF · CRATE toggle keeps every other
+ * mode one tap away. No scanner logic lives here; this is the front
+ * door styled as the instrument itself.
+ *
+ * Layers (back → front): calibration grid drift / edge vignette /
+ * type block / viewfinder brackets (focus breathe) / ghost silhouette +
+ * "$––" pill (the hunt rehearsal — never a real number) / reticle +
+ * camera glyph / scan-line with phosphor trail / border beam (same
+ * living-edge language as the FLIP OR SKIP card) / press flash.
+ *
+ * Motion contract: transform/opacity/filter only; loops grouped on
+ * few clocks (5.6s hunt — scan-line + ghost + pill share it · 3.2s
+ * bracket breathe · 14s grid drift · 3s beam); ONE IntersectionObserver
+ * pauses everything off-screen; prefers-reduced-motion kills all of it
+ * and ships the paused instrument (brackets + reticle + frozen ghost +
+ * "$––" mid-lock + mint edge).
+ */
 
 interface ScanButtonsProps {
-  onScanUpc: () => void;
-  onAiVision: () => void;
-  /** Today's scan count — used for both the gentle hint and the per-button counter. */
-  todayScans: number;
-  /** First-time-user mode: SCAN UPC border breathes a quiet "tap me" pulse. */
+  /** Fires the scanner in ITEM mode (mount passes startScan("vision")). */
+  onScan: () => void;
+  /** Accepted for mount-site compatibility; the hero's fixed composition
+      does not render a per-button counter anymore. */
+  todayScans?: number;
+  /** New-user contract preserved from the old primary button: a quiet
+      "tap me" border pulse when true. */
   pulsePrimary?: boolean;
 }
 
-function BarcodeIcon() {
-  return (
-    <svg
-      width={36}
-      height={36}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="rgba(255,255,255,0.95)"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-    >
-      <path d="M3 5v-2h4" />
-      <path d="M17 3h4v2" />
-      <path d="M21 19v2h-4" />
-      <path d="M7 21H3v-2" />
-      <line x1={7} y1={8} x2={7} y2={16} />
-      <line x1={10} y1={8} x2={10} y2={16} />
-      <line x1={13} y1={8} x2={13} y2={16} strokeWidth={2} />
-      <line x1={17} y1={8} x2={17} y2={16} />
-    </svg>
-  );
-}
+export default function ScanButtons({ onScan, pulsePrimary }: ScanButtonsProps) {
+  const [firing, setFiring] = useState(false);
+  const rootRef = useRef<HTMLButtonElement>(null);
+  const [inView, setInView] = useState(true);
 
-function CameraIcon() {
-  // Crisp white on the white-fill button — matches BarcodeIcon. The
-  // primary/secondary variant distinction now lives entirely in the
-  // mint glow intensity (radial halo + bottom shadow), so the icon
-  // stroke stays the same on both.
-  return (
-    <svg
-      width={36}
-      height={36}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="rgba(255,255,255,0.95)"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-      <circle cx={12} cy={13} r={4} />
-    </svg>
-  );
-}
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.05 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
-const hairlineEdgeBleed: React.CSSProperties = {
-  marginLeft: -18,
-  marginRight: -18,
-  height: 1,
-  backgroundColor: "rgba(255,255,255,0.04)",
-};
-
-interface HeroButtonProps {
-  variant: "mint" | "camel";
-  icon: React.ReactNode;
-  label: string;
-  subtitle: string;
-  onTap: () => void;
-  /** Run the slow border pulse — only used by the primary button in new-user mode. */
-  pulse?: boolean;
-}
-
-function HeroButton({
-  variant,
-  icon,
-  label,
-  subtitle,
-  onTap,
-  pulse,
-}: HeroButtonProps) {
-  const [pressed, setPressed] = useState(false);
-  const [hovered, setHovered] = useState(false);
-
-  // Both variants now use mint (the money color) — primary vs
-  // secondary is encoded as glow intensity, not hue. This keeps the
-  // color system clean: nothing else in the UI introduces amber, so
-  // having amber on AI VISION made it look like a stray accent
-  // rather than a deliberate variant.
-  const accent = "92,224,184";
-  const accentColor = variant === "mint" ? "#5CE0B8" : "rgba(92,224,184,0.72)";
-  // Primary glows brighter; secondary is one notch dimmer.
-  const borderAlpha = variant === "mint" ? 0.28 : 0.16;
-  const haloAlpha = variant === "mint" ? 0.14 : 0.08;
-  // Ambient under-glow — stacked box-shadows mimic a radial
-  // gradient's soft falloff. Larger spreads (24-48px) and higher
-  // alphas than the previous tight 20px halo so the buttons
-  // unambiguously read as "lit from below" rather than as
-  // rendering artifacts. Primary doubles the alpha of secondary on
-  // every layer.
-  const glowPrimary = variant === "mint";
-  const glowMid = glowPrimary ? 0.30 : 0.15;
-  const glowFar = glowPrimary ? 0.12 : 0.06;
-
-  // Foreground-plane shadow — the scan buttons should feel like
-  // they're floating above the rest of the dashboard, lit from
-  // above (the white top-edge inset) AND below (the mint under-
-  // glow). The white inset at 0.08 reads as catching room light
-  // off the upper edge; the mint stack underneath is the brand
-  // halo that makes the buttons feel powered-on.
-  const restShadow =
-    `inset 0 1px 0 0 rgba(255,255,255,0.08),` +
-    ` 0 2px 4px rgba(0,0,0,0.20),` +
-    ` 0 12px 28px -6px rgba(${accent},${glowMid}),` +
-    ` 0 24px 48px -12px rgba(${accent},${glowFar})`;
-  const hoverShadow =
-    `inset 0 1px 0 0 rgba(255,255,255,0.10),` +
-    ` 0 0 0 1px rgba(${accent},${glowPrimary ? 0.22 : 0.14}),` +
-    ` 0 12px 32px -4px rgba(${accent},${glowMid + 0.06}),` +
-    ` 0 24px 48px -10px rgba(${accent},${glowFar + 0.04})`;
+  // Cocking the scanner: focus-lock brackets + edge flash + one fast
+  // sweep (~180ms), then route. Reduced motion routes instantly.
+  const fire = () => {
+    if (firing) return;
+    let reduced = false;
+    try {
+      reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch { /* default: animate */ }
+    if (reduced) {
+      onScan();
+      return;
+    }
+    setFiring(true);
+    window.setTimeout(() => {
+      onScan();
+      setFiring(false);
+    }, 180);
+  };
 
   return (
     <button
+      ref={rootRef}
       type="button"
-      onClick={onTap}
-      onPointerDown={() => setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => {
-        setPressed(false);
-        setHovered(false);
-      }}
-      onPointerEnter={() => setHovered(true)}
-      style={{
-        // Sizing is owned by the grid parent (1fr 1fr). The button just fills
-        // its cell — no width/flex/minWidth/maxWidth here, so content size
-        // can never push a button out of alignment.
-        width: "100%",
-        boxSizing: "border-box",
-        // 88 (was 80) + gap 6 (was 4) gives icon/label/subtitle a few more
-        // pixels of breathing room each. Subtitles now read as headlines
-        // of their own row instead of cramming up against the label.
-        height: 88,
-        borderRadius: 16,
-        // Opaque #120e18 base + 15% white tint stacked on top, so the
-        // grid pattern from the dashboard background never bleeds
-        // through the button. backgroundImage paints over
-        // backgroundColor; the result is a solid surface that reads
-        // as physical, not as a translucent hole. Mint identity lives
-        // entirely in the glow stack below (radial halo, bottom
-        // shadow, pulse) — bg stays neutral white-on-dark.
-        backgroundColor: "#120e18",
-        // Press state darkens the surface 3% (15% → 12% white tint)
-        // so the button reads as physically depressing under the
-        // finger; rest stays at 15% for the brighter "lit" look.
-        backgroundImage: pressed
-          ? "linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12))"
-          : "linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15))",
-        border: `1px solid rgba(${accent},${borderAlpha})`,
-        boxShadow: hovered ? hoverShadow : restShadow,
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 6,
-        cursor: "pointer",
-        padding: 0,
-        // First-scan nudge — the keyframe overrides border-color while running.
-        animation: pulse ? "scanUpcPulse 2s ease-in-out infinite" : undefined,
-        transform: pressed ? "scale(0.97)" : "scale(1)",
-        transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
+      onClick={fire}
+      aria-label="Scan — point at anything, know what it's worth"
+      className={
+        "sh" +
+        (firing ? " sh--firing" : "") +
+        (inView ? "" : " sh--paused") +
+        (pulsePrimary ? " sh--pulse" : "")
+      }
     >
-      {/* Per-button scan count badge removed — it duplicated the
-          "X/N free scans" pill that sits below the buttons,
-          and a tiny number floating in the corner of each button
-          read as visual noise without adding any signal the pill
-          doesn't already provide. */}
+      <style>{STYLES}</style>
 
-      {/* Top-edge shine */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: -1,
-          left: 12,
-          right: 12,
-          height: 1,
-          background:
-            "linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)",
-          pointerEvents: "none",
-        }}
-      />
-      {/* Soft radial halo behind the icon */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          width: 48,
-          height: 48,
-          top: 14,
-          left: "50%",
-          marginLeft: -24,
-          borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(${accent},${haloAlpha}), transparent 70%)`,
-          pointerEvents: "none",
-        }}
-      />
-      {/* Icon — drop-shadow gives it a subtle mint halo so the
-          glyph reads as a light source, not just a stencil. The
-          filter only paints the SVG strokes, not a box around the
-          wrapper, so it stays clean against the button surface. */}
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          filter: "drop-shadow(0 0 6px rgba(92, 224, 184, 0.15))",
-        }}
-      >
-        {icon}
+      {/* calibration mesh — a scanner's idle surface, whisper-faint */}
+      <div className="sh-grid" aria-hidden="true" />
+      <div className="sh-vignette" aria-hidden="true" />
+
+      {/* type block — left, so the viewfinder owns the right like the
+          FLIP card's collectible: Home reads as one family */}
+      <div className="sh-type">
+        <div className="sh-title">SCAN</div>
+        <div className="sh-sub">point at anything. know what it&apos;s worth.</div>
       </div>
-      <span
-        style={{
-          // SCAN UPC / AI VISION — uppercase category label, stays mono.
-          fontFamily: "var(--font-label)",
-          fontWeight: 700,
-          fontSize: 11,
-          letterSpacing: "0.12em",
-          color: accentColor,
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          // Subtitle bumped to a slightly warmer plum
-          // (rgba(200, 192, 216, 0.5)) so it reads at arm's length
-          // without competing with the accent label above. The
-          // variant identity is encoded entirely in the label
-          // color, so the subtitle stays neutral.
-          fontFamily: "var(--font-body)",
-          fontSize: 11,
-          fontWeight: 500,
-          color: "rgba(200, 192, 216, 0.5)",
-          letterSpacing: "0.01em",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {subtitle}
-      </span>
+
+      {/* the viewfinder */}
+      <div className="sh-frame" aria-hidden="true">
+        <span className="sh-br sh-br--tl" />
+        <span className="sh-br sh-br--tr" />
+        <span className="sh-br sh-br--bl" />
+        <span className="sh-br sh-br--br" />
+
+        {/* ghost catch — abstract silhouette, never a real item */}
+        <svg className="sh-ghost" viewBox="0 0 48 64">
+          <path
+            d="M18 6 h12 v10 q8 6 8 20 q0 16 -14 16 q-14 0 -14 -16 q0 -14 8 -20 z"
+            fill="none"
+            stroke="rgba(255,255,255,0.35)"
+            strokeWidth="1.5"
+          />
+        </svg>
+        <div className="sh-pill">$––</div>
+
+        {/* reticle — crosshair + hardware camera glyph */}
+        <div className="sh-reticle">
+          <span className="sh-cross sh-cross--h" />
+          <span className="sh-cross sh-cross--v" />
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5CE0B8" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+            <circle cx={12} cy={13} r={4} />
+          </svg>
+        </div>
+
+        {/* the hunt — sweeping line + phosphor trail */}
+        <div className="sh-scan" />
+      </div>
+
+      {/* capability flex — quiet, bottom edge */}
+      <div className="sh-caps">BARCODE · ITEM · SHELF · CRATE</div>
+
+      {/* border beam — same living-edge language as the FLIP card */}
+      <div className="sh-beam" aria-hidden="true"><div className="sh-beam-spin" /></div>
+      {/* new-user pulse overlay (pulsePrimary contract) */}
+      <div className="sh-pulse-ring" aria-hidden="true" />
+      {/* press flash */}
+      <div className="sh-flash" aria-hidden="true" />
     </button>
   );
 }
 
-export default function ScanButtons({
-  onScanUpc,
-  onAiVision,
-  todayScans,
-  pulsePrimary,
-}: ScanButtonsProps) {
-  const showHint = todayScans === 0;
-
-  return (
-    <>
-      {/* Top hairline removed — was adding visual mass between the
-          stats card and the scan grid that the user read as dead
-          air. The single 14px gap on the grid below is now the
-          only spacing source between the two. */}
-
-      <div
-        style={{
-          // minmax(0, 1fr) — NOT plain 1fr. Plain `1fr` is shorthand for
-          // `minmax(auto, 1fr)`, which floors each track at its min-content
-          // width. Different label/subtitle widths between SCAN UPC and AI
-          // VISION made the auto minimum diverge, leaving the buttons a few
-          // pixels apart. minmax(0, 1fr) drops the floor and forces strictly
-          // equal columns. This is the canonical Grid idiom for this exact
-          // problem — do not change back to `1fr`.
-          marginTop: 14,
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-          gap: 10,
-          width: "100%",
-        }}
-      >
-        <HeroButton
-          variant="mint"
-          icon={<BarcodeIcon />}
-          label="SCAN UPC"
-          subtitle="point at any barcode"
-          onTap={onScanUpc}
-          pulse={pulsePrimary}
-        />
-        <HeroButton
-          variant="camel"
-          icon={<CameraIcon />}
-          label="AI VISION"
-          subtitle="no barcode? snap a photo"
-          onTap={onAiVision}
-        />
-      </div>
-
-      {/* New-user hint — only while today's scans is still 0. 40% white so
-          it reads at a glance without competing with the scan buttons. */}
-      {showHint && (
-        <div
-          style={{
-            marginTop: 12,
-            fontFamily: "var(--font-body)",
-            fontSize: 9,
-            color: "rgba(255,255,255,0.40)",
-            textAlign: "center",
-          }}
-        >
-          works at thrift stores, yard sales, and retail clearance
-        </div>
-      )}
-
-      {/* Bottom hairline — full-bleed channel framing the scan zone */}
-      <div style={{ ...hairlineEdgeBleed, marginTop: 20 }} />
-    </>
-  );
+const STYLES = `
+.sh {
+  position: relative; display: block; width: 100%; height: 176px;
+  margin-top: 14px;
+  padding: 0; text-align: left; cursor: pointer;
+  background: #070510;
+  border: 1px solid rgba(92, 224, 184, 0.35);
+  border-radius: 18px;
+  overflow: hidden;
+  /* forward lift, biased UPWARD so the hero's glow never collides with
+     the content below at 390px */
+  box-shadow:
+    0 -2px 18px -6px rgba(92, 224, 184, 0.22),
+    0 6px 20px -8px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  -webkit-tap-highlight-color: transparent;
 }
+.sh--paused, .sh--paused * { animation-play-state: paused !important; }
+
+/* calibration mesh — oversized layer, transform drift only */
+.sh-grid {
+  position: absolute; inset: -30%;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(92,224,184,0.05) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(90deg, rgba(92,224,184,0.05) 0 1px, transparent 1px 22px);
+  animation: shGrid 14s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes shGrid {
+  from { transform: translate3d(-8px, -5px, 0); }
+  to { transform: translate3d(8px, 5px, 0); }
+}
+.sh-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 62% 50%, transparent 40%, rgba(7,5,16,0.75) 100%);
+  pointer-events: none;
+}
+
+/* type block */
+.sh-type { position: absolute; left: 20px; top: 30px; z-index: 2; max-width: 46%; }
+.sh-title {
+  font-family: var(--font-bebas-neue), sans-serif;
+  font-size: 44px; line-height: 0.95; letter-spacing: 0.03em;
+  color: #5CE0B8;
+  text-shadow: 0 0 18px rgba(92, 224, 184, 0.35);
+}
+.sh-sub {
+  margin-top: 8px;
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 12.5px; line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+}
+.sh-caps {
+  position: absolute; left: 20px; bottom: 12px; z-index: 2;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 8px; letter-spacing: 0.14em;
+  color: rgba(92, 224, 184, 0.45);
+}
+
+/* viewfinder frame — right region */
+.sh-frame {
+  position: absolute; right: 14px; top: 18px; bottom: 18px; width: 150px;
+  z-index: 1;
+}
+.sh-br {
+  position: absolute; width: 16px; height: 16px;
+  border-color: #5CE0B8; border-style: solid; border-width: 0;
+  opacity: 0.9;
+  animation: shBreathe 3.2s ease-in-out infinite;
+}
+.sh-br--tl { top: 0; left: 0; border-top-width: 2px; border-left-width: 2px; --bx: -1.5px; --by: -1.5px; }
+.sh-br--tr { top: 0; right: 0; border-top-width: 2px; border-right-width: 2px; --bx: 1.5px; --by: -1.5px; }
+.sh-br--bl { bottom: 0; left: 0; border-bottom-width: 2px; border-left-width: 2px; --bx: -1.5px; --by: 1.5px; }
+.sh-br--br { bottom: 0; right: 0; border-bottom-width: 2px; border-right-width: 2px; --bx: 1.5px; --by: 1.5px; }
+@keyframes shBreathe {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(var(--bx, 0), var(--by, 0)); }
+}
+/* focus-lock: brackets snap INWARD while firing */
+.sh--firing .sh-br { animation: none; transition: transform 120ms cubic-bezier(0.22,1,0.36,1); }
+.sh--firing .sh-br--tl { transform: translate(5px, 5px); }
+.sh--firing .sh-br--tr { transform: translate(-5px, 5px); }
+.sh--firing .sh-br--bl { transform: translate(5px, -5px); }
+.sh--firing .sh-br--br { transform: translate(-5px, -5px); }
+
+/* reticle */
+.sh-reticle {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(92, 224, 184, 0.45));
+}
+.sh-cross { position: absolute; background: rgba(92, 224, 184, 0.35); }
+.sh-cross--h { width: 58px; height: 1px; }
+.sh-cross--v { width: 1px; height: 58px; }
+
+/* the hunt — scan-line, ghost, and pill share ONE 5.6s clock */
+.sh-scan {
+  position: absolute; top: 4%; bottom: 4%; left: -3px; width: 2px;
+  background: linear-gradient(180deg, transparent, rgba(92,224,184,0.9), transparent);
+  box-shadow: 4px 0 12px rgba(92, 224, 184, 0.35), 12px 0 22px rgba(92, 224, 184, 0.12);
+  animation: shSweep 5.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shSweep {
+  0% { transform: translateX(0); opacity: 0; }
+  6% { opacity: 1; }
+  42% { transform: translateX(150px); opacity: 1; }
+  48%, 100% { transform: translateX(150px); opacity: 0; }
+}
+.sh--firing .sh-scan { animation: shSweepFast 160ms ease-in 1; }
+@keyframes shSweepFast {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(150px); opacity: 1; }
+}
+.sh-ghost {
+  position: absolute; left: 50%; top: 50%; width: 44px; height: 58px;
+  transform: translate(-58%, -52%);
+  opacity: 0;
+  animation: shGhost 5.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shGhost {
+  0%, 34% { opacity: 0; }
+  42%, 66% { opacity: 0.5; }
+  78%, 100% { opacity: 0; }
+}
+.sh-pill {
+  position: absolute; right: 14px; top: 22%;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  color: #070510;
+  background: rgba(92, 224, 184, 0.9);
+  border-radius: 999px; padding: 2px 7px;
+  opacity: 0;
+  /* linear, not steps(): steps(1, jump-none) is invalid CSS (jump-none
+     needs >=2 steps) and silently kills the whole animation. The
+     flicker lives in the keyframe stops themselves. */
+  animation: shPill 5.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes shPill {
+  0%, 45% { opacity: 0; }
+  47% { opacity: 0.9; }
+  50% { opacity: 0.25; }
+  52% { opacity: 0.9; }
+  64% { opacity: 0.9; }
+  70%, 100% { opacity: 0; }
+}
+
+/* border beam — matches the FLIP card's living edge */
+.sh-beam {
+  position: absolute; inset: 0; border-radius: 18px; padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  overflow: hidden; pointer-events: none;
+}
+.sh-beam-spin {
+  position: absolute; left: -55%; top: -160%; width: 210%; height: 420%;
+  background: conic-gradient(transparent 0deg 300deg, rgba(92,224,184,0.8) 332deg, transparent 360deg);
+  animation: shBeam 3s linear infinite;
+}
+@keyframes shBeam { to { transform: rotate(360deg); } }
+
+/* new-user pulse (pulsePrimary contract) */
+.sh-pulse-ring {
+  position: absolute; inset: 0; border-radius: 18px;
+  border: 1px solid rgba(92, 224, 184, 0.6);
+  opacity: 0; pointer-events: none;
+}
+.sh--pulse .sh-pulse-ring { animation: shPulse 2.6s ease-in-out infinite; }
+@keyframes shPulse {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.7; }
+}
+
+/* press flash — mint edge flash while firing */
+.sh-flash {
+  position: absolute; inset: 0; border-radius: 18px;
+  box-shadow: inset 0 0 0 1.5px rgba(92, 224, 184, 0.9), inset 0 0 24px rgba(92, 224, 184, 0.25);
+  opacity: 0; pointer-events: none;
+}
+.sh--firing .sh-flash { animation: shFlash 180ms ease-out 1; }
+@keyframes shFlash {
+  0% { opacity: 0; }
+  35% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.sh--firing { transform: scale(0.985); transition: transform 120ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* the paused instrument: brackets + reticle + frozen ghost + "$––"
+     mid-lock + mint edge. Complete and premium with zero motion. */
+  .sh, .sh * { animation: none !important; transition: none !important; }
+  .sh--firing { transform: none; }
+  .sh-scan, .sh-beam { display: none; }
+  .sh-grid { transform: none; }
+  .sh-ghost { opacity: 0.45; }
+  .sh-pill { opacity: 0.85; }
+  .sh-pulse-ring { opacity: 0; }
+}
+`;

@@ -824,8 +824,8 @@ function DashboardPage() {
   }, [refreshStats]);
 
   // Scan-count — fetched on mount and after every successful scan
-  // so the X/N counter under the ScanButtons reflects live state.
-  // Pro users get isPro: true and the counter hides. Wrapped in an
+  // so the non-Pro nudge under the scan hero reflects live state.
+  // Pro users get isPro: true and the nudge hides. Wrapped in an
   // async IIFE for the function-boundary the
   // react-hooks/set-state-in-effect rule wants.
   useEffect(() => {
@@ -1388,8 +1388,9 @@ function DashboardPage() {
 
         {/* 5. Scan zone — wrapper carries no marginTop. The single
             source of vertical space between the stats card and the
-            scan-button grid is the 14px marginTop on the grid
-            inside ScanButtons; the scan zone's old top hairline +
+            scan hero is the 14px marginTop on the hero root inside
+            ScanButtons (the old two-button grid carried it before the
+            single-hero rebuild); the scan zone's old top hairline +
             wrapper margin both got stripped so the two read as one
             connected action cluster instead of two separate
             floating elements. */}
@@ -1402,11 +1403,9 @@ function DashboardPage() {
             animationDelay: "120ms",
           }}
         >
-          <ScanButtons
-            onScanUpc={() => startScan("barcode")}
-            onAiVision={() => startScan("vision")}
-            todayScans={todayScans}
-          />
+          {/* ITEM mode — the exact param the old AI VISION button
+              passed; ScanOverlay's own toggle covers the rest. */}
+          <ScanButtons onScan={() => startScan("vision")} />
           {/* Flip-or-skip daily card — surfaces today's round + streak.
               Reads localStorage, no server dependency. */}
           <div style={{ marginTop: 16 }}>
