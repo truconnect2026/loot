@@ -97,7 +97,7 @@ function useShrinkOnScroll(enabled: boolean): boolean {
 
 function HomeIcon({ color }: { color: string }) {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
@@ -106,7 +106,7 @@ function HomeIcon({ color }: { color: string }) {
 
 function CompassIcon({ color }: { color: string }) {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx={12} cy={12} r={10} />
       <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
     </svg>
@@ -115,7 +115,7 @@ function CompassIcon({ color }: { color: string }) {
 
 function WrenchIcon({ color }: { color: string }) {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
     </svg>
   );
@@ -123,7 +123,7 @@ function WrenchIcon({ color }: { color: string }) {
 
 function UserIcon({ color }: { color: string }) {
   return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
       <circle cx={12} cy={7} r={4} />
     </svg>
@@ -132,7 +132,7 @@ function UserIcon({ color }: { color: string }) {
 
 function CameraIcon() {
   return (
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="#070510" strokeWidth={2.1} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="#070510" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
       <circle cx={12} cy={13} r={4} />
     </svg>
@@ -213,15 +213,20 @@ export default function TabBar() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
+.tb-nav { --tb-dur: 220ms; --tb-ease: cubic-bezier(0.4, 0, 0.2, 1); }
 .tb-pill {
   pointer-events: auto;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   border-radius: 32px;
-  /* Liquid glass tuned to the brand dark: alpha 0.76 never reads as a
-     hole, and blur stays in the house 12-14px band so scrolling content
-     behind it keeps 60fps. */
-  background: rgba(7, 5, 16, 0.76);
+  /* Liquid glass, alpha 0.82 + a soft inner scrim (transparent at the
+     specular top edge, darkening through the glyph band) so icons and
+     labels keep contrast even over bright mint content — the glass read
+     survives at the top, the legibility lives where the glyphs sit.
+     Blur stays at the house 13px. */
+  background:
+    linear-gradient(180deg, rgba(7, 5, 16, 0) 0%, rgba(7, 5, 16, 0.30) 45%, rgba(7, 5, 16, 0.42) 100%),
+    rgba(7, 5, 16, 0.82);
   -webkit-backdrop-filter: blur(13px) saturate(150%);
   backdrop-filter: blur(13px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -232,15 +237,22 @@ export default function TabBar() {
 }
 .tb-btn {
   -webkit-tap-highlight-color: transparent;
+  /* CONSTANT box in both states: the outer pill footprint never moves
+     (clearance pages depend on it), min-height never animates (it was
+     the clunk — a layout animation fighting a mismatched transform),
+     and the tap target is 52px in BOTH states. */
   min-height: 52px;
   padding: 9px 0 6px;
-  transition: color 160ms ease, min-height 220ms ease, padding 220ms ease;
+  transition: color var(--tb-dur) var(--tb-ease);
 }
-.tb-shrunk .tb-btn { min-height: 46px; padding: 6px 0 4px; }
-.tb-ico { display: flex; transition: transform 200ms cubic-bezier(0.2,1.3,0.4,1); }
+/* Shrink = compositor-only: icon + label scale down on ONE duration and
+   ONE easing. No layout properties animate, so it's a single glide. */
+.tb-ico { display: flex; transition: transform var(--tb-dur) var(--tb-ease); }
+.tb-lbl { display: block; transition: transform var(--tb-dur) var(--tb-ease); }
 .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px); }
-.tb-shrunk .tb-ico { transform: scale(0.95); }
-.tb-shrunk .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px) scale(0.95); }
+.tb-shrunk .tb-ico { transform: scale(0.92); }
+.tb-shrunk .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px) scale(0.92); }
+.tb-shrunk .tb-lbl { transform: scale(0.92); }
 .tb-dot {
   position: absolute; bottom: 2px; left: 50%; margin-left: -2px;
   width: 4px; height: 4px; border-radius: 50%; background: #5CE0B8;
@@ -251,9 +263,8 @@ export default function TabBar() {
 .tb-fab { transition: transform 120ms ease, filter 120ms ease; }
 .tb-fab:active { transform: scale(0.94); filter: brightness(0.94); }
 @media (prefers-reduced-motion: reduce) {
-  .tb-btn, .tb-ico, .tb-dot, .tb-fab, .tb-pill { transition: none !important; }
-  .tb-shrunk .tb-btn { min-height: 52px; padding: 9px 0 6px; }
-  .tb-shrunk .tb-ico { transform: none; }
+  .tb-btn, .tb-ico, .tb-lbl, .tb-dot, .tb-fab, .tb-pill { transition: none !important; }
+  .tb-shrunk .tb-ico, .tb-shrunk .tb-lbl { transform: none; }
 }
 `,
         }}
@@ -338,7 +349,7 @@ export default function TabBar() {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 4,
+                gap: 3,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -353,6 +364,7 @@ export default function TabBar() {
                 {tab.id === "account"  && <UserIcon color={color} />}
               </span>
               <span
+                className="tb-lbl"
                 style={{
                   fontFamily: "var(--font-space-mono, monospace)",
                   fontSize: 9,
