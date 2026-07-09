@@ -8,6 +8,14 @@ import { Eyebrow, FadeUp, SECTION_HEADLINE_SIZE,
 
 const faqData = [
   {
+    q: "is this just google lens?",
+    a: "no. lens tells you what a thing is. loot tells you what it sold for. it pulls real ebay sold listings, the actual final prices, not what people are asking. that's the number that decides a flip.",
+  },
+  {
+    q: "how accurate is it?",
+    a: "it's a range built from recent real solds, not a promise. condition, tag, and timing all move the number, so read it as a fast gut-check, not gospel. the final call is yours. it's there to kill the obvious mistakes and catch the obvious wins in about a second.",
+  },
+  {
     q: "what if i'm not even a 'real' flipper yet?",
     // "the map finds sales / alerts catch trends before they spike"
     // referenced unbuilt features — aligned to what actually ships.
