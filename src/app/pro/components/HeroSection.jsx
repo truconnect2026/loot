@@ -25,8 +25,8 @@ const HERO_STYLES = `
    quick 120ms scale + brightness dip. !important beats the atom's
    inline hover/press transform; anchor button only, zero checkout
    surface touched. */
-.hero-cta-row button { transition: transform 120ms ease, filter 120ms ease, box-shadow 0.15s ease-out, background 0.15s ease-out !important; }
-.hero-cta-row button:active { transform: scale(0.97) !important; filter: brightness(0.92); }
+.hero-cta-lockup button { transition: transform 120ms ease, filter 120ms ease, box-shadow 0.15s ease-out, background 0.15s ease-out !important; }
+.hero-cta-lockup button:active { transform: scale(0.97) !important; filter: brightness(0.92); }
 /* svh-fluid section padding with a vh fallback line (engines without svh
    must still get a bounded value, not a dropped declaration). */
 .pro-hero-section {
@@ -221,24 +221,32 @@ export default function HeroSection() {
       </FadeUp>
 
       <FadeUp delay={0.28}>
-        {/* Grouped CTA + price block — subtle mint outline ties them as one unit
-            so the eye reads "$14.99 = the price to claim" rather than two
-            disconnected components. */}
+        {/* CTA lockup — button spans the card, price tucked directly
+            beneath, even padding all four sides. The old class name
+            ("hero-cta-row") is retired on purpose: a shared module rule
+            flipped that row to a column at ≤640px, turning its 24px row
+            gap into a vertical hole and leaving the fit-content button
+            floating top-left in an oversized outline. This stack IS the
+            designed unit at every width — no media override applies. */}
         <div
-          className="hero-cta-row"
+          className="hero-cta-lockup"
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 24,
-            flexWrap: "wrap",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "stretch",
+            gap: 10,
+            width: "100%",
+            maxWidth: 340,
+            boxSizing: "border-box",
             marginBottom: 20,
-            padding: "8px 8px 8px 0",
+            padding: 10,
             border: "1px solid rgba(92,224,184,0.2)",
-            borderRadius: 10,
+            borderRadius: 14,
           }}
         >
           <CTAButton
             variant="primary"
+            style={{ width: "100%", alignSelf: "stretch" }}
             onClick={() => {
               track("pro_hero_cta_clicked", { location: "hero", plan_target: "pricing" });
               document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
@@ -249,7 +257,7 @@ export default function HeroSection() {
 
           <div
             className="hero-price-stack"
-            style={{ display: "flex", alignItems: "baseline", gap: 4, padding: "0 8px" }}
+            style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}
           >
             <span
               style={{
