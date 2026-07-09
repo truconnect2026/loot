@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDailyItems } from "../../app/flip/lib/dailySeed.js";
 
 /**
@@ -59,6 +59,22 @@ export default function FlipDailyCard() {
   const [teaserImg, setTeaserImg] = useState<string | null>(null);
   const [imgBroken, setImgBroken] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // Off-screen: pause EVERY animation on the collectible via one class
+  // (animation-play-state) — Home also runs the entrance stagger and the
+  // nav blur; this card must cost nothing while scrolled away.
+  const dropRef = useRef<HTMLDivElement>(null);
+  const [dropInView, setDropInView] = useState(true);
+
+  useEffect(() => {
+    const el = dropRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setDropInView(entry.isIntersecting),
+      { threshold: 0.05 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const readState = () => {
     try {
@@ -154,35 +170,66 @@ export default function FlipDailyCard() {
         )}
       </div>
 
-      {/* The drop card — face-down blurred peek (A) / settled reveal (B).
-          Foreground depth layer; the card body recedes behind it. */}
+      {/* The drop card — a holographic mystery collectible (A) that
+          resolves to the settled crisp item (B). Foreground depth layer;
+          all decorative layers are gated to State A and pause entirely
+          when the card leaves the viewport. */}
       <div
+        ref={dropRef}
         className={
           "fdc-drop" +
           (today.played ? " fdc-drop--settled" : " fdc-drop--idle") +
-          (leaving ? " fdc-drop--flip" : "")
+          (leaving ? " fdc-drop--flip" : "") +
+          (dropInView ? "" : " fdc-drop--paused")
         }
         aria-hidden="true"
       >
+        {/* object behind frosted glass — high-contrast silhouette, never
+            a smear, never enough detail to infer the flip/skip call */}
         {showPeek ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={teaserImg}
-            alt=""
-            className={"fdc-drop-img" + (today.played ? "" : " fdc-drop-img--peek")}
-            onError={() => setImgBroken(true)}
-            draggable={false}
-          />
-        ) : (
-          <div className="fdc-drop-back">
-            <svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true">
-              <circle cx="20" cy="20" r="8" fill="none" stroke="#5CE0B8" strokeWidth="2" />
-              <ellipse cx="20" cy="20" rx="18" ry="5" fill="none" stroke="#5CE0B8" strokeWidth="1.5" transform="rotate(-23 20 20)" />
-            </svg>
+          <div className="fdc-peek">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={teaserImg}
+              alt=""
+              className={"fdc-peek-img" + (today.played ? " fdc-peek-img--revealed" : "")}
+              onError={() => setImgBroken(true)}
+              draggable={false}
+            />
+            {!today.played && <div className="fdc-peek-glass" />}
           </div>
+        ) : (
+          <div className="fdc-drop-back" />
         )}
-        {!today.played && <div className="fdc-drop-q">?</div>}
-        {!today.played && <div className="fdc-drop-sheen" />}
+
+        {!today.played && (
+          <>
+            {/* foil watermark — embossed Saturn back, static premium base */}
+            <svg className="fdc-holo-saturn" width="64" height="64" viewBox="0 0 40 40" aria-hidden="true">
+              <circle cx="20" cy="20" r="8" fill="none" stroke="rgba(92,224,184,0.30)" strokeWidth="1.6" />
+              <ellipse cx="20" cy="20" rx="18" ry="5" fill="none" stroke="rgba(92,224,184,0.22)" strokeWidth="1.2" transform="rotate(-23 20 20)" />
+              <ellipse cx="20" cy="20" rx="14" ry="3.6" fill="none" stroke="rgba(59,130,246,0.14)" strokeWidth="1" transform="rotate(-23 20 20)" />
+            </svg>
+            {/* iridescent holo foil — the signature drift */}
+            <div className="fdc-holo-foil" />
+            {/* inner vignette for depth */}
+            <div className="fdc-vignette" />
+            {/* cosmic motes */}
+            <div className="fdc-motes">
+              <i /><i /><i /><i /><i />
+            </div>
+            {/* analyzing scan-line */}
+            <div className="fdc-scanline" />
+            {/* the ? — halo breathe + rare decode flicker */}
+            <div className="fdc-q-halo" />
+            <div className="fdc-drop-q">?</div>
+            <div className="fdc-q-glitch">?</div>
+            {/* living border beam (ring-masked rotating conic) */}
+            <div className="fdc-beam"><div className="fdc-beam-spin" /></div>
+            {/* flip-handoff light streak */}
+            <div className="fdc-flip-streak" />
+          </>
+        )}
         {today.played && <div className="fdc-drop-check">✓</div>}
       </div>
       </div>
@@ -236,15 +283,25 @@ const STYLES = `
 }
 .fdc-count-digits { font-variant-numeric: tabular-nums; color: #5CE0B8; }
 
-/* ── Drop-card teaser ── */
+/* ══ Holographic drop-card collectible ══
+   Layer order (back → front): peek object / glass scrim / saturn foil
+   watermark / holo foil drift / vignette / motes / scan-line / ?-halo /
+   ? / glitch copy / border beam / flip streak.
+   EVERY animation is transform/opacity/filter-only; .fdc-drop--paused
+   (set by IntersectionObserver) freezes the whole stack off-screen. */
 .fdc-drop {
   position: relative; z-index: 1; flex-shrink: 0;
   width: 92px; height: 122px;
   border-radius: 12px; overflow: hidden;
-  border: 1px solid rgba(92,224,184,0.45);
+  border: 1px solid rgba(92,224,184,0.55);
   background: linear-gradient(165deg, #101426 0%, #0a0d1a 100%);
-  box-shadow: 0 6px 18px -4px rgba(92,224,184,0.30), inset 0 1px 0 rgba(255,255,255,0.12);
+  /* floats above the card body: lifted drop shadow + rim light */
+  box-shadow:
+    0 10px 22px -6px rgba(0,0,0,0.55),
+    0 6px 18px -4px rgba(92,224,184,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.14);
 }
+.fdc-drop--paused, .fdc-drop--paused * { animation-play-state: paused !important; }
 .fdc-drop--idle { animation: fdcFloat 3.2s ease-in-out infinite; will-change: transform; }
 @keyframes fdcFloat {
   0%, 100% { transform: rotate(-1.5deg) translateY(0); }
@@ -255,23 +312,158 @@ const STYLES = `
   to { transform: perspective(400px) rotateY(88deg) scale(0.92); opacity: 0.4; }
 }
 .fdc-drop--settled { box-shadow: 0 4px 12px -4px rgba(92,224,184,0.18), inset 0 1px 0 rgba(255,255,255,0.10); }
-.fdc-drop-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.fdc-drop-img--peek { filter: blur(14px) saturate(1.1) brightness(0.75); transform: scale(1.35); }
-.fdc-drop-back { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: 0.55; }
+
+/* object behind frosted glass — contrast-forward, mint-tinted, dark */
+.fdc-peek { position: absolute; inset: 0; }
+.fdc-peek-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: blur(9px) saturate(1.2) contrast(1.3) brightness(0.9);
+  transform: scale(1.3);
+}
+/* State A idle: the object drifts on its own phase inside the card's
+   tilt — real depth between glass and object. */
+.fdc-drop--idle .fdc-peek-img { animation: fdcParallax 3.2s ease-in-out infinite; }
+@keyframes fdcParallax {
+  0%, 100% { transform: scale(1.3) translate(2px, 1px); }
+  50% { transform: scale(1.3) translate(-2px, -2px); }
+}
+.fdc-peek-img--revealed { filter: none; transform: none; animation: none; }
+.fdc-peek-glass {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(160deg, rgba(10, 22, 26, 0.42) 0%, rgba(7, 5, 16, 0.72) 100%),
+    rgba(92, 224, 184, 0.06);
+  box-shadow: inset 0 0 18px rgba(7, 5, 16, 0.55);
+}
+.fdc-drop-back {
+  position: absolute; inset: 0;
+  background: linear-gradient(165deg, #101426 0%, #0a0d1a 100%);
+}
+
+/* saturn foil watermark — embossed, static premium base */
+.fdc-holo-saturn {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) rotate(-8deg);
+  opacity: 0.8; pointer-events: none;
+}
+/* iridescent foil — brand cosmos colors, screen-blended, slow drift.
+   Oversized layer moved by transform only. */
+.fdc-holo-foil {
+  position: absolute; inset: -70%;
+  background: linear-gradient(115deg,
+    transparent 24%,
+    rgba(92, 224, 184, 0.20) 36%,
+    rgba(59, 130, 246, 0.18) 46%,
+    rgba(107, 70, 193, 0.20) 56%,
+    rgba(245, 197, 24, 0.10) 66%,
+    transparent 78%);
+  mix-blend-mode: screen;
+  animation: fdcHolo 4.8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes fdcHolo {
+  from { transform: translate3d(-14%, -10%, 0); }
+  to { transform: translate3d(14%, 10%, 0); }
+}
+.fdc-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(7, 5, 16, 0.5) 100%);
+  pointer-events: none;
+}
+/* cosmic motes — whisper-subtle drifting stars, one shared timeline */
+.fdc-motes { position: absolute; inset: 0; pointer-events: none; }
+.fdc-motes i {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  animation: fdcMote 6.4s ease-in-out infinite;
+  opacity: 0.2;
+}
+.fdc-motes i:nth-child(1) { left: 18%; top: 22%; animation-delay: 0s; }
+.fdc-motes i:nth-child(2) { left: 74%; top: 16%; background: rgba(92,224,184,0.8); animation-delay: -1.4s; }
+.fdc-motes i:nth-child(3) { left: 30%; top: 68%; animation-delay: -2.8s; }
+.fdc-motes i:nth-child(4) { left: 66%; top: 78%; background: rgba(92,224,184,0.8); animation-delay: -4.2s; }
+.fdc-motes i:nth-child(5) { left: 48%; top: 38%; animation-delay: -5.6s; }
+@keyframes fdcMote {
+  0%, 100% { transform: translate(0, 0); opacity: 0.15; }
+  50% { transform: translate(3px, -5px); opacity: 0.5; }
+}
+/* analyzing scan-line — vertical mint sweep */
+.fdc-scanline {
+  position: absolute; left: 6%; right: 6%; top: -4px; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(92,224,184,0.75), transparent);
+  box-shadow: 0 0 8px rgba(92,224,184,0.5);
+  animation: fdcScan 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fdcScan {
+  0%, 12% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  88%, 100% { transform: translateY(126px); opacity: 0; }
+}
+/* the ? — static glow always; halo breathes; rare decode flicker */
+.fdc-q-halo {
+  position: absolute; left: 50%; top: 50%; width: 56px; height: 56px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(92,224,184,0.30) 0%, transparent 70%);
+  animation: fdcQBreathe 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fdcQBreathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
 .fdc-drop-q {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-space-mono), monospace; font-weight: 700; font-size: 30px;
-  color: rgba(92,224,184,0.9); text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  color: rgba(92,224,184,0.95);
+  text-shadow: 0 0 14px rgba(92,224,184,0.55), 0 2px 12px rgba(0,0,0,0.6);
 }
-.fdc-drop-sheen {
-  position: absolute; inset: -40% -60%;
-  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.14) 50%, transparent 58%);
-  animation: fdcSheen 3.2s ease-in-out infinite;
+/* decode flicker: a blue-shifted twin flashes for ~4% of a 6.4s loop —
+   teases the reveal, never shows it */
+.fdc-q-glitch {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-space-mono), monospace; font-weight: 700; font-size: 30px;
+  color: rgba(59, 130, 246, 0.9);
+  opacity: 0; pointer-events: none;
+  animation: fdcGlitch 6.4s steps(2, jump-none) infinite;
+}
+@keyframes fdcGlitch {
+  0%, 92.9% { opacity: 0; transform: translate(0, 0) skewX(0); }
+  93% { opacity: 0.8; transform: translate(2px, -1px) skewX(-8deg); }
+  94.5% { opacity: 0.6; transform: translate(-2px, 1px) skewX(6deg); }
+  96%, 100% { opacity: 0; transform: translate(0, 0) skewX(0); }
+}
+/* living border beam — static ring mask, rotating conic inside */
+.fdc-beam {
+  position: absolute; inset: 0; border-radius: 12px; padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fdc-beam-spin {
+  position: absolute; left: -55%; top: -55%; width: 210%; height: 210%;
+  background: conic-gradient(transparent 0deg 292deg, rgba(92,224,184,0.9) 326deg, transparent 360deg);
+  animation: fdcBeam 3s linear infinite;
+}
+@keyframes fdcBeam {
+  to { transform: rotate(360deg); }
+}
+/* flip handoff — light streak sweeps as the card rotates away */
+.fdc-flip-streak {
+  position: absolute; inset: -30% -70%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.35) 50%, rgba(92,224,184,0.25) 54%, transparent 64%);
+  transform: translateX(-70%);
+  opacity: 0;
   pointer-events: none;
 }
-@keyframes fdcSheen {
-  0%, 55%, 100% { transform: translateX(-45%); }
-  80% { transform: translateX(45%); }
+.fdc-drop--flip .fdc-flip-streak { animation: fdcStreak 240ms ease-out both; }
+@keyframes fdcStreak {
+  from { transform: translateX(-70%); opacity: 1; }
+  to { transform: translateX(70%); opacity: 0; }
 }
 .fdc-drop-check {
   position: absolute; top: 6px; right: 6px;
@@ -304,7 +496,13 @@ const STYLES = `
   .fdc-btn, .fdc-arr { transition: none; }
   .fdc-btn:active { transform: none; filter: none; }
   .fdc-btn:hover .fdc-arr, .fdc-btn:active .fdc-arr { transform: none; }
-  .fdc-drop--idle, .fdc-drop--flip { animation: none; }
-  .fdc-drop-sheen { animation: none; display: none; }
+  /* kill every decorative motion layer; the static base (foil-watermark
+     saturn back, mint rim, glowing ?, glass peek, float shadow) IS the
+     shipped look under reduced motion — complete, nothing broken */
+  .fdc-drop--idle, .fdc-drop--flip,
+  .fdc-holo-foil, .fdc-peek-img, .fdc-q-halo, .fdc-q-glitch,
+  .fdc-beam-spin, .fdc-motes i, .fdc-flip-streak { animation: none !important; }
+  .fdc-scanline, .fdc-motes, .fdc-beam, .fdc-q-glitch { display: none; }
+  .fdc-q-halo { opacity: 0.7; }
 }
 `;
