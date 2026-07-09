@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../lib/colors.js";
 import { CheckIcon, CoinMark } from "./atoms.jsx";
 import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
@@ -17,15 +17,19 @@ import { PyrexBowl } from "../../marketing-screens/_frame";
  * tree, Reduce-Motion devices hydrated into a DIFFERENT structure than
  * the server painted. That divergence class is dead: same tree, always.
  *
- * Loop (~6.6s), transform/opacity only:
- *   frame (0.6s) → sweep (0.7s) → assemble (1.4s) → hold (3.5s) → reset (0.4s)
- * Weighted so the fully-assembled verdict owns ≥50% of the loop — the
- * empty viewfinder is a beat, not the show.
+ * INTERACTIVE (tap to scan): the old forever-loop is gone. One trigger
+ * function — runScan() — plays the SAME frame→sweep→assemble sequence
+ * (same phases, same durations, same CSS keyframes) and terminates at
+ * "hold", where the verdict stays until the visitor taps again ("reset"
+ * bridges held→fresh scan on replay). It is called from exactly two
+ * places: first-scroll-into-view autoplay (once), and taps on the
+ * viewfinder (the whole phone screen is the tap target). Mid-animation
+ * taps are debounced away, not queued.
  *
  * Visibility tracking is local to this file (not the shared useInView,
- * which is a one-shot "seen once" hook and can't report going back out of
- * view) so the loop can pause off-screen and resume on-screen without
- * touching anything shared.
+ * which is a one-shot "seen once" hook and can't report going back out
+ * of view) so the idle affordance pulse pauses off-screen and an
+ * interrupted autoplay re-arms on re-entry.
  */
 
 const PHASES = ["frame", "sweep", "assemble", "hold", "reset"];
@@ -55,6 +59,11 @@ const STYLES = `
 @keyframes vclBracketPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 .vcl-bracket { opacity: 0.5; transition: opacity 0.3s ease; }
 .vcl-bracket.vcl-active { animation: vclBracketPulse 0.35s ease-in-out 2; }
+/* idle tap affordance — gentle, transform/opacity only, class-gated on
+   in-view + idle + motion-ok so it costs nothing off-screen */
+.vcl-bracket.vcl-idle { animation: vclBracketPulse 2.2s ease-in-out infinite; }
+@keyframes vclTapPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.vcl-tap-label { animation: vclTapPulse 2.2s ease-in-out infinite; }
 `;
 
 /* Live, continuously-updating visibility tracker — local to this file.
@@ -73,33 +82,6 @@ function useLiveInView() {
     return () => obs.disconnect();
   }, []);
   return [ref, inView];
-}
-
-/* Advances through PHASES on a timer chain for as long as `active` is
-   true; clears all pending timers (and stops burning cycles) the moment
-   `active` goes false. Resuming restarts cleanly from "frame". */
-function usePhaseLoop(active) {
-  const [phase, setPhase] = useState("frame");
-  useEffect(() => {
-    if (!active) return;
-    let cancelled = false;
-    let idx = 0;
-    let timer = null;
-    const tick = () => {
-      if (cancelled) return;
-      setPhase(PHASES[idx]);
-      timer = setTimeout(() => {
-        idx = (idx + 1) % PHASES.length;
-        tick();
-      }, DURATIONS[PHASES[idx]]);
-    };
-    tick();
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-    };
-  }, [active]);
-  return active ? phase : "frame";
 }
 
 /* Numbers start counting 250ms into "assemble" and settle FAST (550ms —
@@ -144,7 +126,7 @@ function useCountUp(target, phase, reduced) {
   return reduced ? target : value;
 }
 
-function Bracket({ corner, pulse }) {
+function Bracket({ corner, pulse, idle }) {
   const size = 18;
   const stroke = 2;
   const inset = 6;
@@ -157,7 +139,7 @@ function Bracket({ corner, pulse }) {
   return (
     <div
       aria-hidden="true"
-      className={`vcl-bracket${pulse ? " vcl-active" : ""}`}
+      className={`vcl-bracket${pulse ? " vcl-active" : ""}${idle ? " vcl-idle" : ""}`}
       style={{ position: "absolute", width: size, height: size, ...pos }}
     />
   );
@@ -186,18 +168,90 @@ function Reveal({ shown, delayMs = 0, mode = "fade", reduced, children }) {
 export default function VerdictCardLive() {
   const reduced = usePrefersReducedMotion();
   const [rootRef, inView] = useLiveInView();
-  const phase = usePhaseLoop(!reduced && inView);
+  // Motion path: "idle" at rest; runScan() walks the SAME phase chain
+  // the old loop used, then parks at "hold" until the next tap.
+  const [phase, setPhase] = useState("idle");
+  // Reduced path: static verdict by default; tap toggles the static
+  // idle viewfinder back in — zero timers, zero motion, ever.
+  const [reducedShown, setReducedShown] = useState(true);
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+  const runningRef = useRef(false);
+  const autoplayedRef = useRef(false);
+  const timersRef = useRef([]);
+
+  // THE single source of truth for the sequence — autoplay and taps both
+  // call this; nothing else advances the phase machine.
+  const runScan = useCallback(() => {
+    if (runningRef.current) return; // debounce: mid-animation taps ignored
+    runningRef.current = true;
+    // Replays from a held verdict crossfade back through "reset" first —
+    // the same 400ms bridge the old loop used, no new animation logic.
+    const seq = phaseRef.current === "hold" ? ["reset", "frame", "sweep", "assemble", "hold"] : ["frame", "sweep", "assemble", "hold"];
+    let acc = 0;
+    seq.forEach((ph, i) => {
+      timersRef.current.push(
+        setTimeout(() => {
+          setPhase(ph);
+          if (i === seq.length - 1) runningRef.current = false;
+        }, acc),
+      );
+      acc += DURATIONS[ph];
+    });
+  }, []);
+
+  // First-view autoplay: run the sequence ONCE so passive viewers see it
+  // work. If the visitor scrolls away mid-run, cancel cleanly and re-arm
+  // (they never saw the verdict); once it completes, the verdict holds
+  // and re-entries do NOT replay.
+  useEffect(() => {
+    if (reduced) return;
+    if (!inView) {
+      if (runningRef.current) {
+        timersRef.current.forEach(clearTimeout);
+        timersRef.current = [];
+        runningRef.current = false;
+        setPhase("idle");
+        autoplayedRef.current = false;
+      }
+      return;
+    }
+    if (!autoplayedRef.current) {
+      autoplayedRef.current = true;
+      const t = setTimeout(runScan, 450);
+      timersRef.current.push(t);
+    }
+  }, [inView, reduced, runScan]);
+
+  // unmount safety
+  useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
+
+  const handleTap = () => {
+    if (reduced) {
+      setReducedShown((v) => !v); // static toggle: verdict ↔ idle
+      return;
+    }
+    runScan();
+  };
+
   const low = useCountUp(75, phase, reduced);
   const high = useCountUp(95, phase, reduced);
 
-  // Reduced motion pins the SAME tree to its assembled end-state — no
-  // twin component, no structural swap (see header comment).
-  const effPhase = reduced ? "hold" : phase;
-  const viewfinderShown = effPhase === "frame" || effPhase === "sweep" || effPhase === "reset";
+  const effPhase = reduced ? (reducedShown ? "hold" : "idle") : phase;
+  const viewfinderShown =
+    effPhase === "idle" || effPhase === "frame" || effPhase === "sweep" || effPhase === "reset";
   const verdictShown = effPhase === "assemble" || effPhase === "hold";
+  const idle = effPhase === "idle";
+  const held = effPhase === "hold" && !runningRef.current;
 
   return (
-    <div ref={rootRef} style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
+    <div
+      ref={rootRef}
+      onClick={handleTap}
+      role="button"
+      aria-label={held ? "scan again" : "tap to scan"}
+      style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden", cursor: "pointer" }}
+    >
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
 
       {/* App-header skin — mirrors the dashboard header (src/app/app/
@@ -283,7 +337,7 @@ export default function VerdictCardLive() {
           position: "absolute",
           inset: 0,
           opacity: viewfinderShown ? 1 : 0.85,
-          transition: `opacity 400ms ${EASE}`,
+          transition: reduced ? "none" : `opacity 400ms ${EASE}`,
           willChange: "opacity",
           display: "flex",
           flexDirection: "column",
@@ -303,7 +357,7 @@ export default function VerdictCardLive() {
             justifyContent: "center",
             transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-6%) scale(0.38)",
             transformOrigin: "center top",
-            transition: `transform 420ms ${EASE}`,
+            transition: reduced ? "none" : `transform 420ms ${EASE}`,
             willChange: "transform",
           }}
         >
@@ -328,10 +382,10 @@ export default function VerdictCardLive() {
           {/* faint reticle crosshairs — static composition, no motion */}
           <div aria-hidden="true" style={{ position: "absolute", left: "8%", right: "8%", top: "50%", height: 1, background: "rgba(92,224,184,0.08)" }} />
           <div aria-hidden="true" style={{ position: "absolute", top: "8%", bottom: "8%", left: "50%", width: 1, background: "rgba(92,224,184,0.08)" }} />
-          <Bracket corner="tl" pulse={phase === "sweep"} />
-          <Bracket corner="tr" pulse={phase === "sweep"} />
-          <Bracket corner="bl" pulse={phase === "sweep"} />
-          <Bracket corner="br" pulse={phase === "sweep"} />
+          <Bracket corner="tl" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
+          <Bracket corner="tr" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
+          <Bracket corner="bl" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
+          <Bracket corner="br" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
 
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: "min(58%, 170px)" }}>
@@ -340,7 +394,7 @@ export default function VerdictCardLive() {
           </div>
 
           {/* Scan sweep bar */}
-          <div className={`vcl-sweep-track${phase === "sweep" ? " vcl-active" : ""}`} style={{ position: "absolute", inset: 0 }}>
+          <div className={`vcl-sweep-track${effPhase === "sweep" ? " vcl-active" : ""}`} style={{ position: "absolute", inset: 0 }}>
             <div
               style={{
                 position: "absolute",
@@ -356,7 +410,7 @@ export default function VerdictCardLive() {
 
           {/* Capture flash */}
           <div
-            className={`vcl-flash${phase === "sweep" ? " vcl-active" : ""}`}
+            className={`vcl-flash${effPhase === "sweep" ? " vcl-active" : ""}`}
             style={{ position: "absolute", inset: 0, background: "#fff", pointerEvents: "none" }}
             aria-hidden="true"
           />
@@ -371,12 +425,40 @@ export default function VerdictCardLive() {
             textTransform: "uppercase",
             color: "rgba(92,224,184,0.55)",
             opacity: viewfinderShown ? 1 : 0,
-            transition: `opacity 300ms ${EASE}`,
+            transition: reduced ? "none" : `opacity 300ms ${EASE}`,
           }}
+          className={idle && inView && !reduced ? "vcl-tap-label" : ""}
         >
-          {phase === "sweep" ? "analyzing…" : "scanning…"}
+          {idle ? "tap to scan" : effPhase === "sweep" ? "analyzing…" : "scanning…"}
         </div>
         </div>
+      </div>
+
+      {/* Replay affordance — appears once the verdict holds. Small pill
+          only; the TAP TARGET is the whole screen (root onClick). Under
+          reduced motion it reads "tap to reset" and toggles statically. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 50,
+          right: 12,
+          zIndex: 4,
+          fontFamily: "var(--font-mono), monospace",
+          fontSize: 9,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          color: C.mint,
+          border: "1px solid rgba(92,224,184,0.4)",
+          borderRadius: 999,
+          padding: "4px 9px",
+          background: "rgba(7,5,16,0.6)",
+          opacity: held ? 1 : 0,
+          transition: reduced ? "none" : `opacity 300ms ${EASE} 250ms`,
+          pointerEvents: "none",
+        }}
+      >
+        {reduced ? "tap to reset" : "↻ scan again"}
       </div>
 
       {/* Verdict layer — phases 3 & 4, staggered per-element reveal.
@@ -396,7 +478,7 @@ export default function VerdictCardLive() {
           maxHeight: "72%",
           opacity: verdictShown ? 1 : 0,
           transform: verdictShown ? "translateY(0)" : "translateY(14px)",
-          transition: `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
+          transition: reduced ? "none" : `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
           willChange: "opacity, transform",
           display: "flex",
           flexDirection: "column",
