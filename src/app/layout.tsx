@@ -83,6 +83,10 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // Without viewport-fit=cover, iOS resolves env(safe-area-inset-bottom)
+  // to 0 in the standalone PWA — the tab bar sat flush against the screen
+  // edge and its bottom ~34px landed in the home-indicator gesture zone.
+  viewportFit: "cover",
 };
 
 // Film-grain SVG overlay — fractal noise desaturated to grayscale.

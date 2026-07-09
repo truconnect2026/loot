@@ -124,14 +124,42 @@ export default function TabBar() {
         left: 0,
         right: 0,
         zIndex: 50,
-        background: "#070510",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.5)",
+        // Glass bar: blurred brand-dark with a mint-tinted hairline and a
+        // soft lift shadow — separation without a heavy border.
+        background: "rgba(7,5,16,0.92)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        borderTop: "1px solid rgba(92,224,184,0.10)",
+        boxShadow: "0 -8px 28px rgba(0,0,0,0.38)",
         display: "grid",
         gridTemplateColumns: "repeat(5, 1fr)",
-        paddingBottom: "env(safe-area-inset-bottom)",
+        // Explicit 0px fallback: devices without an inset get no gap;
+        // devices with a home indicator get true clearance (requires the
+        // viewport-fit=cover set in app/layout.tsx to resolve non-zero).
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+.tb-btn { -webkit-tap-highlight-color: transparent; transition: color 160ms ease; }
+.tb-ico { display: flex; transition: transform 160ms cubic-bezier(0.2,1.3,0.4,1); }
+.tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px); }
+.tb-dot {
+  position: absolute; bottom: 5px; left: 50%; margin-left: -2px;
+  width: 4px; height: 4px; border-radius: 50%; background: #5CE0B8;
+  opacity: 0; transform: scale(0.4);
+  transition: opacity 160ms ease, transform 160ms cubic-bezier(0.2,1.3,0.4,1);
+}
+.tb-btn[aria-current="page"] .tb-dot { opacity: 1; transform: scale(1); }
+.tb-fab { transition: transform 120ms ease, filter 120ms ease; }
+.tb-fab:active { transform: scale(0.94); filter: brightness(0.94); }
+@media (prefers-reduced-motion: reduce) {
+  .tb-btn, .tb-ico, .tb-dot, .tb-fab { transition: none !important; }
+}
+`,
+        }}
+      />
       {TABS.map((tab) => {
         // ── Center SCAN button — elevated circular mint ──────────────
         if (tab.id === "scan") {
@@ -143,24 +171,29 @@ export default function TabBar() {
                 alignItems: "center",
                 justifyContent: "center",
                 paddingTop: 6,
-                paddingBottom: 10,
+                paddingBottom: 12,
               }}
             >
               <button
+                className="tb-fab"
                 onClick={() => router.push("/app?scan=shelf")}
                 aria-label="Scan shelf"
                 style={{
-                  width: 52,
-                  height: 52,
+                  width: 54,
+                  height: 54,
                   borderRadius: "50%",
-                  background: "#5CE0B8",
-                  border: "none",
+                  // Same gradient language as the app's primary CTAs; the
+                  // bg-colored ring lifts it crisply off page content, and
+                  // the tight+soft dual glow reads charged, not blown out.
+                  background: "linear-gradient(180deg, #6FE5C0 0%, #4FD1A5 100%)",
+                  border: "3px solid #070510",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow: "0 2px 16px rgba(92,224,184,0.45)",
-                  marginTop: -16,
+                  boxShadow:
+                    "0 2px 8px rgba(92,224,184,0.35), 0 8px 26px rgba(92,224,184,0.22), inset 0 1px 0 rgba(255,255,255,0.25)",
+                  marginTop: -18,
                   flexShrink: 0,
                   position: "relative",
                 }}
@@ -179,7 +212,9 @@ export default function TabBar() {
                     }}
                   />
                 )}
-                <CameraIcon />
+                <span style={{ display: "flex", marginTop: -1 }}>
+                  <CameraIcon />
+                </span>
               </button>
             </div>
           );
@@ -187,32 +222,41 @@ export default function TabBar() {
 
         // ── Standard tab button ─────────────────────────────────────
         const isActive = active === tab.id;
-        const color = isActive ? "#5CE0B8" : "#3f3853";
+        // Inactive lifted from the old #3f3853 (near-invisible on #070510)
+        // to a calm, legible muted violet; active is unmistakable mint.
+        const color = isActive ? "#5CE0B8" : "#756D8C";
 
         return (
           <button
             key={tab.id}
+            className="tb-btn"
             onClick={() => tab.route && router.push(tab.route)}
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
             style={{
+              position: "relative",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              gap: 3,
-              padding: "8px 0 10px",
+              gap: 4,
+              // ≥52px tap target — taller than the icon+label visual, so
+              // thumbs land on the button, never the home indicator.
+              minHeight: 52,
+              padding: "9px 0 12px",
               background: "none",
               border: "none",
               cursor: "pointer",
+              touchAction: "manipulation",
               color,
-              transition: "color 150ms ease",
             }}
           >
-            {tab.id === "home"     && <HomeIcon color={color} />}
-            {tab.id === "sourcing" && <CompassIcon color={color} />}
-            {tab.id === "tools"    && <WrenchIcon color={color} />}
-            {tab.id === "account"  && <UserIcon color={color} />}
+            <span className="tb-ico">
+              {tab.id === "home"     && <HomeIcon color={color} />}
+              {tab.id === "sourcing" && <CompassIcon color={color} />}
+              {tab.id === "tools"    && <WrenchIcon color={color} />}
+              {tab.id === "account"  && <UserIcon color={color} />}
+            </span>
             <span
               style={{
                 fontFamily: "var(--font-space-mono, monospace)",
@@ -225,6 +269,7 @@ export default function TabBar() {
             >
               {tab.label}
             </span>
+            <span className="tb-dot" aria-hidden="true" />
           </button>
         );
       })}
