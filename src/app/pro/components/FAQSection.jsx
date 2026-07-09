@@ -23,7 +23,7 @@ const faqData = [
   },
   {
     q: "what if i don't like it?",
-    a: "60-day full refund, no questions. you can also cancel anytime from settings. no chat, no email, no friction. you're in control.",
+    a: "cancel anytime from settings, and there's a 60-day refund window if it's not for you.",
   },
   {
     q: "why subscription vs. one-time?",

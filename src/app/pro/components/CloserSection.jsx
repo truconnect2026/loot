@@ -153,7 +153,7 @@ export default function CloserSection({ onCTA }) {
             margin: 0,
           }}
         >
-          $14.99/MO · $99.99/YR · CANCEL ANYTIME · 60-DAY REFUND
+          $14.99/MO · $99.99/YR · CANCEL ANYTIME
         </p>
       </FadeUp>
       </SectionShell>

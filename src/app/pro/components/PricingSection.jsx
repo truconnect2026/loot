@@ -234,19 +234,6 @@ export default function PricingSection({ onCTA }) {
                   CLAIM ANNUAL
                 </CTAButton>
               </div>
-              <p
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.3)",
-                  textAlign: "center",
-                  marginTop: 8,
-                }}
-              >
-                60-DAY REFUND · NO QUESTIONS
-              </p>
             </div>
           </FadeUp>
 

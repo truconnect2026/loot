@@ -289,9 +289,6 @@ export default function HeroSection() {
           }}
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day money-back, no questions
-          </span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
           </span>
         </div>

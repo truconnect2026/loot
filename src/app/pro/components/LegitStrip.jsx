@@ -7,9 +7,9 @@ import { getPuzzleNumber } from "../../flip/lib/dailySeed.js";
 
 /**
  * Legit signal — a quiet mono band between the closer and the footer.
- * True facts only: who builds this, how checkout is processed, the
- * real refund terms (60-day, matching the FAQ/pricing/closer copy and
- * the Digistore product setting), and a link to the free daily game,
+ * True facts only: who builds this, how checkout is processed, a
+ * plain refund-policy link (terms live on /refund-policy — the sales
+ * page carries the legal minimum), and a link to the free daily game,
  * which is the living proof the product is real. The puzzle number
  * comes from the same daily-index helper the game itself uses
  * (src/app/flip/lib/dailySeed.js) — computed after mount because this
@@ -20,8 +20,6 @@ import { getPuzzleNumber } from "../../flip/lib/dailySeed.js";
  * before the footer, same as the footer itself. No timers, no loops,
  * no animation beyond link hover color.
  */
-
-const SUPPORT_EMAIL = "lootworks.goflip@gmail.com";
 
 const mono = { fontFamily: "var(--font-mono), monospace" };
 
@@ -81,11 +79,6 @@ export default function LegitStrip() {
         <Item>built by one reseller-obsessed engineer. no vc, no growth team.</Item>
         <Item>secure checkout by stripe</Item>
         <Item>
-          60-day refund, no forms.{" "}
-          <a href={`mailto:${SUPPORT_EMAIL}`} style={linkStyle}>
-            email us
-          </a>
-          {" · "}
           <Link href="/refund-policy" style={linkStyle}>
             refund policy
           </Link>
