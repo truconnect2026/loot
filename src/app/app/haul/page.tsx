@@ -804,7 +804,7 @@ export default function HaulLogPage() {
           </div>
         )}
 
-        <div style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }} />
+        <div style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }} />
       </div>
     </>
   );

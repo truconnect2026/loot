@@ -26,6 +26,73 @@ function useScanBadge(): boolean {
   return has;
 }
 
+// Mirrors the OS reduced-motion setting; gates shrink-on-scroll entirely
+// (the pill stays full size under reduced motion).
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handler = () => setReduced(mq.matches);
+    handler();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return reduced;
+}
+
+// ── Shrink-on-scroll ───────────────────────────────────────────────────────
+// Minimal scroll-direction tracker: PASSIVE window listener (tabbed pages
+// scroll the document), rAF-batched — state is only touched inside the
+// animation frame, never raw per scroll event. Hysteresis so it can't
+// flicker: shrink after 8px cumulative downward travel, expand after 5px
+// upward, direction changes reset the accumulator, and the pill is ALWAYS
+// expanded within 40px of the top.
+function useShrinkOnScroll(enabled: boolean): boolean {
+  const [shrunk, setShrunk] = useState(false);
+  useEffect(() => {
+    if (!enabled) {
+      setShrunk(false);
+      return;
+    }
+    let lastY = window.scrollY;
+    let acc = 0;
+    let raf = 0;
+    let ticking = false;
+    const apply = () => {
+      ticking = false;
+      const y = window.scrollY;
+      const delta = y - lastY;
+      lastY = y;
+      if (y < 40) {
+        acc = 0;
+        setShrunk(false);
+        return;
+      }
+      if ((delta > 0 && acc < 0) || (delta < 0 && acc > 0)) acc = 0;
+      acc += delta;
+      if (acc > 8) {
+        setShrunk(true);
+        acc = 0;
+      } else if (acc < -5) {
+        setShrunk(false);
+        acc = 0;
+      }
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        raf = requestAnimationFrame(apply);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [enabled]);
+  return shrunk;
+}
+
 // ── Tab icons (20px stroke) ────────────────────────────────────────────────
 
 function HomeIcon({ color }: { color: string }) {
@@ -97,11 +164,24 @@ export function TabBarMount() {
 }
 
 // ── TabBar ─────────────────────────────────────────────────────────────────
+// Floating Liquid-Glass pill. It floats ABOVE the home indicator on a
+// bottom offset of env(safe-area-inset-bottom) + 8px (viewport-fit=cover
+// in app/layout.tsx makes env() resolve — do not remove either half).
+// Because the pill has margins on all sides and page content scrolls
+// behind and around it, there is NO edge-to-edge surface over the
+// safe-area strip — the translucent-bar-reads-as-a-hole failure mode
+// (357b3e1) cannot occur by construction.
+//
+// FAB clip safety: the glass div deliberately has NO overflow:hidden —
+// the rounded surface is just background + radius, so nothing creates a
+// clipping context and the FAB overhangs the pill's top edge freely.
 
 export default function TabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const hasBuyBadge = useScanBadge();
+  const reduced = usePrefersReducedMotion();
+  const shrunk = useShrinkOnScroll(!reduced);
 
   function activeId(): TabId | null {
     for (const tab of TABS) {
@@ -118,32 +198,49 @@ export default function TabBar() {
     <nav
       role="navigation"
       aria-label="App navigation"
+      className={`tb-nav${shrunk ? " tb-shrunk" : ""}`}
       style={{
         position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
+        left: 12,
+        right: 12,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
         zIndex: 50,
-        // Solid to the screen edge: a translucent bar let page content
-        // ghost through the safe-area zone and read as a gap beneath a
-        // floating bar. One opaque surface, hairline + shadow for lift.
-        background: "#070510",
-        borderTop: "1px solid rgba(92,224,184,0.10)",
-        boxShadow: "0 -8px 28px rgba(0,0,0,0.38)",
-        display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
-        // Explicit 0px fallback: devices without an inset get no gap;
-        // devices with a home indicator get true clearance (requires the
-        // viewport-fit=cover set in app/layout.tsx to resolve non-zero).
-        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        // The wrapper spans the margins too — keep it transparent to
+        // input; the pill re-enables pointer events for itself.
+        pointerEvents: "none",
       }}
     >
       <style
         dangerouslySetInnerHTML={{
           __html: `
-.tb-btn { -webkit-tap-highlight-color: transparent; transition: color 160ms ease; }
-.tb-ico { display: flex; transition: transform 160ms cubic-bezier(0.2,1.3,0.4,1); }
+.tb-pill {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-radius: 32px;
+  /* Liquid glass tuned to the brand dark: alpha 0.76 never reads as a
+     hole, and blur stays in the house 12-14px band so scrolling content
+     behind it keeps 60fps. */
+  background: rgba(7, 5, 16, 0.76);
+  -webkit-backdrop-filter: blur(13px) saturate(150%);
+  backdrop-filter: blur(13px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(92, 224, 184, 0.10), 0 8px 24px rgba(0, 0, 0, 0.38);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tb-pill { background: rgba(7, 5, 16, 0.97); }
+}
+.tb-btn {
+  -webkit-tap-highlight-color: transparent;
+  min-height: 52px;
+  padding: 9px 0 6px;
+  transition: color 160ms ease, min-height 220ms ease, padding 220ms ease;
+}
+.tb-shrunk .tb-btn { min-height: 46px; padding: 6px 0 4px; }
+.tb-ico { display: flex; transition: transform 200ms cubic-bezier(0.2,1.3,0.4,1); }
 .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px); }
+.tb-shrunk .tb-ico { transform: scale(0.95); }
+.tb-shrunk .tb-btn[aria-current="page"] .tb-ico { transform: translateY(-1px) scale(0.95); }
 .tb-dot {
   position: absolute; bottom: 2px; left: 50%; margin-left: -2px;
   width: 4px; height: 4px; border-radius: 50%; background: #5CE0B8;
@@ -154,124 +251,124 @@ export default function TabBar() {
 .tb-fab { transition: transform 120ms ease, filter 120ms ease; }
 .tb-fab:active { transform: scale(0.94); filter: brightness(0.94); }
 @media (prefers-reduced-motion: reduce) {
-  .tb-btn, .tb-ico, .tb-dot, .tb-fab { transition: none !important; }
+  .tb-btn, .tb-ico, .tb-dot, .tb-fab, .tb-pill { transition: none !important; }
+  .tb-shrunk .tb-btn { min-height: 52px; padding: 9px 0 6px; }
+  .tb-shrunk .tb-ico { transform: none; }
 }
 `,
         }}
       />
-      {TABS.map((tab) => {
-        // ── Center SCAN button — elevated circular mint ──────────────
-        if (tab.id === "scan") {
-          return (
-            <div
-              key="scan"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                paddingTop: 6,
-                paddingBottom: 6,
-              }}
-            >
-              <button
-                className="tb-fab"
-                onClick={() => router.push("/app?scan=shelf")}
-                aria-label="Scan shelf"
+      <div className="tb-pill">
+        {TABS.map((tab) => {
+          // ── Center SCAN button — elevated circular mint ──────────────
+          if (tab.id === "scan") {
+            return (
+              <div
+                key="scan"
                 style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: "50%",
-                  // Same gradient language as the app's primary CTAs; the
-                  // bg-colored ring lifts it crisply off page content, and
-                  // the tight+soft dual glow reads charged, not blown out.
-                  background: "linear-gradient(180deg, #6FE5C0 0%, #4FD1A5 100%)",
-                  border: "3px solid #070510",
-                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  boxShadow:
-                    "0 2px 8px rgba(92,224,184,0.35), 0 8px 26px rgba(92,224,184,0.22), inset 0 1px 0 rgba(255,255,255,0.25)",
-                  marginTop: -18,
-                  flexShrink: 0,
-                  position: "relative",
+                  paddingTop: 6,
+                  paddingBottom: 6,
                 }}
               >
-                {hasBuyBadge && (
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: "#E8636B",
-                      border: "2px solid #070510",
-                    }}
-                  />
-                )}
-                <span style={{ display: "flex", marginTop: -1 }}>
-                  <CameraIcon />
-                </span>
-              </button>
-            </div>
-          );
-        }
+                <button
+                  className="tb-fab"
+                  onClick={() => router.push("/app?scan=shelf")}
+                  aria-label="Scan shelf"
+                  style={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: "50%",
+                    // Same gradient language as the app's primary CTAs; the
+                    // bg-colored ring lifts it crisply off page content, and
+                    // the tight+soft dual glow reads charged, not blown out.
+                    background: "linear-gradient(180deg, #6FE5C0 0%, #4FD1A5 100%)",
+                    border: "3px solid #070510",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow:
+                      "0 2px 8px rgba(92,224,184,0.35), 0 8px 26px rgba(92,224,184,0.22), inset 0 1px 0 rgba(255,255,255,0.25)",
+                    marginTop: -18,
+                    flexShrink: 0,
+                    position: "relative",
+                  }}
+                >
+                  {hasBuyBadge && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#E8636B",
+                        border: "2px solid #070510",
+                      }}
+                    />
+                  )}
+                  <span style={{ display: "flex", marginTop: -1 }}>
+                    <CameraIcon />
+                  </span>
+                </button>
+              </div>
+            );
+          }
 
-        // ── Standard tab button ─────────────────────────────────────
-        const isActive = active === tab.id;
-        // Inactive lifted from the old #3f3853 (near-invisible on #070510)
-        // to a calm, legible muted violet; active is unmistakable mint.
-        const color = isActive ? "#5CE0B8" : "#756D8C";
+          // ── Standard tab button ─────────────────────────────────────
+          const isActive = active === tab.id;
+          // Inactive is a calm, legible muted violet; active is
+          // unmistakable mint.
+          const color = isActive ? "#5CE0B8" : "#756D8C";
 
-        return (
-          <button
-            key={tab.id}
-            className="tb-btn"
-            onClick={() => tab.route && router.push(tab.route)}
-            aria-label={tab.label}
-            aria-current={isActive ? "page" : undefined}
-            style={{
-              position: "relative",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              // ≥52px tap target — taller than the icon+label visual, so
-              // thumbs land on the button, never the home indicator.
-              minHeight: 52,
-              padding: "9px 0 6px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              touchAction: "manipulation",
-              color,
-            }}
-          >
-            <span className="tb-ico">
-              {tab.id === "home"     && <HomeIcon color={color} />}
-              {tab.id === "sourcing" && <CompassIcon color={color} />}
-              {tab.id === "tools"    && <WrenchIcon color={color} />}
-              {tab.id === "account"  && <UserIcon color={color} />}
-            </span>
-            <span
+          return (
+            <button
+              key={tab.id}
+              className="tb-btn"
+              onClick={() => tab.route && router.push(tab.route)}
+              aria-label={tab.label}
+              aria-current={isActive ? "page" : undefined}
               style={{
-                fontFamily: "var(--font-space-mono, monospace)",
-                fontSize: 9,
-                fontWeight: 500,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                lineHeight: 1,
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                touchAction: "manipulation",
+                color,
               }}
             >
-              {tab.label}
-            </span>
-            <span className="tb-dot" aria-hidden="true" />
-          </button>
-        );
-      })}
+              <span className="tb-ico">
+                {tab.id === "home"     && <HomeIcon color={color} />}
+                {tab.id === "sourcing" && <CompassIcon color={color} />}
+                {tab.id === "tools"    && <WrenchIcon color={color} />}
+                {tab.id === "account"  && <UserIcon color={color} />}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-space-mono, monospace)",
+                  fontSize: 9,
+                  fontWeight: 500,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                }}
+              >
+                {tab.label}
+              </span>
+              <span className="tb-dot" aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

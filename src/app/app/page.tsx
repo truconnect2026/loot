@@ -1553,7 +1553,7 @@ function DashboardPage() {
         <div
           style={{
             paddingTop: 24,
-            paddingBottom: "calc(80px + env(safe-area-inset-bottom))",
+            paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
             textAlign: "center",
             fontFamily: "var(--font-body)",
             fontSize: 11,
