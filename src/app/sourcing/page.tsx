@@ -605,6 +605,11 @@ export default function SourcingPage() {
             ))}
           </div>
         )}
+        {/* Static clearance for the floating tab pill — logged-in store
+            lists scroll and their check-in rows are tappable; they must
+            never end under the glass. Same 96px+env constant as the
+            other tabbed pages. */}
+        <div style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }} />
       </div>
 
       {/* ═══ ADD STORE MODAL ════════════════════════════════════════════════ */}

@@ -424,6 +424,11 @@ export default function ToolsPage() {
         onClose={() => setActiveTool(null)}
       />
 
+      {/* Static clearance for the floating tab pill (expanded state:
+          pill 54 + offset 8 + FAB overhang 18 + breathing = 96). The last
+          tool card is interactive and ended flush against the pill. */}
+      <div style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }} />
+
       <ConditionGradeSheet
         open={conditionOpen}
         onClose={() => setConditionOpen(false)}
