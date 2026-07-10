@@ -1,10 +1,14 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 // Minimum count before social proof copy renders. Below this threshold
 // nothing is displayed — no guesses, no fabricated stats.
 const SOCIAL_PROOF_MIN = 500;
+
+// Gold is the app's Pro/emphasis color (the same camel the PRO badge
+// and savings callout already use across the app).
+const GOLD = "#D4A574";
 
 interface UpgradeCardProps {
   /** Stripe price IDs — pulled from the build-time
@@ -18,30 +22,24 @@ interface UpgradeCardProps {
 }
 
 /**
- * Free-user variant of the plan card. Sits in the same slot as
- * ProfileCard's plan section; sells two prices side-by-side and
- * routes to /api/stripe/checkout via the parent's onSubscribe.
+ * THE PRO INSTRUMENT — free-user variant of the plan card, rebuilt on
+ * brand: the old blue-purple gradient frame is gone. Deep #070510
+ * face, mint hairline, house depth; gold reserved for Pro identity
+ * (the PRO eyebrow, the POPULAR corner tab, the savings callout).
  *
- * Always-Stripe: both tiles call onSubscribe, which the parent wires
- * to /api/stripe/checkout. Earlier this card short-circuited to
- * Digistore whenever the loot_aff_* affiliate cookies were present
- * (so affiliates could be credited via Digistore's tracking), but
- * that landed users on the unapproved Digistore product page and
- * blocked conversions. The Digistore rail still lives in the parent
- * as a Stripe-failure fallback; affiliate attribution on /account is
- * a separate problem to revisit once the Digistore product is live.
+ * Both tiles still call onSubscribe (tap = checkout, unchanged); the
+ * MONTHLY tile is the highlighted plan — mint edge + fill tint —
+ * exactly as its `primary` flag always marked it, and the ANNUAL tile
+ * stays calm. Zero flow changes: props, price IDs, disabled logic and
+ * copy semantics are identical to the previous revision.
  *
- * Visual treatment is intentionally premium — this is the revenue
- * lever:
- *   - 1.5px gradient border (mint → camel → periwinkle) painted via
- *     a wrapping div with padding, instead of a CSS-mask trick. The
- *     gradient slowly drifts across the border via a 6s background-
- *     position shimmer.
- *   - Inner card surface keeps an opaque #1E1838 base with a faint
- *     mint radial wash from the top-center for a "lit from above"
- *     feel.
- *   - Monthly tile carries a tiny "POPULAR" badge in mint mono.
- *   - Annual tile bolds the dollar savings in camel.
+ * ONE flourish: a slow gold edge-glint orbiting the selected plan
+ * (house border-beam recipe, 6s) — the whisper sits on the object
+ * that closes the sale, in the app's existing living-edge language,
+ * while the wordmark and prices stay print-solid like a receipt.
+ * Trust over theater: everything else on this surface is still.
+ * IntersectionObserver pauses it off-screen; reduced-motion removes
+ * it entirely.
  */
 export default function UpgradeCard({
   monthlyPriceId,
@@ -49,173 +47,157 @@ export default function UpgradeCard({
   onSubscribe,
   memberCount,
 }: UpgradeCardProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.05 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   const handleTap = (priceId: string) => {
     onSubscribe(priceId);
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes upgradeBorderShimmer {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
-      {/* Gradient border wrapper — full-saturation hex stops at
-          0/30/60/100% so the mint→gold→periwinkle hand-off paints
-          three distinct color zones instead of muddying into a
-          single lavender. Only the 2px edge ever shows (the inner
-          card covers the rest), so saturation here is fine — the
-          card surface still reads dark. 145deg angle gives the top-
-          left mint zone visibility against the page; 400% bg-size +
-          4s shimmer keeps the colors drifting. */}
+    <div
+      ref={rootRef}
+      className={inView ? "upc" : "upc upc--paused"}
+      style={{
+        marginTop: 16,
+        position: "relative",
+        borderRadius: 18,
+        backgroundColor: "#070510",
+        backgroundImage:
+          "radial-gradient(ellipse 90% 55% at 50% -10%, rgba(92, 224, 184, 0.09) 0%, transparent 60%)",
+        border: "1px solid rgba(92, 224, 184, 0.22)",
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.09), 0 -2px 18px -8px rgba(92,224,184,0.16), 0 12px 32px -12px rgba(0,0,0,0.6)",
+        padding: 20,
+        overflow: "hidden",
+      }}
+    >
+      <style>{STYLES}</style>
+
+      {/* Eyebrow — gold owns the Pro identity */}
       <div
         style={{
-          marginTop: 16,
-          padding: 2,
-          borderRadius: 16,
-          background:
-            "linear-gradient(145deg, " +
-            "#5CE0B8 0%, " +
-            "#D4A574 30%, " +
-            "#7B8FFF 60%, " +
-            "#5CE0B8 100%" +
-            ")",
-          backgroundSize: "400% 400%",
-          animation: "upgradeBorderShimmer 4s ease-in-out infinite",
-          // Elevated card depth — UpgradeCard sits one layer above
-          // the rest of the account page surfaces, matching the
-          // weight of an open BottomSheet panel.
-          boxShadow:
-            "0 4px 16px rgba(0,0,0,0.3), 0 0 1px rgba(255,255,255,0.04) inset",
+          fontFamily: "var(--font-space-mono), monospace",
+          fontSize: 9.5,
+          fontWeight: 700,
+          letterSpacing: "0.18em",
+          marginBottom: 6,
+          display: "inline-flex",
+          alignItems: "center",
+          color: GOLD,
         }}
       >
+        <span style={{ fontSize: 14, marginRight: 6, lineHeight: 1 }}>✦</span>
+        <span>UPGRADE TO PRO</span>
+      </div>
+
+      {/* Headline — display type */}
+      <div
+        style={{
+          fontFamily: "var(--font-bebas-neue), sans-serif",
+          fontSize: 27,
+          letterSpacing: "0.03em",
+          color: "#EDE7F8",
+          marginBottom: 2,
+          lineHeight: 1.05,
+        }}
+      >
+        UNLIMITED SCANS, UNLOCKED FEEDS
+      </div>
+      {memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
         <div
           style={{
-            position: "relative",
-            // Inner content card. 14 = 16 wrapper - 2 padding so the
-            // inner corner sits flush inside the 2px gradient frame.
-            borderRadius: 14,
-            // Inner glow — radial wash with origin just above the top
-            // edge (50% -10%) creates a downward-facing "lit from
-            // above" highlight. 0.10 center alpha (up from 0.07) is
-            // the threshold where the wash actually registers on
-            // OLED phone screens against the dark base — 0.07 was
-            // close to invisible. Base bg stays 0.9 alpha for a
-            // solid surface under the gradient frame; the glow
-            // paints OVER the base via the comma-separated bg-image
-            // stack so it can't get clipped behind the card content.
-            backgroundColor: "rgba(23, 18, 42, 0.9)",
-            backgroundImage:
-              "radial-gradient(ellipse 90% 50% at 50% -10%, rgba(92, 224, 184, 0.10) 0%, transparent 55%)",
-            padding: 20,
-            overflow: "hidden",
+            fontFamily: "var(--font-body)",
+            fontSize: 12.5,
+            color: "#5CE0B8",
+            fontWeight: 600,
           }}
         >
-          {/* Section label — gold sparkle + mint header. The ✦ is
-              rendered at 14px (much larger than the 9px label text)
-              so it reads as a deliberate accent rather than a
-              speck. marginRight on the sparkle gives it a fixed 6px
-              gap to the wordmark independent of the label's letter-
-              spacing. */}
-          <div
-            style={{
-              fontFamily: "var(--font-label)",
-              fontSize: 9,
-              fontWeight: 600,
-              letterSpacing: "0.14em",
-              marginBottom: 4,
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                color: "#D4A574",
-                fontSize: 14,
-                marginRight: 6,
-                lineHeight: 1,
-              }}
-            >
-              ✦
-            </span>
-            <span style={{ color: "#5CE0B8" }}>UPGRADE TO PRO</span>
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              fontSize: 17,
-              color: "var(--text-primary)",
-              marginBottom: 4,
-              lineHeight: 1.3,
-            }}
-          >
-            unlimited scans, unlocked feeds
-          </div>
-          {memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
-            <div
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: 13,
-                color: "#5CE0B8",
-                marginBottom: 16,
-                fontWeight: 500,
-              }}
-            >
-              join {Math.floor(memberCount / 100) * 100}+ flippers
-            </div>
-          )}
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <PriceOption
-              label="MONTHLY"
-              price="$14.99"
-              period="/mo"
-              note="cancel anytime"
-              disabled={!monthlyPriceId}
-              onTap={() => handleTap(monthlyPriceId)}
-              primary
-              popular
-            />
-            <PriceOption
-              label="ANNUAL"
-              price="$99.99"
-              period="/yr"
-              note={
-                <>
-                  save{" "}
-                  <span style={{ color: "#D4A574", fontWeight: 600 }}>
-                    $80
-                  </span>{" "}
-                  — 5 months free
-                </>
-              }
-              disabled={!annualPriceId}
-              onTap={() => handleTap(annualPriceId)}
-              primary={false}
-            />
-          </div>
-          {/* Feature list — sits beneath the price tiles. The four
-              checkmarks read as the value bundle the user gets for
-              the price above; mono checks + Outfit body keeps the row
-              quiet but legible. */}
-          <div
-            style={{
-              marginTop: 12,
-              fontFamily: "var(--font-body)",
-              fontSize: 11,
-              color: "#5A4E70",
-              textAlign: "center",
-              lineHeight: 1.8,
-            }}
-          >
-            ✓ unlimited scans &nbsp;✓ condition grading &nbsp;✓ flip coach &nbsp;✓ batch listings
-          </div>
+          join {Math.floor(memberCount / 100) * 100}+ flippers
         </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 14 }}>
+        <PriceOption
+          label="MONTHLY"
+          price="$14.99"
+          period="/mo"
+          note="cancel anytime"
+          disabled={!monthlyPriceId}
+          onTap={() => handleTap(monthlyPriceId)}
+          primary
+          popular
+        />
+        <PriceOption
+          label="ANNUAL"
+          price="$99.99"
+          period="/yr"
+          note={
+            <>
+              save{" "}
+              <span style={{ color: GOLD, fontWeight: 700 }}>$80</span>{" "}
+              — 5 months free
+            </>
+          }
+          disabled={!annualPriceId}
+          onTap={() => handleTap(annualPriceId)}
+          primary={false}
+        />
       </div>
-    </>
+
+      {/* Feature checklist — 2×2 grid, mint checks, legible */}
+      <div
+        style={{
+          marginTop: 14,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "7px 12px",
+        }}
+      >
+        {["unlimited scans", "condition grading", "flip coach", "batch listings"].map(
+          (feat) => (
+            <div
+              key={feat}
+              style={{ display: "flex", alignItems: "center", gap: 7 }}
+            >
+              <svg
+                width={12}
+                height={12}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#5CE0B8"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: 11.5,
+                  color: "#B9B0CC",
+                }}
+              >
+                {feat}
+              </span>
+            </div>
+          ),
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -250,61 +232,63 @@ function PriceOption({
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
       style={{
-        // Two-row plan tile: top row label + price, bottom row note.
-        // The mint glow under the primary tile separates it from the
-        // secondary annual option without using a different hue.
+        // Two-row plan tile. The selected (primary) plan reads
+        // unmistakably selected: mint edge + mint fill tint + the gold
+        // glint; the other stays calm on hairline white.
         position: "relative",
         textAlign: "left",
-        padding: "12px 14px",
-        borderRadius: 12,
-        backgroundColor: "#120e18",
+        padding: "13px 14px 12px",
+        borderRadius: 13,
+        backgroundColor: "#0B0817",
         backgroundImage: pressed
-          ? "linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18))"
+          ? "linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14))"
           : primary
-            ? "linear-gradient(180deg, rgba(92,224,184,0.14) 0%, rgba(92,224,184,0.04) 100%)"
-            : "linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06))",
+            ? "linear-gradient(180deg, rgba(92,224,184,0.13) 0%, rgba(92,224,184,0.03) 100%)"
+            : "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))",
         border: primary
-          ? "1px solid rgba(92,224,184,0.35)"
-          : "1px solid rgba(255,255,255,0.12)",
-        boxShadow: primary
-          ? "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 0 0 1px rgba(92,224,184,0.06), 0 4px 12px rgba(92,224,184,0.10)"
-          : "inset 0 1px 0 0 rgba(255,255,255,0.08), 0 1px 2px rgba(0,0,0,0.3)",
+          ? "1px solid rgba(92,224,184,0.5)"
+          : "1px solid rgba(255,255,255,0.10)",
+        boxShadow: pressed
+          ? "0 0 0 1px rgba(92,224,184,0.5), 0 0 16px -5px rgba(92,224,184,0.5)"
+          : primary
+            ? "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 4px 14px -6px rgba(92,224,184,0.25)"
+            : "inset 0 1px 0 0 rgba(255,255,255,0.07), 0 1px 2px rgba(0,0,0,0.3)",
         cursor: disabled ? "default" : "pointer",
         opacity: disabled ? 0.5 : 1,
         display: "flex",
         flexDirection: "column",
         gap: 4,
-        transform: pressed ? "scale(0.99)" : "scale(1)",
+        overflow: "hidden",
+        transform: pressed ? "scale(0.98)" : "scale(1)",
         transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms ease",
       }}
     >
-      {/* "POPULAR" recommended indicator — single mint pill floating
-          half above the tile's top edge. No outer cutout span: the
-          earlier nested-span trick was meant to mask the gradient
-          border behind the badge, but every solid bg color we tried
-          read as a mismatched box on real OLED screens. A bare pill
-          overlapping the border is cleaner — the 0.15-alpha mint
-          surface lets the border show through faintly, which reads
-          as "deliberately on top" rather than "something is wrong
-          here." */}
+      {/* the ONE flourish: slow gold edge-glint on the selected plan */}
+      {primary && (
+        <span className="upc-glint" aria-hidden="true">
+          <span className="upc-glint-spin" />
+        </span>
+      )}
+      {/* POPULAR — gold corner tab, tucked INTO the card corner */}
       {popular && (
         <span
           aria-hidden="true"
           style={{
             position: "absolute",
-            top: -9,
-            right: 14,
+            top: 0,
+            right: 0,
             zIndex: 2,
-            display: "inline-block",
-            backgroundColor: "rgba(92, 224, 184, 0.15)",
-            padding: "2px 8px",
-            borderRadius: 6,
-            fontFamily: "var(--font-space-mono)",
+            backgroundColor: "rgba(212, 165, 116, 0.16)",
+            borderLeft: "1px solid rgba(212, 165, 116, 0.28)",
+            borderBottom: "1px solid rgba(212, 165, 116, 0.28)",
+            padding: "3px 9px 4px",
+            borderRadius: "0 12px 0 10px",
+            fontFamily: "var(--font-space-mono), monospace",
             fontSize: 8,
             fontWeight: 700,
-            letterSpacing: "0.08em",
-            color: "#5CE0B8",
+            letterSpacing: "0.1em",
+            color: "#E2B888",
             textTransform: "uppercase",
             lineHeight: 1.2,
           }}
@@ -325,18 +309,18 @@ function PriceOption({
             fontWeight: 700,
             fontSize: 10,
             letterSpacing: "0.12em",
-            color: primary ? "#5CE0B8" : "rgba(255,255,255,0.55)",
+            color: primary ? "#5CE0B8" : "rgba(255,255,255,0.6)",
           }}
         >
           {label}
         </span>
-        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2, paddingRight: popular ? 52 : 0 }}>
           <span
             style={{
               fontFamily: "var(--font-body)",
-              fontWeight: 300,
+              fontWeight: 400,
               fontSize: 22,
-              color: "#E8E0F0",
+              color: "#EFE9FA",
               fontFeatureSettings: '"tnum"',
               lineHeight: 1,
             }}
@@ -348,7 +332,7 @@ function PriceOption({
               fontFamily: "var(--font-body)",
               fontWeight: 400,
               fontSize: 12,
-              color: "var(--text-muted)",
+              color: "rgba(255,255,255,0.5)",
             }}
           >
             {period}
@@ -359,7 +343,7 @@ function PriceOption({
         style={{
           fontFamily: "var(--font-body)",
           fontSize: 11,
-          color: primary ? "rgba(92,224,184,0.75)" : "rgba(255,255,255,0.45)",
+          color: primary ? "rgba(92,224,184,0.8)" : "rgba(255,255,255,0.5)",
         }}
       >
         {note}
@@ -367,3 +351,27 @@ function PriceOption({
     </button>
   );
 }
+
+const STYLES = `
+/* gold edge-glint — house border-beam recipe (ring mask + rotating
+   conic arc), gold, slow. The only motion on this surface. */
+.upc-glint {
+  position: absolute; inset: 0; border-radius: 13px; padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  overflow: hidden; pointer-events: none;
+  opacity: 0.6;
+}
+.upc-glint-spin {
+  position: absolute; left: -55%; top: -220%; width: 210%; height: 540%;
+  background: conic-gradient(transparent 0deg 316deg, rgba(212,165,116,0.9) 342deg, transparent 360deg);
+  animation: upcGlint 6s linear infinite;
+}
+@keyframes upcGlint { to { transform: rotate(360deg); } }
+.upc--paused .upc-glint-spin { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .upc-glint { display: none; }
+}
+`;

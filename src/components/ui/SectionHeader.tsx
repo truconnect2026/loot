@@ -2,6 +2,11 @@
 
 import type { ReactNode } from "react";
 
+/**
+ * Section header — the app-wide cadence: 10px Space Mono label over a
+ * mint-origin fade rule (mint at the origin, dissolving rightward),
+ * matching SECTION_LABEL on Home and the kit header on Tools.
+ */
 interface SectionHeaderProps {
   children: ReactNode;
   marginTop?: number;
@@ -11,38 +16,28 @@ interface SectionHeaderProps {
 export function SectionHeader({
   children,
   marginTop = 0,
-  marginBottom = 8,
+  marginBottom = 10,
 }: SectionHeaderProps) {
   return (
     <div
       style={{
         marginTop,
         marginBottom,
-        display: "flex",
-        alignItems: "center",
-        gap: 7,
+        paddingBottom: 6,
+        fontFamily: "var(--font-label)",
+        fontSize: 10,
+        fontWeight: 700,
+        color: "#6F678E",
+        letterSpacing: "0.12em",
+        textTransform: "uppercase",
+        backgroundImage:
+          "linear-gradient(to right, rgba(92,224,184,0.22) 0%, rgba(255,255,255,0.05) 40%, transparent 70%)",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "0 100%",
+        backgroundSize: "100% 1px",
       }}
     >
-      <div
-        style={{
-          width: 2,
-          height: 8,
-          borderRadius: 1,
-          backgroundColor: "rgba(92,224,184,0.28)",
-          flexShrink: 0,
-        }}
-      />
-      <span
-        style={{
-          fontFamily: "var(--font-label)",
-          fontSize: 9,
-          color: "rgba(200,192,216,0.40)",
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-        }}
-      >
-        {children}
-      </span>
+      {children}
     </div>
   );
 }

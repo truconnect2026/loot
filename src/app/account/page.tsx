@@ -210,7 +210,7 @@ const ACCENT_ZIP = "#E8636B"; // pin red — location
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
 const ACCENT_BOLO = "#5CE0B8"; // mint — active engagement (money finder)
 const ACCENT_NOTIF = "#7B8FFF"; // blue-purple — alerts
-const ACCENT_EXPORT = "#5A4E70"; // muted — utility action
+const ACCENT_EXPORT = "#5CE0B8"; // mint — Export is USEFUL (your data, one tap)
 // Sign-out no longer uses SettingsTile (it's a centered link, not a
 // settings row), so ACCENT_SIGNOUT was retired with that change.
 
@@ -786,11 +786,28 @@ export default function AccountPage() {
           padding: "0 18px",
           position: "relative",
           zIndex: 1,
-          // Vault arrival — single scale+fade on mount. Different motion
-          // personality from the dashboard's fadeInUp.
-          animation: "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) both",
         }}
+        // House entrance — 45ms stagger, same cadence as Home/Tools
+        // (replaces the old vaultReveal-plus-scattered-fadeInUp mix).
+        className="ac-stagger"
       >
+        <style>{`
+          @keyframes acRise {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .ac-stagger > * { animation: acRise 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+          .ac-stagger > *:nth-child(2) { animation-delay: 0ms; }
+          .ac-stagger > *:nth-child(3) { animation-delay: 45ms; }
+          .ac-stagger > *:nth-child(4) { animation-delay: 90ms; }
+          .ac-stagger > *:nth-child(5) { animation-delay: 135ms; }
+          .ac-stagger > *:nth-child(6) { animation-delay: 180ms; }
+          .ac-stagger > *:nth-child(7) { animation-delay: 225ms; }
+          .ac-stagger > *:nth-child(n+8) { animation-delay: 270ms; }
+          @media (prefers-reduced-motion: reduce) {
+            .ac-stagger > * { animation: none !important; }
+          }
+        `}</style>
         {/* Page header — back arrow + "Account" title. The title anchors the
             page so a returning user lands and instantly knows where they are. */}
         <div
@@ -833,14 +850,8 @@ export default function AccountPage() {
           </span>
         </div>
 
-        {/* Profile Card — vaultReveal cascade, the page's arrival motion */}
-        <div
-          style={{
-            opacity: 0,
-            animation:
-              "vaultReveal 280ms cubic-bezier(0.22, 1, 0.36, 1) 0ms forwards",
-          }}
-        >
+        {/* Profile / Upgrade card — staggered by the container */}
+        <div>
           {profile.isPro ? (
             <ProfileCard
               name={profile.name ?? profile.email.split("@")[0]}
@@ -882,7 +893,7 @@ export default function AccountPage() {
         {/* Group 1: Location settings — 8px between rows so each
             tile reads as its own card with air around it instead of
             crammed against its neighbors. */}
-        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 8, animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 100ms both" }}>
+        <div style={{ marginTop: 0, display: "flex", flexDirection: "column", gap: 8 }}>
           {/* Zip code — persists to profiles.zip_code */}
           <ZipInput
             value={profile.zipCode}
@@ -1023,7 +1034,7 @@ export default function AccountPage() {
             stores the endpoint in push_subscriptions; the sub-toggles
             persist to notification_prefs. notifError surfaces the
             most common failure (denied permission) inline. */}
-        <div style={{ marginTop: 8, animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 160ms both" }}>
+        <div style={{ marginTop: 8 }}>
           <NotificationToggles
             enabled={notifEnabled}
             onToggleEnabled={handleTogglePushEnabled}
@@ -1058,7 +1069,7 @@ export default function AccountPage() {
             now explains the actual value ("track your flips for tax
             season") instead of the cryptic "CSV for taxes". */}
         <SectionHeader marginTop={24}>DATA</SectionHeader>
-        <div style={{ animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) 200ms both" }}>
+        <div>
           <SettingsTile
             height={64}
             onClick={handleExport}
