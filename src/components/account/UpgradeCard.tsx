@@ -39,8 +39,8 @@ interface UpgradeCardProps {
  * a selector.
  *
  * Flow unchanged: props, price IDs, disabled logic, tap targets all
- * byte-equivalent to the previous revision. Reduced motion: no glint,
- * no charge, "$80" renders final instantly.
+ * byte-equivalent to the previous revision. Reduced motion: no charge,
+ * static star, "$80" renders final instantly.
  */
 export default function UpgradeCard({
   monthlyPriceId,
@@ -134,12 +134,19 @@ export default function UpgradeCard({
           color: GOLD,
         }}
       >
-        <span style={{ fontSize: 14, marginRight: 6, lineHeight: 1 }}>✦</span>
+        <span
+          className="upc-star"
+          style={{ fontSize: 14, marginRight: 6, lineHeight: 1 }}
+        >
+          ✦
+        </span>
         <span>UPGRADE TO PRO</span>
       </div>
 
       {/* Headline — display type, deliberate two-line break at the
-          comma (the auto-wrap orphaned "FEEDS" on its own line) */}
+          comma (the auto-wrap orphaned "FEEDS" on its own line).
+          Each half is nowrap so no viewport width can ever re-break
+          a line mid-thought — the break is markup, not font-size luck. */}
       <div
         style={{
           fontFamily: "var(--font-bebas-neue), sans-serif",
@@ -150,9 +157,9 @@ export default function UpgradeCard({
           lineHeight: 1.04,
         }}
       >
-        UNLIMITED SCANS,
+        <span style={{ whiteSpace: "nowrap" }}>UNLIMITED SCANS,</span>
         <br />
-        UNLOCKED FEEDS
+        <span style={{ whiteSpace: "nowrap" }}>UNLOCKED FEEDS</span>
       </div>
       {memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
         <div
@@ -339,20 +346,20 @@ function PriceOption({
         } as React.CSSProperties
       }
     >
-      {/* gold edge-glint on the highlighted plan — brightened for the
-          theater pass: wrapper 0.6→0.85, arc 0.9→1.0, arc widened */}
-      {primary && (
-        <span className="upc-glint" aria-hidden="true">
-          <span className="upc-glint-spin" />
-        </span>
-      )}
-      {/* charge-up press — one lap of accent light around the perimeter */}
+      {/* charge-up press — one lap of accent light around the perimeter.
+          (The idle gold edge-glint was killed here: a perpetual traveling
+          light on a price card reads as sell-pressure, and its beam
+          painted through the translucent POPULAR tab as a smudge. The
+          press charge owns the premium cue at the moment of intent.) */}
       {chargeKey > 0 && !reduced && (
         <span key={chargeKey} className="upc-charge" aria-hidden="true">
           <span className="upc-charge-spin" />
         </span>
       )}
-      {/* POPULAR — gold corner tab, tucked INTO the card corner */}
+      {/* POPULAR — gold corner tab, tucked INTO the card corner.
+          Its outer radius (11) deliberately undercuts the tile's inner
+          curve (outer 13 − 1px border = 12) so the overflow clip can
+          never shave a fringe off the tab at any device pixel ratio. */}
       {popular && (
         <span
           aria-hidden="true"
@@ -365,7 +372,7 @@ function PriceOption({
             borderLeft: "1px solid rgba(212, 165, 116, 0.28)",
             borderBottom: "1px solid rgba(212, 165, 116, 0.28)",
             padding: "3px 9px 4px",
-            borderRadius: "0 12px 0 10px",
+            borderRadius: "0 11px 0 10px",
             fontFamily: "var(--font-space-mono), monospace",
             fontSize: 8,
             fontWeight: 700,
@@ -414,7 +421,7 @@ function PriceOption({
               fontFamily: "var(--font-body)",
               fontWeight: 400,
               fontSize: 12,
-              color: "rgba(255,255,255,0.5)",
+              color: "rgba(255,255,255,0.55)",
             }}
           >
             {period}
@@ -435,25 +442,11 @@ function PriceOption({
 }
 
 const STYLES = `
-/* gold edge-glint — house border-beam recipe (ring mask + rotating
-   conic arc), gold, slow. Theater-pass brightness: wrapper 0.85 (was
-   0.6), arc alpha 1.0 (was 0.9), arc 52deg wide (was 44). */
-.upc-glint {
-  position: absolute; inset: 0; border-radius: 13px; padding: 1.5px;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  overflow: hidden; pointer-events: none;
-  opacity: 0.85;
-}
-.upc-glint-spin {
-  position: absolute; left: -55%; top: -220%; width: 210%; height: 540%;
-  background: conic-gradient(transparent 0deg 308deg, rgba(212,165,116,1) 340deg, transparent 360deg);
-  animation: upcGlint 6s linear infinite;
-}
-@keyframes upcGlint { to { transform: rotate(360deg); } }
-.upc--paused .upc-glint-spin { animation-play-state: paused !important; }
+/* eyebrow star — ambient whisper twinkle, the card's only idle life.
+   Opacity-only, 4s, paused off-screen; static under reduced motion. */
+.upc-star { display: inline-block; animation: upcTwinkle 4s ease-in-out infinite; }
+@keyframes upcTwinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.upc--paused .upc-star { animation-play-state: paused !important; }
 
 /* charge-up press — one perimeter lap per pointer-down (login recipe) */
 .upc-charge {
@@ -474,6 +467,7 @@ const STYLES = `
 @keyframes upcChargeFade { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .upc-glint, .upc-charge { display: none; }
+  .upc-star { animation: none; }
+  .upc-charge { display: none; }
 }
 `;

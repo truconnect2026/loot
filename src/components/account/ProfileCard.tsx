@@ -223,7 +223,9 @@ export default function ProfileCard({
               alignItems: "baseline",
               fontFamily: "var(--font-body)",
               fontSize: 11,
-              color: "var(--text-muted)",
+              // body-copy contrast floor (0.55 white) — #5A4E70 muted
+              // sank below it on the card surface
+              color: "rgba(255,255,255,0.55)",
               minWidth: 0,
             }}
           >
@@ -337,7 +339,7 @@ export default function ProfileCard({
               fontFamily: "var(--font-body)",
               fontWeight: 400,
               fontSize: 13,
-              color: "var(--text-muted)",
+              color: "rgba(255,255,255,0.55)",
             }}
           >
             {period}
