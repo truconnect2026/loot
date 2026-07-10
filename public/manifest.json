@@ -4,6 +4,7 @@
   "description": "AI-powered thrift store scanner",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#120e18",
   "theme_color": "#5CE0B8",
   "icons": [

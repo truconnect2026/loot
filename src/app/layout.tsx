@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import SplashGate from "@/components/shared/SplashGate";
 import { TabBarMount } from "@/components/nav/TabBar";
+import OrientationGuard from "@/components/shared/OrientationGuard";
 
 const bebasNeue = Bebas_Neue({
   variable: "--font-bebas-neue",
@@ -124,6 +125,7 @@ export default function RootLayout({
           }}
         />
         <TabBarMount />
+        <OrientationGuard />
         <Analytics />
       </body>
     </html>

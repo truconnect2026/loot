@@ -34,6 +34,12 @@ interface ShelfScanSheetProps {
   /** Refresh hook — caller uses this to bump the dashboard scan
    * counter after a successful shelf scan persists a row. */
   onScanned?: () => void;
+  /** Branded-camera handoff: when provided, the primary capture
+   * button opens the in-app camera (ScanOverlay shelf mode) instead
+   * of the native file input — iOS standalone ignores
+   * capture="environment" and dumped users into the raw file picker.
+   * The file input stays as the quiet "upload from library" path. */
+  onOpenCamera?: () => void;
 }
 
 type Status = "idle" | "loading" | "loaded" | "error" | "signup-wall";
@@ -235,6 +241,7 @@ export default function ShelfScanSheet({
   onClose,
   onPaywall,
   onScanned,
+  onOpenCamera,
 }: ShelfScanSheetProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -505,13 +512,18 @@ export default function ShelfScanSheet({
         )}
 
         {status === "idle" && (
-          /* Capture invitation as a viewfinder moment: corner brackets
+          <>
+          {/* Capture invitation as a viewfinder moment: corner brackets
              (the scanner's signature), glowing camera glyph, mint
              hairline + soft lift matching the Home hero's edge
-             language. Same onClick/photo flow — visuals only. */
+             language. */}
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={
+              // Branded camera first; file input only as legacy
+              // fallback when no camera handoff is wired.
+              () => (onOpenCamera ? onOpenCamera() : fileInputRef.current?.click())
+            }
             className="sss-cap"
             style={{
               position: "relative",
@@ -585,6 +597,30 @@ export default function ShelfScanSheet({
               works best with book spines, tools, or housewares
             </span>
           </button>
+          {/* Quiet secondary: the native picker is the RIGHT surface
+              when the shelf photo already exists — but only then. */}
+          {onOpenCamera && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: "block",
+                margin: "10px auto 0",
+                background: "none",
+                border: "none",
+                padding: 6,
+                fontFamily: "var(--font-body)",
+                fontSize: 11,
+                color: "rgba(255,255,255,0.55)",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+                cursor: "pointer",
+              }}
+            >
+              or upload from library
+            </button>
+          )}
+          </>
         )}
 
         {status === "loading" && (
@@ -637,11 +673,15 @@ export default function ShelfScanSheet({
           </div>
         )}
 
+        {/* Library-upload path. No capture attr: this input's job is
+            the photo library now — the branded ScanOverlay camera owns
+            live capture (iOS standalone ignored capture="environment"
+            and showed the raw picker anyway). Same handleFile → API
+            pipeline, untouched. */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFile}
           style={{ display: "none" }}
         />

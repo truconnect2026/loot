@@ -592,7 +592,9 @@ function DashboardPage() {
 
   // Scan overlay state
   const [scanOpen, setScanOpen] = useState(false);
-  const [scanMode, setScanMode] = useState<"barcode" | "vision" | "crate">("barcode");
+  const [scanMode, setScanMode] = useState<
+    "barcode" | "vision" | "shelf" | "crate"
+  >("barcode");
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -1025,7 +1027,11 @@ function DashboardPage() {
     return () => observer.disconnect();
   }, []);
 
-  const startScan = useCallback((mode: "barcode" | "vision" | "crate") => {
+  // "shelf" here opens ScanOverlay's branded shelf camera — the
+  // ShelfScanSheet's capture button hands off to it (the sheet keeps
+  // the library-upload path). The SHELF trigger mode still routes to
+  // the sheet via shelfRequest above; gate branches are identical.
+  const startScan = useCallback((mode: "barcode" | "vision" | "shelf" | "crate") => {
     haptic();
     // FREE_SCAN_LIMIT = 0 — non-Pro users go straight to the paywall.
     // No scan overlay, no camera, no API call.
@@ -1650,6 +1656,10 @@ function DashboardPage() {
         onScanned={() => {
           void refreshStats();
           void refreshScanCount();
+        }}
+        onOpenCamera={() => {
+          setShelfOpen(false);
+          startScan("shelf");
         }}
       />
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useScanTrigger } from "@/lib/scan-trigger";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import { createClient } from "@/lib/supabase";
@@ -508,6 +509,12 @@ function HaulCard({ row, onStatusAdvance, onDelete }: HaulCardProps) {
 
 export default function HaulLogPage() {
   const router = useRouter();
+  // Canonical scan trigger (src/lib/scan-trigger.ts) — stashes the
+  // mode and navigates to /app, where the dashboard handler drains
+  // it and opens the scanner. NEVER a bare router.push: that was the
+  // Jan '26 dead-entry class of bug, and this page's OPEN SCANNER
+  // was the last unmigrated caller (it dumped users on Home).
+  const triggerScan = useScanTrigger();
   const [hauls, setHauls] = useState<HaulRow[] | null>(null);
   const [filter, setFilter] = useState<FilterKind>("all");
   const [backPressed, setBackPressed] = useState(false);
@@ -691,7 +698,7 @@ export default function HaulLogPage() {
               action={
                 <button
                   type="button"
-                  onClick={() => router.push("/app")}
+                  onClick={() => triggerScan("vision")}
                   style={{
                     height: 36,
                     padding: "0 20px",
