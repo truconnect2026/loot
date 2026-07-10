@@ -5,6 +5,17 @@ import { useEffect, useRef, useCallback, type ReactNode } from "react";
 /**
  * Slide-up panel with backdrop blur, drag handle, swipe-to-dismiss.
  * Spring animation via cubic-bezier(0.32, 0.72, 0, 1) — the iOS drawer curve.
+ *
+ * ── Z CONTRACT ──────────────────────────────────────────────────
+ * Sheets stack ABOVE the floating tab pill (TabBar zIndex: 50):
+ * backdrop 60, panel 61. Standard iOS sheet behavior — the nav is
+ * persistent chrome that dims behind the scrim while a sheet is up;
+ * no sheet content, CTA, or tappable row may ever sit behind the
+ * pill. The panel extends to the true screen bottom and owns
+ * env(safe-area-inset-bottom) clearance for flow content; sticky
+ * footers inside sheets (FlipCoach input bar, ShelfScan action bar)
+ * carry their OWN env() padding because sticky bottom:0 pins to the
+ * scrollport edge, past this panel padding, while mid-scroll.
  */
 
 interface BottomSheetProps {
@@ -57,11 +68,20 @@ export default function BottomSheet({
   const touchStartY = useRef(0);
   const currentTranslateY = useRef(0);
   const isDragging = useRef(false);
+  // Flick physics — velocity sampled per move event (px/ms) so a
+  // fast downward throw dismisses before the distance threshold,
+  // the way a physically tossed sheet would keep going.
+  const lastY = useRef(0);
+  const lastT = useRef(0);
+  const velocity = useRef(0);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     currentTranslateY.current = 0;
     isDragging.current = true;
+    lastY.current = e.touches[0].clientY;
+    lastT.current = performance.now();
+    velocity.current = 0;
     if (sheetRef.current) {
       sheetRef.current.style.transition = "none";
     }
@@ -69,7 +89,13 @@ export default function BottomSheet({
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current) return;
-    const deltaY = e.touches[0].clientY - touchStartY.current;
+    const y = e.touches[0].clientY;
+    const deltaY = y - touchStartY.current;
+    const now = performance.now();
+    const dt = now - lastT.current;
+    if (dt > 0) velocity.current = (y - lastY.current) / dt;
+    lastY.current = y;
+    lastT.current = now;
     // Only allow dragging down
     currentTranslateY.current = Math.max(0, deltaY);
     if (sheetRef.current) {
@@ -81,9 +107,15 @@ export default function BottomSheet({
     isDragging.current = false;
     if (sheetRef.current) {
       sheetRef.current.style.transition =
-        "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
+        "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
     }
-    if (currentTranslateY.current > 100) {
+    // Dismiss on distance OR on a committed flick (fast downward
+    // release past a small dead zone) — momentum closes a thrown
+    // sheet even when the finger hasn't crossed 100px yet.
+    if (
+      currentTranslateY.current > 100 ||
+      (currentTranslateY.current > 24 && velocity.current > 0.5)
+    ) {
       // Hand off to onClose; the open-sync useEffect below picks up
       // the false transition and pins the inline transform to
       // translateY(100%) so the closed-state cascade can't fall
@@ -104,7 +136,7 @@ export default function BottomSheet({
   // sheet's header strip would surface above viewport bottom as a
   // persistent visible stub.
   //
-  //   open=true  → translateY(0)    + transition: transform 400ms
+  //   open=true  → translateY(0)    + transition: transform 320ms
   //                (transition lets the drag snap-back ease smoothly
   //                 back to 0 after a sub-threshold pulldown)
   //   open=false → translateY(100%) + transition: none
@@ -116,7 +148,7 @@ export default function BottomSheet({
     if (open) {
       sheetRef.current.style.transform = "translateY(0)";
       sheetRef.current.style.transition =
-        "transform 400ms cubic-bezier(0.32, 0.72, 0, 1)";
+        "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)";
     } else {
       sheetRef.current.style.transform = "translateY(100%)";
       sheetRef.current.style.transition = "none";
@@ -189,22 +221,35 @@ export default function BottomSheet({
             border-top-right-radius: 16px !important;
           }
         }
+        /* Reduced motion — instant swaps. The keyframes keep their
+           forwards fill so terminal states (open/closed positions,
+           backdrop opacity) still land; only the travel disappears. */
+        @media (prefers-reduced-motion: reduce) {
+          .loot-bottom-sheet-backdrop,
+          .loot-bottom-sheet-panel,
+          .loot-bottom-sheet-body {
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
       `}</style>
 
       {/* Backdrop — radial vignette over the existing blur fill so the
           corners darken more than the center, focusing the eye on the
           rising sheet panel. */}
       <div
+        className="loot-bottom-sheet-backdrop"
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 40,
+          zIndex: 60,
           background:
             "radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%)",
           backdropFilter: "blur(20px) saturate(150%)",
           WebkitBackdropFilter: "blur(20px) saturate(150%)",
           animation: open
-            ? "bsBackdropIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
+            ? "bsBackdropIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
             : "bsBackdropOut 250ms ease-in forwards",
           pointerEvents: open ? "auto" : "none",
         }}
@@ -222,7 +267,7 @@ export default function BottomSheet({
           left: 0,
           right: 0,
           bottom: 0,
-          zIndex: 41,
+          zIndex: 61,
           backgroundColor: "rgba(18, 14, 24, 0.92)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
@@ -235,11 +280,17 @@ export default function BottomSheet({
           boxShadow:
             "0 -8px 40px -4px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.04) inset, inset 0 1px 0 0 rgba(255,255,255,0.08)",
           animation: open
-            ? "bsSlideUp 350ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
+            ? "bsSlideUp 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
             : "bsSlideDown 250ms ease-in forwards",
           pointerEvents: open ? "auto" : "none",
           maxHeight: "85vh",
           overflowY: "auto",
+          // The panel reaches the true screen bottom; this shared
+          // padding lifts every sheet's flow content clear of the
+          // iPhone home indicator (0px everywhere else). Sticky
+          // footers pin past it and carry their own env() padding —
+          // see the Z CONTRACT note above.
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
         {/* Lit-from-above gradient wash — top 40% of the sheet only */}
@@ -306,6 +357,7 @@ export default function BottomSheet({
             every open. */}
         <div
           key={open ? "open" : "closed"}
+          className="loot-bottom-sheet-body"
           style={{
             position: "relative",
             zIndex: 1,

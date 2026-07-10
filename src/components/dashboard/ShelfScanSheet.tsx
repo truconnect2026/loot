@@ -1868,6 +1868,10 @@ function StickyActionBar({
         WebkitBackdropFilter: "blur(12px)",
         borderTop: "1px solid rgba(92, 224, 184, 0.1)",
         padding: "12px 18px",
+        // Sticky bottom:0 pins past the panel's shared safe-area
+        // padding, so the bar owns its home-indicator clearance —
+        // same pattern as the FlipCoach input bar.
+        paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

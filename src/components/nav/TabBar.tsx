@@ -218,6 +218,10 @@ export default function TabBar() {
         left: 12,
         right: 12,
         bottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+        // Z CONTRACT: the pill is persistent chrome at 50. Bottom
+        // sheets (shared/BottomSheet.tsx) stack ABOVE it at 60/61 —
+        // iOS-standard: the nav dims behind the sheet scrim, and no
+        // sheet CTA ever lands behind the pill. Keep this below 60.
         zIndex: 50,
         // The wrapper spans the margins too — keep it transparent to
         // input; the pill re-enables pointer events for itself.
