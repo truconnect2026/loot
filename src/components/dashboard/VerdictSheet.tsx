@@ -658,7 +658,7 @@ export default function VerdictSheet({
             textAlign: "center",
           }}
         >
-          {data.method === "barcode" ? "UPC SCAN" : "AI VISION"}
+          {data.method === "barcode" ? "UPC SCAN" : "ITEM SCAN"}
         </div>
 
         {/* Item name — wraps freely; word-break catches super-long tokens */}
@@ -975,7 +975,7 @@ export default function VerdictSheet({
             </div>
           ) : comps === null ? (
             <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "rgba(90,78,112,0.8)" }}>
-              no comps found — estimate is AI-based
+              no comps found — best-guess estimate
             </div>
           ) : (
             <>

@@ -493,7 +493,7 @@ export default function ShelfScanSheet({
                 marginBottom: 14,
               }}
             >
-              snap a shelf — Claude ranks every visible item by profit
+              snap a shelf — every visible item ranked by profit
             </div>
           </>
         )}
@@ -505,42 +505,80 @@ export default function ShelfScanSheet({
         )}
 
         {status === "idle" && (
+          /* Capture invitation as a viewfinder moment: corner brackets
+             (the scanner's signature), glowing camera glyph, mint
+             hairline + soft lift matching the Home hero's edge
+             language. Same onClick/photo flow — visuals only. */
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
+            className="sss-cap"
             style={{
+              position: "relative",
               width: "100%",
-              height: 96,
-              borderRadius: 14,
-              backgroundColor: "#120e18",
+              height: 118,
+              borderRadius: 16,
+              backgroundColor: "#0B0817",
               backgroundImage:
-                "linear-gradient(rgba(92,224,184,0.10), rgba(92,224,184,0.04))",
-              border: "1px dashed rgba(92,224,184,0.40)",
+                "radial-gradient(ellipse at 50% 0%, rgba(92,224,184,0.10), transparent 65%)",
+              border: "1px solid rgba(92,224,184,0.30)",
+              boxShadow:
+                "0 -2px 14px -6px rgba(92,224,184,0.18), 0 6px 18px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
               color: "var(--ui-primary)",
               fontFamily: "var(--font-body)",
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
+              overflow: "hidden",
             }}
           >
-            <CameraGlyph />
-            <span>tap to take photo</span>
+            <style>{`
+              .sss-cap .sss-br {
+                position: absolute; width: 14px; height: 14px;
+                border-color: #5CE0B8; border-style: solid; border-width: 0;
+                opacity: 0.85;
+                animation: sssBreathe 3.2s ease-in-out infinite;
+              }
+              .sss-cap .sss-br--tl { top: 9px; left: 9px; border-top-width: 2px; border-left-width: 2px; --bx: -1.5px; --by: -1.5px; }
+              .sss-cap .sss-br--tr { top: 9px; right: 9px; border-top-width: 2px; border-right-width: 2px; --bx: 1.5px; --by: -1.5px; }
+              .sss-cap .sss-br--bl { bottom: 9px; left: 9px; border-bottom-width: 2px; border-left-width: 2px; --bx: -1.5px; --by: 1.5px; }
+              .sss-cap .sss-br--br { bottom: 9px; right: 9px; border-bottom-width: 2px; border-right-width: 2px; --bx: 1.5px; --by: 1.5px; }
+              @keyframes sssBreathe {
+                0%, 100% { transform: translate(0, 0); }
+                50% { transform: translate(var(--bx, 0), var(--by, 0)); }
+              }
+              .sss-cap .sss-glow {
+                display: flex;
+                filter: drop-shadow(0 0 7px rgba(92,224,184,0.55));
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .sss-cap .sss-br { animation: none; }
+              }
+            `}</style>
+            <span className="sss-br sss-br--tl" aria-hidden="true" />
+            <span className="sss-br sss-br--tr" aria-hidden="true" />
+            <span className="sss-br sss-br--bl" aria-hidden="true" />
+            <span className="sss-br sss-br--br" aria-hidden="true" />
+            <span className="sss-glow">
+              <CameraGlyph />
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.92)" }}>tap to take photo</span>
             {/* Expectation-setting hint — sets the user up for a
                 successful first scan. Loose clothing or messy piles
                 give the model nothing to hook on; spines, tools, and
                 housewares all have crisp identifying features. */}
             <span
               style={{
-                marginTop: 8,
+                marginTop: 4,
                 fontFamily: "var(--font-body)",
                 fontSize: 11,
                 fontWeight: 400,
-                color: "#3D2E55",
+                color: "rgba(255,255,255,0.48)",
                 textAlign: "center",
               }}
             >

@@ -371,7 +371,7 @@ export default function ToolsPage() {
             icon={<ShelfIcon />}
             accent="#5CE0B8"
             name="Shelf Scanner"
-            desc="Point at a shelf — AI values every item at once"
+            desc="Point at a shelf — every item valued at once"
             onTap={() => { haptic(); triggerScan("shelf"); }}
           />
           <ToolTile
@@ -392,7 +392,7 @@ export default function ToolsPage() {
             icon={<CheckBoxIcon />}
             accent="#D4A574"
             name="Condition Grade"
-            desc="AI letter grade from your photos — MINT to POOR"
+            desc="Letter grade from your photos — MINT to POOR"
             onTap={() => { haptic(); setConditionOpen(true); }}
           />
         </div>
@@ -404,7 +404,7 @@ export default function ToolsPage() {
             icon={<SaturnIcon />}
             accent="#5CE0B8"
             name="Flip Coach"
-            desc="Claude-backed advisor — pricing, listing tips, strategy"
+            desc="Your flip advisor — pricing, listing tips, strategy"
             onTap={() => { haptic(); setCoachOpen(true); }}
           />
           <ToolTile

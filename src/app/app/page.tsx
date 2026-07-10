@@ -592,7 +592,7 @@ function DashboardPage() {
 
   // Scan overlay state
   const [scanOpen, setScanOpen] = useState(false);
-  const [scanMode, setScanMode] = useState<"barcode" | "vision">("barcode");
+  const [scanMode, setScanMode] = useState<"barcode" | "vision" | "crate">("barcode");
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -1025,7 +1025,7 @@ function DashboardPage() {
     return () => observer.disconnect();
   }, []);
 
-  const startScan = useCallback((mode: "barcode" | "vision") => {
+  const startScan = useCallback((mode: "barcode" | "vision" | "crate") => {
     haptic();
     // FREE_SCAN_LIMIT = 0 — non-Pro users go straight to the paywall.
     // No scan overlay, no camera, no API call.

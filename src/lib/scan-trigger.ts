@@ -18,7 +18,9 @@ import { usePathname, useRouter } from "next/navigation";
 // registers. ALL gating (free-scan limit, Pro shelf check, paywall)
 // stays inside the dashboard's handler — this module never bypasses it.
 
-export type ScanTriggerMode = "barcode" | "vision" | "shelf";
+// "crate" rides the same pipe: ScanOverlay accepts mode="crate"
+// directly and resyncs activeMode on every open.
+export type ScanTriggerMode = "barcode" | "vision" | "shelf" | "crate";
 
 let handler: ((mode: ScanTriggerMode) => void) | null = null;
 let pending: ScanTriggerMode | null = null;

@@ -2900,7 +2900,7 @@ export default function ScanOverlay({
                 color: "var(--text-muted)",
               }}
             >
-              {activeMode === "barcode" ? "ANALYZING COMPS..." : "AI IDENTIFYING..."}
+              {activeMode === "barcode" ? "ANALYZING COMPS..." : "IDENTIFYING ITEM..."}
             </div>
             <div
               style={{

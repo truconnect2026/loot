@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useScanTrigger } from "@/lib/scan-trigger";
+import ScanModeLauncher from "@/components/nav/ScanModeLauncher";
 import { useState, useEffect } from "react";
 
 // Routes where the tab bar is rendered.
@@ -189,6 +190,12 @@ export default function TabBar() {
   // re-keys the one-shot quick-draw pulse per tap.
   const triggerScan = useScanTrigger();
   const [ringKey, setRingKey] = useState(0);
+  // FAB is now a two-stage quick-draw: first tap unfolds the mode
+  // launcher, mode tap fires the trigger. Route changes close it.
+  const [launcherOpen, setLauncherOpen] = useState(false);
+  useEffect(() => {
+    setLauncherOpen(false);
+  }, [pathname]);
 
   function activeId(): TabId | null {
     for (const tab of TABS) {
@@ -289,6 +296,14 @@ export default function TabBar() {
 `,
         }}
       />
+      <ScanModeLauncher
+        open={launcherOpen}
+        onClose={() => setLauncherOpen(false)}
+        onSelect={(mode) => {
+          setLauncherOpen(false);
+          triggerScan(mode);
+        }}
+      />
       <div className="tb-pill">
         {TABS.map((tab) => {
           // ── Center SCAN button — elevated circular mint ──────────────
@@ -309,10 +324,12 @@ export default function TabBar() {
                   onClick={() => {
                     // Quick-draw: fire immediately (no delay — the ring
                     // plays over the transition, it never blocks it).
-                    if (!reduced) setRingKey((k) => k + 1);
-                    triggerScan("shelf");
+                    if (!launcherOpen && !reduced) setRingKey((k) => k + 1);
+                    setLauncherOpen((o) => !o);
                   }}
-                  aria-label="Scan shelf"
+                  aria-label="Scan"
+                  aria-expanded={launcherOpen}
+                  aria-controls="scan-mode-launcher"
                   style={{
                     width: 54,
                     height: 54,
