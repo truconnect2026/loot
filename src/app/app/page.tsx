@@ -17,6 +17,7 @@ import DealDetailSheet from "@/components/dashboard/DealDetailSheet";
 import type { Deal } from "@/components/dashboard/DealCard";
 import ToolTile from "@/components/dashboard/ToolTile";
 import ScanOverlay from "@/components/dashboard/ScanOverlay";
+import { registerScanHandler, useScanTrigger } from "@/lib/scan-trigger";
 import VerdictSheet from "@/components/dashboard/VerdictSheet";
 import SourcingCarousel, {
   type SourcingFeed,
@@ -673,28 +674,36 @@ function DashboardPage() {
   const dayOfWeek = now ? now.getDay() : 0;
   const hour = now ? now.getHours() : 0;
 
-  // Two-step shelf-scan auto-open from the tab-bar SCAN button:
-  // 1) Read the URL param on mount (before scanCount resolves).
-  // 2) Once scanCount resolves, gate on Pro status — non-Pro → paywall.
-  const pendingShelfScanRef = useRef(false);
+  // Shelf-scan requests land here from the canonical trigger
+  // (src/lib/scan-trigger.ts — nav FAB, Tools tile) and from the
+  // ?scan=shelf deep link below. STATE, not a ref: the old ref-based
+  // version was only re-checked when scanCount changed, so a request
+  // arriving AFTER scanCount had resolved (FAB tapped while sitting on
+  // Home) was never processed — part of the Jan '26 dead-FAB bug.
+  const [shelfRequest, setShelfRequest] = useState(false);
+  // Deep-link support only (?scan=shelf bookmarks / external links).
+  // In-app surfaces must NOT push this param — they call the trigger.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("scan") === "shelf") {
       window.history.replaceState(null, "", "/app");
-      pendingShelfScanRef.current = true;
+      setShelfRequest(true);
     }
   }, []);
+  // Gate once both the request and the scan count are in — Pro opens
+  // the shelf sheet, non-Pro the paywall. Same branches as before the
+  // trigger refactor; the free-scan gate itself is untouched.
   useEffect(() => {
-    if (!pendingShelfScanRef.current || scanCount === null) return;
-    pendingShelfScanRef.current = false;
+    if (!shelfRequest || scanCount === null) return;
+    setShelfRequest(false);
     if (!scanCount.isPro) {
       setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
       setPaywallOpen(true);
     } else {
       setShelfOpen(true);
     }
-  }, [scanCount]);
+  }, [shelfRequest, scanCount]);
 
 
   // Deal detail sheet state
@@ -1028,6 +1037,19 @@ function DashboardPage() {
     setScanMode(mode);
     setScanOpen(true);
   }, [scanCount]);
+
+  // ── Canonical scan-trigger registration ─────────────────────────────
+  // The dashboard is the ONLY consumer: every scan surface (nav FAB,
+  // scan hero, Tools tile, deep link) funnels through scan-trigger.ts
+  // into this handler, which owns ALL gating. A trigger fired before
+  // this page mounted drains immediately on register.
+  useEffect(() => {
+    return registerScanHandler((mode) => {
+      if (mode === "shelf") setShelfRequest(true);
+      else startScan(mode);
+    });
+  }, [startScan]);
+  const triggerScan = useScanTrigger();
 
   const handleScanResult = useCallback(
     (result: VerdictPayload) => {
@@ -1364,7 +1386,7 @@ function DashboardPage() {
               real HeroProfit takes over. Gated on !statsLoading so
               EmptyHero never flashes before stats resolve. */}
           {!statsLoading && lifetimeScans === 0 ? (
-            <EmptyHero onScanTap={() => startScan("barcode")} />
+            <EmptyHero onScanTap={() => triggerScan("barcode")} />
           ) : (
             <StatsBorderWrap>
             <HeroProfit
@@ -1405,7 +1427,7 @@ function DashboardPage() {
         >
           {/* ITEM mode — the exact param the old AI VISION button
               passed; ScanOverlay's own toggle covers the rest. */}
-          <ScanButtons onScan={() => startScan("vision")} />
+          <ScanButtons onScan={() => triggerScan("vision")} />
           {/* Flip-or-skip daily card — surfaces today's round + streak.
               Reads localStorage, no server dependency. */}
           <div style={{ marginTop: 16 }}>

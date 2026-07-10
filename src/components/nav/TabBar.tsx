@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useScanTrigger } from "@/lib/scan-trigger";
 import { useState, useEffect } from "react";
 
 // Routes where the tab bar is rendered.
@@ -182,6 +183,12 @@ export default function TabBar() {
   const hasBuyBadge = useScanBadge();
   const reduced = usePrefersReducedMotion();
   const shrunk = useShrinkOnScroll(!reduced);
+  // FAB fires through the canonical trigger (src/lib/scan-trigger.ts) —
+  // NEVER through a URL param. On /app it fires the dashboard handler
+  // directly; elsewhere it stashes the mode and navigates. ringKey
+  // re-keys the one-shot quick-draw pulse per tap.
+  const triggerScan = useScanTrigger();
+  const [ringKey, setRingKey] = useState(0);
 
   function activeId(): TabId | null {
     for (const tab of TABS) {
@@ -262,8 +269,21 @@ export default function TabBar() {
 .tb-btn[aria-current="page"] .tb-dot { opacity: 1; transform: scale(1); }
 .tb-fab { transition: transform 120ms ease, filter 120ms ease; }
 .tb-fab:active { transform: scale(0.94); filter: brightness(0.94); }
+/* One-shot quick-draw ring: a fresh keyed span per tap, 240ms out and
+   done — transform/opacity only, forwards keeps it invisible after. */
+.tb-fab-ring {
+  position: absolute; inset: -3px; border-radius: 50%;
+  border: 2px solid rgba(92, 224, 184, 0.85);
+  pointer-events: none;
+  animation: tbRing 240ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes tbRing {
+  from { transform: scale(1); opacity: 0.9; }
+  to { transform: scale(1.6); opacity: 0; }
+}
 @media (prefers-reduced-motion: reduce) {
   .tb-btn, .tb-ico, .tb-lbl, .tb-dot, .tb-fab, .tb-pill { transition: none !important; }
+  .tb-fab-ring { display: none; }
   .tb-shrunk .tb-ico, .tb-shrunk .tb-lbl { transform: none; }
 }
 `,
@@ -286,7 +306,12 @@ export default function TabBar() {
               >
                 <button
                   className="tb-fab"
-                  onClick={() => router.push("/app?scan=shelf")}
+                  onClick={() => {
+                    // Quick-draw: fire immediately (no delay — the ring
+                    // plays over the transition, it never blocks it).
+                    if (!reduced) setRingKey((k) => k + 1);
+                    triggerScan("shelf");
+                  }}
                   aria-label="Scan shelf"
                   style={{
                     width: 54,
@@ -321,6 +346,9 @@ export default function TabBar() {
                         border: "2px solid #070510",
                       }}
                     />
+                  )}
+                  {ringKey > 0 && (
+                    <span key={ringKey} className="tb-fab-ring" aria-hidden="true" />
                   )}
                   <span style={{ display: "flex", marginTop: -1 }}>
                     <CameraIcon />

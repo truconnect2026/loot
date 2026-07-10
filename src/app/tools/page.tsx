@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useScanTrigger } from "@/lib/scan-trigger";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import ToolSheet, { type ToolSheetTool } from "@/components/dashboard/ToolSheet";
 import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
@@ -264,6 +265,9 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
 
 export default function ToolsPage() {
   const router = useRouter();
+  // Shelf tile goes through the canonical trigger — same contract as
+  // the nav FAB (see src/lib/scan-trigger.ts; no ad-hoc URL params).
+  const triggerScan = useScanTrigger();
 
   const [activeTool, setActiveTool] = useState<ToolSheetTool | null>(null);
   const [conditionOpen, setConditionOpen] = useState(false);
@@ -368,7 +372,7 @@ export default function ToolsPage() {
             accent="#5CE0B8"
             name="Shelf Scanner"
             desc="Point at a shelf — AI values every item at once"
-            onTap={() => { haptic(); router.push("/app?scan=shelf"); }}
+            onTap={() => { haptic(); triggerScan("shelf"); }}
           />
           <ToolTile
             icon={<DollarIcon />}

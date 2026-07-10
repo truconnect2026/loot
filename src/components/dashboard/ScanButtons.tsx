@@ -32,7 +32,9 @@ import { useEffect, useRef, useState } from "react";
  */
 
 interface ScanButtonsProps {
-  /** Fires the scanner in ITEM mode (mount passes startScan("vision")). */
+  /** Fires the scanner in ITEM mode. The mount passes the canonical
+      trigger (src/lib/scan-trigger.ts) with "vision" — identical
+      behavior to the old direct startScan("vision") wiring. */
   onScan: () => void;
   /** Accepted for mount-site compatibility; the hero's fixed composition
       does not render a per-button counter anymore. */
@@ -207,9 +209,16 @@ const STYLES = `
   color: rgba(92, 224, 184, 0.45);
 }
 
-/* viewfinder frame — right region */
+/* viewfinder frame — right region. bottom: 34px (not 18) holds the
+   frame's ENTIRE bounding box above the caps row's band (bottom 12px +
+   ~9px line box): the two are separated on the CROSS axis, so the caps
+   line mathematically cannot reach the brackets at any viewport width —
+   no font-metric or run-width math involved. (The first fix narrowed
+   the frame width instead; it only held in the harness because the
+   fallback serif ran ~25% narrower than real Space Mono.) Do not move
+   the caps back into the frame's vertical band. */
 .sh-frame {
-  position: absolute; right: 14px; top: 18px; bottom: 18px; width: 150px;
+  position: absolute; right: 14px; top: 18px; bottom: 34px; width: 150px;
   z-index: 1;
 }
 .sh-br {
