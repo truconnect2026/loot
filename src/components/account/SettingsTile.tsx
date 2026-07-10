@@ -48,12 +48,17 @@ export default function SettingsTile({
     ? hovered
       ? "rgba(232,99,107,0.06)"
       : "rgba(232,99,107,0.03)"
-    : "rgba(255,255,255,0.038)";
+    : "rgba(255,255,255,0.045)";
   const baseBorder = isDanger
     ? hovered
       ? "1px solid rgba(232,99,107,0.18)"
       : "1px solid rgba(232,99,107,0.12)"
-    : "1px solid rgba(255,255,255,0.07)";
+    : "1px solid rgba(255,255,255,0.10)";
+  // Kit-card face: a whisper of the tile's own accent in the gradient
+  // so each settings row reads as its own instrument (theater pass).
+  const faceGradient = !isDanger && accentColor
+    ? `linear-gradient(150deg, ${accentColor}10 0%, rgba(255,255,255,0.02) 55%)`
+    : undefined;
 
   const bg = pressed ? "var(--press-bg)" : baseBg;
   // House press: scale + accent edge flash (was translateY(1px)).
@@ -80,6 +85,7 @@ export default function SettingsTile({
         position: "relative",
         height,
         backgroundColor: bg,
+        backgroundImage: pressed ? undefined : faceGradient,
         border: baseBorder,
         boxShadow:
           pressed && !reduced
@@ -115,11 +121,13 @@ export default function SettingsTile({
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 18,
-            height: 18,
+            width: 30,
+            height: 30,
+            borderRadius: 9,
             marginRight: 10,
             color: accentColor,
-            opacity: 0.75,
+            background: accentColor ? `${accentColor}22` : undefined,
+            filter: accentColor ? `drop-shadow(0 0 5px ${accentColor}44)` : undefined,
             flexShrink: 0,
           }}
         >

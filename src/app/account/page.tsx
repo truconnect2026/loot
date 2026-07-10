@@ -926,7 +926,8 @@ export default function AccountPage() {
             <div
               data-cell-flash=""
               style={{
-                backgroundColor: "rgba(255,255,255,0.06)",
+                backgroundColor: "rgba(255,255,255,0.09)",
+                border: "1px solid rgba(255,255,255,0.07)",
                 borderRadius: 8,
                 padding: "4px 12px",
                 marginRight: 6,
@@ -938,7 +939,7 @@ export default function AccountPage() {
                   fontFamily: "var(--font-space-mono)",
                   fontWeight: 500,
                   fontSize: 12,
-                  color: "#C8C0D8",
+                  color: "#DED8EC",
                   fontFeatureSettings: '"tnum"',
                 }}
               >
@@ -977,7 +978,8 @@ export default function AccountPage() {
                 state should invite action, not report a zero. */}
             <div
               style={{
-                backgroundColor: "rgba(255,255,255,0.06)",
+                backgroundColor: "rgba(255,255,255,0.09)",
+                border: "1px solid rgba(255,255,255,0.07)",
                 borderRadius: 8,
                 padding: "4px 12px",
                 marginRight: 6,
@@ -1002,7 +1004,7 @@ export default function AccountPage() {
                     style={{
                       fontFamily: "var(--font-body)",
                       fontSize: 11,
-                      color: "#5A4E70",
+                      color: "rgba(255,255,255,0.55)",
                     }}
                   >
                     add keywords
@@ -1014,7 +1016,7 @@ export default function AccountPage() {
                     fontFamily: "var(--font-space-mono)",
                     fontWeight: 500,
                     fontSize: 12,
-                    color: "#C8C0D8",
+                    color: "#DED8EC",
                     fontFeatureSettings: '"tnum"',
                   }}
                 >
@@ -1091,7 +1093,7 @@ export default function AccountPage() {
                 style={{
                   fontFamily: "var(--font-body)",
                   fontSize: 11,
-                  color: "var(--text-muted)",
+                  color: "rgba(255,255,255,0.55)",
                   marginTop: 2,
                 }}
               >

@@ -10,25 +10,24 @@ import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 
 /**
- * TOOLS — the arsenal. Hierarchy replaces the old SOURCE/SCAN/SELL
- * filing cabinet: three FLAGSHIP instruments lead (Shelf Scanner
- * full-width, Price Check + Authenticate 2-up — the in-store,
- * mid-hunt workhorses), THE KIT follows as a tight 2-col grid, and
- * Sourcing Intel closes as a slim cross-link (it fronts a whole tab
- * that already lives in the nav — it doesn't compete for flagship).
- *
- * Identity: every tool keeps its accent (mint/gold/periwinkle/red
- * inventory preserved from the old rows) — icon tint, soft under-glow,
- * hairline edge kiss. Same card anatomy, different soul.
- *
- * Motion: Home's entrance stagger (45ms), house press via CSS :active
- * (scale + accent edge flash — reduced-motion kills it), and ONE
- * whisper idle per flagship (shelf cell shimmer / $ pulse / shield
- * breathe), IntersectionObserver-paused off-screen. The kit stays
- * static — hierarchy through motion too.
+ * TOOLS — the arsenal, theater pass. Every flagship DEMONSTRATES its
+ * own job in a whisper-quiet loop (the Home principle: don't describe
+ * the tool, pantomime it):
+ *   · SHELF SCANNER — a micro-shelf of item silhouettes; a mint
+ *     scan-line sweeps (5.2s), price pills pop above each item as it
+ *     crosses, hold, fade. Plus a faint holo-foil kiss (FoS family).
+ *   · PRICE CHECK — three ghost comp rows ("sold $––") type
+ *     themselves in sequence (6s), settle, fade.
+ *   · AUTHENTICATE — a verdict cycle: tick, tick, red ✗, then a
+ *     rep-caught red edge flash (6.4s).
+ * Scene discipline: transform/opacity only, one timeline per scene,
+ * staggered phase offsets (0.8s / 1.5s / 2.2s) + distinct durations so
+ * no two loops sync-fire; scenes start only after the entrance lands;
+ * ONE IntersectionObserver pauses all of it off-screen; reduced motion
+ * removes every scene and keeps the full brightness upgrade.
  *
  * Routes, gating, and the Shelf Scanner's canonical-trigger call are
- * byte-identical to the previous revision. Layout and visuals only.
+ * byte-identical to the previous revision. Visuals/motion only.
  */
 
 // Light haptic helper
@@ -124,12 +123,87 @@ function ChevronRightIcon() {
   );
 }
 
+// ── Flagship scenes — each card pantomimes its own job ─────────────────────
+
+/** Micro-shelf: five item silhouettes on a shelf line, a mint scan-line
+    sweeps across, price pills pop above each item as it passes. */
+function ShelfScene() {
+  return (
+    <span className="ts ts-shelf" aria-hidden="true" style={{ "--sd": "800ms" } as React.CSSProperties}>
+      {/* holo-foil kiss — the FoS recipe at whisper intensity */}
+      <span className="ts-foil ts-a" />
+      <svg width={280} height={54} viewBox="0 0 280 54" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={1.2} strokeLinejoin="round" strokeLinecap="round">
+        {/* shelf line */}
+        <line x1={2} y1={48} x2={278} y2={48} stroke="rgba(92,224,184,0.35)" />
+        {/* book spine */}
+        <rect x={10} y={16} width={9} height={32} />
+        {/* box */}
+        <rect x={58} y={26} width={20} height={22} />
+        <line x1={58} y1={33} x2={78} y2={33} />
+        {/* vase */}
+        <path d="M126 22 h8 v5 q5 3 5 10 q0 11 -9 11 q-9 0 -9 -11 q0 -7 5 -10 z" />
+        {/* cup */}
+        <path d="M186 34 h14 v14 h-14 z M200 37 q6 0 6 5 q0 4 -6 4" />
+        {/* record */}
+        <circle cx={252} cy={38} r={10} />
+        <circle cx={252} cy={38} r={2} />
+      </svg>
+      <span className="ts-scanline ts-a" />
+      <span className="ts-pill ts-pill--1 ts-a">$––</span>
+      <span className="ts-pill ts-pill--2 ts-a">$––</span>
+      <span className="ts-pill ts-pill--3 ts-a">$––</span>
+      <span className="ts-pill ts-pill--4 ts-a">$––</span>
+      <span className="ts-pill ts-pill--5 ts-a">$––</span>
+    </span>
+  );
+}
+
+/** Comp readout: three ghost "sold $––" rows type themselves in
+    sequence, settle, fade. */
+function CompsScene() {
+  return (
+    <span className="ts ts-comps ts-a" aria-hidden="true" style={{ "--sd": "1500ms" } as React.CSSProperties}>
+      {[1, 2, 3].map((i) => (
+        <span key={i} className="ts-row">
+          <span className={`ts-row-in ts-row-in--${i} ts-a`}>
+            sold&nbsp;&nbsp;<span style={{ color: "rgba(92,224,184,0.9)" }}>$––</span>
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Verdict cycle: tick, tick, red flag — then the card's edge flashes
+    rep-caught red. The flash overlay is rendered by the card itself. */
+function VerdictScene() {
+  return (
+    <span className="ts ts-verd" aria-hidden="true" style={{ "--sd": "2200ms" } as React.CSSProperties}>
+      {[1, 2, 3].map((i) => (
+        <span key={i} className={`ts-vrow ts-vrow--${i} ts-a`}>
+          {i === 3 ? (
+            <svg width={9} height={9} viewBox="0 0 24 24" stroke="#E8636B" strokeWidth={3.4} strokeLinecap="round">
+              <line x1={5} y1={5} x2={19} y2={19} /><line x1={19} y1={5} x2={5} y2={19} />
+            </svg>
+          ) : (
+            <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="#5CE0B8" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+          <span className="ts-vbar" style={i === 3 ? { background: "rgba(232,99,107,0.4)" } : undefined} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 // ── Cards ──────────────────────────────────────────────────────────────────
 
 interface FlagshipProps {
   icon: React.ReactNode;
-  motif: React.ReactNode;
-  idle?: React.ReactNode;
+  scene?: React.ReactNode;
+  /** Authenticate's rep-caught edge flash rides the card border. */
+  edgeFlash?: boolean;
   accent: string;
   name: string;
   desc: string;
@@ -137,9 +211,11 @@ interface FlagshipProps {
   onTap: () => void;
 }
 
-/** Large feature card — icon with accent glow, display-type name, a
-    ghost motif in the corner, and (optionally) one whisper idle layer. */
-function FlagshipCard({ icon, motif, idle, accent, name, desc, wide, onTap }: FlagshipProps) {
+/** Large feature card — bright accent presence + a living scene that
+    demonstrates the tool's job. Brightness floor (theater pass):
+    face gradient 14→22, border 2E→47, under-glow 55→77, icon tile
+    1C→2B, icon glow 55→88. */
+function FlagshipCard({ icon, scene, edgeFlash, accent, name, desc, wide, onTap }: FlagshipProps) {
   return (
     <button
       onClick={onTap}
@@ -152,33 +228,22 @@ function FlagshipCard({ icon, motif, idle, accent, name, desc, wide, onTap }: Fl
           flexDirection: wide ? "row" : "column",
           alignItems: wide ? "center" : "flex-start",
           gap: wide ? 14 : 10,
-          padding: wide ? "18px 16px" : "16px 14px",
-          minHeight: wide ? 0 : 148,
-          background: `linear-gradient(135deg, ${accent}14 0%, rgba(255,255,255,0.02) 55%)`,
-          border: `1px solid ${accent}2E`,
+          // wide: bottom padding reserves the shelf-scene strip;
+          // 2-up: extra height reserves the bottom scene zone.
+          padding: wide ? "16px 16px 68px" : "16px 14px 58px",
+          minHeight: wide ? 0 : 196,
+          background: `linear-gradient(135deg, ${accent}22 0%, rgba(255,255,255,0.03) 60%)`,
+          border: `1px solid ${accent}47`,
           borderRadius: 18,
-          boxShadow: `0 12px 28px -16px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+          boxShadow: `0 14px 30px -14px ${accent}77, inset 0 1px 0 rgba(255,255,255,0.08)`,
           cursor: "pointer",
           textAlign: "left",
           overflow: "hidden",
         } as React.CSSProperties
       }
     >
-      {/* ghost motif — the tool's glyph, oversized, whisper-faint */}
-      <span
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          right: -14,
-          bottom: -18,
-          color: accent,
-          opacity: 0.09,
-          pointerEvents: "none",
-        }}
-      >
-        {motif}
-      </span>
-      {idle}
+      {scene}
+      {edgeFlash && <span className="ts-flash ts-a" aria-hidden="true" />}
       <span
         style={{
           display: "inline-flex",
@@ -187,10 +252,10 @@ function FlagshipCard({ icon, motif, idle, accent, name, desc, wide, onTap }: Fl
           width: 46,
           height: 46,
           borderRadius: 13,
-          background: `${accent}1C`,
+          background: `${accent}2B`,
           color: accent,
           flexShrink: 0,
-          filter: `drop-shadow(0 0 9px ${accent}55)`,
+          filter: `drop-shadow(0 0 10px ${accent}88)`,
         }}
       >
         {icon}
@@ -201,7 +266,7 @@ function FlagshipCard({ icon, motif, idle, accent, name, desc, wide, onTap }: Fl
             fontFamily: "var(--font-bebas-neue, sans-serif)",
             fontSize: 21,
             letterSpacing: "0.05em",
-            color: "#EDE7F8",
+            color: "#F2EDFA",
             lineHeight: 1,
           }}
         >
@@ -211,7 +276,7 @@ function FlagshipCard({ icon, motif, idle, accent, name, desc, wide, onTap }: Fl
           style={{
             fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 11.5,
-            color: "#9A92B3",
+            color: "rgba(255,255,255,0.62)",
             lineHeight: 1.45,
           }}
         >
@@ -230,8 +295,9 @@ interface KitCardProps {
   onTap: () => void;
 }
 
-/** Compact kit card — 2-col grid citizen. Static by design (hierarchy
-    through motion): accent lives in the icon tint + bottom edge kiss. */
+/** Compact kit card — static by design, but a distinct little
+    instrument: bright icon tile, visible accent edge-kiss, legible
+    copy, full house lift. */
 function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
   return (
     <button
@@ -245,10 +311,10 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
           alignItems: "flex-start",
           gap: 8,
           padding: "13px 13px 12px",
-          background: "rgba(255,255,255,0.028)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: `linear-gradient(150deg, ${accent}12 0%, rgba(255,255,255,0.03) 55%)`,
+          border: "1px solid rgba(255,255,255,0.09)",
           borderRadius: 14,
-          boxShadow: `inset 0 -2px 0 ${accent}26`,
+          boxShadow: `inset 0 -2px 0 ${accent}40, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
           cursor: "pointer",
           textAlign: "left",
         } as React.CSSProperties
@@ -259,9 +325,10 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
           display: "inline-flex",
           padding: 7,
           borderRadius: 9,
-          background: `${accent}18`,
+          background: `${accent}26`,
           color: accent,
           flexShrink: 0,
+          filter: `drop-shadow(0 0 6px ${accent}55)`,
         }}
       >
         {icon}
@@ -272,7 +339,7 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
             fontFamily: "var(--font-space-mono, monospace)",
             fontSize: 10.5,
             fontWeight: 700,
-            color: "#DDD5EE",
+            color: "#E9E3F6",
             letterSpacing: "0.05em",
           }}
         >
@@ -282,7 +349,7 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
           style={{
             fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 10.5,
-            color: "#7A7194",
+            color: "rgba(255,255,255,0.58)",
             lineHeight: 1.4,
           }}
         >
@@ -314,10 +381,10 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
           alignItems: "center",
           gap: 12,
           padding: "13px 14px",
-          background: "rgba(255,255,255,0.028)",
-          border: "1px solid rgba(255,255,255,0.06)",
+          background: `linear-gradient(150deg, ${accent}12 0%, rgba(255,255,255,0.03) 55%)`,
+          border: "1px solid rgba(255,255,255,0.09)",
           borderRadius: 14,
-          boxShadow: `inset 0 -2px 0 ${accent}26`,
+          boxShadow: `inset 0 -2px 0 ${accent}40, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
           cursor: "pointer",
           textAlign: "left",
           width: "100%",
@@ -329,9 +396,10 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
           display: "inline-flex",
           padding: 8,
           borderRadius: 9,
-          background: `${accent}18`,
+          background: `${accent}26`,
           color: accent,
           flexShrink: 0,
+          filter: `drop-shadow(0 0 6px ${accent}55)`,
         }}
       >
         {icon}
@@ -342,7 +410,7 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
             fontFamily: "var(--font-space-mono, monospace)",
             fontSize: 10.5,
             fontWeight: 700,
-            color: "#DDD5EE",
+            color: "#E9E3F6",
             letterSpacing: "0.05em",
           }}
         >
@@ -352,14 +420,14 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
           style={{
             fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 10.5,
-            color: "#7A7194",
+            color: "rgba(255,255,255,0.58)",
             lineHeight: 1.4,
           }}
         >
           {desc}
         </span>
       </span>
-      <span style={{ color: "#4A4260", flexShrink: 0 }}>
+      <span style={{ color: "#5A5272", flexShrink: 0 }}>
         <ChevronRightIcon />
       </span>
     </button>
@@ -379,7 +447,7 @@ export default function ToolsPage() {
   const [coachOpen, setCoachOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
-  // Flagship idle life pauses off-screen (single observer).
+  // Flagship scenes pause off-screen (single observer).
   const flagsRef = useRef<HTMLDivElement>(null);
   const [flagsInView, setFlagsInView] = useState(true);
   useEffect(() => {
@@ -421,7 +489,7 @@ export default function ToolsPage() {
       {/* Header */}
       <div
         style={{
-          padding: "56px 18px 20px",
+          padding: "56px 18px 18px",
           position: "relative",
           zIndex: 1,
         }}
@@ -441,11 +509,25 @@ export default function ToolsPage() {
           style={{
             fontFamily: "var(--font-manrope, sans-serif)",
             fontSize: 12.5,
-            color: "rgba(255,255,255,0.55)",
+            color: "rgba(255,255,255,0.58)",
             marginTop: 5,
           }}
         >
           every job in the flip, one tap away.
+        </div>
+        {/* truthful stat — derivable from this page alone: 3 flagships
+            + 6 kit cards + the sourcing cross-link. Update if tiles
+            change. */}
+        <div
+          style={{
+            fontFamily: "var(--font-space-mono, monospace)",
+            fontSize: 8.5,
+            letterSpacing: "0.16em",
+            color: "rgba(92,224,184,0.5)",
+            marginTop: 7,
+          }}
+        >
+          10 TOOLS · ONE TAP EACH
         </div>
       </div>
 
@@ -453,13 +535,12 @@ export default function ToolsPage() {
         className={"tl-stagger" + (flagsInView ? "" : " tl--paused")}
         style={{ padding: "0 18px", position: "relative", zIndex: 1 }}
       >
-        {/* ── FLAGSHIPS — the workhorses lead ─────────────────────── */}
+        {/* ── FLAGSHIPS — each one demonstrates itself ────────────── */}
         <div ref={flagsRef} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <FlagshipCard
             wide
             icon={<ShelfIcon size={26} />}
-            motif={<ShelfIcon size={96} />}
-            idle={<span className="tl-idle-cell" aria-hidden="true" />}
+            scene={<ShelfScene />}
             accent="#5CE0B8"
             name="SHELF SCANNER"
             desc="point at a shelf — every item valued at once"
@@ -468,7 +549,7 @@ export default function ToolsPage() {
           <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 10 }}>
             <FlagshipCard
               icon={<DollarIcon size={24} />}
-              motif={<span className="tl-idle-dollar"><DollarIcon size={92} /></span>}
+              scene={<CompsScene />}
               accent="#D4A574"
               name="PRICE CHECK"
               desc="paste a name or photo to get instant resale comps"
@@ -476,7 +557,8 @@ export default function ToolsPage() {
             />
             <FlagshipCard
               icon={<ShieldIcon size={24} />}
-              motif={<span className="tl-idle-shield"><ShieldIcon size={92} /></span>}
+              scene={<VerdictScene />}
+              edgeFlash
               accent="#E8636B"
               name="AUTHENTICATE"
               desc="spot fakes on sneakers, cards, bags, and more"
@@ -623,49 +705,140 @@ const STYLES = `
   background-size: 100% 1px;
 }
 
-/* ── flagship idle life — one whisper per card, opacity only ──
-   Shelf: one grid cell shimmers (a mint square over the ghost motif's
-   top-right cell — motif box is 96px at right:-14/bottom:-18, so the
-   cell lands at right 22 / bottom 66). */
-.tl-idle-cell {
-  position: absolute; right: 42px; bottom: 38px;
-  width: 28px; height: 28px; border-radius: 4px;
-  background: #5CE0B8;
+/* ════ FLAGSHIP SCENES ════════════════════════════════════════════
+   Shared: every animated element carries .ts-a; each scene root sets
+   --sd (phase offset) so no two loops sync-fire; scenes begin after
+   the entrance lands (offsets 0.8 / 1.5 / 2.2s); the flagships'
+   IntersectionObserver pauses everything via .tl--paused. */
+.ts { position: absolute; pointer-events: none; }
+.tl--paused .ts-a { animation-play-state: paused !important; }
+
+/* ── SHELF: micro-shelf + sweeping scan-line + price pills ── */
+.ts-shelf { right: 10px; bottom: 8px; width: 280px; height: 54px; }
+.ts-foil {
+  position: absolute; inset: -220% -30% -10% -30%;
+  background: linear-gradient(115deg,
+    transparent 30%, rgba(92,224,184,0.07) 42%,
+    rgba(123,143,255,0.07) 50%, rgba(212,165,116,0.06) 58%,
+    transparent 70%);
+  animation: tsFoil 8s ease-in-out var(--sd) infinite alternate;
+}
+@keyframes tsFoil {
+  from { transform: translate3d(-18%, 0, 0); }
+  to { transform: translate3d(18%, 0, 0); }
+}
+.ts-scanline {
+  position: absolute; top: 0; bottom: 4px; left: 0; width: 1.5px;
+  background: linear-gradient(180deg, transparent, rgba(92,224,184,0.9), transparent);
+  box-shadow: 3px 0 8px rgba(92,224,184,0.4);
   opacity: 0;
-  animation: tlCell 4.2s ease-in-out infinite;
-  pointer-events: none;
+  animation: tsScan 5.2s linear var(--sd) infinite;
 }
-@keyframes tlCell {
-  0%, 62% { opacity: 0; }
-  74% { opacity: 0.16; }
-  86%, 100% { opacity: 0; }
+@keyframes tsScan {
+  0% { transform: translateX(0); opacity: 0; }
+  6% { opacity: 1; transform: translateX(0); }
+  42% { transform: translateX(278px); opacity: 1; }
+  48%, 100% { transform: translateX(278px); opacity: 0; }
 }
-/* Price Check: the ghost $ pulses faintly */
-.tl-idle-dollar { display: inline-flex; animation: tlPulse 3.6s ease-in-out infinite; }
-@keyframes tlPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+.ts-pill {
+  position: absolute; top: 0;
+  font-family: var(--font-space-mono, monospace);
+  font-size: 6.5px; font-weight: 700; letter-spacing: 0.04em;
+  color: #071310; background: rgba(92, 224, 184, 0.85);
+  border-radius: 999px; padding: 1px 4px; line-height: 1.3;
+  opacity: 0;
+  animation-duration: 5.2s;
+  animation-timing-function: linear;
+  animation-delay: var(--sd);
+  animation-iteration-count: infinite;
 }
-/* Authenticate: slow shield glow breathe */
-.tl-idle-shield {
-  display: inline-flex;
-  animation: tlBreathe 3s ease-in-out infinite;
+.ts-pill--1 { left: 4px; animation-name: tsPill1; }
+.ts-pill--2 { left: 56px; animation-name: tsPill2; }
+.ts-pill--3 { left: 118px; animation-name: tsPill3; }
+.ts-pill--4 { left: 181px; animation-name: tsPill4; }
+.ts-pill--5 { left: 240px; animation-name: tsPill5; }
+/* pop as the scan-line crosses each item (6%→42% sweep, staggered),
+   hold, fade together */
+@keyframes tsPill1 { 0%, 8% { opacity: 0; transform: translateY(3px); } 10%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsPill2 { 0%, 15% { opacity: 0; transform: translateY(3px); } 17%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsPill3 { 0%, 22% { opacity: 0; transform: translateY(3px); } 24%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsPill4 { 0%, 30% { opacity: 0; transform: translateY(3px); } 32%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsPill5 { 0%, 38% { opacity: 0; transform: translateY(3px); } 40%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+
+/* ── PRICE CHECK: comp rows type themselves ── */
+.ts-comps {
+  right: 12px; bottom: 12px; width: 104px;
+  display: flex; flex-direction: column; gap: 5px;
+  opacity: 0;
+  animation: tsCompsFade 6s linear var(--sd) infinite;
 }
-@keyframes tlBreathe {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
+@keyframes tsCompsFade {
+  0%, 3% { opacity: 0; }
+  6%, 70% { opacity: 1; }
+  80%, 100% { opacity: 0; }
+}
+.ts-row {
+  display: block; overflow: hidden;
+  font-family: var(--font-space-mono, monospace);
+  font-size: 8px; letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  padding-bottom: 3px;
+}
+.ts-row-in {
+  display: inline-block; white-space: nowrap;
+  transform: translateX(-103%);
+  animation-duration: 6s;
+  animation-timing-function: linear;
+  animation-delay: var(--sd);
+  animation-iteration-count: infinite;
+}
+.ts-row-in--1 { animation-name: tsType1; }
+.ts-row-in--2 { animation-name: tsType2; }
+.ts-row-in--3 { animation-name: tsType3; }
+@keyframes tsType1 { 0%, 6% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 13%, 100% { transform: translateX(0); } }
+@keyframes tsType2 { 0%, 18% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 25%, 100% { transform: translateX(0); } }
+@keyframes tsType3 { 0%, 30% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 37%, 100% { transform: translateX(0); } }
+
+/* ── AUTHENTICATE: tick · tick · red flag + rep-caught edge flash ── */
+.ts-verd {
+  right: 14px; bottom: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.ts-vrow {
+  display: inline-flex; align-items: center; gap: 5px;
+  opacity: 0;
+  animation-duration: 6.4s;
+  animation-timing-function: linear;
+  animation-delay: var(--sd);
+  animation-iteration-count: infinite;
+}
+.ts-vbar { width: 34px; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.28); }
+.ts-vrow--1 { animation-name: tsV1; }
+.ts-vrow--2 { animation-name: tsV2; }
+.ts-vrow--3 { animation-name: tsV3; }
+@keyframes tsV1 { 0%, 7% { opacity: 0; transform: translateY(3px); } 10%, 64% { opacity: 0.9; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsV2 { 0%, 19% { opacity: 0; transform: translateY(3px); } 22%, 64% { opacity: 0.9; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+@keyframes tsV3 { 0%, 32% { opacity: 0; transform: translateY(3px); } 35%, 64% { opacity: 1; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+/* the card's edge catches the fake */
+.ts-flash {
+  position: absolute; inset: 0; border-radius: 18px;
+  box-shadow: inset 0 0 0 1.5px rgba(232, 99, 107, 0.75), inset 0 0 20px rgba(232, 99, 107, 0.2);
+  opacity: 0; pointer-events: none;
+  animation: tsFlash 6.4s linear 2200ms infinite;
+}
+@keyframes tsFlash {
+  0%, 35% { opacity: 0; }
+  38% { opacity: 1; }
+  41% { opacity: 0.3; }
+  44% { opacity: 0.9; }
+  52%, 100% { opacity: 0; }
 }
 
-/* ── off-screen pause (single IO drives this class) ── */
-.tl--paused .tl-idle-cell,
-.tl--paused .tl-idle-dollar,
-.tl--paused .tl-idle-shield { animation-play-state: paused !important; }
-
-/* ── reduced motion: static, premium, organized ── */
+/* ── reduced motion: scenes dead, full brightness stays ── */
 @media (prefers-reduced-motion: reduce) {
   .tl-stagger > * { animation: none !important; }
-  .tl-idle-cell, .tl-idle-dollar, .tl-idle-shield { animation: none !important; }
-  .tl-idle-cell { opacity: 0; }
+  .ts, .ts-flash { display: none !important; }
   .tl-card { transition: none; }
   .tl-card:active { transform: none; box-shadow: none; }
 }

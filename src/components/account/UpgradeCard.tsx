@@ -22,24 +22,25 @@ interface UpgradeCardProps {
 }
 
 /**
- * THE PRO INSTRUMENT — free-user variant of the plan card, rebuilt on
- * brand: the old blue-purple gradient frame is gone. Deep #070510
- * face, mint hairline, house depth; gold reserved for Pro identity
- * (the PRO eyebrow, the POPULAR corner tab, the savings callout).
+ * THE PRO INSTRUMENT — theater pass. On-brand face (#070510, mint
+ * hairline, gold = Pro identity), and now the card does arithmetic in
+ * front of you: THE MATH MOMENT — the annual plan's "$80" savings
+ * counts up 0→80 in gold ONCE when the card first enters the viewport
+ * (800ms, tabular digits, width reserved so nothing shifts), then
+ * stays print-solid forever. Loss-aversion made visible, then
+ * trustworthy stillness.
  *
- * Both tiles still call onSubscribe (tap = checkout, unchanged); the
- * MONTHLY tile is the highlighted plan — mint edge + fill tint —
- * exactly as its `primary` flag always marked it, and the ANNUAL tile
- * stays calm. Zero flow changes: props, price IDs, disabled logic and
- * copy semantics are identical to the previous revision.
+ * Selection reality: a tap IS the checkout (both tiles call
+ * onSubscribe immediately — there is no selection state; MONTHLY's
+ * highlight is a static recommendation). So the decision theater is a
+ * press-state charge-up — one lap of accent light around the tile's
+ * perimeter on pointer-down (the login-input recipe; mint on the
+ * highlighted plan, gold on annual) — arming the purchase, not faking
+ * a selector.
  *
- * ONE flourish: a slow gold edge-glint orbiting the selected plan
- * (house border-beam recipe, 6s) — the whisper sits on the object
- * that closes the sale, in the app's existing living-edge language,
- * while the wordmark and prices stay print-solid like a receipt.
- * Trust over theater: everything else on this surface is still.
- * IntersectionObserver pauses it off-screen; reduced-motion removes
- * it entirely.
+ * Flow unchanged: props, price IDs, disabled logic, tap targets all
+ * byte-equivalent to the previous revision. Reduced motion: no glint,
+ * no charge, "$80" renders final instantly.
  */
 export default function UpgradeCard({
   monthlyPriceId,
@@ -49,16 +50,51 @@ export default function UpgradeCard({
 }: UpgradeCardProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true);
+  const [savings, setSavings] = useState(0);
+  const countedRef = useRef(false);
+  const rafRef = useRef(0);
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    try {
+      setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch { /* default: animate */ }
+  }, []);
 
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        // THE MATH MOMENT — one-shot on first sight, never loops.
+        if (entry.isIntersecting && !countedRef.current) {
+          countedRef.current = true;
+          let prefersReduced = false;
+          try {
+            prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          } catch { /* animate */ }
+          if (prefersReduced) {
+            setSavings(80);
+            return;
+          }
+          const t0 = performance.now();
+          const tick = (now: number) => {
+            const t = Math.min((now - t0) / 800, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            setSavings(Math.round(80 * eased));
+            if (t < 1) rafRef.current = requestAnimationFrame(tick);
+          };
+          rafRef.current = requestAnimationFrame(tick);
+        }
+      },
       { threshold: 0.05 },
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   const handleTap = (priceId: string) => {
@@ -102,18 +138,21 @@ export default function UpgradeCard({
         <span>UPGRADE TO PRO</span>
       </div>
 
-      {/* Headline — display type */}
+      {/* Headline — display type, deliberate two-line break at the
+          comma (the auto-wrap orphaned "FEEDS" on its own line) */}
       <div
         style={{
           fontFamily: "var(--font-bebas-neue), sans-serif",
-          fontSize: 27,
+          fontSize: 28,
           letterSpacing: "0.03em",
           color: "#EDE7F8",
           marginBottom: 2,
-          lineHeight: 1.05,
+          lineHeight: 1.04,
         }}
       >
-        UNLIMITED SCANS, UNLOCKED FEEDS
+        UNLIMITED SCANS,
+        <br />
+        UNLOCKED FEEDS
       </div>
       {memberCount !== undefined && memberCount >= SOCIAL_PROOF_MIN && (
         <div
@@ -138,6 +177,7 @@ export default function UpgradeCard({
           onTap={() => handleTap(monthlyPriceId)}
           primary
           popular
+          reduced={reduced}
         />
         <PriceOption
           label="ANNUAL"
@@ -146,49 +186,73 @@ export default function UpgradeCard({
           note={
             <>
               save{" "}
-              <span style={{ color: GOLD, fontWeight: 700 }}>$80</span>{" "}
+              <span
+                style={{
+                  color: GOLD,
+                  fontWeight: 700,
+                  textShadow: "0 0 10px rgba(212,165,116,0.55)",
+                }}
+              >
+                {/* width reserved (3ch, tabular) so the count-up never
+                    shifts layout; renders "$80" instantly under
+                    reduced motion */}
+                <span
+                  style={{
+                    display: "inline-block",
+                    minWidth: "3ch",
+                    fontFeatureSettings: '"tnum"',
+                  }}
+                >
+                  ${savings}
+                </span>
+              </span>{" "}
               — 5 months free
             </>
           }
           disabled={!annualPriceId}
           onTap={() => handleTap(annualPriceId)}
           primary={false}
+          reduced={reduced}
         />
       </div>
 
-      {/* Feature checklist — 2×2 grid, mint checks, legible */}
+      {/* Feature checklist — these four items ARE the product */}
       <div
         style={{
           marginTop: 14,
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: "7px 12px",
+          gap: "8px 12px",
         }}
       >
         {["unlimited scans", "condition grading", "flip coach", "batch listings"].map(
           (feat) => (
             <div
               key={feat}
-              style={{ display: "flex", alignItems: "center", gap: 7 }}
+              style={{ display: "flex", alignItems: "center", gap: 8 }}
             >
               <svg
-                width={12}
-                height={12}
+                width={14}
+                height={14}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="#5CE0B8"
                 strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                style={{ flexShrink: 0 }}
+                style={{
+                  flexShrink: 0,
+                  filter: "drop-shadow(0 0 4px rgba(92,224,184,0.55))",
+                }}
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               <span
                 style={{
                   fontFamily: "var(--font-body)",
-                  fontSize: 11.5,
-                  color: "#B9B0CC",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.66)",
                 }}
               >
                 {feat}
@@ -209,6 +273,7 @@ interface PriceOptionProps {
   disabled: boolean;
   primary: boolean;
   popular?: boolean;
+  reduced: boolean;
   onTap: () => void;
 }
 
@@ -220,54 +285,71 @@ function PriceOption({
   disabled,
   primary,
   popular = false,
+  reduced,
   onTap,
 }: PriceOptionProps) {
   const [pressed, setPressed] = useState(false);
+  const [chargeKey, setChargeKey] = useState(0);
   return (
     <button
       type="button"
       onClick={onTap}
       disabled={disabled}
-      onPointerDown={() => setPressed(true)}
+      onPointerDown={() => {
+        setPressed(true);
+        // charge-up press: one perimeter lap per touch (login recipe)
+        if (!reduced) setChargeKey((k) => k + 1);
+      }}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
-      style={{
-        // Two-row plan tile. The selected (primary) plan reads
-        // unmistakably selected: mint edge + mint fill tint + the gold
-        // glint; the other stays calm on hairline white.
-        position: "relative",
-        textAlign: "left",
-        padding: "13px 14px 12px",
-        borderRadius: 13,
-        backgroundColor: "#0B0817",
-        backgroundImage: pressed
-          ? "linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14))"
-          : primary
-            ? "linear-gradient(180deg, rgba(92,224,184,0.13) 0%, rgba(92,224,184,0.03) 100%)"
-            : "linear-gradient(rgba(255,255,255,0.045), rgba(255,255,255,0.045))",
-        border: primary
-          ? "1px solid rgba(92,224,184,0.5)"
-          : "1px solid rgba(255,255,255,0.10)",
-        boxShadow: pressed
-          ? "0 0 0 1px rgba(92,224,184,0.5), 0 0 16px -5px rgba(92,224,184,0.5)"
-          : primary
-            ? "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 4px 14px -6px rgba(92,224,184,0.25)"
-            : "inset 0 1px 0 0 rgba(255,255,255,0.07), 0 1px 2px rgba(0,0,0,0.3)",
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        overflow: "hidden",
-        transform: pressed ? "scale(0.98)" : "scale(1)",
-        transition:
-          "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms ease",
-      }}
+      style={
+        {
+          "--cacc": primary ? "rgba(92,224,184,0.95)" : "rgba(212,165,116,0.95)",
+          // The highlighted plan reads unmistakably highlighted:
+          // mint edge 0.62 + fill 0.20 + under-glow 0.38 (was
+          // 0.5 / 0.13 / 0.25 pre-theater). The other stays calm.
+          position: "relative",
+          textAlign: "left",
+          padding: "13px 14px 12px",
+          borderRadius: 13,
+          backgroundColor: "#0B0817",
+          backgroundImage: pressed
+            ? "linear-gradient(rgba(255,255,255,0.14), rgba(255,255,255,0.14))"
+            : primary
+              ? "linear-gradient(180deg, rgba(92,224,184,0.20) 0%, rgba(92,224,184,0.05) 100%)"
+              : "linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.05))",
+          border: primary
+            ? "1px solid rgba(92,224,184,0.62)"
+            : "1px solid rgba(255,255,255,0.12)",
+          boxShadow: pressed
+            ? "0 0 0 1px var(--cacc), 0 0 16px -5px var(--cacc)"
+            : primary
+              ? "inset 0 1px 0 0 rgba(255,255,255,0.10), 0 6px 18px -6px rgba(92,224,184,0.38)"
+              : "inset 0 1px 0 0 rgba(255,255,255,0.07), 0 1px 2px rgba(0,0,0,0.3)",
+          cursor: disabled ? "default" : "pointer",
+          opacity: disabled ? 0.5 : 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          overflow: "hidden",
+          transform: pressed && !reduced ? "scale(0.98)" : "scale(1)",
+          transition: reduced
+            ? "none"
+            : "transform 100ms cubic-bezier(0.16, 1, 0.3, 1), background 100ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 120ms ease",
+        } as React.CSSProperties
+      }
     >
-      {/* the ONE flourish: slow gold edge-glint on the selected plan */}
+      {/* gold edge-glint on the highlighted plan — brightened for the
+          theater pass: wrapper 0.6→0.85, arc 0.9→1.0, arc widened */}
       {primary && (
         <span className="upc-glint" aria-hidden="true">
           <span className="upc-glint-spin" />
+        </span>
+      )}
+      {/* charge-up press — one lap of accent light around the perimeter */}
+      {chargeKey > 0 && !reduced && (
+        <span key={chargeKey} className="upc-charge" aria-hidden="true">
+          <span className="upc-charge-spin" />
         </span>
       )}
       {/* POPULAR — gold corner tab, tucked INTO the card corner */}
@@ -343,7 +425,7 @@ function PriceOption({
         style={{
           fontFamily: "var(--font-body)",
           fontSize: 11,
-          color: primary ? "rgba(92,224,184,0.8)" : "rgba(255,255,255,0.5)",
+          color: primary ? "rgba(92,224,184,0.8)" : "rgba(255,255,255,0.55)",
         }}
       >
         {note}
@@ -354,7 +436,8 @@ function PriceOption({
 
 const STYLES = `
 /* gold edge-glint — house border-beam recipe (ring mask + rotating
-   conic arc), gold, slow. The only motion on this surface. */
+   conic arc), gold, slow. Theater-pass brightness: wrapper 0.85 (was
+   0.6), arc alpha 1.0 (was 0.9), arc 52deg wide (was 44). */
 .upc-glint {
   position: absolute; inset: 0; border-radius: 13px; padding: 1.5px;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -362,16 +445,35 @@ const STYLES = `
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
   overflow: hidden; pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 .upc-glint-spin {
   position: absolute; left: -55%; top: -220%; width: 210%; height: 540%;
-  background: conic-gradient(transparent 0deg 316deg, rgba(212,165,116,0.9) 342deg, transparent 360deg);
+  background: conic-gradient(transparent 0deg 308deg, rgba(212,165,116,1) 340deg, transparent 360deg);
   animation: upcGlint 6s linear infinite;
 }
 @keyframes upcGlint { to { transform: rotate(360deg); } }
 .upc--paused .upc-glint-spin { animation-play-state: paused !important; }
+
+/* charge-up press — one perimeter lap per pointer-down (login recipe) */
+.upc-charge {
+  position: absolute; inset: 0; border-radius: 13px; padding: 1.5px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  overflow: hidden; pointer-events: none;
+  animation: upcChargeFade 700ms ease-out both;
+}
+.upc-charge-spin {
+  position: absolute; left: -55%; top: -220%; width: 210%; height: 540%;
+  background: conic-gradient(transparent 0deg 285deg, var(--cacc, rgba(92,224,184,0.95)) 330deg, transparent 360deg);
+  animation: upcChargeSpin 420ms ease-out both;
+}
+@keyframes upcChargeSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes upcChargeFade { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
-  .upc-glint { display: none; }
+  .upc-glint, .upc-charge { display: none; }
 }
 `;
