@@ -197,7 +197,12 @@ export default function UpgradeCard({
                 style={{
                   color: GOLD,
                   fontWeight: 700,
-                  textShadow: "0 0 10px rgba(212,165,116,0.55)",
+                  // Crisp gold emphasis, not a halo. A 10px/0.55 blur on
+                  // ~11px text spread wider than the glyphs → a dirty
+                  // smudge. A tight 3px/0.5 shadow hugs the numerals so it
+                  // reads as intentional shine. Static style (no
+                  // animation) — nothing for reduced-motion to disable.
+                  textShadow: "0 0 3px rgba(212,165,116,0.5)",
                 }}
               >
                 {/* width reserved (3ch, tabular) so the count-up never
