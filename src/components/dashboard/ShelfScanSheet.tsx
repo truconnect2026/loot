@@ -856,9 +856,17 @@ function ResultsView({
       <div
         style={{
           padding: "0 18px",
-          // Bottom padding accounts for the sticky bar so the last
-          // card isn't hidden behind it when scrolled to the end.
-          paddingBottom: counts.BUY > 0 ? 80 : 24,
+          // Bottom padding accounts for the sticky bar so the last card
+          // isn't hidden behind it when scrolled to the end. The bar is
+          // 12px top + 36px button + max(12px, env(safe-area-inset-bottom))
+          // bottom = 60px with no home indicator, ~82px with one. The
+          // flat 80 cleared the 60px case but not the notched case
+          // (d7dd911 added the env() inset to the bar) — mirror it here
+          // so the last card always clears on notched devices too.
+          paddingBottom:
+            counts.BUY > 0
+              ? "calc(80px + env(safe-area-inset-bottom, 0px))"
+              : 24,
           width: "100%",
           maxWidth: "100%",
           boxSizing: "border-box",
