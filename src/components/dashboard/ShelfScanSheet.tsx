@@ -256,6 +256,10 @@ export default function ShelfScanSheet({
   const [listings, setListings] = useState<Map<number, ListingResponse>>(
     new Map(),
   );
+  // Items whose listing generation failed (single or batch). Drives the
+  // per-card RETRY LISTING state; cleared on retry, on success, or on a
+  // new scan. Successful items keep their listings regardless.
+  const [listingFailed, setListingFailed] = useState<Set<number>>(new Set());
   const [batchProgress, setBatchProgress] = useState<{
     current: number;
     total: number;
@@ -385,11 +389,19 @@ export default function ShelfScanSheet({
     setFilter("ALL");
     setExpanded(new Set());
     setListings(new Map());
+    setListingFailed(new Set());
     setBatchProgress(null);
   }
 
   async function generateListingFor(idx: number, item: ShelfScanItem) {
     if (listings.has(idx)) return;
+    // Clear any prior failure so a retry starts clean.
+    setListingFailed((prev) => {
+      if (!prev.has(idx)) return prev;
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
     try {
       const res = await fetch("/api/listing", {
         method: "POST",
@@ -400,7 +412,11 @@ export default function ShelfScanSheet({
           reasoning: item.description,
         }),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Surface an inline per-card retry instead of failing silently.
+        setListingFailed((prev) => new Set(prev).add(idx));
+        return;
+      }
       const json = (await res.json()) as ListingResponse;
       setListings((prev) => {
         const next = new Map(prev);
@@ -408,7 +424,7 @@ export default function ShelfScanSheet({
         return next;
       });
     } catch {
-      /* swallow — single-item failures don't surface a banner */
+      setListingFailed((prev) => new Set(prev).add(idx));
     }
   }
 
@@ -696,6 +712,7 @@ export default function ShelfScanSheet({
           expanded={expanded}
           onToggleExpanded={toggleExpanded}
           listings={listings}
+          listingFailed={listingFailed}
           onGenerate={generateListingFor}
           onBatch={batchGenerate}
           batchProgress={batchProgress}
@@ -779,6 +796,7 @@ interface ResultsViewProps {
   expanded: Set<number>;
   onToggleExpanded: (i: number) => void;
   listings: Map<number, ListingResponse>;
+  listingFailed: Set<number>;
   onGenerate: (i: number, item: ShelfScanItem) => void;
   onBatch: () => void;
   batchProgress: { current: number; total: number } | null;
@@ -794,6 +812,7 @@ function ResultsView({
   expanded,
   onToggleExpanded,
   listings,
+  listingFailed,
   onGenerate,
   onBatch,
   batchProgress,
@@ -801,10 +820,15 @@ function ResultsView({
 }: ResultsViewProps) {
   const [savedItems, setSavedItems]   = useState<Set<number>>(new Set());
   const [savingItems, setSavingItems] = useState<Set<number>>(new Set());
+  // Items whose haul-save failed (Supabase error / lost auth / network).
+  // Drives the chip's failure + tap-to-retry state instead of silently
+  // un-busying. Cleared on retry; cleared on success.
+  const [saveFailedItems, setSaveFailedItems] = useState<Set<number>>(new Set());
 
   async function handleSaveItem(idx: number, item: ShelfScanItem) {
     if (savedItems.has(idx) || savingItems.has(idx)) return;
     setSavingItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+    setSaveFailedItems(prev => { const n = new Set(prev); n.delete(idx); return n; });
     const result = await saveHaul({
       name:            item.name,
       buy_price:       item.cost > 0 ? item.cost : null,
@@ -814,7 +838,11 @@ function ResultsView({
       source:          "scan_shelf",
     });
     setSavingItems(prev => { const n = new Set(prev); n.delete(idx); return n; });
-    if (result.ok) setSavedItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+    if (result.ok) {
+      setSavedItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+    } else {
+      setSaveFailedItems(prev => { const n = new Set(prev); n.add(idx); return n; });
+    }
   }
 
   // Sort: verdict BUY > MAYBE > PASS, then sellSpeed FAST > MOD > SLOW,
@@ -1022,10 +1050,12 @@ function ResultsView({
                 expanded={expanded.has(realIdx)}
                 onToggle={() => onToggleExpanded(realIdx)}
                 listing={listings.get(realIdx) ?? null}
+                listingFailed={listingFailed.has(realIdx)}
                 onGenerate={() => onGenerate(realIdx, item)}
                 onSave={() => handleSaveItem(realIdx, item)}
                 saved={savedItems.has(realIdx)}
                 saving={savingItems.has(realIdx)}
+                saveFailed={saveFailedItems.has(realIdx)}
               />
             );
           })
@@ -1129,10 +1159,12 @@ interface ItemCardProps {
   expanded: boolean;
   onToggle: () => void;
   listing: ListingResponse | null;
+  listingFailed?: boolean;
   onGenerate: () => void;
   onSave?: () => void;
   saved?: boolean;
   saving?: boolean;
+  saveFailed?: boolean;
 }
 
 function ItemCard({
@@ -1140,10 +1172,12 @@ function ItemCard({
   expanded,
   onToggle,
   listing,
+  listingFailed,
   onGenerate,
   onSave,
   saved,
   saving,
+  saveFailed,
 }: ItemCardProps) {
   const tint = VERDICT_TINT[item.verdict];
   const isBuy = item.verdict === "BUY";
@@ -1297,24 +1331,44 @@ function ItemCard({
             {item.verdict}
           </div>
 
-          {/* Save-to-haul button — stopPropagation so expand doesn't fire */}
+          {/* Save-to-haul button — stopPropagation so expand doesn't fire.
+              On failure the chip turns red with a ↻ retry glyph and stays
+              tappable (retry runs the same handler, which clears the
+              failure first). Static end-state — no looping animation, so
+              the reduced-motion contract holds. */}
           {onSave && (
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onSave(); }}
               disabled={saved || saving}
-              aria-label={saved ? "Saved to haul" : "Save to haul"}
+              aria-label={
+                saveFailed
+                  ? "Save failed — tap to retry"
+                  : saved
+                    ? "Saved to haul"
+                    : "Save to haul"
+              }
               style={{
                 width: 24,
                 height: 24,
                 borderRadius: "50%",
-                border: saved
-                  ? "1px solid rgba(92,224,184,0.32)"
-                  : "1px solid rgba(255,255,255,0.14)",
-                background: saved ? "rgba(92,224,184,0.10)" : "rgba(255,255,255,0.04)",
-                color: saved ? "#5CE0B8" : "rgba(200,192,216,0.55)",
+                border: saveFailed
+                  ? "1px solid rgba(232,99,107,0.45)"
+                  : saved
+                    ? "1px solid rgba(92,224,184,0.32)"
+                    : "1px solid rgba(255,255,255,0.14)",
+                background: saveFailed
+                  ? "rgba(232,99,107,0.12)"
+                  : saved
+                    ? "rgba(92,224,184,0.10)"
+                    : "rgba(255,255,255,0.04)",
+                color: saveFailed
+                  ? "#E8636B"
+                  : saved
+                    ? "#5CE0B8"
+                    : "rgba(200,192,216,0.55)",
                 fontFamily: "var(--font-body)",
-                fontSize: 14,
+                fontSize: saveFailed ? 12 : 14,
                 fontWeight: 700,
                 lineHeight: 1,
                 cursor: saved ? "default" : "pointer",
@@ -1325,7 +1379,7 @@ function ItemCard({
                 transition: "all 200ms cubic-bezier(0.16,1,0.3,1)",
               }}
             >
-              {saving ? "·" : saved ? "✓" : "+"}
+              {saving ? "·" : saved ? "✓" : saveFailed ? "↻" : "+"}
             </button>
           )}
         </div>
@@ -1477,13 +1531,24 @@ function ItemCard({
                     e.stopPropagation();
                     onGenerate();
                   }}
+                  aria-label={
+                    listingFailed
+                      ? "Listing failed — tap to retry"
+                      : "Generate listing"
+                  }
                   style={{
                     height: 32,
                     padding: "0 14px",
                     borderRadius: 8,
-                    backgroundColor: "transparent",
-                    border: "1px solid rgba(92, 224, 184, 0.2)",
-                    color: "#5CE0B8",
+                    backgroundColor: listingFailed
+                      ? "rgba(232,99,107,0.12)"
+                      : "transparent",
+                    // Failed → red border + RETRY label; static end-state,
+                    // no animation, so reduced-motion is unaffected.
+                    border: listingFailed
+                      ? "1px solid rgba(232,99,107,0.45)"
+                      : "1px solid rgba(92, 224, 184, 0.2)",
+                    color: listingFailed ? "#E8636B" : "#5CE0B8",
                     fontFamily: "var(--font-label)",
                     fontSize: 10,
                     fontWeight: 700,
@@ -1491,7 +1556,7 @@ function ItemCard({
                     cursor: "pointer",
                   }}
                 >
-                  GENERATE LISTING
+                  {listingFailed ? "RETRY LISTING" : "GENERATE LISTING"}
                 </button>
               )}
             </div>
