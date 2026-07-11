@@ -25,6 +25,10 @@ import type { ScanTriggerMode } from "@/lib/scan-trigger";
  * SHELF · CRATE) so the launcher teaches the destination.
  */
 
+// True circular fan: all four chips share one radius (106px about the
+// FAB center) at mirrored angles — outer pair ±65°, inner pair ±25°.
+// (The prior offsets put the outer pair on r≈112 and the inner on
+// r≈106, so the arc read lopsided.) tx = R·sinθ, ty = −R·cosθ.
 const MODES: {
   mode: ScanTriggerMode;
   label: string;
@@ -35,8 +39,8 @@ const MODES: {
   {
     mode: "barcode",
     label: "BARCODE",
-    tx: -96,
-    ty: -58,
+    tx: -96, // −65°
+    ty: -45,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round">
         <path d="M3 5v-2h4" /><path d="M17 3h4v2" /><path d="M21 19v2h-4" /><path d="M7 21H3v-2" />
@@ -48,8 +52,8 @@ const MODES: {
   {
     mode: "vision",
     label: "ITEM",
-    tx: -34,
-    ty: -100,
+    tx: -45, // −25°
+    ty: -96,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
@@ -60,8 +64,8 @@ const MODES: {
   {
     mode: "shelf",
     label: "SHELF",
-    tx: 34,
-    ty: -100,
+    tx: 45, // +25°
+    ty: -96,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <line x1={3} y1={9} x2={21} y2={9} /><line x1={3} y1={17} x2={21} y2={17} />
@@ -73,8 +77,8 @@ const MODES: {
   {
     mode: "crate",
     label: "CRATE",
-    tx: 96,
-    ty: -58,
+    tx: 96, // +65°
+    ty: -45,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 9l8-4 8 4v10l-8 4-8-4z" /><path d="M4 9l8 4 8-4" /><path d="M12 13v10" />
