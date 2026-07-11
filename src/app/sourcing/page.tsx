@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { CHAIN_PATTERNS } from "@/lib/sourcingPatterns";
+import BottomSheet from "@/components/shared/BottomSheet";
 
 // ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
 interface StoreRecord {
@@ -37,6 +38,17 @@ const WEEKDAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "F
 
 const CHAIN_OPTIONS = ["Goodwill", "Savers", "Value Village", "other"] as const;
 type Chain = (typeof CHAIN_OPTIONS)[number];
+
+// Field label — mono, uppercase, at the readable contrast floor.
+const AS_LABEL: React.CSSProperties = {
+  fontFamily: "var(--font-space-mono, monospace)",
+  fontSize: 9,
+  fontWeight: 700,
+  letterSpacing: "0.14em",
+  textTransform: "uppercase",
+  color: "rgba(255,255,255,0.55)",
+  marginBottom: 8,
+};
 
 const CHAIN_COLOR: Record<string, { bg: string; text: string }> = {
   Goodwill:        { bg: "rgba(92,224,184,0.10)",  text: "#5CE0B8" },
@@ -612,110 +624,175 @@ export default function SourcingPage() {
         <div style={{ paddingBottom: "var(--content-bottom-clearance)" }} />
       </div>
 
-      {/* ═══ ADD STORE MODAL ════════════════════════════════════════════════ */}
-      {addOpen && (
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 100,
-            background: "rgba(7,5,16,0.86)", backdropFilter: "blur(8px)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center",
-          }}
-          onClick={(e) => { if (e.target === e.currentTarget) setAddOpen(false); }}
-        >
-          <form
-            onSubmit={(e) => void handleAddStore(e)}
-            style={{
-              width: "100%", maxWidth: 480,
-              background: "#0E0B1F",
-              border: "1px solid rgba(92,224,184,0.14)",
-              borderRadius: "20px 20px 0 0",
-              padding: "22px 20px 40px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{
-              fontFamily: "var(--font-display, sans-serif)",
-              fontSize: 24, letterSpacing: "0.04em",
-              color: MINT, marginBottom: 20,
-            }}>
+      {/* ═══ ADD STORE — branded bottom sheet ════════════════════════════════ */}
+      <BottomSheet
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        borderColor="rgba(92,224,184,0.30)"
+      >
+        <style>{`
+          .as-field {
+            width: 100%; box-sizing: border-box;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px; padding: 14px 15px;
+            font-family: var(--font-manrope, sans-serif); font-size: 15px;
+            color: #E8E5F0; outline: none;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+          }
+          .as-field::placeholder { color: rgba(255,255,255,0.34); }
+          /* focus-charge: the input well brightens to a mint rim, echoing
+             the login inputs. */
+          .as-field:focus {
+            border-color: rgba(92,224,184,0.55);
+            box-shadow: 0 0 0 1px rgba(92,224,184,0.22),
+                        0 0 16px -6px rgba(92,224,184,0.45);
+          }
+          .as-chip {
+            flex: 0 0 auto; height: 36px; padding: 0 15px; border-radius: 18px;
+            font-family: var(--font-space-mono, monospace); font-size: 11px;
+            font-weight: 700; letter-spacing: 0.05em; cursor: pointer;
+            transition: background-color 140ms ease, border-color 140ms ease,
+                        color 140ms ease;
+          }
+          .as-cta {
+            transition: background-color 160ms ease, box-shadow 160ms ease;
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .as-field, .as-chip, .as-cta { transition: none; }
+          }
+        `}</style>
+        <form onSubmit={(e) => void handleAddStore(e)}>
+          <div style={{ padding: "2px 20px 8px" }}>
+            {/* Header */}
+            <div
+              style={{
+                fontFamily: "var(--font-bebas-neue, sans-serif)",
+                fontSize: 26,
+                letterSpacing: "0.05em",
+                color: "#F2EDFA",
+                lineHeight: 1,
+                marginBottom: 18,
+              }}
+            >
               ADD STORE
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <input
-                placeholder="Store name (e.g. Goodwill Broad St)"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
-                style={{
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 10, padding: "13px 14px",
-                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
-                  width: "100%", boxSizing: "border-box",
-                }}
-              />
+            {/* Field 1 — store name */}
+            <div style={AS_LABEL}>STORE NAME</div>
+            <input
+              className="as-field"
+              placeholder="Goodwill Broad St"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              required
+              autoFocus
+            />
 
-              <select
-                value={newChain}
-                onChange={(e) => setNewChain(e.target.value as Chain)}
-                style={{
-                  background: "#0E0B1F", border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 10, padding: "13px 14px",
-                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
-                  width: "100%", boxSizing: "border-box", cursor: "pointer",
-                }}
-              >
-                {CHAIN_OPTIONS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-
-              <input
-                placeholder="Location label (optional — e.g. Broad St)"
-                value={newLoc}
-                onChange={(e) => setNewLoc(e.target.value)}
-                style={{
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 10, padding: "13px 14px",
-                  fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#e5e7eb", outline: "none",
-                  width: "100%", boxSizing: "border-box",
-                }}
-              />
+            {/* Field 2 — chain, branded chip row (was a raw select) */}
+            <div style={{ ...AS_LABEL, marginTop: 16 }}>CHAIN</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {CHAIN_OPTIONS.map((c) => {
+                const active = newChain === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    className="as-chip"
+                    onClick={() => setNewChain(c)}
+                    aria-pressed={active}
+                    style={{
+                      background: active
+                        ? "rgba(92,224,184,0.16)"
+                        : "rgba(255,255,255,0.04)",
+                      border: active
+                        ? "1px solid rgba(92,224,184,0.55)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                      color: active ? "#5CE0B8" : "rgba(255,255,255,0.55)",
+                    }}
+                  >
+                    {c === "other" ? "OTHER" : c}
+                  </button>
+                );
+              })}
             </div>
 
-            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <button
-                type="button"
-                onClick={() => setAddOpen(false)}
-                style={{
-                  flex: 1, padding: "13px 0", borderRadius: 10,
-                  background: "transparent", border: "1px solid rgba(255,255,255,0.10)",
-                  color: "#6b7280", fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700,
-                  letterSpacing: "0.08em", cursor: "pointer",
-                }}
-              >
-                CANCEL
-              </button>
-              <button
-                type="submit"
-                disabled={addBusy || !newName.trim()}
-                style={{
-                  flex: 2, padding: "13px 0", borderRadius: 10, border: "none",
-                  background: addBusy || !newName.trim() ? "rgba(92,224,184,0.15)" : MINT,
-                  color: addBusy || !newName.trim() ? MINT : "#000",
-                  fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  cursor: addBusy || !newName.trim() ? "not-allowed" : "pointer",
-                  boxShadow: addBusy || !newName.trim() ? "none" : "0 0 18px rgba(92,224,184,0.32)",
-                  transition: "all 200ms ease",
-                }}
-              >
-                {addBusy ? "SAVING…" : "SAVE STORE"}
-              </button>
+            {/* Field 3 — optional location label */}
+            <div style={{ ...AS_LABEL, marginTop: 16 }}>
+              LOCATION{" "}
+              <span style={{ color: "rgba(255,255,255,0.35)" }}>· optional</span>
             </div>
-          </form>
-        </div>
-      )}
+            <input
+              className="as-field"
+              placeholder="Broad St"
+              value={newLoc}
+              onChange={(e) => setNewLoc(e.target.value)}
+            />
+          </div>
+
+          {/* Sticky action bar — pinned inside the sheet's safe area so the
+              buttons never hide under the iOS keyboard / AutoFill bar. */}
+          <div
+            style={{
+              position: "sticky",
+              bottom: 0,
+              display: "flex",
+              gap: 10,
+              padding: "14px 20px",
+              paddingBottom: "max(14px, env(safe-area-inset-bottom, 0px))",
+              backgroundColor: "rgba(18,14,24,0.95)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setAddOpen(false)}
+              style={{
+                flex: 1,
+                height: 46,
+                borderRadius: 12,
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.6)",
+                fontFamily: "var(--font-space-mono, monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                cursor: "pointer",
+              }}
+            >
+              CANCEL
+            </button>
+            <button
+              type="submit"
+              className="as-cta"
+              disabled={addBusy || !newName.trim()}
+              style={{
+                flex: 2,
+                height: 46,
+                borderRadius: 12,
+                border: "none",
+                background:
+                  addBusy || !newName.trim() ? "rgba(92,224,184,0.15)" : MINT,
+                color: addBusy || !newName.trim() ? MINT : "#05130E",
+                fontFamily: "var(--font-space-mono, monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                cursor: addBusy || !newName.trim() ? "not-allowed" : "pointer",
+                boxShadow:
+                  addBusy || !newName.trim()
+                    ? "none"
+                    : "0 0 18px -2px rgba(92,224,184,0.45)",
+              }}
+            >
+              {addBusy ? "SAVING…" : "SAVE STORE"}
+            </button>
+          </div>
+        </form>
+      </BottomSheet>
       {/* Bottom padding for tab bar */}
       <div style={{ height: 80 }} />
     </div>
