@@ -22,8 +22,13 @@ import { usePathname, useRouter } from "next/navigation";
 // directly and resyncs activeMode on every open.
 export type ScanTriggerMode = "barcode" | "vision" | "shelf" | "crate";
 
-let handler: ((mode: ScanTriggerMode) => void) | null = null;
-let pending: ScanTriggerMode | null = null;
+// Optional image payload. Only the shelf library-upload path uses it:
+// the picked image rides the same pipe (fire-direct or stash+drain) so
+// the overlay runs its detect→value pipeline on an uploaded image
+// exactly as it would on a camera capture. Camera/barcode entries pass
+// no image and behave identically to before.
+let handler: ((mode: ScanTriggerMode, image?: string) => void) | null = null;
+let pending: { mode: ScanTriggerMode; image?: string } | null = null;
 
 /**
  * Dashboard-side. Register the one consumer; returns the unregister
@@ -31,13 +36,13 @@ let pending: ScanTriggerMode | null = null;
  * (e.g. FAB tapped on /sourcing) drains here.
  */
 export function registerScanHandler(
-  h: (mode: ScanTriggerMode) => void,
+  h: (mode: ScanTriggerMode, image?: string) => void,
 ): () => void {
   handler = h;
   if (pending !== null) {
-    const mode = pending;
+    const { mode, image } = pending;
     pending = null;
-    h(mode);
+    h(mode, image);
   }
   return () => {
     if (handler === h) handler = null;
@@ -46,16 +51,17 @@ export function registerScanHandler(
 
 /**
  * Core dispatch, framework-free: fire the handler if the dashboard is
- * live (true), otherwise stash the mode for drain-on-register (false).
- * Surfaces inside React use useScanTrigger below, which adds the
- * cross-route navigation this function deliberately knows nothing about.
+ * live (true), otherwise stash the mode (+ optional image) for
+ * drain-on-register (false). Surfaces inside React use useScanTrigger
+ * below, which adds the cross-route navigation this function
+ * deliberately knows nothing about.
  */
-export function requestScan(mode: ScanTriggerMode): boolean {
+export function requestScan(mode: ScanTriggerMode, image?: string): boolean {
   if (handler) {
-    handler(mode);
+    handler(mode, image);
     return true;
   }
-  pending = mode;
+  pending = { mode, image };
   return false;
 }
 
@@ -63,15 +69,15 @@ export function requestScan(mode: ScanTriggerMode): boolean {
  * Surface-side. Returns the canonical trigger: fire directly when the
  * dashboard is live, otherwise stash + route to /app.
  */
-export function useScanTrigger(): (mode: ScanTriggerMode) => void {
+export function useScanTrigger(): (mode: ScanTriggerMode, image?: string) => void {
   const router = useRouter();
   const pathname = usePathname();
   return useCallback(
-    (mode: ScanTriggerMode) => {
+    (mode: ScanTriggerMode, image?: string) => {
       // Stashed with no handler while already on /app = unauthed
       // marketing preview; navigating would be a no-op, the stash just
       // waits for the dashboard to mount.
-      if (!requestScan(mode) && pathname !== "/app") router.push("/app");
+      if (!requestScan(mode, image) && pathname !== "/app") router.push("/app");
     },
     [router, pathname],
   );

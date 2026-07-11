@@ -40,6 +40,12 @@ interface ShelfScanSheetProps {
    * capture="environment" and dumped users into the raw file picker.
    * The file input stays as the quiet "upload from library" path. */
   onOpenCamera?: () => void;
+  /** Library-upload handoff: when provided, a picked image is routed to
+   * the canonical ScanOverlay shelf flow (crown / full verdict / comps)
+   * instead of this sheet's own inferior results view. With this wired,
+   * the sheet's results view is unreachable — it's a pure capture
+   * chooser that always lands in the overlay. */
+  onUploadImage?: (dataUrl: string) => void;
 }
 
 type Status = "idle" | "loading" | "loaded" | "error" | "signup-wall";
@@ -242,6 +248,7 @@ export default function ShelfScanSheet({
   onPaywall,
   onScanned,
   onOpenCamera,
+  onUploadImage,
 }: ShelfScanSheetProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -290,7 +297,11 @@ export default function ShelfScanSheet({
       setExpanded(new Set());
       setListings(new Map());
       setBatchProgress(null);
-      if (cached) {
+      // With the overlay handoff wired the sheet is a pure capture
+      // chooser — never restore its (now-orphaned) results view; the
+      // canonical overlay owns results. Only the legacy no-handoff
+      // build restores a cached scan here.
+      if (cached && !onUploadImage) {
         setStatus("loaded");
         setResult({ items: cached.items });
         setThumbnail(cached.image);
@@ -309,6 +320,13 @@ export default function ShelfScanSheet({
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = String(reader.result ?? "");
+      // Canonical path: hand the uploaded image to the overlay flow
+      // (crown / full verdict / comps). Falls back to this sheet's own
+      // scan only when no handoff is wired.
+      if (onUploadImage) {
+        onUploadImage(dataUrl);
+        return;
+      }
       setThumbnail(dataUrl);
       void runShelfScan(dataUrl);
     };

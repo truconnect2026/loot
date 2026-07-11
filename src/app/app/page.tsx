@@ -595,6 +595,12 @@ function DashboardPage() {
   const [scanMode, setScanMode] = useState<
     "barcode" | "vision" | "shelf" | "crate"
   >("barcode");
+  // Library-upload image handed to the overlay's shelf flow. Non-null
+  // only while an uploaded shelf scan is running; cleared whenever the
+  // overlay closes so a later camera scan never reuses a stale image.
+  const [shelfInitialImage, setShelfInitialImage] = useState<string | null>(
+    null,
+  );
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -1040,7 +1046,23 @@ function DashboardPage() {
       setPaywallOpen(true);
       return;
     }
+    setShelfInitialImage(null);
     setScanMode(mode);
+    setScanOpen(true);
+  }, [scanCount]);
+
+  // Library-upload shelf scan: same Pro gate as startScan, but opens the
+  // overlay on a pre-supplied image (no camera). The overlay runs the
+  // identical detect→value pipeline a camera capture would.
+  const startShelfWithImage = useCallback((image: string) => {
+    haptic();
+    if (scanCount !== null && !scanCount.isPro) {
+      setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
+      setPaywallOpen(true);
+      return;
+    }
+    setShelfInitialImage(image);
+    setScanMode("shelf");
     setScanOpen(true);
   }, [scanCount]);
 
@@ -1048,18 +1070,22 @@ function DashboardPage() {
   // The dashboard is the ONLY consumer: every scan surface (nav FAB,
   // scan hero, Tools tile, deep link) funnels through scan-trigger.ts
   // into this handler, which owns ALL gating. A trigger fired before
-  // this page mounted drains immediately on register.
+  // this page mounted drains immediately on register. An image rides
+  // the pipe only for the shelf library-upload path.
   useEffect(() => {
-    return registerScanHandler((mode) => {
-      if (mode === "shelf") setShelfRequest(true);
-      else startScan(mode);
+    return registerScanHandler((mode, image) => {
+      if (mode === "shelf") {
+        if (image) startShelfWithImage(image);
+        else setShelfRequest(true);
+      } else startScan(mode);
     });
-  }, [startScan]);
+  }, [startScan, startShelfWithImage]);
   const triggerScan = useScanTrigger();
 
   const handleScanResult = useCallback(
     (result: VerdictPayload) => {
       setScanOpen(false);
+      setShelfInitialImage(null);
       setVerdictData(result);
       setVerdictOpen(true);
 
@@ -1081,6 +1107,7 @@ function DashboardPage() {
 
   const cancelScan = useCallback(() => {
     setScanOpen(false);
+    setShelfInitialImage(null);
   }, []);
 
   // /api/scan returned 403 — close the scanner overlay, open the
@@ -1089,6 +1116,7 @@ function DashboardPage() {
   const handlePaywall = useCallback(
     (info: { used: number; limit: number }) => {
       setScanOpen(false);
+      setShelfInitialImage(null);
       setPaywallInfo(info);
       setPaywallOpen(true);
       void refreshScanCount();
@@ -1631,6 +1659,7 @@ function DashboardPage() {
       <ScanOverlay
         open={scanOpen}
         mode={scanMode}
+        initialImage={shelfInitialImage ?? undefined}
         onResult={handleScanResult}
         onCancel={cancelScan}
         onPaywall={handlePaywall}
@@ -1669,6 +1698,13 @@ function DashboardPage() {
         onOpenCamera={() => {
           setShelfOpen(false);
           startScan("shelf");
+        }}
+        onUploadImage={(dataUrl) => {
+          // Library upload → canonical overlay flow (crown / verdict /
+          // comps). Close the sheet, then route the image through the
+          // scan-trigger so the dashboard handler runs it (with gating).
+          setShelfOpen(false);
+          triggerScan("shelf", dataUrl);
         }}
       />
 

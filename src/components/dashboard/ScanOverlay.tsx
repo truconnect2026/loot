@@ -27,6 +27,11 @@ interface ScanOverlayProps {
   onResult: (verdict: VerdictPayload) => void;
   onCancel: () => void;
   onPaywall?: (info: { used: number; limit: number }) => void;
+  /** Library-upload handoff (shelf mode only): a pre-supplied image to
+   * run detection on instead of opening the camera. When set, the
+   * overlay skips getUserMedia entirely and drives the same
+   * detect→value pipeline a camera capture would. */
+  initialImage?: string;
 }
 
 const ACCENT = {
@@ -574,6 +579,7 @@ export default function ScanOverlay({
   onResult,
   onCancel,
   onPaywall,
+  initialImage,
 }: ScanOverlayProps) {
   const [phase, setPhase] = useState<Phase>({ kind: "framing" });
   const [costInput, setCostInput] = useState("");
@@ -669,13 +675,11 @@ export default function ScanOverlay({
     cameraReadyRef.current = false;
     let cancelled = false;
 
-    cameraTimeoutRef.current = setTimeout(() => {
-      if (cancelled) return;
-      if (!cameraReadyRef.current) {
-        flagError("camera-timeout", "video did not reach playing state");
-        setPhase({ kind: "cameraError" });
-      }
-    }, 6000);
+    // Library-upload handoff: an image was supplied, so skip the camera
+    // entirely and run the exact same detect→value pipeline a camera
+    // capture would (handleShelfCapture sets the shelf-* phases). Only
+    // valid for shelf mode; other modes ignore initialImage.
+    const providedShelfImage = mode === "shelf" ? initialImage : undefined;
 
     const video = videoRef.current;
     const onVideoError = () => {
@@ -685,30 +689,42 @@ export default function ScanOverlay({
     };
     if (video) video.addEventListener("error", onVideoError);
 
-    (async () => {
-      try {
-        const stream = await openCameraStream();
-        if (cancelled) {
-          stopStream(stream);
-          return;
-        }
-        streamRef.current = stream;
-        const v = videoRef.current;
-        if (!v) return;
-        v.srcObject = stream;
-        await v.play();
+    if (providedShelfImage) {
+      void handleShelfCapture(providedShelfImage);
+    } else {
+      cameraTimeoutRef.current = setTimeout(() => {
         if (cancelled) return;
-        cameraReadyRef.current = true;
-        setCameraReady(true);
-        if (cameraTimeoutRef.current) {
-          clearTimeout(cameraTimeoutRef.current);
-          cameraTimeoutRef.current = null;
+        if (!cameraReadyRef.current) {
+          flagError("camera-timeout", "video did not reach playing state");
+          setPhase({ kind: "cameraError" });
         }
-      } catch (err) {
-        flagError("camera-init", err);
-        if (!cancelled) setPhase({ kind: "cameraError" });
-      }
-    })();
+      }, 6000);
+
+      (async () => {
+        try {
+          const stream = await openCameraStream();
+          if (cancelled) {
+            stopStream(stream);
+            return;
+          }
+          streamRef.current = stream;
+          const v = videoRef.current;
+          if (!v) return;
+          v.srcObject = stream;
+          await v.play();
+          if (cancelled) return;
+          cameraReadyRef.current = true;
+          setCameraReady(true);
+          if (cameraTimeoutRef.current) {
+            clearTimeout(cameraTimeoutRef.current);
+            cameraTimeoutRef.current = null;
+          }
+        } catch (err) {
+          flagError("camera-init", err);
+          if (!cancelled) setPhase({ kind: "cameraError" });
+        }
+      })();
+    }
 
     return () => {
       cancelled = true;
