@@ -654,6 +654,10 @@ export default function ToolsPage() {
       <FlipCoachSheet
         open={coachOpen}
         onClose={() => setCoachOpen(false)}
+        onPaywall={() => {
+          setCoachOpen(false);
+          setPaywallOpen(true);
+        }}
       />
 
       <PaywallSheet

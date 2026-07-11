@@ -7,9 +7,12 @@ import { formatErrorMessage } from "@/lib/formatError";
 
 /**
  * Flip Coach — Claude-backed chat advisor for resellers. Lives in a
- * BottomSheet anchored at the dashboard bottom edge. Free tier is
- * capped at 3 messages per local day via localStorage; the server is
- * stateless (no counter table).
+ * BottomSheet anchored at the dashboard bottom edge. Pro-only feature:
+ * the server (/api/flip-coach) returns 401 for anonymous and 403 for
+ * free users (FREE_SCAN_LIMIT = 0 — the free tier gets nothing that
+ * spends). On that gate response the sheet surfaces the paywall, the
+ * same PaywallSheet path the scan surfaces use — there is no free-tier
+ * message counter.
  *
  * Character-led redesign:
  *   - Header: FlipCoyote 60px + "FLIP COACH" wordmark + close X
@@ -48,8 +51,6 @@ interface ChatMessage {
   content: string;
 }
 
-const FREE_DAILY_LIMIT = 3;
-
 const SUGGESTED_PROMPTS = [
   "What sells fast at Goodwill?",
   "How do I price vintage Pyrex?",
@@ -67,38 +68,6 @@ const INITIAL_GREETING =
 // /api/flip-coach so we never persist more than we can send.
 const HISTORY_KEY = "flipCoach_history";
 const HISTORY_CAP = 20;
-
-function todayKey(): string {
-  const d = new Date();
-  // Local YYYY-MM-DD key so the day rolls over at the user's
-  // midnight, not UTC's.
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `flipCoachCount_${y}-${m}-${day}`;
-}
-
-function readUsedCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const raw = window.localStorage.getItem(todayKey());
-    const n = Number(raw ?? 0);
-    return Number.isFinite(n) ? n : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function bumpUsedCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const next = readUsedCount() + 1;
-    window.localStorage.setItem(todayKey(), String(next));
-    return next;
-  } catch {
-    return readUsedCount();
-  }
-}
 
 function readHistory(): ChatMessage[] {
   if (typeof window === "undefined") return [];
@@ -216,7 +185,6 @@ export default function FlipCoachSheet({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [usedToday, setUsedToday] = useState(0);
   // Hydration gate — prevents the persist effect below from
   // overwriting localStorage with the initial empty messages array
   // during the brief window between component mount and the
@@ -231,8 +199,7 @@ export default function FlipCoachSheet({
 
   // Hydrate persisted chat history on every open. Replaces the prior
   // reset-on-open behavior — users return to whatever conversation
-  // they last had. The 3/day count is also re-read here in case
-  // they sent messages from a different tab or the day rolled over.
+  // they last had.
   useEffect(() => {
     if (!open) {
       setHydrated(false);
@@ -246,7 +213,6 @@ export default function FlipCoachSheet({
       msgIdRef.current = hist.length;
       setInput("");
       setSending(false);
-      setUsedToday(readUsedCount());
       setHydrated(true);
     });
   }, [open]);
@@ -268,7 +234,6 @@ export default function FlipCoachSheet({
     el.scrollTop = el.scrollHeight;
   }, [messages, sending]);
 
-  const exhausted = usedToday >= FREE_DAILY_LIMIT;
   // Mood derives from the current message list — recomputed on every
   // render. detectMood is a pure pass over the last user + assistant
   // messages and runs in O(n) over the (small, capped at 20) list.
@@ -276,7 +241,7 @@ export default function FlipCoachSheet({
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || sending || exhausted) return;
+    if (!trimmed || sending) return;
     const userMsg: ChatMessage = {
       id: `u-${msgIdRef.current++}`,
       role: "user",
@@ -301,6 +266,15 @@ export default function FlipCoachSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed, history }),
       });
+      // Pro gate — anon (401) or free (403). Surface the paywall (same
+      // PaywallSheet path the scan surfaces use) instead of an error
+      // bubble, and roll back the optimistic user message so the chat
+      // stays clean for when they return as Pro.
+      if (res.status === 401 || res.status === 403) {
+        setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+        onPaywall?.();
+        return;
+      }
       const data = (await res.json()) as
         | { response: string }
         | { error: string };
@@ -315,7 +289,6 @@ export default function FlipCoachSheet({
         content: data.response,
       };
       setMessages((prev) => [...prev, assistantMsg]);
-      setUsedToday(bumpUsedCount());
     } catch (err) {
       const errMsg: ChatMessage = {
         id: `a-err-${msgIdRef.current++}`,
@@ -451,7 +424,7 @@ export default function FlipCoachSheet({
                   key={p}
                   type="button"
                   onClick={() => sendMessage(p)}
-                  disabled={sending || exhausted}
+                  disabled={sending}
                   style={{
                     padding: "6px 12px",
                     borderRadius: 16,
@@ -461,8 +434,8 @@ export default function FlipCoachSheet({
                     fontFamily: "var(--font-space-mono)",
                     fontSize: 9,
                     fontWeight: 600,
-                    cursor: sending || exhausted ? "default" : "pointer",
-                    opacity: sending || exhausted ? 0.5 : 1,
+                    cursor: sending ? "default" : "pointer",
+                    opacity: sending ? 0.5 : 1,
                   }}
                 >
                   {p}
@@ -502,26 +475,7 @@ export default function FlipCoachSheet({
             paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))",
           }}
         >
-          {exhausted ? (
-            <button
-              type="button"
-              onClick={onPaywall}
-              style={{
-                width: "100%",
-                padding: 12,
-                backgroundColor: "transparent",
-                border: "1px solid rgba(212,165,116,0.20)",
-                borderRadius: 10,
-                color: "#D4A574",
-                fontFamily: "var(--font-body)",
-                fontSize: 12,
-                cursor: "pointer",
-              }}
-            >
-              upgrade to Pro for unlimited coaching
-            </button>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <input
                 type="text"
                 value={input}
@@ -586,8 +540,7 @@ export default function FlipCoachSheet({
               >
                 <ArrowUpIcon color="#000" />
               </button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </BottomSheet>
