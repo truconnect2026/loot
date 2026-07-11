@@ -285,17 +285,17 @@ export default function SourcingPage() {
         </svg>
 
         {/* Label */}
-        <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.16em", color: "#5A4E70", textTransform: "uppercase", marginBottom: 8, position: "relative" }}>
+        <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.16em", color: "rgba(255,255,255,0.55)", textTransform: "uppercase", marginBottom: 8, position: "relative" }}>
           {"today's best stop"}
         </div>
 
         {/* — No stores — */}
         {!hasStores && (
           <div style={{ position: "relative" }}>
-            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#4b5563", letterSpacing: "0.02em", lineHeight: 1.1 }}>
+            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#EDE7F8", letterSpacing: "0.02em", lineHeight: 1.1 }}>
               No stores yet
             </div>
-            <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#6b7280", marginTop: 8, marginBottom: 20, lineHeight: 1.5 }}>
+            <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "rgba(255,255,255,0.6)", marginTop: 8, marginBottom: 20, lineHeight: 1.5 }}>
               Add your stops to build your game plan
             </div>
             <button
@@ -349,11 +349,11 @@ export default function SourcingPage() {
         {/* — Stores but no deal today — */}
         {hasStores && !bestStop && (
           <div style={{ position: "relative" }}>
-            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#4b5563", letterSpacing: "0.02em" }}>
+            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#EDE7F8", letterSpacing: "0.02em" }}>
               No tracked deals today
             </div>
             {nextDealDay && (
-              <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#6b7280", marginTop: 8 }}>
+              <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "rgba(255,255,255,0.6)", marginTop: 8 }}>
                 next: {WEEKDAY_FULL[nextDealDay.weekday]} ({nextDealDay.date.slice(5).replace("-", "/")})
               </div>
             )}
@@ -402,14 +402,14 @@ export default function SourcingPage() {
                     <span style={{
                       fontFamily: "var(--font-label, monospace)",
                       fontSize: 8, letterSpacing: "0.12em",
-                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "#4b5563",
+                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "rgba(255,255,255,0.55)",
                     }}>
                       {DAY_LETTER[day.weekday]}
                     </span>
                     <span style={{
                       fontFamily: "var(--font-data, monospace)",
                       fontSize: 14, fontWeight: 700,
-                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "#6b7280",
+                      color: isSel ? (isToday ? MINT : "#e5e7eb") : "rgba(255,255,255,0.55)",
                       lineHeight: 1,
                     }}>
                       {day.date.slice(8)}
