@@ -40,9 +40,13 @@ import { formatErrorMessage } from "@/lib/formatError";
 interface FlipCoachSheetProps {
   open: boolean;
   onClose: () => void;
-  /** Fired when the user hits the daily free limit and taps the
-   * upgrade CTA. The dashboard uses this to surface PaywallSheet. */
+  /** Fired when an authenticated free user hits the Pro gate (403).
+   * The parent surfaces PaywallSheet. */
   onPaywall?: () => void;
+  /** Fired when a logged-out visitor hits the gate (401). The parent
+   * closes the sheet and routes them to signup/login — a subscribe
+   * CTA is a dead end without an account. */
+  onSignup?: () => void;
 }
 
 interface ChatMessage {
@@ -181,6 +185,7 @@ export default function FlipCoachSheet({
   open,
   onClose,
   onPaywall,
+  onSignup,
 }: FlipCoachSheetProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -266,13 +271,19 @@ export default function FlipCoachSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed, history }),
       });
-      // Pro gate — anon (401) or free (403). Surface the paywall (same
-      // PaywallSheet path the scan surfaces use) instead of an error
-      // bubble, and roll back the optimistic user message so the chat
-      // stays clean for when they return as Pro.
-      if (res.status === 401 || res.status === 403) {
+      // Pro gate — split the two cases. Roll back the optimistic user
+      // message either way so the chat stays clean.
+      //   403 (authenticated free user) → paywall (upgrade to Pro).
+      //   401 (no session)              → signup/login. A subscribe CTA
+      //     they can't complete without an account would be a dead end.
+      if (res.status === 403) {
         setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
         onPaywall?.();
+        return;
+      }
+      if (res.status === 401) {
+        setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+        onSignup?.();
         return;
       }
       const data = (await res.json()) as

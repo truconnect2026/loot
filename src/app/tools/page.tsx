@@ -468,11 +468,19 @@ export default function ToolsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
+      // Anon reached the price buttons (checkout requires an account) —
+      // route to login instead of the silent dead button. Close the
+      // sheet first so it doesn't orphan over the login page.
+      if (res.status === 401) {
+        setPaywallOpen(false);
+        router.push("/");
+        return;
+      }
       if (!res.ok) return;
       const { url } = (await res.json()) as { url?: string };
       if (url) window.location.href = url;
     } catch { /* swallow */ }
-  }, []);
+  }, [router]);
 
   return (
     <div
@@ -658,12 +666,26 @@ export default function ToolsPage() {
           setCoachOpen(false);
           setPaywallOpen(true);
         }}
+        onSignup={() => {
+          // Logged-out visitor — close the sheet and route to the
+          // login page (root renders LoginPage; middleware sends
+          // unauth users to "/"). No return-path plumbing exists, so
+          // plain navigation per the app's existing auth routing.
+          setCoachOpen(false);
+          router.push("/");
+        }}
       />
 
+      {/* Shared by both Pro-only tools on this page (Flip Coach +
+          Condition Grade), neither of which has a free tier
+          (FREE_SCAN_LIMIT = 0). limit={0} selects PaywallSheet's
+          "GO PRO / Unlock unlimited scans" framing instead of the
+          "X/Y free scans used today" quota framing, which never
+          applied here. */}
       <PaywallSheet
         open={paywallOpen}
         used={0}
-        limit={3}
+        limit={0}
         monthlyPriceId={process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? ""}
         annualPriceId={process.env.NEXT_PUBLIC_STRIPE_PRICE_ANNUAL ?? ""}
         onSubscribe={handleSubscribe}

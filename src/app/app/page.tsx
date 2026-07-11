@@ -1107,6 +1107,15 @@ function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
+      // Session expired between page load and tapping subscribe —
+      // route to login rather than a silent no-op. (This dashboard is
+      // auth-gated, so this is the session-expiry case, not an anon
+      // one; same routing as the /tools anon path.)
+      if (res.status === 401) {
+        setPaywallOpen(false);
+        router.push("/");
+        return;
+      }
       if (!res.ok) {
         console.error("[paywall] checkout failed:", await res.text());
         return;
@@ -1116,7 +1125,7 @@ function DashboardPage() {
     } catch (err) {
       console.error("[paywall] checkout error:", err);
     }
-  }, []);
+  }, [router]);
 
   // ToolSheet handles every tool EXCEPT shelf-scan. Its `activeTool`
   // state is typed as ToolSheetTool (which excludes "shelf-scan") so
