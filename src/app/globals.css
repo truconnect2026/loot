@@ -109,6 +109,22 @@
   );
 
   /* ============================================================
+     MOTION SYSTEM — one easing family, a two-step duration scale
+     ------------------------------------------------------------
+     Sheets and routes share the same decelerate curve + medium
+     duration so they read as one product. Controls (FAB chips,
+     press states) use the fast step. Exits accelerate.
+       --ease-out  decelerate — every entrance / settle
+       --ease-in   accelerate — every exit
+       --motion-fast    controls & micro-interactions
+       --motion-medium  sheets, routes, backdrops
+     prefers-reduced-motion collapses ALL of it below. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-fast: 180ms;
+  --motion-medium: 260ms;
+
+  /* ============================================================
      FONT ROLE SYSTEM
      ------------------------------------------------------------
      Monospace (Space Mono) is RESERVED for uppercase
@@ -192,10 +208,16 @@ input::placeholder {
   color: rgba(255, 255, 255, 0.2);
 }
 
+/* Global reduced-motion collapse — the whole motion system (routes,
+   sheets, FAB, scenes, press states) drops to static end-states here.
+   animation-delay: 0 so staggered entrances don't hold their invisible
+   pre-animation frame. Components that need a stronger stance (e.g.
+   hiding a looping scene) add their own display:none on top. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
   }
 }

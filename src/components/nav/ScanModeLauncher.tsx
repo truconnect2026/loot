@@ -216,9 +216,9 @@ const STYLES = `
   position: fixed; inset: 0;
   background: rgba(4, 3, 10, 0.55);
   pointer-events: auto;
-  animation: smlFade 140ms ease-out both;
+  animation: smlFade var(--motion-fast) var(--ease-out) both;
 }
-.sml--closing .sml-scrim { animation: smlFadeOut 120ms ease-in both; }
+.sml--closing .sml-scrim { animation: smlFadeOut var(--motion-fast) var(--ease-in) both; }
 @keyframes smlFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes smlFadeOut { from { opacity: 1; } to { opacity: 0; } }
 
@@ -235,11 +235,13 @@ const STYLES = `
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   transform: translate(var(--tx), var(--ty));
-  animation: smlSpring 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  /* Unified to the house decelerate (was an overshoot spring) so the
+     launcher shares the app-wide easing family. */
+  animation: smlSpring var(--motion-fast) var(--ease-out) both;
   animation-delay: var(--d);
 }
 .sml--closing .sml-chip {
-  animation: smlRetract 150ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+  animation: smlRetract var(--motion-fast) var(--ease-in) both;
   animation-delay: 0ms;
 }
 @keyframes smlSpring {

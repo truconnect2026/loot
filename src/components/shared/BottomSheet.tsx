@@ -249,8 +249,8 @@ export default function BottomSheet({
           backdropFilter: "blur(20px) saturate(150%)",
           WebkitBackdropFilter: "blur(20px) saturate(150%)",
           animation: open
-            ? "bsBackdropIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards"
-            : "bsBackdropOut 250ms ease-in forwards",
+            ? "bsBackdropIn var(--motion-medium) var(--ease-out) forwards"
+            : "bsBackdropOut var(--motion-medium) var(--ease-in) forwards",
           pointerEvents: open ? "auto" : "none",
         }}
         onClick={onClose}
@@ -280,8 +280,8 @@ export default function BottomSheet({
           boxShadow:
             "0 -8px 40px -4px rgba(0,0,0,0.5), 0 0 1px rgba(255,255,255,0.04) inset, inset 0 1px 0 0 rgba(255,255,255,0.08)",
           animation: open
-            ? "bsSlideUp 280ms cubic-bezier(0.32, 0.72, 0, 1) forwards"
-            : "bsSlideDown 250ms ease-in forwards",
+            ? "bsSlideUp var(--motion-medium) var(--ease-out) forwards"
+            : "bsSlideDown var(--motion-medium) var(--ease-in) forwards",
           pointerEvents: open ? "auto" : "none",
           maxHeight: "85vh",
           overflowY: "auto",

@@ -659,7 +659,10 @@ export default function ToolsPage() {
         onClose={() => setConditionOpen(false)}
         onPaywall={() => {
           setConditionOpen(false);
-          setPaywallOpen(true);
+          // Sequence, don't crossfade: let this sheet start its slide-down
+          // before the paywall rises, so two scrims never stack (the
+          // double-scrim beat). ~150ms ≈ half the sheet duration.
+          window.setTimeout(() => setPaywallOpen(true), 150);
         }}
         onSignup={() => {
           setConditionOpen(false);
@@ -672,7 +675,10 @@ export default function ToolsPage() {
         onClose={() => setCoachOpen(false)}
         onPaywall={() => {
           setCoachOpen(false);
-          setPaywallOpen(true);
+          // Sequenced handoff — see ConditionGrade above. Closes the chat
+          // sheet, then raises the paywall ~150ms later so the scrims
+          // hand off cleanly instead of doubling up.
+          window.setTimeout(() => setPaywallOpen(true), 150);
         }}
         onSignup={() => {
           // Logged-out visitor — close the sheet and route to the

@@ -84,8 +84,10 @@ export default function Template({ children }: { children: ReactNode }) {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .pt-in { animation: ptRise 180ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-        .pt-pop { animation: ptSettle 180ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+        /* Routes share the sheet duration + decelerate curve so a tab
+           switch and a sheet feel like one product. */
+        .pt-in { animation: ptRise var(--motion-medium) var(--ease-out) backwards; }
+        .pt-pop { animation: ptSettle var(--motion-medium) var(--ease-out) backwards; }
         /* Route-change mounts: the plane owns the motion. Page-level
            entrance staggers are first-arrival theater only. */
         .pt-route .hm-root > *:nth-child(n+4),
