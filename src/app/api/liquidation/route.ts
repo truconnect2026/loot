@@ -140,8 +140,7 @@ export async function POST(
     const result = await liquidationAnalyze(manifest);
     return NextResponse.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Liquidation analysis failed";
     console.error("Liquidation error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

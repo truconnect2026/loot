@@ -127,12 +127,8 @@ export async function POST(
   try {
     result = await shelfScan(body.image);
   } catch (err) {
-    const message =
-      err instanceof Error
-        ? `Shelf scan failed: ${err.message}`
-        : "Shelf scan failed";
     console.error("Shelf scan error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
   // Persist a single rolled-up row so the haul log doesn't get flooded

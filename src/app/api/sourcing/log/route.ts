@@ -56,7 +56,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[sourcing/log]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   return NextResponse.json({ log: data }, { status: 201 });
 }

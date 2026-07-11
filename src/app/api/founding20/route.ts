@@ -152,11 +152,12 @@ export async function POST(
       { onConflict: "email" },
     );
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[founding20]", error);
+      return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[founding20]", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

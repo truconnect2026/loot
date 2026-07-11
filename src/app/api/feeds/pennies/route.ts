@@ -79,8 +79,7 @@ export async function GET(): Promise<
     await writeFeedCache(ZIP_KEY, "pennies", items);
     return NextResponse.json({ items, cached: false });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Pennies feed failed";
     console.error("Pennies feed error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

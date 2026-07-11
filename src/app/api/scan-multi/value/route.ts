@@ -129,8 +129,7 @@ export async function POST(
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Valuation failed";
     console.error("scan-multi/value error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

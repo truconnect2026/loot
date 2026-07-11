@@ -261,8 +261,7 @@ export async function POST(
     if (stampAnonScanCookie) setAnonScanCookie(res, ANON_SCAN_FREE_LIMIT);
     return res;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Scan failed";
     console.error("Scan error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

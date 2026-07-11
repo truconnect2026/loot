@@ -141,8 +141,7 @@ export async function GET(
     await writeFeedCache(zip, "deals", deals);
     return NextResponse.json({ deals, cached: false });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Deals feed failed";
     console.error("Deals feed error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

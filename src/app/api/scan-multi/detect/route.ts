@@ -151,8 +151,7 @@ export async function POST(
       _debug: { rawText: rawText.slice(0, 3000), parsedCount },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Detection failed";
     console.error("scan-multi/detect error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

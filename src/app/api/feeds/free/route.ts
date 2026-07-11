@@ -127,8 +127,7 @@ export async function GET(
     await writeFeedCache(zip, "free", deals);
     return NextResponse.json({ deals, cached: false });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Free feed failed";
     console.error("Free feed error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

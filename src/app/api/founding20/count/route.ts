@@ -17,7 +17,8 @@ export async function GET(): Promise<
       .select("*", { count: "exact", head: true })
       .eq("status", "approved");
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[founding20/count]", error);
+      return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
     return NextResponse.json(
       { claimed: count ?? 0, total: TOTAL },
@@ -28,7 +29,7 @@ export async function GET(): Promise<
       },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[founding20/count]", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

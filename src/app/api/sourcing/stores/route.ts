@@ -17,7 +17,8 @@ export async function GET(): Promise<NextResponse> {
     .order("created_at");
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[sourcing/stores]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   return NextResponse.json({ stores: data ?? [] });
 }
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[sourcing/stores]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   return NextResponse.json({ store: data }, { status: 201 });
 }
@@ -83,7 +85,8 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
     .eq("user_id", user.id); // RLS also enforces this; belt + braces
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[sourcing/stores]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   return NextResponse.json({ deleted: id });
 }

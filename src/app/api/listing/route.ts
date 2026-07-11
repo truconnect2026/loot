@@ -97,8 +97,7 @@ export async function POST(
     });
     return NextResponse.json(listing);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Listing generation failed";
     console.error("Listing error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

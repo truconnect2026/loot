@@ -77,8 +77,7 @@ export async function POST(
     const result = await fakeCheck(body.image);
     return NextResponse.json(result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Fake check failed";
     console.error("Fake check error:", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
