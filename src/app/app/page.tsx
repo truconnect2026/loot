@@ -601,6 +601,14 @@ function DashboardPage() {
   const [shelfInitialImage, setShelfInitialImage] = useState<string | null>(
     null,
   );
+  // A camera request received while the scan quota is still loading
+  // (scanCount === null). Stashed here and drained the moment the quota
+  // resolves, so a fast tap can't race past the Pro gate. { image }
+  // is the uploaded shelf image, or null for a live-camera mode.
+  const [pendingOverlay, setPendingOverlay] = useState<{
+    mode: "barcode" | "vision" | "shelf" | "crate";
+    image: string | null;
+  } | null>(null);
 
   // Verdict sheet state
   const [verdictOpen, setVerdictOpen] = useState(false);
@@ -1033,38 +1041,71 @@ function DashboardPage() {
     return () => observer.disconnect();
   }, []);
 
-  // "shelf" here opens ScanOverlay's branded shelf camera — the
-  // ShelfScanSheet's capture button hands off to it (the sheet keeps
-  // the library-upload path). The SHELF trigger mode still routes to
-  // the sheet via shelfRequest above; gate branches are identical.
-  const startScan = useCallback((mode: "barcode" | "vision" | "shelf" | "crate") => {
-    haptic();
-    // FREE_SCAN_LIMIT = 0 — non-Pro users go straight to the paywall.
-    // No scan overlay, no camera, no API call.
-    if (scanCount !== null && !scanCount.isPro) {
-      setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
-      setPaywallOpen(true);
-      return;
-    }
-    setShelfInitialImage(null);
-    setScanMode(mode);
-    setScanOpen(true);
-  }, [scanCount]);
+  // ── THE camera gate ──────────────────────────────────────────────────
+  // Every path that opens the live ScanOverlay funnels through here:
+  // FAB radial modes (BARCODE/ITEM/CRATE), the Home SCAN hero, an
+  // uploaded shelf image, and the shelf sheet's camera button. One gate,
+  // all entries — free/anon never reach a camera.
+  //
+  // The old per-function gate used `scanCount !== null && !isPro`, which
+  // SKIPPED the check while the quota was still loading — a fast tap
+  // (FAB → CRATE before the count resolved) slipped a free user straight
+  // into the armed camera. Now scanCount === null (unknown) DEFERS: the
+  // request is stashed and drained by the effect below the instant the
+  // quota resolves, so the gate can never be raced.
+  //
+  // (Anon users never reach this: the dashboard is auth-only; the FAB on
+  // public routes routes through /app, where middleware bounces anon to
+  // the login page — the established signup path.)
+  const openScanOverlay = useCallback(
+    (
+      mode: "barcode" | "vision" | "shelf" | "crate",
+      image: string | null = null,
+    ) => {
+      haptic();
+      if (scanCount === null) {
+        setPendingOverlay({ mode, image });
+        return;
+      }
+      if (!scanCount.isPro) {
+        setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
+        setPaywallOpen(true);
+        return;
+      }
+      setShelfInitialImage(image);
+      setScanMode(mode);
+      setScanOpen(true);
+    },
+    [scanCount],
+  );
 
-  // Library-upload shelf scan: same Pro gate as startScan, but opens the
-  // overlay on a pre-supplied image (no camera). The overlay runs the
-  // identical detect→value pipeline a camera capture would.
-  const startShelfWithImage = useCallback((image: string) => {
-    haptic();
-    if (scanCount !== null && !scanCount.isPro) {
+  // Drain a deferred camera request the moment the quota resolves. Same
+  // gate branches as openScanOverlay — never opens a camera for a free
+  // user, even one who tapped mid-load.
+  useEffect(() => {
+    if (!pendingOverlay || scanCount === null) return;
+    const { mode, image } = pendingOverlay;
+    setPendingOverlay(null);
+    if (!scanCount.isPro) {
       setPaywallInfo({ used: scanCount.used, limit: scanCount.limit });
       setPaywallOpen(true);
       return;
     }
     setShelfInitialImage(image);
-    setScanMode("shelf");
+    setScanMode(mode);
     setScanOpen(true);
-  }, [scanCount]);
+  }, [pendingOverlay, scanCount]);
+
+  // Thin wrappers preserve the existing call sites (onOpenCamera, the
+  // registered handler) — both now route through the single gate above.
+  const startScan = useCallback(
+    (mode: "barcode" | "vision" | "shelf" | "crate") => openScanOverlay(mode),
+    [openScanOverlay],
+  );
+  const startShelfWithImage = useCallback(
+    (image: string) => openScanOverlay("shelf", image),
+    [openScanOverlay],
+  );
 
   // ── Canonical scan-trigger registration ─────────────────────────────
   // The dashboard is the ONLY consumer: every scan surface (nav FAB,
