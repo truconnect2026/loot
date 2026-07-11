@@ -357,9 +357,12 @@ function PriceOption({
         </span>
       )}
       {/* POPULAR — gold corner tab, tucked INTO the card corner.
-          Its outer radius (11) deliberately undercuts the tile's inner
-          curve (outer 13 − 1px border = 12) so the overflow clip can
-          never shave a fringe off the tab at any device pixel ratio. */}
+          The button clips its absolute children at the PADDING-box
+          radius = outer 13 − 1px border = 12. The badge's top-right
+          radius must MATCH that 12 so its edge coincides with the clip
+          arc — the prior 11 undercut it (sharper than the clip), which
+          is exactly what let overflow:hidden shave the corner. Matching
+          at 12 conforms the tab flush to the rounded corner, no shave. */}
       {popular && (
         <span
           aria-hidden="true"
@@ -372,7 +375,7 @@ function PriceOption({
             borderLeft: "1px solid rgba(212, 165, 116, 0.28)",
             borderBottom: "1px solid rgba(212, 165, 116, 0.28)",
             padding: "3px 9px 4px",
-            borderRadius: "0 11px 0 10px",
+            borderRadius: "0 12px 0 10px",
             fontFamily: "var(--font-space-mono), monospace",
             fontSize: 8,
             fontWeight: 700,
