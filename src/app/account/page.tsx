@@ -1125,7 +1125,7 @@ export default function AccountPage() {
         <SignOutLink onTap={handleSignOut} />
 
         {/* Bottom padding — tab bar + air above sign-out */}
-        <div style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }} />
+        <div style={{ paddingBottom: "var(--content-bottom-clearance)" }} />
       </div>
     </>
   );

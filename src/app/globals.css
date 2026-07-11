@@ -93,6 +93,22 @@
   --press-bg: #1F1835;
 
   /* ============================================================
+     LAYOUT — bottom clearance for the floating tab bar
+     ------------------------------------------------------------
+     Every tabbed page's scroll content ends with this padding so the
+     last element clears the floating nav. The nav's frozen footprint:
+       8px  bottom offset   (nav wrapper bottom = env + 8)
+       54px pill height
+       18px FAB overhang    (the SCAN FAB's marginTop: -18 lifts it
+                             above the pill's top edge)
+     → nav cluster top sits at env + 80. Plus 24px breathing = env + 104.
+     The prior per-page value (96px) omitted the FAB overhang, leaving
+     the last row tight/half-under the FAB. One token now; no drift. */
+  --content-bottom-clearance: calc(
+    54px + 8px + 18px + env(safe-area-inset-bottom, 0px) + 24px
+  );
+
+  /* ============================================================
      FONT ROLE SYSTEM
      ------------------------------------------------------------
      Monospace (Space Mono) is RESERVED for uppercase

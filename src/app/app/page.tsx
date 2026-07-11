@@ -1684,7 +1684,7 @@ function DashboardPage() {
         <div
           style={{
             paddingTop: 24,
-            paddingBottom: "calc(96px + env(safe-area-inset-bottom))",
+            paddingBottom: "var(--content-bottom-clearance)",
             textAlign: "center",
             fontFamily: "var(--font-body)",
             fontSize: 11,
