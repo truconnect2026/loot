@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { identifyMultiFromImageDebug, identifyCrateStripsDebug, type MultiDetectItem } from "@/lib/claude";
-import { PRO_MONTHLY_SHELF_SCAN_LIMIT } from "@/lib/limits";
+import { PRO_MONTHLY_SHELF_SCAN_LIMIT, FREE_SCAN_LIMIT } from "@/lib/limits";
 
 export interface DetectResponse {
   items: MultiDetectItem[];
@@ -10,7 +10,19 @@ export interface DetectResponse {
 
 export async function POST(
   req: NextRequest,
-): Promise<NextResponse<DetectResponse | { error: string; used?: number; limit?: number }>> {
+): Promise<
+  NextResponse<
+    | DetectResponse
+    | {
+        error: string;
+        message?: string;
+        used?: number;
+        limit?: number;
+        scans_used?: number;
+        scans_limit?: number;
+      }
+  >
+> {
   let body: { image?: string; mode?: string; crops?: string[] };
   try {
     body = await req.json();
@@ -34,79 +46,78 @@ export async function POST(
     );
   }
 
-  // ── Auth + Pro monthly cap ──────────────────────────────────────────────────
-  // Pro users are capped at PRO_MONTHLY_SHELF_SCAN_LIMIT shelf scans/month.
-  // Free users: no additional gate here (existing free-tier applies on /api/scan).
-  // If the gate check itself fails, log and proceed rather than blocking a paying user.
+  // ── Auth + Pro gate ─────────────────────────────────────────────────────────
+  // ENFORCED (was previously log-but-don't-gate). Mirror of
+  // /api/shelf-scan's checkScanGate: anonymous → 401, free (non-Pro) →
+  // 403, Pro → monthly cap of PRO_MONTHLY_SHELF_SCAN_LIMIT. The single
+  // try/catch fails open ONLY on a gate-query exception (never 500s a
+  // paying user mid-flow) — same posture as /api/scan + /api/shelf-scan.
   let authedUserId: string | null = null;
-  let isPro = false;
 
   try {
     const supabase = await createServerSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
     const user = userData.user;
 
-    if (user) {
-      authedUserId = user.id;
-      const { data: profileRow } = await supabase
-        .from("profiles")
-        .select("is_pro")
-        .eq("id", user.id)
-        .maybeSingle();
-      const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
-        .split(",")
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean);
-      const isTestPro = user.email
-        ? testProEmails.includes(user.email.toLowerCase())
-        : false;
-      isPro = profileRow?.is_pro === true || isTestPro;
+    if (!user) {
+      return NextResponse.json(
+        { error: "signup_required", message: "sign in to use this tool" },
+        { status: 401 },
+      );
+    }
+    authedUserId = user.id;
 
-      if (isPro) {
-        // Count method='shelf' rows this calendar month (UTC).
-        const startOfMonth = new Date();
-        startOfMonth.setUTCDate(1);
-        startOfMonth.setUTCHours(0, 0, 0, 0);
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("is_pro")
+      .eq("id", user.id)
+      .maybeSingle();
+    const testProEmails = (process.env.PRO_TEST_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const isTestPro = user.email
+      ? testProEmails.includes(user.email.toLowerCase())
+      : false;
+    const isPro = profileRow?.is_pro === true || isTestPro;
 
-        const { count } = await supabase
-          .from("scans")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .in("method", ["shelf", "crate"])
-          .gte("created_at", startOfMonth.toISOString());
+    if (!isPro) {
+      return NextResponse.json(
+        {
+          error: "Upgrade to Pro for unlimited scans.",
+          scans_used: 0,
+          scans_limit: FREE_SCAN_LIMIT,
+        },
+        { status: 403 },
+      );
+    }
 
-        const used = count ?? 0;
-        console.log(
-          `[SHELF-LIMIT] pro=${isPro} used=${used}/${PRO_MONTHLY_SHELF_SCAN_LIMIT} (includes crate)`,
-        );
+    // Pro monthly cap — count method IN (shelf,crate) this calendar month (UTC).
+    const startOfMonth = new Date();
+    startOfMonth.setUTCDate(1);
+    startOfMonth.setUTCHours(0, 0, 0, 0);
 
-        if (used >= PRO_MONTHLY_SHELF_SCAN_LIMIT) {
-          return NextResponse.json(
-            {
-              error: "monthly_limit",
-              used,
-              limit: PRO_MONTHLY_SHELF_SCAN_LIMIT,
-            },
-            { status: 429 },
-          );
-        }
-      } else {
-        // Free user — log but don't gate here.
-        const startOfMonth = new Date();
-        startOfMonth.setUTCDate(1);
-        startOfMonth.setUTCHours(0, 0, 0, 0);
-        const { count } = await supabase
-          .from("scans")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .in("method", ["shelf", "crate"])
-          .gte("created_at", startOfMonth.toISOString());
-        console.log(
-          `[SHELF-LIMIT] pro=${isPro} used=${count ?? 0}/${PRO_MONTHLY_SHELF_SCAN_LIMIT}`,
-        );
-      }
-    } else {
-      console.log("[SHELF-LIMIT] pro=false (unauthenticated)");
+    const { count } = await supabase
+      .from("scans")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .in("method", ["shelf", "crate"])
+      .gte("created_at", startOfMonth.toISOString());
+
+    const used = count ?? 0;
+    console.log(
+      `[SHELF-LIMIT] pro=true used=${used}/${PRO_MONTHLY_SHELF_SCAN_LIMIT} (includes crate)`,
+    );
+
+    if (used >= PRO_MONTHLY_SHELF_SCAN_LIMIT) {
+      return NextResponse.json(
+        {
+          error: "monthly_limit",
+          used,
+          limit: PRO_MONTHLY_SHELF_SCAN_LIMIT,
+        },
+        { status: 429 },
+      );
     }
   } catch (gateErr) {
     console.error("[SHELF-LIMIT] gate check failed, proceeding:", gateErr);

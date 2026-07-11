@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { flipCoach, type FlipCoachTurn } from "@/lib/claude";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 interface FlipCoachBody {
   message?: string;
@@ -35,6 +36,23 @@ export async function POST(
   const message = body.message?.trim();
   if (!message) {
     return NextResponse.json({ error: "Empty message" }, { status: 400 });
+  }
+
+  // Auth gate — anonymous callers can no longer reach the Claude call.
+  // (The authenticated free-tier daily limit is enforced in the
+  // signed-cookie counter added by the flip-coach rate-limit pass.)
+  // Fail-open on a gate exception, matching /api/scan + /api/shelf-scan.
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      return NextResponse.json(
+        { error: "signup_required" },
+        { status: 401 },
+      );
+    }
+  } catch (gateErr) {
+    console.error("[flip-coach] auth gate failed, proceeding:", gateErr);
   }
 
   // Sanitize history → only valid turns, capped at 20 (claude.ts also
