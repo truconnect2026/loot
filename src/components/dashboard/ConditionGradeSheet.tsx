@@ -21,6 +21,10 @@ interface ConditionGradeSheetProps {
   open: boolean;
   onClose: () => void;
   onPaywall?: () => void;
+  /** Fired when a logged-out visitor hits the gate (401). The parent
+   * closes the sheet and routes them to signup/login — mirrors
+   * FlipCoachSheet's onSignup. */
+  onSignup?: () => void;
 }
 
 type Status = "idle" | "loading" | "loaded" | "error";
@@ -45,6 +49,7 @@ export default function ConditionGradeSheet({
   open,
   onClose,
   onPaywall,
+  onSignup,
 }: ConditionGradeSheetProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [status, setStatus] = useState<Status>("idle");
@@ -94,6 +99,13 @@ export default function ConditionGradeSheet({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: photos }),
       });
+      if (res.status === 401) {
+        // No session — route to signup/login instead of an error
+        // state (a subscribe CTA is a dead end without an account).
+        onSignup?.();
+        onClose();
+        return;
+      }
       if (res.status === 403) {
         // Pro paywall — bubble up to caller.
         onPaywall?.();

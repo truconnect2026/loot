@@ -230,7 +230,7 @@ export default function SourcingPage() {
         <span style={{ fontFamily: "var(--font-ui, sans-serif)", color: "#9ca3af", fontSize: 15 }}>
           Sign in to see your sourcing plan
         </span>
-        <a href="/login" style={{ padding: "10px 28px", background: MINT, color: "#000", borderRadius: 8, fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textDecoration: "none" }}>
+        <a href="/" style={{ padding: "10px 28px", background: MINT, color: "#000", borderRadius: 8, fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textDecoration: "none" }}>
           SIGN IN
         </a>
       </div>

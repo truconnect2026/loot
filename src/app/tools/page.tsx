@@ -657,6 +657,10 @@ export default function ToolsPage() {
           setConditionOpen(false);
           setPaywallOpen(true);
         }}
+        onSignup={() => {
+          setConditionOpen(false);
+          router.push("/");
+        }}
       />
 
       <FlipCoachSheet

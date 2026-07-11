@@ -1813,6 +1813,10 @@ function DashboardPage() {
           });
           setPaywallOpen(true);
         }}
+        onSignup={() => {
+          setConditionOpen(false);
+          router.push("/");
+        }}
       />
 
     </>
