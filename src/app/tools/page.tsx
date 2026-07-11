@@ -228,10 +228,14 @@ function FlagshipCard({ icon, scene, edgeFlash, accent, name, desc, wide, onTap 
           flexDirection: wide ? "row" : "column",
           alignItems: wide ? "center" : "flex-start",
           gap: wide ? 14 : 10,
-          // wide: bottom padding reserves the shelf-scene strip;
-          // 2-up: extra height reserves the bottom scene zone.
-          padding: wide ? "16px 16px 68px" : "16px 14px 58px",
-          minHeight: wide ? 0 : 196,
+          // Reserved scene zone as a padding-box guarantee: the bottom
+          // padding is ≥ the absolutely-positioned scene's full footprint
+          // (bottom offset + height), so the scene ALWAYS sits inside the
+          // reserved band and the flow text (icon/name/desc) can never
+          // reach it — no overlap possible at any viewport, any desc
+          // length. wide = shelf strip (68); 2-up = comps/verdict (66).
+          padding: wide ? "16px 16px 68px" : "16px 14px 66px",
+          minHeight: wide ? 0 : 200,
           background: `linear-gradient(135deg, ${accent}22 0%, rgba(255,255,255,0.03) 60%)`,
           border: `1px solid ${accent}47`,
           borderRadius: 18,
@@ -798,7 +802,7 @@ const STYLES = `
 /* ── PRICE CHECK: comp rows type themselves ── */
 .ts-comps {
   right: 12px; bottom: 12px; width: 104px;
-  display: flex; flex-direction: column; gap: 5px;
+  display: flex; flex-direction: column; gap: 3px;
   opacity: 0;
   animation: tsCompsFade 6s linear var(--sd) infinite;
 }
@@ -813,7 +817,7 @@ const STYLES = `
   font-size: 8px; letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 0.55);
   border-bottom: 1px solid rgba(255,255,255,0.10);
-  padding-bottom: 3px;
+  padding-bottom: 1px;
 }
 .ts-row-in {
   display: inline-block; white-space: nowrap;
