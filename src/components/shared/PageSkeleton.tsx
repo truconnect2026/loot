@@ -141,6 +141,45 @@ export function AccountSkeleton() {
   );
 }
 
+/**
+ * Inline reserve for the Home deal-feeds block. Mirrors FeedsEmptyCard's
+ * frame (margins · padding · surface) and interior rhythm so the common
+ * new-user resolve (both feeds empty → FeedsEmptyCard, ~139px) lands
+ * with ZERO height change. Returning users' real carousels are taller
+ * and extend below this reserve — no shift for the common case. Carries
+ * the .skel-reveal 120ms guard so a warm cache never blinks it.
+ */
+export function FeedsPlaceholder() {
+  return (
+    <div
+      className="skel-reveal"
+      aria-hidden="true"
+      style={{
+        marginTop: 24,
+        marginLeft: 18,
+        marginRight: 18,
+        backgroundColor: "#120e18",
+        backgroundImage:
+          "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 16,
+        boxShadow:
+          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 4px 16px -4px rgba(0,0,0,0.3)",
+        padding: 16,
+      }}
+    >
+      {/* Interior heights tuned so the total (~142px) matches
+          FeedsEmptyCard's 2-line height at the common phone width
+          (~375px); wider viewports wrap to one line and collapse a few
+          px — no perceptible shift for the common case. */}
+      <Skel variant="line" w={80} h={13} style={{ marginBottom: 6 }} />
+      <Skel variant="line" w="88%" h={18} style={{ marginBottom: 3 }} />
+      <Skel variant="line" w="52%" h={18} style={{ marginBottom: 12 }} />
+      <Skel variant="block" h={40} r={12} />
+    </div>
+  );
+}
+
 /** Sourcing: header label, best-stop headline, week strip, store cards. */
 export function SourcingSkeleton() {
   return (

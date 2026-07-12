@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
-import { HomeSkeleton } from "@/components/shared/PageSkeleton";
+import { HomeSkeleton, Skel, FeedsPlaceholder } from "@/components/shared/PageSkeleton";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
@@ -1521,9 +1521,24 @@ function DashboardPage() {
             <FlipDailyCard />
           </div>
           {/* FREE_SCAN_LIMIT = 0 means no free tier. Non-Pro users see a
-              FLIP OR SKIP nudge in this slot instead of a quota counter. */}
-          {scanCount && !scanCount.isPro && (
+              FLIP OR SKIP nudge in this slot instead of a quota counter.
+              While the quota is loading (scanCount === null) the slot is
+              RESERVED with a same-height Skel pill so the nudge doesn't
+              pop content below down when it resolves — the common case
+              (free user) fills the reserve with zero shift; a Pro user
+              (rare) collapses it. The skel-reveal 120ms guard means a
+              warm-cache resolve never blinks the placeholder. */}
+          {scanCount === null ? (
             <div
+              className="skel-reveal"
+              aria-hidden="true"
+              style={{ marginTop: 12, display: "flex", justifyContent: "center" }}
+            >
+              <Skel variant="line" w={184} h={28} r={20} />
+            </div>
+          ) : !scanCount.isPro ? (
+            <div
+              className="fade-in"
               style={{
                 marginTop: 12,
                 display: "flex",
@@ -1550,7 +1565,7 @@ function DashboardPage() {
                 play FLIP OR SKIP free daily →
               </a>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* 6 + 7. Carousels — order swaps for first-time users.
@@ -1571,7 +1586,14 @@ function DashboardPage() {
             stacked compact lines. The two-line stacked variant adds
             ~80px of dead space; one card is ~140px and gives the user
             an actionable CTA. */}
-        {!feedsLoading && nearbyDeals.length === 0 && freeDeals.length === 0 ? (
+        {feedsLoading ? (
+          // Reserve the common new-user empty height (FeedsEmptyCard is
+          // ~139px) so the feeds resolve with no shift for that case;
+          // returning users' carousels extend below. Replaces the old
+          // during-load render of two ~220px skeleton carousels, which
+          // shrank hard to ~139px when the feeds came back empty.
+          <FeedsPlaceholder />
+        ) : nearbyDeals.length === 0 && freeDeals.length === 0 ? (
           <FeedsEmptyCard radius={userRadius} />
         ) : isNewUser ? (
           <>

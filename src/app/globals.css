@@ -222,6 +222,21 @@ input::placeholder {
   }
 }
 
+/* ── Skeleton system (global, so inline data-placeholders can reuse it,
+   not just the route-level PageSkeleton). .skel = pulsing dim fill;
+   .skel-reveal = the 120ms flash guard (invisible during the delay via
+   backwards fill, so a warm-cache resolve never blinks a placeholder).
+   Reduced motion: the global collapse below zeroes both → a static dim
+   fill shown immediately (no pulse, no reveal delay). */
+.skel { animation: skelPulse 1.4s var(--ease-out, ease-in-out) infinite; }
+@keyframes skelPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.skel-reveal { animation: skelReveal 1ms linear 120ms both; }
+@keyframes skelReveal { from { opacity: 0; } to { opacity: 1; } }
+/* Content crossfade when data lands — opacity only, no layout impact.
+   Reduced motion: collapses to an instant swap via the global rule. */
+.fade-in { animation: fadeInOpacity var(--motion-fast, 180ms) var(--ease-out, ease) both; }
+@keyframes fadeInOpacity { from { opacity: 0; } to { opacity: 1; } }
+
 @keyframes shimmerSweep {
   0% { transform: translateX(-80px); }
   30% { transform: translateX(calc(100vw)); }
