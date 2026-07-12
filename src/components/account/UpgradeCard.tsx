@@ -407,6 +407,11 @@ function PriceOption({
             fontSize: 10,
             letterSpacing: "0.12em",
             color: primary ? "#5CE0B8" : "rgba(255,255,255,0.6)",
+            // Explicit line-height:1 on every span in this baseline row
+            // (label, price, unit) so mismatched default line-heights
+            // can't offset the baselines — the Space Mono label and the
+            // Manrope price/unit now share one clean baseline.
+            lineHeight: 1,
           }}
         >
           {label}
@@ -430,6 +435,7 @@ function PriceOption({
               fontWeight: 400,
               fontSize: 12,
               color: "rgba(255,255,255,0.55)",
+              lineHeight: 1,
             }}
           >
             {period}
