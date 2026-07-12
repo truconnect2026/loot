@@ -319,6 +319,13 @@ const STYLES = `
   width: 100%; height: 100%; object-fit: cover; display: block;
   filter: blur(9px) saturate(1.2) contrast(1.3) brightness(0.9);
   transform: scale(1.3);
+  /* Feather the art's rectangular edges to transparent so it floats on
+     the card face instead of reading as a pasted-in rectangle. The
+     center (Saturn + ?) stays fully opaque; the outer ~28% fades, and
+     the card gradient shows through — one continuous surface. Applies
+     in both idle and revealed states (revealed only drops the blur). */
+  -webkit-mask: radial-gradient(ellipse 92% 88% at 50% 47%, #000 72%, transparent 100%);
+  mask: radial-gradient(ellipse 92% 88% at 50% 47%, #000 72%, transparent 100%);
 }
 /* State A idle: the object drifts on its own phase inside the card's
    tilt — real depth between glass and object. */
