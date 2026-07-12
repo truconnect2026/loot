@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { CHAIN_PATTERNS } from "@/lib/sourcingPatterns";
 import BottomSheet from "@/components/shared/BottomSheet";
+import { SourcingSkeleton } from "@/components/shared/PageSkeleton";
 
 // ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
 interface StoreRecord {
@@ -228,13 +229,10 @@ export default function SourcingPage() {
 
   // ── Loading / auth guards ──────────────────────────────────────────────────
   if (loading) {
-    return (
-      <div style={{ background: BG, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "var(--font-data, monospace)", color: MINT, fontSize: 13, letterSpacing: "0.08em" }}>
-          loading plan…
-        </span>
-      </div>
-    );
+    // Held structure, not a lone "loading…" line — mirrors the sourcing
+    // layout (best-stop headline · week strip · store cards) so the tab
+    // arrives already shaped.
+    return <SourcingSkeleton />;
   }
   if (authErr) {
     return (

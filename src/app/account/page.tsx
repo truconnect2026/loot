@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import { CoinMarkSpinner } from "@/components/shared/CoinMark";
+import { AccountSkeleton } from "@/components/shared/PageSkeleton";
 import ProfileCard from "@/components/account/ProfileCard";
 import UpgradeCard from "@/components/account/UpgradeCard";
 import SettingsTile from "@/components/account/SettingsTile";
@@ -709,23 +710,9 @@ export default function AccountPage() {
 
   // Loading state — show the branded spinner until session + profile are ready.
   if (loading || !profile) {
-    return (
-      <>
-        <DotGridBackground variant="grid" />
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1,
-          }}
-        >
-          <CoinMarkSpinner />
-        </div>
-      </>
-    );
+    // Held structure, not a spinner — mirrors the loaded Me layout so
+    // the client data-fetch gate reads as "arriving", not "empty".
+    return <AccountSkeleton />;
   }
 
   // BOLO list view

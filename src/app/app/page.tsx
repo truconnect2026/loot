@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
-import SplashScreen from "@/components/shared/SplashScreen";
+import { HomeSkeleton } from "@/components/shared/PageSkeleton";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
@@ -1264,7 +1264,10 @@ function DashboardPage() {
   // with its entrance animations replaying — same identity, just a
   // brief replay rather than the previous dim "broken" treatment.
   if (!gateChecked) {
-    return <SplashScreen />;
+    // Held structure over the boot splash's brand — a shaped ghost of
+    // the dashboard, not a re-flashed full splash on every tab-switch.
+    // Its 120ms reveal-delay means a fast auth gate never flashes it.
+    return <HomeSkeleton />;
   }
 
   return (
