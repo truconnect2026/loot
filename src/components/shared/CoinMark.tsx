@@ -58,7 +58,15 @@ export default function CoinMark({
   );
 }
 
-export function CoinMarkSpinner() {
+/**
+ * THE one branded loader — the mint Saturn mark, slowly rotating. Used
+ * by anything that still needs a spinner after route skeletons took over
+ * page loads (in-flight actions, sheet content). Always mint (was
+ * inheriting `currentColor`, which rendered a stray purple Saturn on the
+ * Me tab). Reduced motion: the global rule freezes the spin → a static
+ * mint mark at 0.4 opacity, pulse-free.
+ */
+export function CoinMarkSpinner({ size = 32 }: { size?: number }) {
   return (
     <>
       <style>{`
@@ -74,7 +82,7 @@ export function CoinMarkSpinner() {
           lineHeight: 0,
         }}
       >
-        <CoinMark size={32} />
+        <CoinMark size={size} color="#5CE0B8" />
       </div>
     </>
   );
