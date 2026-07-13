@@ -6,6 +6,7 @@ import BottomSheet from "@/components/shared/BottomSheet";
 import { SourcingSkeleton } from "@/components/shared/PageSkeleton";
 import FlipCoyote from "@/components/shared/FlipCoyote";
 import { FlipBubble } from "@/components/shared/FlipBubble";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
 // ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
@@ -588,9 +589,11 @@ export default function SourcingPage() {
           </div>
 
           {displayDayCards.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "24px 0", fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "#374151" }}>
-              nothing tracked this day
-            </div>
+            <EmptyState
+              compact
+              headline="clear day"
+              body="nothing flagged here yet — check another day"
+            />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {displayDayCards.map((card) => {
@@ -752,11 +755,15 @@ export default function SourcingPage() {
           </div>
         </div>
 
-        {/* Store list */}
+        {/* Store list — the empty case uses the house template. No CTA
+            inside it: the + ADD button sits in this section's header row
+            directly above, so a second button would just echo it. */}
         {stores.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "10px 0", fontFamily: "var(--font-ui, sans-serif)", fontSize: 13, color: "#374151" }}>
-            No stores added yet
-          </div>
+          <EmptyState
+            compact
+            headline="no stores yet"
+            body="hit + ADD up top — i'll learn each one's sale days"
+          />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {stores.map((s) => (

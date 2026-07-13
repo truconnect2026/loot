@@ -703,12 +703,14 @@ export default function HaulLogPage() {
         )}
 
         {/* ── Empty state ── */}
+        {/* House template owns its own staggered entrance + glyph idle,
+            so no outer fadeInUp wrapper (it would double the motion). */}
         {hauls !== null && hauls.length === 0 && (
-          <div style={{ animation: "fadeInUp 400ms cubic-bezier(0.16,1,0.3,1) both" }}>
+          <div>
             <EmptyState
               icon={<BoxIcon />}
-              headline="No hauls yet"
-              body="save your first find from a scan to start tracking it through the pipeline"
+              headline="nothing in the haul yet"
+              body="save a find from any scan — i'll track it saved to sold"
               action={
                 <button
                   type="button"
@@ -780,16 +782,14 @@ export default function HaulLogPage() {
         )}
 
         {/* ── No items in this filter ── */}
+        {/* Text-only sub-empty (icon={null}): the chips above already
+            carry the visual weight, so the glyph would be noise here. */}
         {hauls !== null && hauls.length > 0 && filtered.length === 0 && (
-          <div style={{
-            textAlign: "center",
-            padding: "32px 0",
-            fontFamily: "var(--font-body)",
-            fontSize: 13,
-            color: "var(--text-muted)",
-          }}>
-            no {filter} items
-          </div>
+          <EmptyState
+            compact
+            icon={null}
+            headline={`nothing ${filter} yet`}
+          />
         )}
 
         {/* ── Haul list ── */}
