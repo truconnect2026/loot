@@ -7,6 +7,7 @@ import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import { HomeSkeleton, Skel, FeedsPlaceholder } from "@/components/shared/PageSkeleton";
 import { FlipTip } from "@/components/shared/FlipTip";
+import FirstScanNote from "@/components/dashboard/FirstScanNote";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
@@ -662,6 +663,29 @@ function DashboardPage() {
     used: number;
     limit: number;
   } | null>(null);
+
+  // First-scan Pro heads-up gate. The line under the first-time scan CTA
+  // shows only until the user has seen the paywall once — after that the
+  // model has been made explicit and the reassurance is noise. Tracked
+  // in localStorage (client-only, no data layer); an effect below flips
+  // it the first time the paywall opens, from ANY of the open sites.
+  const [paywallSeen, setPaywallSeen] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("lw-paywall-seen") === "1") setPaywallSeen(true);
+    } catch {
+      /* private mode */
+    }
+  }, []);
+  useEffect(() => {
+    if (!paywallOpen) return;
+    try {
+      localStorage.setItem("lw-paywall-seen", "1");
+    } catch {
+      /* private mode */
+    }
+    setPaywallSeen(true);
+  }, [paywallOpen]);
 
   const refreshScanCount = useCallback(async () => {
     try {
@@ -1474,7 +1498,17 @@ function DashboardPage() {
               real HeroProfit takes over. Gated on !statsLoading so
               EmptyHero never flashes before stats resolve. */}
           {!statsLoading && lifetimeScans === 0 ? (
-            <EmptyHero onScanTap={() => triggerScan("barcode")} />
+            <>
+              <EmptyHero onScanTap={() => triggerScan("barcode")} />
+              {/* First-scan Pro heads-up — only for users who've never
+                  hit the paywall and aren't Pro. Sells the model under
+                  the CTA, then disappears forever once the paywall opens
+                  (paywallSeen flips true). scanCount gates on !isPro; a
+                  null count simply holds the line back until it resolves. */}
+              {!paywallSeen && scanCount != null && !scanCount.isPro && (
+                <FirstScanNote />
+              )}
+            </>
           ) : (
             <StatsBorderWrap>
             <HeroProfit
