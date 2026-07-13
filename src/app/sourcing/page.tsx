@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { CHAIN_PATTERNS } from "@/lib/sourcingPatterns";
 import BottomSheet from "@/components/shared/BottomSheet";
 import { SourcingSkeleton } from "@/components/shared/PageSkeleton";
+import FlipCoyote from "@/components/shared/FlipCoyote";
+import { FlipBubble } from "@/components/shared/FlipBubble";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 
 // ── Local types (mirror lib/sourcingPlan.ts shapes) ─────────────────────────
 interface StoreRecord {
@@ -138,6 +141,18 @@ export default function SourcingPage() {
   // storeId → "yes"|"no" for today's session logging
   const [logged,     setLogged]     = useState<Record<string, "yes" | "no">>({});
 
+  // First-run guided intro for the zero-store state. Plays the full
+  // cinematic sequence once (localStorage lw-guide-sourcing-intro); on
+  // later zero-store visits the settled static state renders. null while
+  // reading localStorage so we don't flash the wrong branch.
+  const reducedMotion = useReducedMotion();
+  const [introSeen, setIntroSeen] = useState<boolean | null>(null);
+  useEffect(() => {
+    let seen = false;
+    try { seen = localStorage.getItem("lw-guide-sourcing-intro") === "1"; } catch { /* private mode */ }
+    setIntroSeen(seen);
+  }, []);
+
   const todayCircleRef = useRef<HTMLDivElement>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
@@ -205,6 +220,17 @@ export default function SourcingPage() {
   const weekPlan  = plan?.weekPlan ?? [];
   const bestStop  = plan?.bestStop ?? null;
   const hasStores = stores.length > 0;
+  // Play the guided intro only on a fresh zero-store visit with motion
+  // allowed. introSeen === null = still reading localStorage → hold off.
+  const playIntro = !hasStores && introSeen === false && !reducedMotion;
+  // Persist the "seen" flag the moment the sequence starts, WITHOUT
+  // flipping introSeen (which would abort the running animation) — so it
+  // never replays but the current play finishes.
+  useEffect(() => {
+    if (playIntro) {
+      try { localStorage.setItem("lw-guide-sourcing-intro", "1"); } catch { /* private mode */ }
+    }
+  }, [playIntro]);
 
   // Preview plan — shown when the user has no stores yet so the week strip
   // is legible and the value of adding stores is immediately obvious.
@@ -287,26 +313,156 @@ export default function SourcingPage() {
           {"today's best stop"}
         </div>
 
-        {/* — No stores — */}
-        {!hasStores && (
+        {/* — No stores: GUIDED CINEMATIC PITCH — Flip fronts a one-time
+            reveal that teaches the loop, then settles into a labelled
+            static guide. playIntro gates the entrance staircase; idle
+            (breathe/bloom) always runs (reduced-motion collapses it). */}
+        {!hasStores && introSeen !== null && (
           <div style={{ position: "relative" }}>
-            <div style={{ fontFamily: "var(--font-display, sans-serif)", fontSize: 30, color: "#EDE7F8", letterSpacing: "0.02em", lineHeight: 1.1 }}>
-              No stores yet
+            {/* Flip — the guide's face; idle breathing + mint bloom */}
+            <div
+              style={{
+                position: "relative",
+                width: 64,
+                height: 64,
+                marginBottom: 8,
+                animation: playIntro
+                  ? "sgRise var(--motion-medium) var(--ease-out) 80ms backwards"
+                  : undefined,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: -6,
+                  borderRadius: "50%",
+                  background:
+                    "radial-gradient(circle, rgba(92,224,184,0.28) 0%, transparent 66%)",
+                  filter: "blur(7px)",
+                  animation: "sgBloom 4.5s var(--ease-out) infinite",
+                }}
+              />
+              <span
+                style={{
+                  position: "relative",
+                  display: "inline-block",
+                  animation: "sgBreathe 4.5s var(--ease-out) infinite",
+                }}
+              >
+                <FlipCoyote mood="smirk" size={64} />
+              </span>
             </div>
-            <div style={{ fontFamily: "var(--font-ui, sans-serif)", fontSize: 14, color: "rgba(255,255,255,0.6)", marginTop: 8, marginBottom: 20, lineHeight: 1.5 }}>
-              Add your stops to build your game plan
+
+            {/* Hero — payoff in Flip's voice */}
+            <div
+              style={{
+                fontFamily: "var(--font-bebas-neue, sans-serif)",
+                fontSize: 40,
+                letterSpacing: "0.02em",
+                color: "#F2EDFA",
+                lineHeight: 0.98,
+                animation: playIntro
+                  ? "sgRise var(--motion-medium) var(--ease-out) 0ms backwards"
+                  : undefined,
+              }}
+            >
+              YOUR HUNT, MAPPED
             </div>
+            <div
+              style={{
+                fontFamily: "var(--font-body)",
+                fontSize: 14,
+                color: "rgba(255,255,255,0.62)",
+                marginTop: 8,
+                lineHeight: 1.5,
+                maxWidth: 320,
+                animation: playIntro
+                  ? "sgRise var(--motion-medium) var(--ease-out) 140ms backwards"
+                  : undefined,
+              }}
+            >
+              add your stores — i learn their sale days, then flag the right day
+              to roll up.
+            </div>
+
+            {/* Flip bubble — points at the day strip below */}
+            <div
+              style={{
+                marginTop: 16,
+                animation: playIntro
+                  ? "sgFade 300ms var(--ease-out) 350ms backwards"
+                  : undefined,
+              }}
+            >
+              <FlipBubble
+                text="those dots below? sale-day intel. i track it — you cash it."
+                play={playIntro}
+                mood="smirk"
+                glyphSize={30}
+                startDelay={450}
+                maxWidth={300}
+              />
+            </div>
+
+            {/* CTA — the one dominant action, with an attention glow pulse */}
             <button
               onClick={() => setAddOpen(true)}
               style={{
-                padding: "11px 28px", borderRadius: 10,
-                background: MINT, color: "#000", border: "none",
-                fontFamily: "var(--font-label, monospace)", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em",
-                cursor: "pointer", boxShadow: "0 0 20px rgba(92,224,184,0.35)",
+                position: "relative",
+                marginTop: 18,
+                padding: "12px 30px",
+                borderRadius: 12,
+                background: MINT,
+                color: "#05130E",
+                border: "none",
+                fontFamily: "var(--font-label, monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.10em",
+                cursor: "pointer",
+                boxShadow: "0 0 22px rgba(92,224,184,0.4)",
+                animation: playIntro
+                  ? "sgRise var(--motion-medium) var(--ease-out) 220ms backwards"
+                  : undefined,
               }}
             >
+              <span
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: -6,
+                  borderRadius: 16,
+                  background:
+                    "radial-gradient(ellipse at center, rgba(92,224,184,0.5) 0%, transparent 70%)",
+                  filter: "blur(8px)",
+                  opacity: 0,
+                  zIndex: -1,
+                  pointerEvents: "none",
+                  animation: playIntro
+                    ? "sgCtaGlow 2.4s var(--ease-out) 1900ms infinite"
+                    : undefined,
+                }}
+              />
               + ADD STORE
             </button>
+
+            {/* Static caption over the strip below — persists after intro */}
+            <div
+              style={{
+                marginTop: 20,
+                fontFamily: "var(--font-space-mono, monospace)",
+                fontSize: 9,
+                letterSpacing: "0.12em",
+                color: "rgba(255,255,255,0.55)",
+                textTransform: "uppercase",
+                animation: playIntro
+                  ? "sgFade 300ms var(--ease-out) 700ms backwards"
+                  : undefined,
+              }}
+            >
+              sale-day intel · confirms once you add stores
+            </div>
           </div>
         )}
 
@@ -361,17 +517,9 @@ export default function SourcingPage() {
 
       {/* ═══ WEEK STRIP ═════════════════════════════════════════════════════ */}
       {/* Always rendered — preview shows Goodwill + Savers typical patterns
-          so the feature is legible before any store is added. */}
-      {!hasStores && displayPlan.length > 0 && (
-        <div style={{
-          marginLeft: 20, marginRight: 20, marginBottom: 8,
-          fontFamily: "var(--font-label, monospace)",
-          fontSize: 8, letterSpacing: "0.12em",
-          color: "#D4A574", textTransform: "uppercase",
-        }}>
-          TYPICAL · ADD A STORE TO CONFIRM
-        </div>
-      )}
+          so the feature is legible before any store is added. The
+          zero-store caption is now the guide's "sale-day intel" line in
+          the hero above; no separate amber label here. */}
       {displayPlan.length > 0 && (
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
           <div style={{ display: "flex", gap: 6, padding: "0 20px 16px", width: "max-content" }}>
@@ -413,11 +561,16 @@ export default function SourcingPage() {
                       {day.date.slice(8)}
                     </span>
                   </div>
-                  {/* Deal indicator dot */}
+                  {/* Deal indicator dot — sale-day intel. Soft static
+                      bloom; on the guided intro they pop in L→R staggered. */}
                   <div style={{
                     width: 5, height: 5, borderRadius: "50%",
                     background: hasDeals ? dotColor : "transparent",
+                    boxShadow: hasDeals ? `0 0 4px ${dotColor}` : "none",
                     transition: "background 200ms ease",
+                    animation: playIntro && hasDeals
+                      ? `sgDotPop 320ms var(--ease-out) ${950 + idx * 55}ms backwards`
+                      : undefined,
                   }} />
                 </div>
               );
@@ -444,12 +597,38 @@ export default function SourcingPage() {
                 const isToday     = selDay === 0;
                 // No logging for preview cards (store ids start with "preview-")
                 const alreadyLogged = card.store.id.startsWith("preview-") ? undefined : logged[card.store.id];
+                const isPreview = card.store.id.startsWith("preview-");
                 return (
                   <div key={card.store.id} style={{
+                    position: "relative",
+                    overflow: "hidden",
                     background: "rgba(255,255,255,0.028)",
                     border: "1px solid rgba(255,255,255,0.06)",
                     borderRadius: 14, padding: "14px 16px",
                   }}>
+                    {/* SAMPLE tag — reads as preview, not a bug */}
+                    {isPreview && (
+                      <span style={{
+                        position: "absolute", top: 10, right: 12, zIndex: 2,
+                        fontFamily: "var(--font-space-mono, monospace)",
+                        fontSize: 8, fontWeight: 700, letterSpacing: "0.14em",
+                        color: "rgba(92,224,184,0.72)",
+                        background: "rgba(92,224,184,0.08)",
+                        border: "1px solid rgba(92,224,184,0.22)",
+                        borderRadius: 6, padding: "2px 6px",
+                      }}>
+                        SAMPLE
+                      </span>
+                    )}
+                    {/* One-time mint sheen sweep as the guide explains it */}
+                    {playIntro && isPreview && (
+                      <span aria-hidden="true" style={{
+                        position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none",
+                        background: "linear-gradient(105deg, transparent 32%, rgba(92,224,184,0.16) 50%, transparent 68%)",
+                        transform: "translateX(-130%)",
+                        animation: "sgSheen 900ms var(--ease-out) 1400ms 1 backwards",
+                      }} />
+                    )}
                     {/* Store name + chain */}
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{
