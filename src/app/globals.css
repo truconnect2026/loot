@@ -250,6 +250,9 @@ input::placeholder {
 @keyframes sgSheen { from { transform: translateX(-130%); } to { transform: translateX(130%); } }
 @keyframes ftPeek { 0% { opacity: 0; transform: translateY(8px) rotate(-4deg); } 60% { transform: translateY(-2px) rotate(2deg); } 100% { opacity: 1; transform: translateY(0) rotate(0deg); } }
 @keyframes ftGlow { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.7; } }
+@keyframes ftBubbleBreath { 0%, 100% { filter: drop-shadow(0 0 1px rgba(92,224,184,0.3)); } 50% { filter: drop-shadow(0 0 8px rgba(92,224,184,0.55)); } }
+@keyframes ftExit { from { opacity: 1; transform: scale(1) translateY(0); } to { opacity: 0; transform: scale(0.96) translateY(-4px); } }
+@keyframes ftIdle { 0%, 92%, 100% { transform: translateY(0); } 96% { transform: translateY(-2px); } }
 @keyframes esFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
 @keyframes shimmerSweep {

@@ -6,6 +6,7 @@ import DotGridBackground from "@/components/shared/DotGridBackground";
 import CoinMark from "@/components/shared/CoinMark";
 import CoinRain from "@/components/shared/CoinRain";
 import { HomeSkeleton, Skel, FeedsPlaceholder } from "@/components/shared/PageSkeleton";
+import { FlipTip } from "@/components/shared/FlipTip";
 import HeroProfit from "@/components/dashboard/HeroProfit";
 import EmptyHero from "@/components/dashboard/EmptyHero";
 import { ONBOARDING_SKIPPED_KEY } from "@/app/onboarding/page";
@@ -1566,6 +1567,18 @@ function DashboardPage() {
               </a>
             </div>
           ) : null}
+        </div>
+
+        {/* First-run callout — teaches the two money surfaces (scan =
+            the tool, flip or skip = the free daily). Shows once per
+            device (localStorage lw-guide-home-scan), then never again.
+            Lives outside the scan zone's overflow:hidden so its dismiss
+            X isn't clipped. */}
+        <div style={{ padding: "0 18px" }}>
+          <FlipTip
+            id="home-scan"
+            text="scan = your money tool. flip or skip = free daily. both yours."
+          />
         </div>
 
         {/* 6 + 7. Carousels — order swaps for first-time users.

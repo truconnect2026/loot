@@ -8,6 +8,7 @@ import { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import { createClient } from "@/lib/supabase";
 import { VerdictBadge } from "@/components/ui/VerdictBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FlipTip } from "@/components/shared/FlipTip";
 import { elevation } from "@/lib/design/tokens";
 
 type HaulStatus  = "saved" | "bought" | "listed" | "sold";
@@ -685,6 +686,19 @@ export default function HaulLogPage() {
         {hauls === null && (
           <div style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}>
             <CoinMarkSpinner />
+          </div>
+        )}
+
+        {/* First-run callout — only when there ARE hauls; the empty
+            state already owns the teaching moment when the list is
+            blank, and two guides never stack on one screen. Shows once
+            per device (localStorage lw-guide-haul). */}
+        {hauls !== null && hauls.length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <FlipTip
+              id="haul"
+              text="everything you save lands here. push each one to sold."
+            />
           </div>
         )}
 

@@ -8,6 +8,7 @@ import ToolSheet, { type ToolSheetTool } from "@/components/dashboard/ToolSheet"
 import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
 import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
+import { FlipTip } from "@/components/shared/FlipTip";
 
 /**
  * TOOLS — the arsenal, theater pass. Every flagship DEMONSTRATES its
@@ -541,6 +542,13 @@ export default function ToolsPage() {
         >
           10 TOOLS · ONE TAP EACH
         </div>
+      </div>
+
+      {/* First-run callout — one line teaching the mental model (each
+          tile does one job). Outside .tl-stagger so it isn't a stagger
+          child and doesn't inherit tlRise; shows once per device. */}
+      <div style={{ padding: "0 18px", position: "relative", zIndex: 1 }}>
+        <FlipTip id="tools" text="every tool's one job. tap one, go to work." />
       </div>
 
       <div
