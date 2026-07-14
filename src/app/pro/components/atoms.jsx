@@ -14,6 +14,35 @@ export function CoinMark({ size = 24, color = C.mint, style = {} }) {
   );
 }
 
+/* Small, consistent "this is an illustration, not a real report/earning"
+   tag for demo clusters — so no fabricated number can be mistaken for a
+   real eBay report or an income promise. Mono, dim, on-brand. */
+export function ExampleTag({ label = "EXAMPLE", style = {} }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        fontFamily: "var(--font-mono), monospace",
+        fontSize: 8.5,
+        fontWeight: 700,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        color: "rgba(255,255,255,0.4)",
+        border: "1px solid rgba(255,255,255,0.16)",
+        borderRadius: 4,
+        padding: "2px 6px",
+        lineHeight: 1,
+        pointerEvents: "none",
+        ...style,
+      }}
+      aria-hidden="true"
+    >
+      {label}
+    </span>
+  );
+}
+
 /* Animated multi-color background-clip gradient text (shimmer keyframe lives
    in pro.module.css). */
 export function ShimmerText({ children, style = {} }) {

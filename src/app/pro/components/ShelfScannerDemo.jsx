@@ -5,6 +5,7 @@ import { C } from "../lib/colors.js";
 import {
   CheckIcon,
   Eyebrow,
+  ExampleTag,
   FadeUp,
   SECTION_BODY_SIZE,
   SECTION_HEADLINE_STYLE,
@@ -723,9 +724,15 @@ export default function ShelfScannerDemo() {
                       textTransform: "uppercase",
                       color: "rgba(255,255,255,0.4)",
                       marginBottom: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 7,
                     }}
                   >
                     shelf value
+                    {/* Phase 1.2: the per-item tags + total are illustrative,
+                        not real appraisals. */}
+                    <ExampleTag label="EXAMPLE" />
                   </div>
                   <div
                     style={{

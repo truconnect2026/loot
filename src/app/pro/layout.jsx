@@ -36,7 +36,7 @@ const spaceMono = Space_Mono({
 export const metadata = {
   title: "loot.works/pro — the unfair advantage for resellers",
   description:
-    "AI thrift arbitrage. Real eBay comps in about a second. Yard sale map. BOLO alerts. $14.99/mo, cancel anytime. Built for flippers.",
+    "Thrift arbitrage. Real eBay comps in about a second. Sale-day planner. BOLO alerts. $14.99/mo, cancel anytime. Built for flippers.",
   alternates: { canonical: "https://loot.works/pro" },
   openGraph: {
     title: "LOOT.WORKS / pro",

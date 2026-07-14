@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../lib/colors.js";
-import { CheckIcon, CoinMark } from "./atoms.jsx";
+import { CheckIcon, CoinMark, ExampleTag } from "./atoms.jsx";
 import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 import { PyrexBowl } from "../../marketing-screens/_frame";
 
@@ -504,6 +504,13 @@ export default function VerdictCardLive() {
             flexShrink: 0,
           }}
         />
+        {/* Phase 1.2: frames the whole card as a DEMONSTRATION ("this is what
+            a verdict looks like") so the sample item / comps / "verified" /
+            "AUTHENTIC" read as an illustration of the feature, never as
+            certification of a real item or a real eBay report. */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, flexShrink: 0 }}>
+          <ExampleTag label="EXAMPLE" />
+        </div>
         {/* 0.5 vs 1: bias the result block toward the top of the sheet —
             equal spacers left a dead band above the title on tall screens */}
         <div style={{ flex: "0.5 1 auto" }} />

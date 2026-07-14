@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { C } from "../lib/colors.js";
 import {
   Eyebrow,
+  ExampleTag,
   FadeUp,
   SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
@@ -562,6 +563,20 @@ export default function AuthCheckDemo() {
                   }}
                 >
                   walk away. keep your $200.
+                </div>
+                {/* Phase 1.2: the $200 is an illustrative loss avoided, not a
+                    real or typical figure. Reserved slot — no layout shift. */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    minHeight: 15,
+                    marginTop: 5,
+                    opacity: verdict ? 1 : 0,
+                    transition: reduced ? "none" : `opacity 320ms ${EASE} 220ms`,
+                  }}
+                >
+                  <ExampleTag label="EXAMPLE" />
                 </div>
 
                 {/* micro-CTA: reserved slot, anchor only. Appears at full

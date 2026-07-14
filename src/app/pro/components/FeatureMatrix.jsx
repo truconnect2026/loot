@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { C } from "../lib/colors.js";
 import {
   Eyebrow,
+  ExampleTag,
   FadeUp,
   SECTION_BODY_SIZE,
   SECTION_HEADLINE_SIZE,
@@ -559,7 +560,10 @@ export default function FeatureMatrix() {
             >
               PRO
             </span>
-            .
+            .{" "}
+            {/* Phase 1.2: flags the numbers in the cards below (prices,
+                sold comps, +$71 net) as illustrative, not real data. */}
+            <ExampleTag label="EXAMPLES" style={{ marginLeft: 2, verticalAlign: "middle" }} />
           </p>
         </FadeUp>
 

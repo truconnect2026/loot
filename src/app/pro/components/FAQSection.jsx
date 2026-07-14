@@ -19,7 +19,7 @@ const faqData = [
     q: "what if i'm not even a 'real' flipper yet?",
     // "the map finds sales / alerts catch trends before they spike"
     // referenced unbuilt features — aligned to what actually ships.
-    a: "perfect. Pro turns you into one faster. the AI identifies items you wouldn't recognize, the planner times your store runs, and the watch list pings you when a grail shows up.",
+    a: "perfect. Pro turns you into one faster. it flags items you wouldn't recognize, the planner times your store runs, and the watch list pings you when a grail shows up.",
   },
   {
     q: "what if i don't like it?",
@@ -27,7 +27,7 @@ const faqData = [
   },
   {
     q: "why subscription vs. one-time?",
-    a: "live eBay comps require ongoing data infrastructure. the AI improves weekly. new features ship monthly. subscription means you always have the sharpest tool.",
+    a: "live eBay comps require ongoing data infrastructure. it gets sharper every week. new features ship monthly. subscription means you always have the sharpest tool.",
   },
   {
     q: "can i switch between monthly and annual?",
@@ -42,7 +42,7 @@ const faqData = [
   },
   {
     q: "do you sell my data?",
-    a: "never. your scans stay yours. your hauls stay yours. the only data we use is aggregated, anonymized comps to improve the AI.",
+    a: "never. your scans stay yours. your hauls stay yours. the only data we use is aggregated, anonymized comps to sharpen pricing for everyone.",
   },
 ];
 
