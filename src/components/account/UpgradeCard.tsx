@@ -416,7 +416,13 @@ function PriceOption({
         >
           {label}
         </span>
-        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2, paddingRight: popular ? 52 : 0 }}>
+        {/* Same right inset on BOTH rows so the price figures ($14.99 /
+            $99.99) and their /mo · /yr suffixes share one vertical
+            anchor. 52px is the POPULAR badge's clearance on the monthly
+            (popular) tile; applying it to the annual tile too — which has
+            no badge — is what keeps the two prices in a clean column
+            instead of the monthly one sitting 52px further left. */}
+        <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2, paddingRight: 52 }}>
           <span
             style={{
               fontFamily: "var(--font-body)",
