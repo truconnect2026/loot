@@ -134,16 +134,30 @@ export default function FlipDailyCard() {
       {streakBoost && (
         <div className="fdc-streak-boost">✓ shared today — streak boost applied</div>
       )}
-      <div className="fdc">
+      <div className={"fdc" + (dropInView ? "" : " fdc--paused")}>
       <style>{STYLES}</style>
 
-      {/* Streak chip — stakes, top-right. Rendered ONLY when a real
-          streak exists in storage; never fabricated. */}
-      {streak > 0 && (
+      {/* Living mint edge — the peripheral-vision winner. Breathes on
+          OPACITY only (the ring's box-shadow values are static inside the
+          layer, so it stays compositor-only). Pauses off-screen with the
+          rest of the card's motion. */}
+      <div className="fdc-edge-glow" aria-hidden="true" />
+
+      {/* Top-right hook badge — ALWAYS present so a scrolling eye lands on
+          a reason to tap. A real streak (fos-streak-count) shows the flame
+          count as returning-user stakes; with no streak we show a
+          confident "FREE DAILY" pill (the cold-traffic value: free, daily,
+          zero friction). Streak count is never fabricated. */}
+      {streak > 0 ? (
         <div className="fdc-chip" aria-label={`${streak} day streak`}>
           <span className="fdc-chip-flame">🔥</span>
           <span className="fdc-chip-num">{streak}</span>
           <span className="fdc-chip-label">{today.played ? "streak alive" : "keep it alive"}</span>
+        </div>
+      ) : (
+        <div className="fdc-chip fdc-chip--free" aria-label="Free daily game">
+          <span className="fdc-chip-free-dot" />
+          <span className="fdc-chip-free-label">FREE DAILY</span>
         </div>
       )}
 
@@ -248,12 +262,38 @@ const STYLES = `
 }
 .fdc {
   position: relative; overflow: hidden;
-  border: 1px solid rgba(92,224,184,0.25);
+  border: 1px solid rgba(92,224,184,0.42);
   background: linear-gradient(180deg, rgba(10,22,18,0.6) 0%, rgba(10,10,10,0.85) 100%);
   border-radius: 16px;
   padding: 20px;
   display: flex; gap: 16px; align-items: center; justify-content: space-between;
   min-height: 200px;
+  /* static presence — a constant mint bloom + depth so the tile reads as
+     "something rewarding is here" even before the breathing edge lands
+     (and as the shipped reduced-motion base). Static box-shadow: no
+     per-frame paint. Sits secondary to SCAN's 44px-title viewfinder. */
+  box-shadow:
+    0 8px 30px -12px rgba(0,0,0,0.6),
+    0 0 30px -8px rgba(92,224,184,0.26);
+}
+.fdc--paused .fdc-edge-glow,
+.fdc--paused .fdc-btn--solid::after { animation-play-state: paused !important; }
+
+/* Living mint edge ring — inset (inside the card's overflow clip) so it
+   never fights the outer bloom; breathes via OPACITY only. Brighter at
+   peak than a neutral card → wins the scroll's peripheral vision. */
+.fdc-edge-glow {
+  position: absolute; inset: 0; z-index: 0; border-radius: 16px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(92,224,184,0.6),
+    inset 0 0 26px rgba(92,224,184,0.14);
+  opacity: 0.5;
+  animation: fdcEdgeBreathe 3.6s ease-in-out infinite;
+}
+@keyframes fdcEdgeBreathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 .fdc-inner { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; position: relative; z-index: 1; }
 .fdc-eyebrow { font-family: var(--font-space-mono), monospace; font-weight: 700; font-size: 11px; letter-spacing: 0.18em; color: #5CE0B8; }
@@ -271,10 +311,20 @@ const STYLES = `
 .fdc-btn--solid {
   /* The Home hero: same gradient language as the primary CTAs, with a
      soft bloom beneath — the loudest element in the scrollable content. */
+  position: relative;
   background: linear-gradient(180deg, #6FE5C0 0%, #4FD1A5 100%);
   color: #070510;
   box-shadow: 0 2px 6px rgba(92,224,184,0.30), 0 8px 22px -4px rgba(92,224,184,0.40), inset 0 1px 0 rgba(255,255,255,0.25);
 }
+/* Idle "tap me" glow ring — a soft mint halo pulsing on OPACITY only
+   (compositor-safe). Says the CTA is live without moving the button. */
+.fdc-btn--solid::after {
+  content: ""; position: absolute; inset: -2px; border-radius: 13px;
+  box-shadow: 0 0 16px 1px rgba(92,224,184,0.55);
+  opacity: 0; pointer-events: none;
+  animation: fdcCtaPulse 2.6s ease-in-out infinite;
+}
+@keyframes fdcCtaPulse { 0%, 100% { opacity: 0; } 50% { opacity: 0.85; } }
 .fdc-btn--outline { border: 1px solid rgba(92,224,184,0.55); color: #5CE0B8; }
 .fdc-foot { font-family: var(--font-space-mono), monospace; font-size: 10px; color: rgba(92,224,184,0.5); letter-spacing: 0.12em; margin-top: 4px; }
 .fdc-count {
@@ -501,6 +551,18 @@ const STYLES = `
   color: rgba(245,197,24,0.75); letter-spacing: 0.10em;
 }
 
+/* "FREE DAILY" pill — the always-on hook when there's no streak yet.
+   Mint (the free/action color), confident, never fine print. */
+.fdc-chip--free { background: rgba(92,224,184,0.10); border-color: rgba(92,224,184,0.38); }
+.fdc-chip-free-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: #5CE0B8;
+  box-shadow: 0 0 6px rgba(92,224,184,0.85);
+}
+.fdc-chip-free-label {
+  font-family: var(--font-space-mono), monospace; font-weight: 700; font-size: 9px;
+  color: #5CE0B8; letter-spacing: 0.16em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fdc-btn, .fdc-arr { transition: none; }
   .fdc-btn:active { transform: none; filter: none; }
@@ -513,5 +575,10 @@ const STYLES = `
   .fdc-beam-spin, .fdc-motes i, .fdc-flip-streak { animation: none !important; }
   .fdc-scanline, .fdc-motes, .fdc-beam, .fdc-q-glitch { display: none; }
   .fdc-q-halo { opacity: 0.7; }
+  /* Designed elevated static glow (NOT flat): the breathing edge freezes
+     bright and the CTA keeps a soft static halo, so the tile still reads
+     as live and premium with zero motion — this is David's shipped look. */
+  .fdc-edge-glow { animation: none; opacity: 0.85; }
+  .fdc-btn--solid::after { animation: none; opacity: 0.4; }
 }
 `;
