@@ -77,11 +77,11 @@ export function FlipTip({
         // floating at the far edge of a full-width block.
         width: "fit-content",
         maxWidth: "min(100%, 380px)",
-        marginTop: 12,
-        // Reserve a full section gap (space[5] = 20) below the tip so the
-        // section that follows (carousel / feeds placeholder / footer)
-        // never crowds it — the reserve is the tip's own, not borrowed
-        // from the next block's margin, so it holds in every feed state.
+        // Equal section-gap margins (space[5] = 20) top and bottom so the
+        // tip sits in the flow as a first-class card with even rhythm,
+        // not a callout wedged tight to one side. The bottom is also the
+        // tip's own reserve so nothing below crowds it in any feed state.
+        marginTop: space[5],
         marginBottom: space[5],
         animation:
           state === "exiting"
