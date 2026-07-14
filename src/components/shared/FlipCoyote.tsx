@@ -41,11 +41,20 @@ export default function FlipCoyote({
   crop = false,
 }: FlipCoyoteProps) {
   if (crop) {
-    const inner = Math.round(size * 1.7);
+    // Face-forward crop: zoom to the head and clip the shoulders. 1.5x (not
+    // 1.7x, which clipped the ears + halo) keeps the whole head, gold halo,
+    // and ears in frame; tx centers horizontally and ty centers the FACE
+    // (~0.34 down the art) in the size×size box, so the box is a face-
+    // centered square that seats predictably on the bubble's first text line.
+    const inner = Math.round(size * 1.5);
+    const tx = Math.round((size - inner) / 2);
+    const ty = Math.round(size / 2 - 0.34 * inner);
     return (
       <span
         style={{
-          display: "inline-block",
+          // block (not inline-block) so the wrapper adds no baseline gap —
+          // the glyph box is exactly size×size for clean flex seating.
+          display: "block",
           width: size,
           height: size,
           overflow: "hidden",
@@ -62,8 +71,7 @@ export default function FlipCoyote({
             width: inner,
             height: inner,
             objectFit: "contain",
-            // center horizontally, lift so the face (upper third) fills the box
-            transform: `translate(${Math.round((size - inner) / 2)}px, ${Math.round(-size * 0.15)}px)`,
+            transform: `translate(${tx}px, ${ty}px)`,
             userSelect: "none",
             pointerEvents: "none",
           }}

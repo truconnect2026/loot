@@ -17,10 +17,14 @@ import { space } from "@/lib/design/tokens";
  * (scale/fade, --ease-in) and the tip collapses its own height so the
  * content above closes the gap.
  *
- * Gating: shows once per surface (localStorage lw-guide-<id>); dismiss
- * persists. A session-level throttle (sessionStorage lw-guide-session) also
- * caps VISIBLE first-run tips at one per session, so tips on different tabs
- * (Home + Tools) never stack in a single session. Callers ensure max one
+ * Gating: a tip shows until the user EXPLICITLY dismisses it (the X), which
+ * writes localStorage lw-guide-<id> and hides it forever. It PERSISTS across
+ * tab navigation within a session (mount -> nav away -> nav back -> still
+ * there); only the X dismisses it. A session slot (sessionStorage
+ * lw-guide-session = the claiming tip's id, NOT a boolean) caps VISIBLE
+ * first-run tips at one per session so tips on different tabs never stack —
+ * a tip recognizes its OWN id in the slot on remount and stays visible. An
+ * undismissed tip may show again in a later session. Callers ensure max one
  * FlipTip per screen and never mount it on a surface with an active
  * empty-state guide.
  *
@@ -44,24 +48,36 @@ export function FlipTip({
 
   useEffect(() => {
     let seen = false;
-    let sessionUsed = false;
+    let sessionOwner = "";
     try {
       seen = localStorage.getItem(`lw-guide-${id}`) === "1";
-      // F2: a first-run tip already fired on another tab this session.
-      sessionUsed = sessionStorage.getItem("lw-guide-session") === "1";
+      // The single per-session slot holds the id of whichever tip claimed it
+      // (NOT a boolean). Storing the id is what lets THIS tip recognize its
+      // own claim on remount and stay visible instead of hiding itself.
+      sessionOwner = sessionStorage.getItem("lw-guide-session") || "";
     } catch {
       /* private mode */
     }
-    // Already dismissed forever, OR another tip already used this session's
-    // one slot (still show it in a LATER session — don't mark it seen).
-    if (seen || sessionUsed) {
+    // Dismissed forever (only the X sets this) -> never show again.
+    if (seen) {
       setState("hidden");
       return;
     }
-    try {
-      sessionStorage.setItem("lw-guide-session", "1");
-    } catch {
-      /* private mode */
+    // Slot held by a DIFFERENT tip -> don't stack; stay hidden this session
+    // (never dismissed, so it may show in a later session).
+    if (sessionOwner && sessionOwner !== id) {
+      setState("hidden");
+      return;
+    }
+    // Claim the slot once. On remount (tab nav away + back) the slot already
+    // equals our id, so we skip the claim and stay VISIBLE — the tip persists
+    // until the user taps X. Mounting NEVER marks it seen.
+    if (!sessionOwner) {
+      try {
+        sessionStorage.setItem("lw-guide-session", id);
+      } catch {
+        /* private mode */
+      }
     }
     setState("shown");
   }, [id]);
