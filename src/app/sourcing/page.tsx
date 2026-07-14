@@ -41,6 +41,14 @@ const BG   = "#070510";
 const DAY_LETTER  = ["S", "M", "T", "W", "T", "F", "S"] as const;
 const WEEKDAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
 
+// D3: consumer date label from a "YYYY-MM-DD" plan key. Built from LOCAL
+// parts (not new Date(iso), which parses as UTC midnight and renders the
+// previous day in US timezones). Client-only render, so no SSR mismatch.
+function formatPlanDate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const CHAIN_OPTIONS = ["Goodwill", "Savers", "Value Village", "other"] as const;
 type Chain = (typeof CHAIN_OPTIONS)[number];
 
@@ -593,7 +601,7 @@ export default function SourcingPage() {
         <div style={{ padding: "0 16px 16px" }}>
           {/* Day label */}
           <div style={{ fontFamily: "var(--font-data, monospace)", fontSize: 9, letterSpacing: "0.13em", color: "#5A4E70", marginBottom: 12, textTransform: "uppercase" }}>
-            {selDay === 0 ? "today" : WEEKDAY_FULL[displaySelPlan.weekday]} · {displaySelPlan.date}
+            {selDay === 0 ? "today" : WEEKDAY_FULL[displaySelPlan.weekday]} · {formatPlanDate(displaySelPlan.date)}
           </div>
 
           {displayDayCards.length === 0 ? (

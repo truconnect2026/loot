@@ -143,11 +143,13 @@ function ShelfScene() {
         <circle cx={252} cy={38} r={2} />
       </svg>
       <span className="ts-scanline ts-a" />
-      <span className="ts-pill ts-pill--1 ts-a">$––</span>
-      <span className="ts-pill ts-pill--2 ts-a">$––</span>
-      <span className="ts-pill ts-pill--3 ts-a">$––</span>
-      <span className="ts-pill ts-pill--4 ts-a">$––</span>
-      <span className="ts-pill ts-pill--5 ts-a">$––</span>
+      {/* D5: sample flip values (with ~) so the seated pills read as an
+          illustrative example, not a stuck "$––" loading placeholder. */}
+      <span className="ts-pill ts-pill--1 ts-a">~$18</span>
+      <span className="ts-pill ts-pill--2 ts-a">~$40</span>
+      <span className="ts-pill ts-pill--3 ts-a">~$25</span>
+      <span className="ts-pill ts-pill--4 ts-a">~$12</span>
+      <span className="ts-pill ts-pill--5 ts-a">~$55</span>
     </span>
   );
 }
@@ -157,10 +159,12 @@ function ShelfScene() {
 function CompsScene() {
   return (
     <span className="ts ts-comps ts-a" aria-hidden="true" style={{ "--sd": "1500ms" } as React.CSSProperties}>
+      {/* D5: sample comps (with ~) — reads as an example comp table, not a
+          stuck "$––" placeholder. */}
       {[1, 2, 3].map((i) => (
         <span key={i} className="ts-row">
           <span className={`ts-row-in ts-row-in--${i} ts-a`}>
-            sold&nbsp;&nbsp;<span style={{ color: "rgba(92,224,184,0.9)" }}>$––</span>
+            sold&nbsp;&nbsp;<span style={{ color: "rgba(92,224,184,0.9)" }}>{["~$34", "~$28", "~$41"][i - 1]}</span>
           </span>
         </span>
       ))}

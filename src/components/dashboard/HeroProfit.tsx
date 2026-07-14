@@ -237,7 +237,9 @@ export default function HeroProfit({
   // the same baseline and feel like one currency-glyph unit; the
   // visual hierarchy comes from the $'s opacity (rendered at 0.5
   // on the JSX below) instead of a smaller font.
-  const heroNumberSize = isEmpty ? 28 : 44;
+  // D2: in the empty state the $0 is a placeholder, not the message — shrink
+  // it (28 -> 20) so it stops dominating the invitation below it.
+  const heroNumberSize = isEmpty ? 20 : 44;
   const heroDollarSize = heroNumberSize;
 
   // Period pills are meaningless when every period reads $0. Hide
@@ -433,9 +435,12 @@ export default function HeroProfit({
           <span
             style={{
               fontFamily: "var(--font-body)",
-              fontWeight: 500,
-              fontSize: 13,
-              color: "rgba(200, 192, 216, 0.55)",
+              // D2: this is the actual CTA in the empty state — promote it to
+              // lead (16/600, full-contrast text) so a new user reads "go
+              // find" instead of the discouraging ghost "$0".
+              fontWeight: 600,
+              fontSize: 16,
+              color: "#C8C0D8",
               lineHeight: 1.3,
               display: "inline-flex",
               alignItems: "baseline",

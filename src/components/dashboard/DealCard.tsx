@@ -439,32 +439,28 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         {deal.distance}
       </span>
 
-      {/* Profit chip — bottom-right. Now a distinct chip with mint surface
-          + border so it reads as a separate data point from the bare mint
-          $45 resale value above. Same pattern used on EmptyHero's profit
-          chip; consistent across the app. */}
+      {/* D4: profit readout — bottom-right. Was a mint-surface + border pill
+          with a breathing pulse, which read as a separate tappable control
+          inside the already-tappable card and was unlabeled ("+$280" =
+          profit? points?). Now a labeled INFO readout: a "PROFIT" caption +
+          the mint value, no surface/border/pulse, pointer-events:none so it
+          never intercepts the card tap. */}
       {profit > 0 && (
         <div
           style={{
             position: "absolute",
             bottom: 12,
             right: 14,
-            backgroundColor: "rgba(92,224,184,0.10)",
-            border: "1px solid rgba(92,224,184,0.20)",
-            borderRadius: 6,
-            padding: "3px 8px",
-            fontFamily: "var(--font-body)",
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#5CE0B8",
+            display: "flex",
+            alignItems: "baseline",
+            gap: 4,
+            pointerEvents: "none",
             fontFeatureSettings: '"tnum"',
             lineHeight: 1.2,
-            // Slow breath — money numbers should feel alive, not
-            // static. 2.5s ease-in-out keeps the pulse subliminal.
-            animation: "dealProfitBreath 2.5s ease-in-out infinite",
           }}
         >
-          +${profit}
+          <span style={{ fontFamily: "var(--font-label)", fontSize: 8, fontWeight: 700, letterSpacing: "0.12em", color: "#5A4E70" }}>PROFIT</span>
+          <span style={{ fontFamily: "var(--font-body)", fontSize: 12, fontWeight: 700, color: "#5CE0B8" }}>+${profit}</span>
         </div>
       )}
       <style>{`

@@ -1750,12 +1750,16 @@ function DashboardPage() {
             paddingBottom: "var(--content-bottom-clearance)",
             textAlign: "center",
             fontFamily: "var(--font-body)",
-            fontSize: 11,
-            color: "#3D2E55",
-            letterSpacing: "0.10em",
+            // D6: committed as a deliberate branded sign-off. Was #3D2E55/11px,
+            // near-invisible and read as a leftover; bumped to the textMuted
+            // token at the splash signature's cadence, with mint periods for a
+            // signature lockup.
+            fontSize: 13,
+            color: "#5A4E70",
+            letterSpacing: "0.08em",
           }}
         >
-          scan. price. flip.
+          scan<span style={{ color: "#5CE0B8" }}>.</span> price<span style={{ color: "#5CE0B8" }}>.</span> flip<span style={{ color: "#5CE0B8" }}>.</span>
         </div>
       </div>
 
