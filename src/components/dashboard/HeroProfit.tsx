@@ -321,11 +321,15 @@ export default function HeroProfit({
       >
         <div
           style={{
-            // Section label — uppercase category header, stays mono per the
-            // font role system.
+            // E1: the money-moment header — was 8px/#5A4E70/weight-400, the
+            // dimmest, smallest label in the app, underselling the single most
+            // important emotional beat. Lifted to the canonical section-header
+            // tier (10px/700/#6F678E, still Space Mono per the font-role
+            // system) so it reads confident, not apologetic.
             fontFamily: "var(--font-label)",
-            fontSize: 8,
-            color: "#5A4E70",
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#6F678E",
             letterSpacing: "0.12em",
           }}
         >

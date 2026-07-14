@@ -202,17 +202,18 @@ function DoorIcon() {
 }
 
 // Tile accent colors — each drives the icon tint inside SettingsTile.
-// Reassigned per the account-page polish spec: zip is now a warm
-// location red (pin color, not alarm), watch list takes mint as the
-// active engagement feature, push notifications take the alert
-// blue-purple. Mint earning a slot here is the deliberate exception
-// to the "mint = money only" rule — watch list IS the money-finding
-// feature, so mint signals "this is what fills your wallet."
-const ACCENT_ZIP = "#E8636B"; // pin red — location
+// E2: tightened from a 5-hue rainbow (which included the off-brand
+// periwinkle #7B8FFF and a red #E8636B that duplicated the destructive
+// sign-out) to the three-token brand palette. Nothing here carries a
+// load-bearing semantic state, so the colors now follow brand meaning:
+// camel = neutral settings, gold = attention/alerts, mint = the ONE
+// money-finder row (watch list), the deliberate "mint = money" exception.
+// Red is reserved strictly for destructive sign-out.
+const ACCENT_ZIP = "#D4A574"; // camel — location (a static field, not an alarm)
 const ACCENT_RADIUS = "#D4A574"; // camel — distance
-const ACCENT_BOLO = "#5CE0B8"; // mint — active engagement (money finder)
-const ACCENT_NOTIF = "#7B8FFF"; // blue-purple — alerts
-const ACCENT_EXPORT = "#5CE0B8"; // mint — Export is USEFUL (your data, one tap)
+const ACCENT_BOLO = "#5CE0B8"; // mint — the money-finder row (intentional exception)
+const ACCENT_NOTIF = "#F5C518"; // gold — attention/alerts (brand emphasis color)
+const ACCENT_EXPORT = "#D4A574"; // camel — reserve mint strictly for the watch-list row
 // Sign-out no longer uses SettingsTile (it's a centered link, not a
 // settings row), so ACCENT_SIGNOUT was retired with that change.
 
@@ -1119,6 +1120,16 @@ export default function AccountPage() {
             urgent." Press state drops to 40% opacity for a clean
             tactile cue without bouncing or scaling. */}
         <SignOutLink onTap={handleSignOut} />
+
+        {/* E3: footer terminus — a dim wordmark so the page reads FINISHED
+            below the quiet sign-out instead of running into dead space above
+            the tab bar. Neutral dim (no brand hue) so it never competes with
+            the settings accents. */}
+        <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
+          <span style={{ fontFamily: "var(--font-space-mono)", fontSize: 11, letterSpacing: "0.14em", color: "rgba(255,255,255,0.20)" }}>
+            loot.works
+          </span>
+        </div>
 
         {/* Bottom padding — tab bar + air above sign-out */}
         <div style={{ paddingBottom: "var(--content-bottom-clearance)" }} />
