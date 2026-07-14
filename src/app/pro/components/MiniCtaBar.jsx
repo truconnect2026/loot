@@ -25,7 +25,10 @@ import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
  */
 
 const LABELS = {
-  mistake: "never eat a $200 mistake",
+  // 5.2: the "$200" belongs to THE MATH as its one gut-punch. The bar's
+  // features-zone line keeps the loss-aversion urgency without repeating the
+  // figure (which diluted the moment when both showed at once).
+  mistake: "never eat a bad buy again",
   price: "loot pro · $14.99/mo",
   annual: "$8.33/mo billed annually",
 };
