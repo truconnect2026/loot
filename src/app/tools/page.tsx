@@ -666,11 +666,17 @@ export default function ToolsPage() {
         open={conditionOpen}
         onClose={() => setConditionOpen(false)}
         onPaywall={() => {
+          // One continuous cross-motion: close this sheet and raise the
+          // paywall in the SAME tick so the first leaves exactly as the
+          // second arrives (matches the /app dashboard handoff). No
+          // double-scrim — two identical dark scrims crossfading never
+          // sum above a single steady scrim (0.5+0.5 alpha-composites to
+          // 0.75, below the 1.0 max). The prior 150ms setTimeout read as
+          // two beats AND, being wall-clock, left a blank-scrim gap under
+          // reduced motion (both sheets snap instantly, then 150ms of
+          // nothing). Removing it fixes both.
           setConditionOpen(false);
-          // Sequence, don't crossfade: let this sheet start its slide-down
-          // before the paywall rises, so two scrims never stack (the
-          // double-scrim beat). ~150ms ≈ half the sheet duration.
-          window.setTimeout(() => setPaywallOpen(true), 150);
+          setPaywallOpen(true);
         }}
         onSignup={() => {
           setConditionOpen(false);
@@ -682,11 +688,12 @@ export default function ToolsPage() {
         open={coachOpen}
         onClose={() => setCoachOpen(false)}
         onPaywall={() => {
+          // Simultaneous cross-motion — see ConditionGrade above. Close
+          // the chat sheet and raise the paywall in one tick so the
+          // handoff reads as a single continuous replacement with no
+          // double-scrim and no reduced-motion blank gap.
           setCoachOpen(false);
-          // Sequenced handoff — see ConditionGrade above. Closes the chat
-          // sheet, then raises the paywall ~150ms later so the scrims
-          // hand off cleanly instead of doubling up.
-          window.setTimeout(() => setPaywallOpen(true), 150);
+          setPaywallOpen(true);
         }}
         onSignup={() => {
           // Logged-out visitor — close the sheet and route to the

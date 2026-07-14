@@ -184,9 +184,15 @@ export default function BottomSheet({
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        /* Panel materializes as it rises: a subtle opacity floor (0.6→1)
+           on the same curve as the slide + scrim, so the glass solidifies
+           into place with weight rather than sliding in flat. Opacity (not
+           scale) because the drag handler owns the panel's inline transform
+           — a scale keyframe would fight it. Only the open keyframe carries
+           opacity; drag + close leave the panel fully opaque. */
         @keyframes bsSlideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          from { transform: translateY(100%); opacity: 0.6; }
+          to { transform: translateY(0); opacity: 1; }
         }
         @keyframes bsBackdropOut {
           from { opacity: 1; }
