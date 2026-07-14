@@ -573,7 +573,9 @@ export default function AuthCheckDemo() {
                     minHeight: 15,
                     marginTop: 5,
                     opacity: verdict ? 1 : 0,
-                    transition: reduced ? "none" : `opacity 320ms ${EASE} 220ms`,
+                    // reduce handled by the global .pro-page-root rule (avoids a
+                    // reduce-conditional attribute → no hydration mismatch).
+                    transition: `opacity 320ms ${EASE} 220ms`,
                   }}
                 >
                   <ExampleTag label="EXAMPLE" />

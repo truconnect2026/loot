@@ -62,13 +62,19 @@ export function useInView(opts = {}) {
  * immediately instead of animating in.
  */
 export function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
+  // Start false on BOTH server AND the client's first render so hydration
+  // matches. The previous sync matchMedia init returned true on the client
+  // under reduce but false on the server, so every component that rendered
+  // reduce-conditional text/attrs (e.g. "tap to reset" vs "↻ scan again")
+  // tripped React #418 — which discards the prerendered HTML and re-renders
+  // the whole tree client-side (a flash on the money page for reduce users).
+  // The real value is read post-mount in the effect below; the global
+  // `.pro-page-root *` reduced-motion CSS already suppresses the actual
+  // animation on first paint, so nothing visibly animates in the meantime.
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
     const handler = (e) => setReduced(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);

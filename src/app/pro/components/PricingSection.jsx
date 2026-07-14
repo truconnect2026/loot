@@ -11,7 +11,12 @@ import {
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
-import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
+// NOTE: intentionally NOT using usePrefersReducedMotion here. Its synchronous
+// matchMedia init diverges SSR (false) vs client-first-render (true under
+// reduce), so gating rendered className/style on it causes a hydration
+// mismatch. The global `.pro-page-root *` reduced-motion rule in
+// pro.module.css already neutralizes every transition/animation under reduce,
+// so the toggle morph is instant for reduce users with zero hydration risk.
 
 // Core product features — what Pro unlocks at either billing pace.
 // "Sale-day planner", not "Yard sale map": the shipped feature is the
@@ -59,7 +64,6 @@ const featRow = {
 };
 
 export default function PricingSection({ onCTA }) {
-  const reduced = usePrefersReducedMotion();
   // Annual pre-selected — BEST VALUE.
   const [plan, setPlan] = useState("annual");
   const isAnnual = plan === "annual";
@@ -128,7 +132,7 @@ export default function PricingSection({ onCTA }) {
                     borderRadius: 999,
                     background: C.mint,
                     transform: isAnnual ? "translateX(0)" : "translateX(100%)",
-                    transition: reduced ? "none" : "transform 260ms cubic-bezier(0.22,1,0.36,1)",
+                    transition: "transform 260ms cubic-bezier(0.22,1,0.36,1)",
                     boxShadow: "0 2px 8px rgba(92,224,184,0.35)",
                   }}
                 />
@@ -154,7 +158,7 @@ export default function PricingSection({ onCTA }) {
                         letterSpacing: "0.1em",
                         textTransform: "uppercase",
                         color: active ? C.bg : "rgba(255,255,255,0.55)",
-                        transition: reduced ? "none" : "color 200ms",
+                        transition: "color 200ms",
                       }}
                     >
                       {p}
@@ -174,7 +178,7 @@ export default function PricingSection({ onCTA }) {
                     textTransform: "uppercase",
                     color: C.gold,
                     opacity: isAnnual ? 1 : 0,
-                    transition: reduced ? "none" : "opacity 220ms",
+                    transition: "opacity 220ms",
                   }}
                 >
                   BEST VALUE
@@ -189,7 +193,7 @@ export default function PricingSection({ onCTA }) {
                     borderRadius: 999,
                     padding: "3px 9px",
                     opacity: isAnnual ? 1 : 0,
-                    transition: reduced ? "none" : "opacity 220ms",
+                    transition: "opacity 220ms",
                   }}
                 >
                   save $80
@@ -199,7 +203,7 @@ export default function PricingSection({ onCTA }) {
               {/* Price — remounts (key=plan) for a compositor crossfade. */}
               <div
                 key={plan}
-                className={reduced ? "" : "pricing-morph"}
+                className="pricing-morph"
                 style={{ display: "flex", alignItems: "baseline", lineHeight: 1, marginBottom: 4 }}
               >
                 <span
@@ -255,7 +259,7 @@ export default function PricingSection({ onCTA }) {
                   margin: "10px 0 0",
                   minHeight: 16,
                   opacity: isAnnual ? 0.9 : 0,
-                  transition: reduced ? "none" : "opacity 220ms",
+                  transition: "opacity 220ms",
                 }}
               >
                 ★ annual also: priority support · new features first
