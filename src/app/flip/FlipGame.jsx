@@ -56,6 +56,7 @@ export default function FlipGame() {
   const [streak, setStreak] = useState(0);
   const [streakKey, setStreakKey] = useState(0);
   const [shakeKey, setShakeKey] = useState(0);
+  const [verdict, setVerdict] = useState({ key: 0, correct: true });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [offline, setOffline] = useState(false);
   const [intermissionKind, setIntermissionKind] = useState(null);
@@ -249,6 +250,7 @@ export default function FlipGame() {
     sounds.playSwoosh(direction);
 
     if (correct) {
+      setVerdict((v) => ({ key: v.key + 1, correct: true }));
       sounds.playDing();
       sounds.playTick?.(streak + 1);
       haptics.hapticSuccess();
@@ -275,6 +277,7 @@ export default function FlipGame() {
       }
       await new Promise((r) => setTimeout(r, HIT_PAUSE_CORRECT_MS));
     } else {
+      setVerdict((v) => ({ key: v.key + 1, correct: false }));
       sounds.playBuzz();
       haptics.hapticError();
       window.dispatchEvent(new CustomEvent("fos:wrong-swipe"));
@@ -390,6 +393,7 @@ export default function FlipGame() {
             <motion.div key="playing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="flip-playing-shell">
               <PlayingEnvironment streak={streak} />
               <DirectionalBackground x={dragX} />
+              <VerdictFlash flash={verdict} />
 
               <div className="flip-game-header">
                 <div className="flip-game-header-left">
@@ -435,6 +439,7 @@ export default function FlipGame() {
                   currentIndex={currentIndex}
                   onSwipe={handleSwipe}
                   onDragX={(v) => dragX.set(v)}
+                  firstRound={currentIndex === 0}
                 />
               </ScreenShake>
               <StreakOverlay streakKey={streakKey} streak={streak} />
@@ -473,6 +478,7 @@ export default function FlipGame() {
                   setPriceGuesses({});
                   setCurrentIndex(0);
                   setStreak(0);
+                  setVerdict({ key: 0, correct: true });
                   setPhase("playing");
                 }}
               />
@@ -492,6 +498,25 @@ export default function FlipGame() {
   );
 }
 
+
+/**
+ * Correct/wrong verdict beat — a brief edge-vignette flash (mint on a hit,
+ * red on a miss) keyed to each swipe so it retriggers. It hugs the screen
+ * edges (transparent center) so it never blocks the card. Purely additive
+ * dopamine on top of the sound/haptic/confetti/score-arc feedback — and the
+ * first real visual punch on a MISS. Reduced motion: not rendered (the CSS
+ * guard hides it), so a reduce user just gets the instant arc-colour change.
+ */
+function VerdictFlash({ flash }) {
+  if (!flash.key) return null;
+  return (
+    <div
+      key={flash.key}
+      className={`flip-verdict-flash flip-verdict-flash--${flash.correct ? "hit" : "miss"}`}
+      aria-hidden="true"
+    />
+  );
+}
 
 function Intermission({ kind }) {
   const META = {
@@ -844,14 +869,24 @@ const INLINE_STYLES = `
   border-radius: 24px;
   background: #0a0a0a;
   box-shadow:
-    0 0 60px rgba(92,224,184,0.2),
+    0 0 56px rgba(92,224,184,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.10),
     inset 0 0 80px rgba(0,0,0,0.8),
-    0 18px 48px rgba(0,0,0,0.55);
-  border: 1px solid rgba(92,224,184,0.3);
+    0 20px 50px rgba(0,0,0,0.6);
+  border: 1px solid rgba(92,224,184,0.32);
 }
 .flip-card-image-wrap {
   position: absolute; top: 0; left: 0; right: 0; height: 65%;
   overflow: hidden;
+}
+/* Crisp inner frame around the item photo + a soft seat shadow so the
+   image reads as inset glass, not a pasted rectangle. The item photo (and
+   any thrift price sticker on it) is the star of the round. */
+.flip-card-image-wrap::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 -36px 44px -22px rgba(0,0,0,0.55);
 }
 .flip-swipe-img { object-fit: cover; }
 .flip-card-vignette {
@@ -983,6 +1018,39 @@ const INLINE_STYLES = `
   font-family: var(--display); font-weight: 500; font-size: 14px;
   color: rgba(255,255,255,0.9); font-style: italic;
 }
+
+/* ─── First-round gesture cue ─────────────────────────────────────
+   A ghost finger sweeps left↔right (transform only) to demonstrate the
+   drag; the label teaches skip-left / flip-right. First card only, gone
+   on first interaction. */
+.flip-gesture-cue {
+  position: absolute; left: 0; right: 0; top: 44%; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  pointer-events: none;
+}
+.flip-gesture-track { position: relative; width: 96px; height: 32px; }
+.flip-gesture-finger {
+  position: absolute; top: 50%; left: 50%;
+  width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  border: 1.5px solid rgba(255,255,255,0.6);
+  box-shadow: 0 0 16px rgba(255,255,255,0.3), inset 0 0 8px rgba(255,255,255,0.2);
+  animation: flipGestureSwipe 2.4s ease-in-out infinite;
+}
+@keyframes flipGestureSwipe {
+  0%, 100% { transform: translateX(-34px); opacity: 0.15; }
+  16% { opacity: 1; }
+  50% { transform: translateX(34px); opacity: 1; }
+  74% { opacity: 0.15; }
+}
+.flip-gesture-text {
+  font-family: var(--mono); font-weight: 700; font-size: 12px;
+  letter-spacing: 0.12em; color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9);
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip-gesture-finger { animation: none; transform: none; opacity: 0.85; }
+}
 .flip-peek-tint--purple {
   position: absolute; inset: 0; pointer-events: none; border-radius: 24px;
   background: rgba(107,70,193,0.1); mix-blend-mode: multiply;
@@ -991,7 +1059,7 @@ const INLINE_STYLES = `
 /* ─── Action buttons ──────────────────────────────────────────── */
 .flip-action-row {
   display: flex; justify-content: center; align-items: center; gap: 20px;
-  margin: 24px auto 16px;
+  margin: 18px auto 12px;
   position: relative; z-index: 1;
 }
 .flip-action-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -1038,6 +1106,31 @@ const INLINE_STYLES = `
   background: linear-gradient(90deg, #ff6b6b, #F5C518, #5CE0B8, #7B8FFF);
   -webkit-background-clip: text; background-clip: text;
   color: transparent !important;
+}
+
+/* ─── Verdict flash — edge-vignette hit/miss beat ─────────────────
+   Fixed, edge-only (transparent center) so the card stays clear;
+   opacity-only pulse (compositor). Keyed per swipe to retrigger. */
+.flip-verdict-flash {
+  position: fixed; inset: 0; z-index: 3; pointer-events: none; opacity: 0;
+}
+.flip-verdict-flash--hit {
+  background: radial-gradient(ellipse 130% 82% at 50% 50%, transparent 56%, rgba(92,224,184,0.28) 100%);
+  animation: flipVerdictFlash 380ms cubic-bezier(0.22,1,0.36,1);
+}
+.flip-verdict-flash--miss {
+  background: radial-gradient(ellipse 130% 82% at 50% 50%, transparent 56%, rgba(239,68,68,0.32) 100%);
+  animation: flipVerdictFlash 380ms cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes flipVerdictFlash {
+  0% { opacity: 0; }
+  28% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* No flash under reduce — the instant score-arc colour change already
+     marks the verdict; a full-screen pulse would violate the contract. */
+  .flip-verdict-flash { display: none; }
 }
 
 /* ─── Playing env ─────────────────────────────────────────────── */

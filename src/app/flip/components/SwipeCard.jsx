@@ -29,12 +29,16 @@ const SWIPE_VELOCITY = 500;
  * Visual layers are the new editorial treatment: rarity-aware bg, vignette
  * image, premium content panel, big swipe badges with sub-labels.
  */
-export default function SwipeCard({ item, isTop, onSwipe, onDrag }) {
+export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) {
   const x = useMotionValue(0);
   const [exiting, setExiting] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const idleTimerRef = useRef(null);
   const [idleNudge, setIdleNudge] = useState(0);
+  // First-round teaching cue — dismisses the moment the player moves the
+  // card, taps a button, or after 5s. Only ever shown on the very first
+  // card of a round (firstRound), so returning motion never sees it.
+  const [cueOff, setCueOff] = useState(false);
   const cardRef = useRef(null);
   const { enableHeavyEffects } = useDeviceClass();
   // PERF: 3D tilt only on heavy-effects-capable desktops, top card only.
@@ -55,12 +59,22 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag }) {
 
   useMotionValueEvent(x, "change", (latest) => {
     if (isTop && onDrag) onDrag(latest);
-    // Cancel idle nudge when user starts dragging.
-    if (Math.abs(latest) > 4 && idleTimerRef.current) {
-      window.clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = null;
+    // Cancel idle nudge + dismiss the teaching cue when the user drags.
+    if (Math.abs(latest) > 4) {
+      if (idleTimerRef.current) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      setCueOff(true);
     }
   });
+
+  // Auto-dismiss the first-round cue after 5s even if untouched.
+  useEffect(() => {
+    if (!isTop || !firstRound) return;
+    const t = window.setTimeout(() => setCueOff(true), 5000);
+    return () => window.clearTimeout(t);
+  }, [isTop, firstRound]);
 
   // Idle nudge — after 3s of no movement on the top card, gently nudge.
   useEffect(() => {
@@ -99,6 +113,7 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag }) {
 
   const flyOut = (direction) => {
     setExiting(true);
+    setCueOff(true);
     const targetX =
       (direction === "flip" ? 1 : -1) *
       (typeof window !== "undefined" ? window.innerWidth * 1.5 : 800);
@@ -205,6 +220,16 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag }) {
         {/* Direction wash overlays */}
         <motion.div className="flip-overlay flip-overlay--mint" style={{ opacity: mintOverlay }} aria-hidden="true" />
         <motion.div className="flip-overlay flip-overlay--red" style={{ opacity: redOverlay }} aria-hidden="true" />
+
+        {/* First-round teaching cue — a ghost finger sweeps left↔right to
+            demonstrate the drag; the label teaches the mapping. Reduced
+            motion: a static finger + label (a clean, complete hint). */}
+        {isTop && firstRound && !cueOff && (
+          <div className="flip-gesture-cue" aria-hidden="true">
+            <span className="flip-gesture-track"><span className="flip-gesture-finger" /></span>
+            <span className="flip-gesture-text">← skip · flip →</span>
+          </div>
+        )}
 
         {/* Content panel — bottom 35% */}
         <div className="flip-card-bottom">

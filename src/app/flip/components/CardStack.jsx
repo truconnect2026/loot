@@ -9,7 +9,7 @@ import SwipeCard from "./SwipeCard.jsx";
  * (current + 2 peeks). Peek 1 binds to the top card's drag so it grows + tilts
  * counter to the top card, creating the "next card revealed" depth cue.
  */
-export default function CardStack({ items, currentIndex, onSwipe, onDragX }) {
+export default function CardStack({ items, currentIndex, onSwipe, onDragX, firstRound }) {
   const x = useMotionValue(0);
 
   useEffect(() => {
@@ -40,6 +40,7 @@ export default function CardStack({ items, currentIndex, onSwipe, onDragX }) {
               key={item.id}
               item={item}
               isTop
+              firstRound={firstRound}
               onSwipe={onSwipe}
               onDrag={(latest) => x.set(latest)}
             />
