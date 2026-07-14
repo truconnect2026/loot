@@ -32,7 +32,7 @@ function buildTwitterIntent({ day, score, total, dollars, emojiGrid }) {
   return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
 }
 
-export default function ShareGrid({ scoreData, puzzleNumber, answers, priceGuesses }) {
+export default function ShareGrid({ scoreData, puzzleNumber, answers, priceGuesses, tierGlyph, tierLabel }) {
   const sounds = useGameSounds();
   const haptics = useHaptics();
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -262,7 +262,12 @@ export default function ShareGrid({ scoreData, puzzleNumber, answers, priceGuess
           <div className="fos-share-source-head">FLIP OR SKIP #{puzzleNumber}</div>
           <div className="fos-share-source-score">{scoreData.swipeScore}/10</div>
           <div className="fos-share-source-dollars">${scoreData.totalDollarsSpotted} SPOTTED</div>
-          <div className="fos-share-source-tier">{scoreData.swipeScore >= 9 ? "🐺 WOLF" : scoreData.swipeScore >= 7 ? "💪 SOLID" : scoreData.swipeScore >= 5 ? "😬 MID" : "💀 RIP"}</div>
+          {/* Tier MUST match the on-screen result. It is passed in from
+              ResultReveal's authoritative tier (getScoreTier(finalScore)),
+              NOT re-derived from swipeScore here — otherwise the shared
+              image could show a different tier than the player saw (e.g.
+              9/10 swipes but bad pricing = RIP on screen, was WOLF here). */}
+          <div className="fos-share-source-tier">{tierGlyph} {tierLabel}</div>
           <div className="fos-share-source-grid">{emojiGrid}</div>
           <div className="fos-share-source-foot">loot.works/flip</div>
         </div>

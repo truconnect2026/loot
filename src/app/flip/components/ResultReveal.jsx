@@ -405,6 +405,8 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
             puzzleNumber={puzzleNumber}
             answers={answers}
             priceGuesses={priceGuesses}
+            tierGlyph={tm.glyph}
+            tierLabel={tm.label}
           />
           <div className="flip-rev-footer">
             <div className={countdownClass}>
