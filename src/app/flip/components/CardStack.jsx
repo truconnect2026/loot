@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useTransform } from "motion/react";
+import { motion, useMotionValue, useTransform, useReducedMotion } from "motion/react";
 import { useEffect } from "react";
 import SwipeCard from "./SwipeCard.jsx";
 
@@ -17,10 +17,15 @@ export default function CardStack({ items, currentIndex, onSwipe, onDragX, first
     return x.on("change", (v) => onDragX(v));
   }, [x, onDragX]);
 
+  const reduced = useReducedMotion();
   // Peek 1: scales up and counter-tilts as top card moves toward an edge.
-  const peek1Scale = useTransform(x, [-200, 0, 200], [0.98, 0.94, 0.98]);
-  const peek1Y = useTransform(x, [-200, 0, 200], [6, 12, 6]);
-  const peek1Rotate = useTransform(x, [-200, 0, 200], [0.9, 0, -0.9]); // 5% of top tilt
+  const peek1ScaleRaw = useTransform(x, [-200, 0, 200], [0.98, 0.94, 0.98]);
+  const peek1YRaw = useTransform(x, [-200, 0, 200], [6, 12, 6]);
+  const peek1RotateRaw = useTransform(x, [-200, 0, 200], [0.9, 0, -0.9]); // 5% of top tilt
+  // Under reduce, the peek holds its resting pose — no drag-driven grow/tilt.
+  const peek1Scale = reduced ? 0.94 : peek1ScaleRaw;
+  const peek1Y = reduced ? 12 : peek1YRaw;
+  const peek1Rotate = reduced ? 0 : peek1RotateRaw;
 
   const slots = [0, 1, 2]
     .map((depth) => {

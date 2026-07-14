@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { AnimatePresence, motion, useSpring, useTransform } from "motion/react";
+import { AnimatePresence, motion, useSpring, useTransform, useReducedMotion } from "motion/react";
 import { getScoreTier } from "../lib/scoring.js";
 import useGameSounds from "../hooks/useGameSounds.jsx";
 import useHaptics from "../hooks/useHaptics.jsx";
@@ -47,6 +47,7 @@ function midnightCountdown(now = new Date()) {
 export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleNumber, onReplay }) {
   const tier = getScoreTier(scoreData.finalScore);
   const tm = TIER_META[tier];
+  const reduced = useReducedMotion();
   const sounds = useGameSounds();
   const haptics = useHaptics();
 
@@ -218,9 +219,9 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
 
       <motion.div
         className={`flip-rev-mascot flip-rev-mascot--${MASCOT_MOOD[tier]}`}
-        initial={{ y: 200, scale: 0.4, opacity: 0 }}
+        initial={reduced ? false : { y: 200, scale: 0.4, opacity: 0 }}
         animate={phaseRank >= 1 ? { y: -40, scale: 0.4, opacity: 1, x: -120 } : { y: 0, scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 120, damping: 14 }}
+        transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 120, damping: 14 }}
       >
         {/* Kronos — the same host from TAP IN, mood-matched to the tier, so
             the free game opens and closes on one branded face. (The old SVG
@@ -234,9 +235,9 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
           key="tier-big"
           className={`flip-rev-tier ${tm.glow ? "flip-rev-tier--glow" : ""}`}
           style={{ color: tm.color }}
-          initial={{ scale: 1.4, opacity: 0 }}
+          initial={reduced ? false : { scale: 1.4, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 320, damping: 16 }}
+          transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 16 }}
         >
           <div className="flip-rev-tier-glyph">{tm.glyph}</div>
           <div className="flip-rev-tier-label">{tm.label}</div>
@@ -267,6 +268,7 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
             onTick={() => sounds.playReveal()}
             active={phaseRank === 2}
             enableHeavyEffects={enableHeavyEffects}
+            reduced={reduced}
           />
           <div className="flip-rev-dollars-tag">SPOTTED TODAY</div>
           <div className="flip-rev-dollars-sub">
@@ -417,12 +419,14 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
   );
 }
 
-function DollarCounter({ value, onTick, active, enableHeavyEffects }) {
+function DollarCounter({ value, onTick, active, enableHeavyEffects, reduced }) {
   const spring = useSpring(0, { mass: 0.8, stiffness: 60, damping: 18 });
   const text = useTransform(spring, (v) => `$${Math.round(v).toLocaleString()}`);
   const [floaters, setFloaters] = useState([]);
 
   useEffect(() => {
+    // Reduced motion: jump straight to the total — no count-up spring.
+    if (reduced) { spring.jump(value); return; }
     spring.set(value);
     let last = 0;
     const unsub = spring.on("change", (v) => {
@@ -430,11 +434,11 @@ function DollarCounter({ value, onTick, active, enableHeavyEffects }) {
       if (r !== last && r % 5 === 0) { last = r; onTick?.(); }
     });
     return () => unsub();
-  }, [value, spring, onTick]);
+  }, [value, spring, onTick, reduced]);
 
   // Spawn 6–10 floating $ emojis during the count.
   useEffect(() => {
-    if (!active || !enableHeavyEffects) return;
+    if (!active || !enableHeavyEffects || reduced) return;
     const max = Math.min(10, Math.max(6, Math.floor(value / 50)));
     let i = 0;
     const id = window.setInterval(() => {

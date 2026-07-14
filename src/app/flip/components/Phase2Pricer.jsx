@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform, useReducedMotion } from "motion/react";
 import { calcPriceAccuracy } from "../lib/scoring.js";
 import useGameSounds from "../hooks/useGameSounds.jsx";
 import useHaptics from "../hooks/useHaptics.jsx";
@@ -200,6 +200,7 @@ export default function Phase2Pricer({ flipItems, onComplete }) {
 
 function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
   const tm = TIER_META[data.tier];
+  const reduced = useReducedMotion();
   const guessSpring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
   const actualSpring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
   const guessText = useTransform(guessSpring, (v) => `$${Math.round(v)}`);
@@ -213,6 +214,8 @@ function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
   }, [isLast]);
 
   useEffect(() => {
+    // Reduced motion: jump both figures to final — no count-up.
+    if (reduced) { guessSpring.jump(data.guess); actualSpring.jump(data.actual); return; }
     guessSpring.set(data.guess);
     actualSpring.set(data.actual);
     let last = 0;
@@ -221,7 +224,7 @@ function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
       if (r !== last) { last = r; onTick?.(); }
     });
     return () => unsub();
-  }, [data.guess, data.actual, guessSpring, actualSpring, onTick]);
+  }, [data.guess, data.actual, guessSpring, actualSpring, onTick, reduced]);
 
   const accuracyPct = Math.max(0, Math.min(100, Math.round((1 - data.percentOff) * 100)));
 
@@ -241,7 +244,7 @@ function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
 
       <motion.div
         className="flip-reveal-divider"
-        initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.2 }}
+        initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={reduced ? { duration: 0 } : { duration: 0.2 }}
       />
 
       <div className="flip-reveal-numbers">
@@ -259,18 +262,18 @@ function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
         <motion.div
           className="flip-reveal-bar-fill"
           style={{ background: tm.barColor }}
-          initial={{ width: 0 }}
+          initial={reduced ? false : { width: 0 }}
           animate={{ width: `${accuracyPct}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={reduced ? { duration: 0 } : { duration: 0.6, ease: "easeOut" }}
         />
       </div>
 
       <motion.div
         className={`flip-reveal-tier ${tm.glow ? "flip-reveal-tier--glow" : ""}`}
         style={{ color: tm.color }}
-        initial={{ scale: 1.5, opacity: 0 }}
+        initial={reduced ? false : { scale: 1.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.4, type: "spring", stiffness: 280, damping: 14 }}
+        transition={reduced ? { duration: 0 } : { delay: 0.4, type: "spring", stiffness: 280, damping: 14 }}
       >
         <span className="flip-reveal-tier-glyph">{tm.glyph}</span>
         <span className="flip-reveal-tier-label">{tm.label}</span>

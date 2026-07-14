@@ -7,6 +7,7 @@ import {
   useMotionValue,
   useMotionValueEvent,
   useTransform,
+  useReducedMotion,
   animate,
 } from "motion/react";
 import GrailCardOverlay from "./GrailCardOverlay.jsx";
@@ -31,6 +32,12 @@ const SWIPE_VELOCITY = 500;
  */
 export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) {
   const x = useMotionValue(0);
+  // Direct-manipulation drag stays enabled under reduced motion (the game
+  // is unplayable without it, and a card tracking the finger 1:1 is not an
+  // animation) — but every DERIVED motion (card rotation, image parallax,
+  // snap-back spring, fly-out slide, mount pop) collapses to its final
+  // state so a reduce user gets an instant, snappy, non-vestibular round.
+  const reduced = useReducedMotion();
   const [exiting, setExiting] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const idleTimerRef = useRef(null);
@@ -48,14 +55,18 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) 
     enabled: enableHeavyEffects && isTop && !exiting,
   });
 
-  const rotate = useTransform(x, [-200, 200], [-18, 18]);
+  const rotateRaw = useTransform(x, [-200, 200], [-18, 18]);
   const opacity = useTransform(x, [-220, -150, 0, 150, 220], [0, 1, 1, 1, 0]);
   const flipBadgeOpacity = useTransform(x, [0, 80], [0, 1]);
   const skipBadgeOpacity = useTransform(x, [-80, 0], [1, 0]);
   const mintOverlay = useTransform(x, [0, 150], [0, 0.4]);
   const redOverlay = useTransform(x, [-150, 0], [0.4, 0]);
   // Parallax: image translates opposite of card drag for depth.
-  const imageParallaxX = useTransform(x, [-200, 200], [10, -10]);
+  const imageParallaxXRaw = useTransform(x, [-200, 200], [10, -10]);
+  // Under reduce, kill the drag-derived rotation + parallax (opacity-based
+  // badge/overlay feedback stays — it aids the call and reads as instant).
+  const rotate = reduced ? 0 : rotateRaw;
+  const imageParallaxX = reduced ? 0 : imageParallaxXRaw;
 
   useMotionValueEvent(x, "change", (latest) => {
     if (isTop && onDrag) onDrag(latest);
@@ -104,7 +115,7 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) 
     const passOffset = Math.abs(dx) > SWIPE_OFFSET;
     const passVelocity = Math.abs(vx) > SWIPE_VELOCITY;
     if (!passOffset && !passVelocity) {
-      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(x, 0, reduced ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 });
       return;
     }
     const direction = dx > 0 || vx > 0 ? "flip" : "skip";
@@ -117,10 +128,7 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) 
     const targetX =
       (direction === "flip" ? 1 : -1) *
       (typeof window !== "undefined" ? window.innerWidth * 1.5 : 800);
-    animate(x, targetX, {
-      duration: 0.3,
-      ease: [0.32, 0.72, 0, 1],
-    });
+    animate(x, targetX, reduced ? { duration: 0 } : { duration: 0.3, ease: [0.32, 0.72, 0, 1] });
     onSwipe?.(direction);
   };
 
@@ -167,9 +175,9 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) 
       dragElastic={0.7}
       onDragEnd={handleDragEnd}
       data-flip-item-id={item.id}
-      initial={isTop ? { scale: 0.85, y: 20, opacity: 0 } : false}
+      initial={isTop && !reduced ? { scale: 0.85, y: 20, opacity: 0 } : false}
       animate={isTop ? { scale: 1, y: 0, opacity: 1 } : undefined}
-      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 20 }}
     >
       <div className="flip-swipe-card-inner">
         {/* Image layer with parallax */}
