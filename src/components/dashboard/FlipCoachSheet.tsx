@@ -579,10 +579,11 @@ function CoachBubble({
         maxWidth: "85%",
       }}
     >
-      {/* 36px avatar, marginTop:-2 seats the head+shoulders portrait's face
-          on the bubble's first line (matches FlipBubble). */}
-      <span style={{ flexShrink: 0, marginTop: -2 }}>
-        <FlipCoyote mood={mood} size={36} />
+      {/* B4: face-forward crop at 40px (matches FlipBubble) — Kronos's head
+          + halo instead of a dark blob; the crop centers the face so it
+          seats flush at the row top. */}
+      <span style={{ flexShrink: 0, marginTop: 0 }}>
+        <FlipCoyote mood={mood} size={40} crop />
       </span>
       <div
         style={{
@@ -643,10 +644,11 @@ function TypingBubble({ mood }: { mood: FlipCoyoteMood }) {
         maxWidth: "85%",
       }}
     >
-      {/* 36px avatar, marginTop:-2 seats the head+shoulders portrait's face
-          on the bubble's first line (matches FlipBubble). */}
-      <span style={{ flexShrink: 0, marginTop: -2 }}>
-        <FlipCoyote mood={mood} size={36} />
+      {/* B4: face-forward crop at 40px (matches FlipBubble) — Kronos's head
+          + halo instead of a dark blob; the crop centers the face so it
+          seats flush at the row top. */}
+      <span style={{ flexShrink: 0, marginTop: 0 }}>
+        <FlipCoyote mood={mood} size={40} crop />
       </span>
       <div
         style={{

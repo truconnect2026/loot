@@ -73,14 +73,15 @@ function formatRenewsDate(iso: string | null): string {
 function ChevronLeft() {
   return (
     <svg
-      width={18}
-      height={18}
+      width={22}
+      height={22}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
+      style={{ marginTop: -1 }}
     >
       <polyline points="15 18 9 12 15 6" />
     </svg>
@@ -802,7 +803,7 @@ export default function AccountPage() {
             marginTop: 16,
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: 6,
           }}
         >
           <button
@@ -814,8 +815,16 @@ export default function AccountPage() {
               background: "none",
               border: "none",
               cursor: "pointer",
-              padding: 4,
+              // B6: 44px touch target (up from ~26px), pulled left so the
+              // enlarged glyph's optical edge lands back on the 18px page
+              // margin instead of floating detached from the title.
+              width: 44,
+              height: 44,
+              padding: 0,
+              marginLeft: -11,
               display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               color: backPressed
                 ? "var(--text-primary)"
                 : "var(--text-muted)",

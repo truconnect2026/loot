@@ -328,6 +328,8 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
       <span
         style={{
           display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
           padding: 7,
           borderRadius: 9,
           background: `${accent}26`,
@@ -336,7 +338,10 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
           filter: `drop-shadow(0 0 6px ${accent}55)`,
         }}
       >
-        {icon}
+        {/* B3: the 18px glyphs read slightly high-left in their 24-viewBoxes;
+            a uniform 0.5px down-right shift re-centers the ink mass in the
+            rounded tile (the container itself already centers geometrically). */}
+        <span style={{ display: "inline-flex", transform: "translate(0.5px, 0.5px)" }}>{icon}</span>
       </span>
       <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         <span
@@ -801,7 +806,10 @@ const STYLES = `
   font-size: 6.5px; font-weight: 700; letter-spacing: 0.04em;
   color: #071310; background: rgba(92, 224, 184, 0.85);
   border-radius: 999px; padding: 1px 4px; line-height: 1.3;
-  opacity: 0;
+  /* B2: pills are SEATED above each object at rest (opacity 0.85); the
+     scan-line pass only brightens them briefly — they never fade to empty,
+     so the shelf always reads populated in every state. */
+  opacity: 0.85;
   animation-duration: 5.2s;
   animation-timing-function: linear;
   animation-delay: var(--sd);
@@ -814,23 +822,28 @@ const STYLES = `
 .ts-pill--5 { left: 242px; animation-name: tsPill5; }
 /* pop as the scan-line crosses each item (6%→42% sweep, staggered),
    hold, fade together */
-@keyframes tsPill1 { 0%, 8% { opacity: 0; transform: translateY(3px); } 10%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
-@keyframes tsPill2 { 0%, 15% { opacity: 0; transform: translateY(3px); } 17%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
-@keyframes tsPill3 { 0%, 22% { opacity: 0; transform: translateY(3px); } 24%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
-@keyframes tsPill4 { 0%, 30% { opacity: 0; transform: translateY(3px); } 32%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
-@keyframes tsPill5 { 0%, 38% { opacity: 0; transform: translateY(3px); } 40%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }
+/* seated at 0.85; the scan-line pass brightens each pill to 1 in turn
+   (staggered), then it settles back — never disappears. */
+@keyframes tsPill1 { 0%, 6% { opacity: 0.8; } 10% { opacity: 1; } 18%, 100% { opacity: 0.85; } }
+@keyframes tsPill2 { 0%, 15% { opacity: 0.8; } 19% { opacity: 1; } 27%, 100% { opacity: 0.85; } }
+@keyframes tsPill3 { 0%, 22% { opacity: 0.8; } 26% { opacity: 1; } 34%, 100% { opacity: 0.85; } }
+@keyframes tsPill4 { 0%, 30% { opacity: 0.8; } 34% { opacity: 1; } 42%, 100% { opacity: 0.85; } }
+@keyframes tsPill5 { 0%, 38% { opacity: 0.8; } 42% { opacity: 1; } 50%, 100% { opacity: 0.85; } }
 
 /* ── PRICE CHECK: comp rows type themselves ── */
 .ts-comps {
   right: 12px; bottom: 12px; width: 104px;
   display: flex; flex-direction: column; gap: 3px;
-  opacity: 0;
-  animation: tsCompsFade 6s linear var(--sd) infinite;
+  /* B1: rows are permanently seated (see .ts-row-in); the container only
+     breathes opacity within a floor so it stays alive but never empties —
+     the settled 3-row layout is the deterministic resting state, every
+     render and under reduced motion. */
+  opacity: 0.9;
+  animation: tsCompsBreathe 6s ease-in-out var(--sd) infinite;
 }
-@keyframes tsCompsFade {
-  0%, 3% { opacity: 0; }
-  6%, 70% { opacity: 1; }
-  80%, 100% { opacity: 0; }
+@keyframes tsCompsBreathe {
+  0%, 100% { opacity: 0.78; }
+  50% { opacity: 0.95; }
 }
 .ts-row {
   display: block; overflow: hidden;
@@ -841,19 +854,10 @@ const STYLES = `
   padding-bottom: 1px;
 }
 .ts-row-in {
+  /* B1: seated at rest (no infinite type-in loop), so all three rows
+     always occupy their reserved positions with text present. */
   display: inline-block; white-space: nowrap;
-  transform: translateX(-103%);
-  animation-duration: 6s;
-  animation-timing-function: linear;
-  animation-delay: var(--sd);
-  animation-iteration-count: infinite;
 }
-.ts-row-in--1 { animation-name: tsType1; }
-.ts-row-in--2 { animation-name: tsType2; }
-.ts-row-in--3 { animation-name: tsType3; }
-@keyframes tsType1 { 0%, 6% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 13%, 100% { transform: translateX(0); } }
-@keyframes tsType2 { 0%, 18% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 25%, 100% { transform: translateX(0); } }
-@keyframes tsType3 { 0%, 30% { transform: translateX(-103%); animation-timing-function: steps(7, end); } 37%, 100% { transform: translateX(0); } }
 
 /* ── AUTHENTICATE: tick · tick · red flag + rep-caught edge flash ── */
 .ts-verd {
@@ -893,7 +897,11 @@ const STYLES = `
 /* ── reduced motion: scenes dead, full brightness stays ── */
 @media (prefers-reduced-motion: reduce) {
   .tl-stagger > * { animation: none !important; }
-  .ts, .ts-flash { display: none !important; }
+  .ts-a { animation: none !important; }
+  /* B1/B2: keep the shelf (svg + seated price pills) and the comp rows
+     visible and static at their designed resting state; hide only the
+     pure-motion layers (scan-line, foil) and the transient verdict scene. */
+  .ts-verd, .ts-flash, .ts-scanline, .ts-foil { display: none !important; }
   .tl-card { transition: none; }
   .tl-card:active { transform: none; box-shadow: none; }
 }

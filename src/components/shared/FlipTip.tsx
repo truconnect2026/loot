@@ -98,7 +98,7 @@ export function FlipTip({
         text={text}
         play={play}
         mood={mood}
-        glyphSize={36}
+        glyphSize={40}
         startDelay={260}
         fontSize={12.5}
         maxWidth="min(100%, 340px)"

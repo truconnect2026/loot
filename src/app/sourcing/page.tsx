@@ -546,6 +546,9 @@ export default function SourcingPage() {
                   <div style={{
                     width: 46, height: 46, borderRadius: "50%",
                     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    // B5: breathing room so the day-letter doesn't sit on the
+                    // date-number (they read as one glyph without it).
+                    gap: 3,
                     background: isSel ? (isToday ? "rgba(92,224,184,0.16)" : "rgba(255,255,255,0.05)") : "transparent",
                     border: `2px solid ${isSel ? (isToday ? MINT : "rgba(255,255,255,0.18)") : "transparent"}`,
                     boxShadow: isSel && isToday ? "0 0 16px rgba(92,224,184,0.28)" : "none",

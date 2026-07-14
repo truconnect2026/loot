@@ -18,7 +18,7 @@ export function FlipBubble({
   text,
   play = false,
   mood = "smirk",
-  glyphSize = 36,
+  glyphSize = 40,
   startDelay = 0,
   fontSize = 13,
   maxWidth,
@@ -69,15 +69,13 @@ export function FlipBubble({
       className="fb-row"
       style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth }}
     >
-      {/* marginTop:0 — the Kronos art is a head+shoulders portrait with
-          the face in the upper third, so seating it flush with the row top
-          lands the face on the bubble's first text line. (The old face-
-          centered sprite used marginTop:4; that now floats the face high.) */}
-      {/* marginTop:-2 seats the 36px head+shoulders portrait's face on the
-          bubble's first text line (the taller glyph vs the old 30px needs a
-          2px lift; verified via a marginTop sweep). */}
-      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: -2 }}>
-        <FlipCoyote mood={mood} size={glyphSize} />
+      {/* B4: face-forward crop (see FlipCoyote `crop`) — at 40px the small
+          inline glyph now shows Kronos's head + halo, recognizable instead
+          of a dark head+shoulders blob. The crop box centers the face, so
+          it seats flush with the row top (marginTop:0) on the bubble's
+          first text line. */}
+      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 0 }}>
+        <FlipCoyote mood={mood} size={glyphSize} crop />
       </span>
       <div
         className="fb-bubble"

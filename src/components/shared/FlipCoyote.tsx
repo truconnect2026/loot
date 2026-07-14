@@ -25,12 +25,53 @@ export type FlipCoyoteMood =
 interface FlipCoyoteProps {
   mood?: FlipCoyoteMood;
   size?: number;
+  /** Face-forward crop for SMALL inline glyphs (~40px: FlipBubble / coach
+   * avatars). The locked art is a head+shoulders portrait, so at small
+   * sizes object-fit:contain shrinks the actual face to a ~14px dark blob
+   * with the hoodie/shoulders dominating. `crop` zooms to the head (keeping
+   * the signature gold halo) and clips the shoulders so Kronos stays
+   * recognizable. Off by default — the large hero renders show the full
+   * portrait. */
+  crop?: boolean;
 }
 
 export default function FlipCoyote({
   mood = "smirk",
   size = 160,
+  crop = false,
 }: FlipCoyoteProps) {
+  if (crop) {
+    const inner = Math.round(size * 1.7);
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          width: size,
+          height: size,
+          overflow: "hidden",
+          lineHeight: 0,
+          flexShrink: 0,
+        }}
+      >
+        <img
+          src={`/flip/flip-${mood}.png`}
+          alt={`Kronos ${mood}`}
+          width={inner}
+          height={inner}
+          style={{
+            width: inner,
+            height: inner,
+            objectFit: "contain",
+            // center horizontally, lift so the face (upper third) fills the box
+            transform: `translate(${Math.round((size - inner) / 2)}px, ${Math.round(-size * 0.15)}px)`,
+            userSelect: "none",
+            pointerEvents: "none",
+          }}
+          draggable={false}
+        />
+      </span>
+    );
+  }
   return (
     <img
       src={`/flip/flip-${mood}.png`}
