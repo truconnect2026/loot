@@ -321,7 +321,7 @@ export default function Gamification() {
             title="Tap to hide Kronos for this session"
           >
             <img
-              src="/brand-kit/flip/flip-smirk.png"
+              src="/flip/flip-smirk.png"
               alt=""
               aria-hidden="true"
             />

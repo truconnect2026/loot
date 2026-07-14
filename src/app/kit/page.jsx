@@ -853,7 +853,7 @@ export default function KitPage() {
               <div className="flip-section">
                 <div className="flip-visual flip-glow" style={{ position: "relative" }}>
                   <img
-                    src="/brand-kit/flip/flip-smirk.png"
+                    src="/flip/flip-smirk.png"
                     alt="Kronos mascot — smirk mood"
                     style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
                   />
@@ -875,7 +875,7 @@ export default function KitPage() {
                     ].map((m) => (
                       <div key={m.mood} className="mood-item">
                         <img
-                          src={`/brand-kit/flip/flip-${m.mood}.png`}
+                          src={`/flip/flip-${m.mood}.png`}
                           alt={`Kronos — ${m.label.toLowerCase()} mood`}
                           width={80}
                           height={80}
