@@ -1,328 +1,283 @@
 "use client";
 
+import { useState } from "react";
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import {
   CTAButton,
   Eyebrow,
   FadeUp,
-  SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
+import { usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
+// Core product features — what Pro unlocks at either billing pace.
 // "Sale-day planner", not "Yard sale map": the shipped feature is the
-// /sourcing thrift sale-day planner. A yard-sale map does not exist in
-// the app (coming-soon placeholder only) — naming it here would be a
-// fabricated capability.
-const monthlyBullets = ["Unlimited scans", "BOLO alerts", "Sale-day planner", "Fake check"];
-const annualBullets = ["Everything in Monthly", "Priority support", "New features first"];
+// /sourcing thrift sale-day planner (a yard-sale map does not exist —
+// naming it would be a fabricated capability).
+const coreFeatures = ["Unlimited scans", "Fake check", "Sale-day planner", "BOLO alerts"];
+
+// One plan, two billing paces. The toggle SELECTS which existing checkout
+// price fires (onCTA("annual") vs onCTA("monthly")) — the money logic in
+// page.jsx (priceIdFor + /api/stripe/checkout) is untouched; this card only
+// chooses which of the two existing paths a tap sends.
+const PLANS = {
+  annual: {
+    big: "$8.33",
+    per: "/mo",
+    sub: "billed annually · $99.99/yr",
+    verb: "CLAIM ANNUAL",
+    price: 99.99,
+    accent: C.mint,
+  },
+  monthly: {
+    big: "$14.99",
+    per: "/mo",
+    sub: "billed monthly · cancel anytime",
+    verb: "CLAIM MONTHLY",
+    price: 14.99,
+    accent: "#fff",
+  },
+};
+
+const MORPH_CSS = `
+@keyframes pricingMorph { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.pricing-morph { animation: pricingMorph 240ms cubic-bezier(0.22,1,0.36,1) both; }
+`;
+
+const featRow = {
+  fontFamily: "var(--font-manrope), sans-serif",
+  fontSize: 15,
+  color: "rgba(255,255,255,0.72)",
+  padding: "5px 0",
+  borderBottom: "1px solid rgba(255,255,255,0.06)",
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+};
 
 export default function PricingSection({ onCTA }) {
+  const reduced = usePrefersReducedMotion();
+  // Annual pre-selected — BEST VALUE.
+  const [plan, setPlan] = useState("annual");
+  const isAnnual = plan === "annual";
+  const P = PLANS[plan];
+
   return (
     <section
       id="pricing"
       className="pro-snap-section"
-      style={{
-        padding: SECTION_PADDING,
-        // Internal-scroll section: extra bottom room so an in-app-browser
-        // fold (~620px usable) never rests decapitating the last card.
-        // 176 = 96 + 80: compensates the founding-line + founding-bullet
-        // removal so the section snap height (and every rest position
-        // after it) is unchanged.
-        paddingBottom: 176,
-        position: "relative",
-        zIndex: 1,
-        // Two pricing cards + fine print reliably exceed one viewport —
-        // top-align + scroll internally rather than center-force.
-        justifyContent: "flex-start",
-      }}
+      // Top-align (not the class's upper-third bias): the toggle card is
+      // tall, so seat it near the top so the CLAIM CTA reaches the fold in
+      // the short IG-webview viewport. Tighter top padding buys the CTA more
+      // room. Snap architecture (pro-snap-section, id) untouched.
+      style={{ padding: "clamp(30px,5vw,56px) 24px 44px", position: "relative", zIndex: 1, justifyContent: "flex-start" }}
     >
+      <style dangerouslySetInnerHTML={{ __html: MORPH_CSS }} />
       <SectionShell maxWidth={920}>
         <FadeUp>
-          <Eyebrow text="— two ways in" color={C.mint} />
+          <Eyebrow text="— pro tier" color={C.mint} />
         </FadeUp>
         <FadeUp delay={0.15}>
-          <h2
-            style={{
-              ...SECTION_HEADLINE_STYLE,
-              paddingBottom: "0.5em",
-              // 24: the comparison strip below the headline now carries the
-              // spacing the old 58 provided.
-              marginBottom: 24,
-            }}
-          >
-            PICK YOUR <span style={{ color: C.mint }}>WEAPON.</span>
+          <h2 style={{ ...SECTION_HEADLINE_STYLE, paddingBottom: "0.25em", marginBottom: 12 }}>
+            PICK YOUR <span style={{ color: C.mint }}>PACE.</span>
           </h2>
         </FadeUp>
 
-        {/* Comparison moment — the two cards never share a screen on
-            mobile, so the head-to-head happens HERE: a toggle-free visual
-            anchor, no interactivity, no CTA. Outside .pricing-grid so it
-            never picks up the per-card snap points. */}
-        <FadeUp delay={0.2}>
-          <div
-            aria-hidden="true"
-            style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}
-          >
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                color: C.mint,
-                border: `1px solid ${C.mint}`,
-                background: "rgba(92,224,184,0.08)",
-                borderRadius: 999,
-                padding: "5px 12px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              annual $8.33/mo · save $80
-            </span>
-            <span
-              style={{
-                fontFamily: "var(--font-mono), monospace",
-                fontSize: 11,
-                letterSpacing: "0.06em",
-                color: "rgba(255,255,255,0.4)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 999,
-                padding: "5px 12px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              monthly $14.99
-            </span>
-          </div>
-        </FadeUp>
-
-        <div
-          className="pricing-grid"
-          style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, marginBottom: 30 }}
-        >
-          {/* Annual */}
-          <FadeUp delay={0.25}>
+        {/* ONE definitive card — annual/monthly toggle morphs it in place. */}
+        <FadeUp delay={0.25}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
             <div
-              className="pricing-card pricing-card--annual"
               style={{
-                // dominant card: annual leads on mobile and carries the emphasis
-                transform: "scale(1.015)",
-                transformOrigin: "center top",
-                background: "rgba(92,224,184,0.035)",
+                width: "100%",
+                maxWidth: 440,
+                background: "rgba(92,224,184,0.04)",
                 border: `2px solid ${C.mint}`,
-                borderRadius: 20,
-                padding: "clamp(22px,3.5vw,32px)",
+                borderRadius: 22,
+                padding: "clamp(20px,4vw,30px)",
+                position: "relative",
+                boxShadow: "0 0 44px rgba(92,224,184,0.14)",
                 display: "flex",
                 flexDirection: "column",
-                height: "100%",
-                position: "relative",
-                boxShadow: "0 0 40px rgba(92,224,184,0.12)",
-                transition: "box-shadow 0.25s",
               }}
             >
+              {/* Segmented toggle — sliding mint indicator (transform only). */}
               <div
+                role="tablist"
+                aria-label="billing pace"
                 style={{
-                  position: "absolute",
-                  top: -13,
-                  right: 20,
-                  background: C.mint,
-                  color: C.bg,
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "6px 14px",
-                  borderRadius: 8,
+                  position: "relative",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 999,
+                  padding: 4,
+                  marginBottom: 16,
                 }}
               >
-                ↓ Save $80
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    bottom: 4,
+                    left: 4,
+                    width: "calc(50% - 4px)",
+                    borderRadius: 999,
+                    background: C.mint,
+                    transform: isAnnual ? "translateX(0)" : "translateX(100%)",
+                    transition: reduced ? "none" : "transform 260ms cubic-bezier(0.22,1,0.36,1)",
+                    boxShadow: "0 2px 8px rgba(92,224,184,0.35)",
+                  }}
+                />
+                {["annual", "monthly"].map((p) => {
+                  const active = plan === p;
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setPlan(p)}
+                      style={{
+                        position: "relative",
+                        zIndex: 1,
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "9px 0",
+                        fontFamily: "var(--font-mono), monospace",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        color: active ? C.bg : "rgba(255,255,255,0.55)",
+                        transition: reduced ? "none" : "color 200ms",
+                      }}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
               </div>
 
-              <p
-                style={{
-                  fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: C.gold,
-                  marginBottom: 10,
-                }}
-              >
-                BEST VALUE
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: "clamp(48px,8vw,72px)",
-                  color: "#fff",
-                  lineHeight: 1,
-                  fontVariantNumeric: "tabular-nums",
-                  marginBottom: 8,
-                  filter: "drop-shadow(0 0 24px rgba(92,224,184,0.4))",
-                }}
-              >
-                $99.99
-                <span style={{ fontSize: "0.4em", color: "rgba(255,255,255,0.35)" }}>/yr</span>
-              </p>
-              {/* $8.33 is the best number on the page — promoted from a
-                  gray footnote to its own beat: second thing the eye hits
-                  after $99.99. Bebas sub-32px carries 0.03em optical
-                  tracking per the brand type system. */}
-              <p style={{ margin: "0 0 2px", lineHeight: 1 }}>
-                <span
-                  style={{
-                    fontFamily: "var(--font-bebas), sans-serif",
-                    fontSize: "clamp(26px,7vw,36px)",
-                    letterSpacing: "0.03em",
-                    color: C.mint,
-                    lineHeight: 1,
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  $8.33/mo
-                </span>{" "}
+              {/* BEST VALUE + save $80 — annual only, reserved height so the
+                  toggle never shifts the card layout. */}
+              <div style={{ minHeight: 20, marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
                 <span
                   style={{
                     fontFamily: "var(--font-mono), monospace",
                     fontSize: 11,
-                    letterSpacing: "0.08em",
-                    color: "rgba(255,255,255,0.45)",
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: C.gold,
+                    opacity: isAnnual ? 1 : 0,
+                    transition: reduced ? "none" : "opacity 220ms",
                   }}
                 >
-                  billed annually
+                  BEST VALUE
                 </span>
-              </p>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: C.bg,
+                    background: C.mint,
+                    borderRadius: 999,
+                    padding: "3px 9px",
+                    opacity: isAnnual ? 1 : 0,
+                    transition: reduced ? "none" : "opacity 220ms",
+                  }}
+                >
+                  save $80
+                </span>
+              </div>
+
+              {/* Price — remounts (key=plan) for a compositor crossfade. */}
+              <div
+                key={plan}
+                className={reduced ? "" : "pricing-morph"}
+                style={{ display: "flex", alignItems: "baseline", lineHeight: 1, marginBottom: 4 }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-bebas), sans-serif",
+                    fontSize: "clamp(52px,11vw,74px)",
+                    color: P.accent,
+                    letterSpacing: "0.02em",
+                    fontVariantNumeric: "tabular-nums",
+                    filter: isAnnual ? "drop-shadow(0 0 24px rgba(92,224,184,0.4))" : "none",
+                  }}
+                >
+                  {P.big}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-bebas), sans-serif",
+                    fontSize: "clamp(20px,4vw,28px)",
+                    color: "rgba(255,255,255,0.4)",
+                    marginLeft: 4,
+                  }}
+                >
+                  {P.per}
+                </span>
+              </div>
               <p
                 style={{
                   fontFamily: "var(--font-mono), monospace",
                   fontSize: 12,
-                  color: "rgba(255,255,255,0.3)",
-                  marginBottom: 18,
+                  letterSpacing: "0.04em",
+                  color: "rgba(255,255,255,0.5)",
+                  margin: "0 0 14px",
+                  minHeight: 16,
                 }}
               >
-                vs $14.99 monthly · 44% off
+                {P.sub}
               </p>
-              <ul style={{ listStyle: "none", padding: 0, flex: 1, marginBottom: 20 }}>
-                {annualBullets.map((f, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontFamily: "var(--font-manrope), sans-serif",
-                      fontSize: 15,
-                      color: "rgba(255,255,255,0.65)",
-                      padding: "5px 0",
-                      borderBottom: "1px solid rgba(92,224,184,0.08)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <span style={{ color: C.gold, fontSize: 16, textShadow: "0 0 8px rgba(245,197,24,0.5)" }}>★</span> {f}
+
+              {/* Features — the 4 core unlocks; annual perks noted below. */}
+              <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                {coreFeatures.map((f) => (
+                  <li key={f} style={featRow}>
+                    <span style={{ color: C.mint, fontWeight: 700 }}>✓</span> {f}
                   </li>
                 ))}
               </ul>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <CTAButton
-                  variant="primary"
-                  onClick={() => {
-                    track("pro_plan_clicked", { plan: "annual", price: 99.99 });
-                    onCTA && onCTA("annual");
-                  }}
-                >
-                  CLAIM ANNUAL
-                </CTAButton>
-              </div>
-            </div>
-          </FadeUp>
-
-          {/* Monthly */}
-          <FadeUp delay={0.35}>
-            <div
-              className="pricing-card"
-              style={{
-                opacity: 0.94,
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 20,
-                padding: "clamp(22px,3.5vw,32px)",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                transition: "border-color 0.25s",
-              }}
-            >
               <p
                 style={{
                   fontFamily: "var(--font-mono), monospace",
-                  fontSize: 11,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.4)",
-                  marginBottom: 10,
+                  fontSize: 11.5,
+                  letterSpacing: "0.03em",
+                  color: C.gold,
+                  margin: "10px 0 0",
+                  minHeight: 16,
+                  opacity: isAnnual ? 0.9 : 0,
+                  transition: reduced ? "none" : "opacity 220ms",
                 }}
               >
-                MONTHLY
+                ★ annual also: priority support · new features first
               </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-bebas), sans-serif",
-                  fontSize: "clamp(48px,8vw,72px)",
-                  color: "rgba(255,255,255,0.95)",
-                  lineHeight: 1,
-                  fontVariantNumeric: "tabular-nums",
-                  marginBottom: 8,
-                }}
-              >
-                $14.99
-                <span style={{ fontSize: "0.4em", color: "rgba(255,255,255,0.35)" }}>/mo</span>
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-manrope), sans-serif",
-                  fontSize: 15,
-                  color: "rgba(255,255,255,0.45)",
-                  marginBottom: 18,
-                  lineHeight: 1.4,
-                }}
-              >
-                pay as you flip. cancel whenever.
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, flex: 1, marginBottom: 20 }}>
-                {monthlyBullets.map((f, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      fontFamily: "var(--font-manrope), sans-serif",
-                      fontSize: 15,
-                      color: "rgba(255,255,255,0.65)",
-                      padding: "5px 0",
-                      borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
-                  >
-                    <span style={{ color: C.mint, fontWeight: 700 }}>→</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ display: "flex", justifyContent: "center" }}>
+
+              {/* CTA — unified CLAIM verb; selects the existing price path. */}
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
                 <CTAButton
-                  variant="outline"
+                  variant="primary"
                   onClick={() => {
-                    track("pro_plan_clicked", { plan: "monthly", price: 14.99 });
-                    onCTA && onCTA("monthly");
+                    track("pro_plan_clicked", { plan, price: P.price });
+                    onCTA && onCTA(plan);
                   }}
                 >
-                  START MONTHLY
+                  {P.verb}
                 </CTAButton>
               </div>
             </div>
-          </FadeUp>
-        </div>
+          </div>
+        </FadeUp>
 
+        {/* Trust line — readable at the moment of payment (6f): 0.2 -> 0.42. */}
         <FadeUp delay={0.4}>
           <p
             style={{
@@ -330,7 +285,7 @@ export default function PricingSection({ onCTA }) {
               fontSize: 11,
               letterSpacing: "0.08em",
               textAlign: "center",
-              color: "rgba(255,255,255,0.2)",
+              color: "rgba(255,255,255,0.42)",
               textTransform: "uppercase",
             }}
           >
