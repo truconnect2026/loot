@@ -14,7 +14,7 @@ function DealCardSkeleton() {
       aria-hidden="true"
       style={{
         flexShrink: 0,
-        width: 232,
+        width: 200,
         minHeight: 164,
         display: "flex",
         flexDirection: "column",
@@ -243,11 +243,15 @@ export default function DealCarousel({
               gap: 10,
               paddingLeft: 18,
               paddingRight: 18,
+              // A2: snap each card flush to the 18px inset so a flick never
+              // lands a card half-cut mid-scroll.
+              scrollPaddingLeft: 18,
+              scrollPaddingRight: 18,
               WebkitOverflowScrolling: "touch",
             }}
           >
             {loading
-              ? // Skeleton placeholders match the live cards' 232×164
+              ? // Skeleton placeholders match the live cards' 200×164
                 // dimensions exactly so the layout doesn't shift when
                 // real data arrives.
                 Array.from({ length: 4 }).map((_, i) => (

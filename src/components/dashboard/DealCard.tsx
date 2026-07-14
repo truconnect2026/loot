@@ -153,7 +153,11 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
       ? "#5CE0B8"
       : profit >= 20
         ? "#D4A574"
-        : "rgba(255,255,255,0.06)";
+        // A3: below-threshold was rgba(255,255,255,0.06) — identical to the
+        // card border, so it read as "no stripe" and looked inconsistent
+        // next to the mint/camel cards. Raised to the textDim token so every
+        // card shows a deliberate graded ribbon (mint > camel > dim).
+        : "#3D2E55";
 
   return (
     <button
@@ -165,7 +169,10 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
       style={{
         position: "relative",
         flexShrink: 0,
-        width: 232,
+        // A2: 232 -> 200 so the peeked 2nd card shows ~81% (readable, its
+        // tail dissolving under the right fade) instead of a ~56% half-cut
+        // with chopped text.
+        width: 200,
         // Bumped from 152 → 164 so the "estimated resale" caption
         // under the resale value has room without compressing the title.
         minHeight: 164,

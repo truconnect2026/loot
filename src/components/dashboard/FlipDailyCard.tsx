@@ -143,25 +143,25 @@ export default function FlipDailyCard() {
           rest of the card's motion. */}
       <div className="fdc-edge-glow" aria-hidden="true" />
 
-      {/* Top-right hook badge — ALWAYS present so a scrolling eye lands on
-          a reason to tap. A real streak (fos-streak-count) shows the flame
-          count as returning-user stakes; with no streak we show a
-          confident "FREE DAILY" pill (the cold-traffic value: free, daily,
-          zero friction). Streak count is never fabricated. */}
-      {streak > 0 ? (
-        <div className="fdc-chip" aria-label={`${streak} day streak`}>
-          <span className="fdc-chip-flame">🔥</span>
-          <span className="fdc-chip-num">{streak}</span>
-          <span className="fdc-chip-label">{today.played ? "streak alive" : "keep it alive"}</span>
-        </div>
-      ) : (
-        <div className="fdc-chip fdc-chip--free" aria-label="Free daily game">
-          <span className="fdc-chip-free-dot" />
-          <span className="fdc-chip-free-label">FREE DAILY</span>
-        </div>
-      )}
-
       <div className="fdc-inner">
+        {/* A1: the hook badge lives INLINE at the top of the text column
+            (was absolute top-right, where it overhung the flush-right
+            drop-card corner and read as outside the card). ALWAYS present so
+            a scrolling eye lands on a reason to tap: the real streak count
+            (fos-streak-count, never fabricated), else a confident "FREE
+            DAILY" pill (the cold-traffic value: free, daily, zero friction). */}
+        {streak > 0 ? (
+          <div className="fdc-chip" aria-label={`${streak} day streak`}>
+            <span className="fdc-chip-flame">🔥</span>
+            <span className="fdc-chip-num">{streak}</span>
+            <span className="fdc-chip-label">{today.played ? "streak alive" : "keep it alive"}</span>
+          </div>
+        ) : (
+          <div className="fdc-chip fdc-chip--free" aria-label="Free daily game">
+            <span className="fdc-chip-free-dot" />
+            <span className="fdc-chip-free-label">FREE DAILY</span>
+          </div>
+        )}
         <div className="fdc-eyebrow">🎯 FLIP OR SKIP</div>
         {today.played ? (
           <>
@@ -533,9 +533,9 @@ const STYLES = `
 
 /* ── Streak chip — top-right stakes ── */
 .fdc-chip {
-  /* top:14 (not 12) so the padded chip's optical midline baseline-pairs
-     with the "🎯 FLIP OR SKIP" eyebrow across the card top. */
-  position: absolute; top: 14px; right: 12px; z-index: 2;
+  /* A1: inline at the top of the text column (see JSX) — no longer absolute,
+     so it can never overlap the flush-right drop-card. */
+  align-self: flex-start;
   display: flex; align-items: center; gap: 5px;
   padding: 5px 9px; border-radius: 999px;
   background: rgba(245,197,24,0.10);

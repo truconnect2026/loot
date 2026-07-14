@@ -319,7 +319,7 @@ function KitCard({ icon, accent, name, desc, onTap }: KitCardProps) {
           background: `linear-gradient(150deg, ${accent}12 0%, rgba(255,255,255,0.03) 55%)`,
           border: "1px solid rgba(255,255,255,0.09)",
           borderRadius: 14,
-          boxShadow: `inset 0 -2px 0 ${accent}40, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
+          boxShadow: `inset 0 -2px 0 ${accent}66, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
           cursor: "pointer",
           textAlign: "left",
         } as React.CSSProperties
@@ -394,7 +394,7 @@ function SectionLink({ icon, accent, name, desc, onTap }: SectionLinkProps) {
           background: `linear-gradient(150deg, ${accent}12 0%, rgba(255,255,255,0.03) 55%)`,
           border: "1px solid rgba(255,255,255,0.09)",
           borderRadius: 14,
-          boxShadow: `inset 0 -2px 0 ${accent}40, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
+          boxShadow: `inset 0 -2px 0 ${accent}66, inset 0 1px 0 rgba(255,255,255,0.05), 0 6px 16px -8px rgba(0,0,0,0.5)`,
           cursor: "pointer",
           textAlign: "left",
           width: "100%",
