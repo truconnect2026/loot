@@ -645,7 +645,12 @@ export default function SourcingPage() {
                       }}>
                         {card.store.name}
                       </span>
-                      <ChainBadge chain={card.store.chain} />
+                      {/* Preview cards carry the SAMPLE ribbon in this same
+                          top-right corner AND their store name is literally
+                          the chain ("Goodwill"/"Savers"), so the chain chip
+                          both collides with SAMPLE and echoes the name. Drop
+                          it on preview only; real cards keep their badge. */}
+                      {!isPreview && <ChainBadge chain={card.store.chain} />}
                     </div>
 
                     {card.store.location_label && (
