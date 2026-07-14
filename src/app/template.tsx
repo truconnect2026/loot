@@ -16,9 +16,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
  * - FIRST mount of the session (initial load / hard refresh) renders
  *   inert: SplashGate and each page's own entrance stagger own the
  *   arrival. The stagger owns first mount; this owns route changes.
- * - Route-change mounts play a single whole-plane rise (fade + 12px,
- *   180ms, house ease). Back/forward (popstate) plays the reverse —
- *   a settle from above. Transform/opacity only, zero layout shift.
+ * - Route-change mounts play a single whole-plane materialize (fade +
+ *   scale 0.98→1, --motion-medium, house ease). Back/forward (popstate)
+ *   plays the reverse — a settle back from 1.02→1. Transform/opacity
+ *   only, top-anchored origin, zero layout shift.
  * - The persistent `pt-route` class suppresses the per-card entrance
  *   staggers (.hm-root / .tl-stagger / .ac-stagger) on route-change
  *   mounts so plane motion and card motion never stack. The class
@@ -76,18 +77,26 @@ export default function Template({ children }: { children: ReactNode }) {
   return (
     <>
       <style>{`
+        /* Incoming plane materializes into focus: a subtle scale + fade
+           rather than a vertical slide. Scale reads as "coming forward"
+           — the right cue for lateral peer tabs (a translateY implies a
+           push/scroll, which is wrong for switching between equals). The
+           push GROWS in (0.98→1), the pop SETTLES back (1.02→1), giving a
+           depth-based direction cue without any vertical shift. Origin is
+           pinned to the top so the visible viewport top never moves on
+           tall scrollable pages (the element's geometric center can sit
+           off-screen). Same medium duration + house ease as the tab-icon
+           color transition, so nav chrome and page settle as one motion. */
         @keyframes ptRise {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: scale(0.98); }
+          to { opacity: 1; transform: scale(1); }
         }
         @keyframes ptSettle {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: scale(1.02); }
+          to { opacity: 1; transform: scale(1); }
         }
-        /* Routes share the sheet duration + decelerate curve so a tab
-           switch and a sheet feel like one product. */
-        .pt-in { animation: ptRise var(--motion-medium) var(--ease-out) backwards; }
-        .pt-pop { animation: ptSettle var(--motion-medium) var(--ease-out) backwards; }
+        .pt-in { animation: ptRise var(--motion-medium) var(--ease-out) backwards; transform-origin: 50% 0; }
+        .pt-pop { animation: ptSettle var(--motion-medium) var(--ease-out) backwards; transform-origin: 50% 0; }
         /* Route-change mounts: the plane owns the motion. Page-level
            entrance staggers are first-arrival theater only. */
         .pt-route .hm-root > *:nth-child(n+4),

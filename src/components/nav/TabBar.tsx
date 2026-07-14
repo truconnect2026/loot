@@ -97,35 +97,35 @@ function useShrinkOnScroll(enabled: boolean): boolean {
 
 // ── Tab icons (20px stroke) ────────────────────────────────────────────────
 
-function HomeIcon({ color }: { color: string }) {
+function HomeIcon() {
   return (
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
   );
 }
 
-function CompassIcon({ color }: { color: string }) {
+function CompassIcon() {
   return (
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <circle cx={12} cy={12} r={10} />
       <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
     </svg>
   );
 }
 
-function WrenchIcon({ color }: { color: string }) {
+function WrenchIcon() {
   return (
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
     </svg>
   );
 }
 
-function UserIcon({ color }: { color: string }) {
+function UserIcon() {
   return (
-    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
       <circle cx={12} cy={7} r={4} />
     </svg>
@@ -407,10 +407,10 @@ export default function TabBar() {
               }}
             >
               <span className="tb-ico">
-                {tab.id === "home"     && <HomeIcon color={color} />}
-                {tab.id === "sourcing" && <CompassIcon color={color} />}
-                {tab.id === "tools"    && <WrenchIcon color={color} />}
-                {tab.id === "account"  && <UserIcon color={color} />}
+                {tab.id === "home"     && <HomeIcon />}
+                {tab.id === "sourcing" && <CompassIcon />}
+                {tab.id === "tools"    && <WrenchIcon />}
+                {tab.id === "account"  && <UserIcon />}
               </span>
               <span
                 className="tb-lbl"
