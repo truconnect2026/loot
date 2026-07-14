@@ -317,8 +317,8 @@ export default function Gamification() {
             type="button"
             className="gm-mascot-orb"
             onClick={() => setMascotDismissed(true)}
-            aria-label="Hide Flip"
-            title="Tap to hide Flip for this session"
+            aria-label="Hide Kronos"
+            title="Tap to hide Kronos for this session"
           >
             <img
               src="/brand-kit/flip/flip-smirk.png"

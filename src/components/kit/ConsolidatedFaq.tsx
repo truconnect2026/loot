@@ -48,7 +48,7 @@ const FAQS = [
   },
   {
     q: "How does the leaderboard work?",
-    a: "Top 4 affiliates by referrals each month win cash prizes ($500/$300/$200/$100). First to 100 paid signups all-time → $2,500 + Flip merch drop + Coach Pick feature.",
+    a: "Top 4 affiliates by referrals each month win cash prizes ($500/$300/$200/$100). First to 100 paid signups all-time → $2,500 + Kronos merch drop + Coach Pick feature.",
   },
   {
     q: "Will this conflict with my Flipwise / Vendoo / List Perfectly deals?",

@@ -277,7 +277,7 @@ export default function Founding20() {
           <div className="f20-kit-mockup">
             <img
               src="/kit/founding-20-kit-mockup.png"
-              alt="Founding 20 creator kit — Flip mascot coyote enamel pin, Saturn sticker pack, custom hangtag, brass Saturn charm, branded fabric pouch, membership card, creator kit metal token"
+              alt="Founding 20 creator kit — Kronos mascot coyote enamel pin, Saturn sticker pack, custom hangtag, brass Saturn charm, branded fabric pouch, membership card, creator kit metal token"
               width={1254}
               height={1254}
               loading="lazy"
@@ -302,7 +302,7 @@ export default function Founding20() {
             <div className="f20-perk">
               <div className="f20-perk-icon">📦</div>
               <h3>physical kit</h3>
-              <p>Saturn sticker pack, Flip enamel pin, custom thrifted tag with your code</p>
+              <p>Saturn sticker pack, Kronos enamel pin, custom thrifted tag with your code</p>
             </div>
             <div className="f20-perk">
               <div className="f20-perk-icon">🔗</div>
@@ -350,7 +350,7 @@ export default function Founding20() {
             </ol>
             <div className="f20-lb-bonus">
               🔥 First to 100 paid signups →{" "}
-              <strong>$2,500 bonus + Flip merch drop + Coach Pick feature</strong>
+              <strong>$2,500 bonus + Kronos merch drop + Coach Pick feature</strong>
             </div>
             <div className="f20-lb-countdown">
               Resets in <strong>{countdown || "—"}</strong>

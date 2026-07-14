@@ -190,7 +190,7 @@ function ToolIcon({
 
 const TOP_TOOLS: Tool[] = [
   {
-    name: "Flip Coach",
+    name: "Kronos Coach",
     icon: <ToolIcon color="#5CE0B8"><SaturnIcon /></ToolIcon>,
     accent: "#5CE0B8",
     toolKind: "flip-coach",

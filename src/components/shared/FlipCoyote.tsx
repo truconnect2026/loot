@@ -38,7 +38,7 @@ export default function FlipCoyote({
   return (
     <img
       src={`/flip/flip-${mood}.png`}
-      alt={`Flip ${mood}`}
+      alt={`Kronos ${mood}`}
       width={size}
       height={size}
       style={{

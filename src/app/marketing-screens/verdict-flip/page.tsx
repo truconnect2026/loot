@@ -271,7 +271,7 @@ export default function VerdictFlipScreen() {
               fontWeight: 600,
             }}
           >
-            FLIP&apos;S BOLO
+            KRONOS&apos; BOLO
           </span>
         </div>
         <div

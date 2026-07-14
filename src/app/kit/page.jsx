@@ -314,7 +314,7 @@ const SWATCHES = [
 
 const DOS = [
   "Use logos in videos, posts, articles",
-  "Use the Flip mascot in commentary content",
+  "Use the Kronos mascot in commentary content",
   "Quote anything on this page verbatim",
   "Link to loot.works without asking",
   "Make jokes about Saturn",
@@ -324,7 +324,7 @@ const DOS = [
 const DONTS = [
   "Recolor the logos",
   "Stretch or distort the wordmark",
-  "Use Flip in adult, violent, or hateful content",
+  "Use Kronos in adult, violent, or hateful content",
   "Claim Loot endorses you (unless you're a signed affiliate)",
   "Crop the CoinMark out of the wordmark",
   "Reupload as your own",
@@ -854,13 +854,13 @@ export default function KitPage() {
                 <div className="flip-visual flip-glow" style={{ position: "relative" }}>
                   <img
                     src="/brand-kit/flip/flip-smirk.png"
-                    alt="Flip mascot — smirk mood"
+                    alt="Kronos mascot — smirk mood"
                     style={{ display: "block", width: "100%", height: "100%", objectFit: "contain" }}
                   />
                 </div>
                 <div className="flip-info">
                   <p className="flip-eyebrow">THE COACH</p>
-                  <h3>Meet Flip</h3>
+                  <h3>Meet Kronos</h3>
                   <p>
                     Loot&apos;s in-app AI coach. Saturn-themed. Street-smart. Disciplined, not patient.
                     He calls your shots in 4 moods — smirk, hyped, side-eye, dead — depending on how
@@ -876,7 +876,7 @@ export default function KitPage() {
                       <div key={m.mood} className="mood-item">
                         <img
                           src={`/brand-kit/flip/flip-${m.mood}.png`}
-                          alt={`Flip — ${m.label.toLowerCase()} mood`}
+                          alt={`Kronos — ${m.label.toLowerCase()} mood`}
                           width={80}
                           height={80}
                           style={{ borderRadius: 8, objectFit: "contain" }}

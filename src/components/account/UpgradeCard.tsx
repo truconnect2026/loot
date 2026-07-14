@@ -237,7 +237,7 @@ export default function UpgradeCard({
           gap: "8px 12px",
         }}
       >
-        {["unlimited scans", "condition grading", "flip coach", "batch listings"].map(
+        {["unlimited scans", "condition grading", "kronos coach", "batch listings"].map(
           (feat) => (
             <div
               key={feat}

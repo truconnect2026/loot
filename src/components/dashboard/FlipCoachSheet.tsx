@@ -360,7 +360,7 @@ export default function FlipCoachSheet({
                 lineHeight: 1,
               }}
             >
-              FLIP COACH
+              KRONOS COACH
             </div>
             <div
               style={{
@@ -376,7 +376,7 @@ export default function FlipCoachSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close Flip Coach"
+            aria-label="Close Kronos Coach"
             style={{
               width: 36,
               height: 36,

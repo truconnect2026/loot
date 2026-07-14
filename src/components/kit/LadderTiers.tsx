@@ -156,7 +156,7 @@ export default function LadderTiers() {
               </li>
               <li>
                 <span className="lt-bullet-icon lt-bullet-icon--gradient">🪐</span>
-                Physical kit: stickers + Flip pin + custom thrifted tag
+                Physical kit: stickers + Kronos pin + custom thrifted tag
               </li>
               <li>
                 <span className="lt-bullet-icon lt-bullet-icon--gradient">🪐</span>

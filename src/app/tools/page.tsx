@@ -621,7 +621,7 @@ export default function ToolsPage() {
           <KitCard
             icon={<SaturnIcon />}
             accent="#5CE0B8"
-            name="Flip Coach"
+            name="Kronos Coach"
             desc="your flip advisor — pricing, listing tips, strategy"
             onTap={() => { haptic(); setCoachOpen(true); }}
           />
