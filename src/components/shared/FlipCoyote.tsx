@@ -1,19 +1,15 @@
 /**
- * Flip — character mascot. PNG-sprite based as of the post-c3b083a
- * commit; 8 mood variants live in public/flip/flip-${mood}.png and
- * are sourced from the 2x2-grid sheets cropped via
- * cropFlipSprites.mjs at the repo root.
+ * Kronos — character mascot. PNG-sprite based; 8 mood variants live in
+ * public/flip/flip-${mood}.png. The locked design is a head+shoulders
+ * portrait: near-black coyote, mint (#5CE0B8) neon outline, gold
+ * (#F5C518) halo + Saturn-ring chain pendant, hoodie. Source art ships
+ * on a solid white canvas and is de-matted to transparent 320px sprites
+ * by scripts/whiteKeyFlip.mjs.
  *
- * Renders a square <img> at `size × size` pixels. The PNG is
- * authored at 320×320 (2x retina against the 160px default) and
- * scales down via the wrapping <img> width/height; object-fit:
- * contain preserves the aspect ratio on any size.
- *
- * Saturn-ring spin animation is GONE — the rings are baked into
- * each PNG at a fixed angle. Trade-off accepted as part of the
- * sprite swap; if motion needs to return, the move is to either
- * animate the whole <img> (which would tilt the face too) or to
- * layer a transparent spinning ring overlay on top.
+ * Renders a square <img> at `size × size` pixels (320×320 = 2x retina
+ * against the 160px default); object-fit: contain preserves the aspect
+ * ratio on any size. The gold halo is baked in — there is no separate
+ * spinning-ring layer.
  */
 
 export type FlipCoyoteMood =
