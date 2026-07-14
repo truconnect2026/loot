@@ -1347,7 +1347,7 @@ function DashboardPage() {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
           }
-          .hm-root > *:nth-child(n+4) { animation: hmRise 280ms cubic-bezier(0.22,1,0.36,1) both; }
+          .hm-root > *:nth-child(n+4) { animation: hmRise var(--motion-medium) var(--ease-out) both; }
           .hm-root > *:nth-child(4) { animation-delay: 0ms; }
           .hm-root > *:nth-child(5) { animation-delay: 45ms; }
           .hm-root > *:nth-child(6) { animation-delay: 90ms; }

@@ -730,7 +730,7 @@ const STYLES = `
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.tl-stagger > * { animation: tlRise 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.tl-stagger > * { animation: tlRise var(--motion-medium) var(--ease-out) both; }
 .tl-stagger > *:nth-child(1) { animation-delay: 0ms; }
 .tl-stagger > *:nth-child(2) { animation-delay: 45ms; }
 .tl-stagger > *:nth-child(3) { animation-delay: 90ms; }

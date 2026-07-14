@@ -632,7 +632,7 @@ export default function HaulLogPage() {
           padding: "0 18px",
           position: "relative",
           zIndex: 1,
-          animation: "vaultReveal 280ms cubic-bezier(0.22,1,0.36,1) both",
+          animation: "vaultReveal var(--motion-medium) var(--ease-out) both",
         }}
       >
         {/* ── Header ── */}

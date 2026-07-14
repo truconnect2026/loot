@@ -41,7 +41,7 @@ export function EmptyState({ icon, headline, body, action, compact }: EmptyState
         .es-root > .es-head,
         .es-root > .es-body,
         .es-root > .es-action {
-          animation: sgRise 420ms var(--ease-out) both;
+          animation: sgRise var(--motion-medium) var(--ease-out) both;
         }
         .es-root > .es-glyph { animation-delay: 0ms; }
         .es-root > .es-head { animation-delay: 70ms; }

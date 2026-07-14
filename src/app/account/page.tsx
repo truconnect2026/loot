@@ -783,7 +783,7 @@ export default function AccountPage() {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
           }
-          .ac-stagger > * { animation: acRise 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+          .ac-stagger > * { animation: acRise var(--motion-medium) var(--ease-out) both; }
           .ac-stagger > *:nth-child(2) { animation-delay: 0ms; }
           .ac-stagger > *:nth-child(3) { animation-delay: 45ms; }
           .ac-stagger > *:nth-child(4) { animation-delay: 90ms; }
