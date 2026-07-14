@@ -744,7 +744,10 @@ export default function ShelfScannerDemo() {
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    ${totalValue}
+                    {/* 6c: at rest show "$—" (awaiting a tap), never a
+                        discouraging "$0" that reads as failure to a glancing
+                        cold user; fills to the running total once tapped. */}
+                    ${totalValue > 0 ? totalValue : "—"}
                   </div>
                 </div>
                 {/* completion line — reserved slot */}

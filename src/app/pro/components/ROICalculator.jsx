@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { C } from "../lib/colors.js";
 import {
   Eyebrow,
+  ExampleTag,
   FadeUp,
   SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
@@ -240,6 +241,11 @@ export default function ROICalculator() {
         <FadeUp delay={0.3}>
           <div ref={rootRef}>
             {/* Chips — load a bad buy onto the left pan */}
+            {/* Phase 1.2: the $40/$60/$200 buys are illustrative examples of
+                a bad buy, not real or typical losses. */}
+            <div style={{ marginBottom: 8 }}>
+              <ExampleTag label="EXAMPLE" />
+            </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 22 }}>
               {BUYS.map((b, i) => {
                 const active = i === sel;
@@ -255,9 +261,13 @@ export default function ROICalculator() {
                       padding: "7px 12px",
                       borderRadius: 999,
                       cursor: "pointer",
-                      color: active ? "#070510" : "rgba(92,224,184,0.75)",
-                      background: active ? C.mint : "transparent",
-                      border: `1px solid ${active ? C.mint : "rgba(92,224,184,0.35)"}`,
+                      // 6g: the selected chip is the bad buy currently on the
+                      // scale — the PAIN, not a desirable pick. Fill it
+                      // danger-red (matching the red price pill) instead of the
+                      // positive mint it wore before (which read as "chosen/good").
+                      color: active ? "#fff" : "rgba(255,255,255,0.55)",
+                      background: active ? RED : "transparent",
+                      border: `1px solid ${active ? RED : "rgba(255,255,255,0.2)"}`,
                       transition: reduced ? "none" : `background 200ms ${EASE}, color 200ms ${EASE}`,
                     }}
                   >

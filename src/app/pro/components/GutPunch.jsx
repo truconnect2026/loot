@@ -79,7 +79,7 @@ export default function GutPunch() {
                   fontSize: 10,
                   letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.35)",
+                  color: "rgba(255,255,255,0.5)",
                   marginBottom: 12,
                 }}
               >
@@ -94,9 +94,13 @@ export default function GutPunch() {
                           fontFamily: "var(--font-manrope), sans-serif",
                           fontSize: 12,
                           lineHeight: 1.3,
-                          color: "rgba(255,255,255,0.42)",
+                          // 6a: was 0.42 — too dim to read, so the tedium the
+                          // "old way" column exists to show was lost, and
+                          // "POINT. DONE." had nothing to beat. Now clearly
+                          // legible (0.62), the connectors visible too.
+                          color: "rgba(255,255,255,0.62)",
                           padding: "5px 8px",
-                          background: "rgba(255,255,255,0.02)",
+                          background: "rgba(255,255,255,0.03)",
                           borderRadius: 6,
                         }}
                       >
@@ -107,7 +111,7 @@ export default function GutPunch() {
                           aria-hidden="true"
                           style={{
                             textAlign: "center",
-                            color: "rgba(255,255,255,0.16)",
+                            color: "rgba(255,255,255,0.3)",
                             fontSize: 10,
                             lineHeight: "14px",
                           }}
