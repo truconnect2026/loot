@@ -3,6 +3,7 @@
 import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { CheckIcon, CTAButton, Eyebrow, FadeUp } from "./atoms.jsx";
+import FlipCoyote from "@/components/shared/FlipCoyote";
 import VerdictCardLive from "./VerdictCardLive.jsx";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
@@ -167,6 +168,15 @@ export default function HeroSection() {
 
       <div className="pro-hero-grid">
         <div className="pro-hero-text">
+      {/* Phase 3.1: Kronos greets — the ad's face, so a stranger who tapped
+          the Kronos ad lands on the same face and knows they're in the right
+          place. Transparent PNG, no box; the halo glow is gated static under
+          the global reduced-motion rule. */}
+      <FadeUp delay={0.05}>
+        <div style={{ marginBottom: 10, width: "fit-content", filter: "drop-shadow(0 6px 22px rgba(92,224,184,0.32))" }}>
+          <FlipCoyote mood="hyped" size={92} />
+        </div>
+      </FadeUp>
       <FadeUp delay={0.1}>
         <Eyebrow text="— pro tier" color={C.mint} />
       </FadeUp>

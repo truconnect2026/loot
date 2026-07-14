@@ -11,6 +11,7 @@ import {
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
+import FlipCoyote from "@/components/shared/FlipCoyote";
 
 export default function CloserSection({ onCTA }) {
   return (
@@ -44,6 +45,21 @@ export default function CloserSection({ onCTA }) {
       </div>
 
       <SectionShell style={{ position: "relative" }}>
+      {/* Phase 3.2: Kronos closes on the buy moment — the same face that
+          opened the ad and the hero seals the loop right at the decision.
+          Transparent PNG; halo glow gated static under the global reduce. */}
+      <FadeUp>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: 14,
+            filter: "drop-shadow(0 6px 24px rgba(92,224,184,0.3))",
+          }}
+        >
+          <FlipCoyote mood="hyped" size={104} />
+        </div>
+      </FadeUp>
       <FadeUp>
         <div
           style={{
