@@ -801,10 +801,10 @@ const STYLES = `
   animation-iteration-count: infinite;
 }
 .ts-pill--1 { left: 4px; animation-name: tsPill1; }
-.ts-pill--2 { left: 56px; animation-name: tsPill2; }
-.ts-pill--3 { left: 118px; animation-name: tsPill3; }
-.ts-pill--4 { left: 181px; animation-name: tsPill4; }
-.ts-pill--5 { left: 240px; animation-name: tsPill5; }
+.ts-pill--2 { left: 58px; animation-name: tsPill2; }
+.ts-pill--3 { left: 120px; animation-name: tsPill3; }
+.ts-pill--4 { left: 183px; animation-name: tsPill4; }
+.ts-pill--5 { left: 242px; animation-name: tsPill5; }
 /* pop as the scan-line crosses each item (6%→42% sweep, staggered),
    hold, fade together */
 @keyframes tsPill1 { 0%, 8% { opacity: 0; transform: translateY(3px); } 10%, 62% { opacity: 0.95; transform: translateY(0); } 72%, 100% { opacity: 0; } }

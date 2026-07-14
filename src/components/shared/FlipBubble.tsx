@@ -69,7 +69,7 @@ export function FlipBubble({
       className="fb-row"
       style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth }}
     >
-      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 2 }}>
+      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 4 }}>
         <FlipCoyote mood={mood} size={glyphSize} />
       </span>
       <div

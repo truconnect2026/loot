@@ -359,6 +359,12 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
             fontSize: 11,
             color: "#5A4E70",
             lineHeight: 1,
+            // The 11px arrow shares the row baseline with the larger
+            // 14/15px prices; on a shared baseline the smaller glyph's
+            // optical midline falls ~2px low, so lift it to point straight
+            // across rather than dip.
+            position: "relative",
+            top: -2,
           }}
         >
           →
@@ -410,11 +416,13 @@ export default function DealCard({ deal, onTap }: DealCardProps) {
         </div>
       </div>
 
-      {/* Distance — bottom-left */}
+      {/* Distance — bottom-left. bottom:15 (vs the profit chip's 12)
+          because the chip is a padded, taller box; matching raw bottoms
+          left the two bottom-row labels ~4px out of optical register. */}
       <span
         style={{
           position: "absolute",
-          bottom: 12,
+          bottom: 15,
           left: 14,
           fontFamily: "var(--font-body)",
           fontSize: 10,

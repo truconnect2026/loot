@@ -348,6 +348,10 @@ export default function SourcingPage() {
                 style={{
                   position: "relative",
                   display: "inline-block",
+                  // lineHeight:0 collapses the inline-block baseline gap so
+                  // the 64px sprite seats flush in its 64px box (no ~4px
+                  // descender strip stealing from the 8px gap below).
+                  lineHeight: 0,
                   animation: "sgBreathe 4.5s var(--ease-out) infinite",
                 }}
               >

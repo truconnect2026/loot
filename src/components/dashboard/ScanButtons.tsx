@@ -127,7 +127,12 @@ export default function ScanButtons({ onScan, pulsePrimary }: ScanButtonsProps) 
         <div className="sh-reticle">
           <span className="sh-cross sh-cross--h" />
           <span className="sh-cross sh-cross--v" />
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5CE0B8" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+          {/* translateY(-1): the camera is bottom-heavy (lens at cy13,
+              below the 24-box center), so seating the sprite box on the
+              crosshair leaves the lens ~1px below it. Nudge up 1px to seat
+              the lens on the crosshair — same optical correction the nav
+              FAB camera carries. */}
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5CE0B8" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ transform: "translateY(-1px)" }}>
             <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
             <circle cx={12} cy={13} r={4} />
           </svg>

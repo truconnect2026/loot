@@ -483,7 +483,9 @@ const STYLES = `
 
 /* ── Streak chip — top-right stakes ── */
 .fdc-chip {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
+  /* top:14 (not 12) so the padded chip's optical midline baseline-pairs
+     with the "🎯 FLIP OR SKIP" eyebrow across the card top. */
+  position: absolute; top: 14px; right: 12px; z-index: 2;
   display: flex; align-items: center; gap: 5px;
   padding: 5px 9px; border-radius: 999px;
   background: rgba(245,197,24,0.10);
