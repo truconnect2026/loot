@@ -5,7 +5,6 @@ import { CHAIN_PATTERNS } from "@/lib/sourcingPatterns";
 import BottomSheet from "@/components/shared/BottomSheet";
 import { SourcingSkeleton } from "@/components/shared/PageSkeleton";
 import FlipCoyote from "@/components/shared/FlipCoyote";
-import { FlipBubble } from "@/components/shared/FlipBubble";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -399,24 +398,11 @@ export default function SourcingPage() {
               to roll up.
             </div>
 
-            {/* Flip bubble — points at the day strip below */}
-            <div
-              style={{
-                marginTop: 16,
-                animation: playIntro
-                  ? "sgFade 300ms var(--ease-out) 350ms backwards"
-                  : undefined,
-              }}
-            >
-              <FlipBubble
-                text="those dots below? sale-day intel. i track it — you cash it."
-                play={playIntro}
-                mood="smirk"
-                glyphSize={36}
-                startDelay={450}
-                maxWidth={300}
-              />
-            </div>
+            {/* F1: the Kronos speech bubble here restated the sub-line's
+                promise (a second Kronos message saying the same "I track your
+                stores' sale days"), and its dot-labeling job is already done
+                by the "sale-day intel" caption over the strip below. Cut it so
+                the path to +ADD STORE is one message, then the action. */}
 
             {/* CTA — the one dominant action, with an attention glow pulse */}
             <button

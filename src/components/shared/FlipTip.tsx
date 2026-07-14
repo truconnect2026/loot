@@ -18,8 +18,11 @@ import { space } from "@/lib/design/tokens";
  * content above closes the gap.
  *
  * Gating: shows once per surface (localStorage lw-guide-<id>); dismiss
- * persists. Callers ensure max one FlipTip per screen and never mount it
- * on a surface that has an active empty-state guide.
+ * persists. A session-level throttle (sessionStorage lw-guide-session) also
+ * caps VISIBLE first-run tips at one per session, so tips on different tabs
+ * (Home + Tools) never stack in a single session. Callers ensure max one
+ * FlipTip per screen and never mount it on a surface with an active
+ * empty-state guide.
  *
  * Reduced motion: no peek, no typewriter, no idle — the full bubble
  * renders static and intentional; dismiss is an instant unmount.
@@ -41,12 +44,26 @@ export function FlipTip({
 
   useEffect(() => {
     let seen = false;
+    let sessionUsed = false;
     try {
       seen = localStorage.getItem(`lw-guide-${id}`) === "1";
+      // F2: a first-run tip already fired on another tab this session.
+      sessionUsed = sessionStorage.getItem("lw-guide-session") === "1";
     } catch {
       /* private mode */
     }
-    setState(seen ? "hidden" : "shown");
+    // Already dismissed forever, OR another tip already used this session's
+    // one slot (still show it in a LATER session — don't mark it seen).
+    if (seen || sessionUsed) {
+      setState("hidden");
+      return;
+    }
+    try {
+      sessionStorage.setItem("lw-guide-session", "1");
+    } catch {
+      /* private mode */
+    }
+    setState("shown");
   }, [id]);
 
   function dismiss() {
