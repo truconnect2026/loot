@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CrateResultsStack, type StripRect } from "@/components/dashboard/CrateResultsStack";
 
-import { CoinMarkSpinner } from "@/components/shared/CoinMark";
+import CoinMark, { CoinMarkSpinner } from "@/components/shared/CoinMark";
 import {
   captureFrame,
   openCameraStream,
@@ -538,20 +538,7 @@ function CrateCaptureButton({ armedCount, onTap }: CrateCaptureButtonProps) {
             transform: pressed ? "scale(0.93)" : "scale(1)",
           }}
         >
-          <svg
-            width={30}
-            height={30}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke={MINT}
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx={12} cy={12} r={5} />
-            <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
-          </svg>
+          <CoinMark size={30} color={MINT} />
         </button>
       </div>
 

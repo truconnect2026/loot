@@ -9,6 +9,7 @@ import ConditionGradeSheet from "@/components/dashboard/ConditionGradeSheet";
 import FlipCoachSheet from "@/components/dashboard/FlipCoachSheet";
 import PaywallSheet from "@/components/dashboard/PaywallSheet";
 import { FlipTip } from "@/components/shared/FlipTip";
+import CoinMark from "@/components/shared/CoinMark";
 
 /**
  * TOOLS — the arsenal, theater pass. Every flagship DEMONSTRATES its
@@ -89,14 +90,6 @@ function RecycleIcon({ size = 18 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="1 4 1 10 7 10" /><polyline points="23 20 23 14 17 14" />
       <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
-    </svg>
-  );
-}
-function SaturnIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx={12} cy={12} r={5} />
-      <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
     </svg>
   );
 }
@@ -624,7 +617,7 @@ export default function ToolsPage() {
             onTap={() => { haptic(); setActiveTool("scrap-id"); }}
           />
           <KitCard
-            icon={<SaturnIcon />}
+            icon={<CoinMark size={18} />}
             accent="#5CE0B8"
             name="Kronos Coach"
             desc="your flip advisor — pricing, listing tips, strategy"

@@ -140,15 +140,6 @@ function CheckBoxIcon() {
 
 // Flip Coach — Saturn (planet with ring) per the spec; reads as the
 // coach's "brand" mark across the FAB and tile.
-function SaturnIcon() {
-  return (
-    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx={12} cy={12} r={5} />
-      <ellipse cx={12} cy={12} rx={10} ry={3.5} transform="rotate(-20 12 12)" />
-    </svg>
-  );
-}
-
 interface Tool {
   name: string;
   icon: React.ReactNode;
@@ -191,7 +182,7 @@ function ToolIcon({
 const TOP_TOOLS: Tool[] = [
   {
     name: "Kronos Coach",
-    icon: <ToolIcon color="#5CE0B8"><SaturnIcon /></ToolIcon>,
+    icon: <ToolIcon color="#5CE0B8"><CoinMark size={16} /></ToolIcon>,
     accent: "#5CE0B8",
     toolKind: "flip-coach",
   },
