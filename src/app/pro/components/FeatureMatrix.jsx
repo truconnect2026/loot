@@ -38,7 +38,10 @@ const RED = "#ff6b6b";
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 const POP = "cubic-bezier(0.2,1.3,0.4,1)";
 const TICK_MS = 1100;
-const CARD_COUNT = 8;
+// 6 (was 8): the shelf-scan + fake-check cards were removed — they each get
+// a dedicated full-screen interactive demo above, so re-showing them here
+// doubled the proof (Phase 4.1). The arsenal now carries only the REST.
+const CARD_COUNT = 6;
 
 const GRID_STYLES = `
 .fpg-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -68,18 +71,22 @@ function useLiveInView() {
 
 const mono = { fontFamily: "var(--font-mono), monospace" };
 
-function Card({ label, copy, children }) {
+function Card({ label, copy, children, wide, featured }) {
   return (
     <div
       style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(92,224,184,0.15)",
+        background: featured ? "rgba(92,224,184,0.05)" : "rgba(255,255,255,0.02)",
+        border: featured ? `1px solid ${C.mint}` : "1px solid rgba(92,224,184,0.15)",
         borderRadius: 14,
         padding: "14px 12px 12px",
         display: "flex",
         flexDirection: "column",
         gap: 10,
         minWidth: 0,
+        // Phase 4.2: the moat card spans the full grid width + carries a mint
+        // border/glow so it reads as the standout, not one of eight equals.
+        ...(wide ? { gridColumn: "1 / -1" } : null),
+        ...(featured ? { boxShadow: "0 0 30px rgba(92,224,184,0.14)" } : null),
       }}
     >
       <div
@@ -495,8 +502,8 @@ export default function FeatureMatrix() {
   // Off-screen (and pre-entry, and reduced) everything rests.
   const beatIdx = entered && inView && !reduced ? tick % CARD_COUNT : -1;
   // Haul pipeline stage advances once per rotation, exactly on its beat
-  // (card index 4): count how many times slot 4 has come around.
-  const haulStage = (tick >= 4 ? Math.floor((tick - 4) / CARD_COUNT) + 1 : 0) % 4;
+  // (card index 2 after the dedup): count how many times slot 2 has come around.
+  const haulStage = (tick >= 2 ? Math.floor((tick - 2) / CARD_COUNT) + 1 : 0) % 4;
 
   return (
     <section
@@ -575,23 +582,28 @@ export default function FeatureMatrix() {
             <Card label="sold comps" copy="real sold prices, not asking prices.">
               <CompsMicro beat={beatIdx === 1} reduced={reduced} />
             </Card>
-            <Card label="fake check" copy="catch reps before they cost you.">
-              <FakeCheckMicro beat={beatIdx === 2} reduced={reduced} />
-            </Card>
-            <Card label="shelf scan" copy="every item on the shelf, one pass.">
-              <ShelfMicro beat={beatIdx === 3} reduced={reduced} />
-            </Card>
+            {/* Phase 4.1: shelf scan + fake check removed — each has a
+                dedicated full-screen interactive demo above; re-showing them
+                here doubled the proof. Arsenal now carries the REST only. */}
             <Card label="haul tracking" copy="follow every flip from save to sold.">
               <HaulMicro stage={haulStage} reduced={reduced} />
             </Card>
             <Card label="crate mode" copy="price a crate without pulling every record.">
-              <CrateMicro beat={beatIdx === 5} reduced={reduced} />
+              <CrateMicro beat={beatIdx === 3} reduced={reduced} />
             </Card>
             <Card label="bolo alerts" copy="set your grails. get pinged on a match.">
-              <BoloMicro beat={beatIdx === 6} reduced={reduced} />
+              <BoloMicro beat={beatIdx === 4} reduced={reduced} />
             </Card>
-            <Card label="sale-day planner" copy="which store's on sale before you drive.">
-              <PlannerMicro beat={beatIdx === 7} reduced={reduced} />
+            {/* Phase 4.2: the moat — store/day routing no competitor has.
+                Featured (mint border + glow) so it reads as the standout
+                among the grays; kept in-grid (no full-width) to avoid an
+                empty odd slot. Punchier copy lands the payoff. */}
+            <Card
+              featured
+              label="sale-day planner"
+              copy="know which store's on sale before you drive. nobody else routes your week by discount day."
+            >
+              <PlannerMicro beat={beatIdx === 5} reduced={reduced} />
             </Card>
           </div>
         </FadeUp>
