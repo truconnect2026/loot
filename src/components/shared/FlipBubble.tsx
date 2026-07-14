@@ -69,7 +69,11 @@ export function FlipBubble({
       className="fb-row"
       style={{ display: "flex", alignItems: "flex-start", gap: 8, maxWidth }}
     >
-      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 4 }}>
+      {/* marginTop:0 — the Kronos art is a head+shoulders portrait with
+          the face in the upper third, so seating it flush with the row top
+          lands the face on the bubble's first text line. (The old face-
+          centered sprite used marginTop:4; that now floats the face high.) */}
+      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 0 }}>
         <FlipCoyote mood={mood} size={glyphSize} />
       </span>
       <div

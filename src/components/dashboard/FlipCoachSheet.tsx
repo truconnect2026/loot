@@ -579,7 +579,9 @@ function CoachBubble({
         maxWidth: "85%",
       }}
     >
-      <span style={{ flexShrink: 0, marginTop: 2 }}>
+      {/* marginTop:0 seats the head+shoulders portrait's face on the
+          bubble's first line (matches FlipBubble; old art used a nudge). */}
+      <span style={{ flexShrink: 0, marginTop: 0 }}>
         <FlipCoyote mood={mood} size={28} />
       </span>
       <div
@@ -641,7 +643,9 @@ function TypingBubble({ mood }: { mood: FlipCoyoteMood }) {
         maxWidth: "85%",
       }}
     >
-      <span style={{ flexShrink: 0, marginTop: 2 }}>
+      {/* marginTop:0 seats the head+shoulders portrait's face on the
+          bubble's first line (matches FlipBubble; old art used a nudge). */}
+      <span style={{ flexShrink: 0, marginTop: 0 }}>
         <FlipCoyote mood={mood} size={28} />
       </span>
       <div
