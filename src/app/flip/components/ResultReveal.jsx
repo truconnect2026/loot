@@ -8,7 +8,8 @@ import { getScoreTier } from "../lib/scoring.js";
 import useGameSounds from "../hooks/useGameSounds.jsx";
 import useHaptics from "../hooks/useHaptics.jsx";
 import ShareGrid from "./ShareGrid.jsx";
-import Mascot, { SPEECH_BUBBLE_CHANCE } from "./Mascot.jsx";
+import { SPEECH_BUBBLE_CHANCE } from "./Mascot.jsx";
+import FlipCoyote from "@/components/shared/FlipCoyote";
 import { useTilt } from "../hooks/useMouseManager.jsx";
 import { useDeviceClass } from "../lib/perf.js";
 import { isDiscovered, markDiscovered, shouldShowHint, markHintShown } from "../lib/easterEggs.js";
@@ -221,7 +222,11 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
         animate={phaseRank >= 1 ? { y: -40, scale: 0.4, opacity: 1, x: -120 } : { y: 0, scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 120, damping: 14 }}
       >
-        <Mascot ref={mascotRef} mood={MASCOT_MOOD[tier]} color={tm.color} size={160} animated />
+        {/* Kronos — the same host from TAP IN, mood-matched to the tier, so
+            the free game opens and closes on one branded face. (The old SVG
+            mascot's wink/speak calls below now no-op via optional chaining;
+            the wolf easter egg keeps its flash + confetti.) */}
+        <FlipCoyote mood={MASCOT_MOOD[tier]} size={150} />
       </motion.div>
 
       {phaseRank >= 1 && phaseRank < 2 && (
@@ -358,7 +363,8 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
             style={{ rotateX: ctaTiltX, rotateY: ctaTiltY, transformPerspective: 800, width: "100%", maxWidth: 420, display: "flex", justifyContent: "center" }}
           >
             <Link href="/app?ref=flip_results" className="flip-rev-cta-btn">
-              GET LOOT.WORKS →
+              <span className="flip-rev-cta-btn-bloom" aria-hidden="true" />
+              <span className="flip-rev-cta-btn-label">GET LOOT.WORKS →</span>
             </Link>
           </motion.div>
           <Link href="/app?ref=flip_results" className="flip-rev-cta-sub-link">

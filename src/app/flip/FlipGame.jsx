@@ -21,7 +21,8 @@ import ResultReveal from "./components/ResultReveal.jsx";
 import SettingsPanel from "./components/SettingsPanel.jsx";
 import CosmicCursor from "./components/CosmicCursor.jsx";
 import KeyboardHUD from "./components/KeyboardHUD.jsx";
-import Mascot, { SPEECH_BUBBLE_CHANCE } from "./components/Mascot.jsx";
+import { SPEECH_BUBBLE_CHANCE } from "./components/Mascot.jsx";
+import FlipCoyote from "@/components/shared/FlipCoyote";
 import useGameSounds from "./hooks/useGameSounds.jsx";
 import useHaptics from "./hooks/useHaptics.jsx";
 import { markDiscovered, shouldShowHint, markHintShown } from "./lib/easterEggs.js";
@@ -453,7 +454,7 @@ export default function FlipGame() {
           {phase === "phase2" && (
             <motion.div key="phase2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
               <div className="flip-corner-mascot flip-corner-mascot--top-right">
-                <Mascot ref={phase2MascotRef} mood="smirk" size={56} animated={false} />
+                <FlipCoyote mood="smirk" size={56} />
               </div>
               <Phase2Pricer
                 flipItems={answers.filter((a) => a.correct && a.choice === "flip").map((a) => a.item)}
@@ -742,12 +743,6 @@ const INLINE_STYLES = `
   0% { transform: translateY(0); opacity: 0; }
   20% { opacity: 0.6; }
   100% { transform: translateY(-72px); opacity: 0; }
-}
-/* Retained for the result-screen CTA (.flip-rev-cta-btn); the TAP-IN hero
-   now pulses via the bloom layer's opacity instead. */
-@keyframes flip-tapin-pulse {
-  0%, 100% { box-shadow: 0 0 30px rgba(92,224,184,0.6); }
-  50% { box-shadow: 0 0 45px rgba(92,224,184,0.85); }
 }
 @media (prefers-reduced-motion: reduce) {
   /* Designed static composition: no entrance motion, no idle pulse, but a
@@ -1582,15 +1577,28 @@ const INLINE_STYLES = `
   text-align: center; padding: 2px;
 }
 .flip-rev-cta-btn {
-  width: 100%; max-width: 420px; height: 72px;
-  background: linear-gradient(180deg, #5CE0B8 0%, #4FCDA5 100%);
-  color: #000; text-decoration: none;
+  position: relative;
+  width: 100%; max-width: 420px; height: 72px; border-radius: 16px;
+  background: linear-gradient(180deg, #6FE9C6 0%, #4FCDA5 54%, #38BC91 100%);
+  color: #04120D; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--display); font-weight: 900; font-size: 18px;
   letter-spacing: 0.22em;
-  box-shadow: 0 0 30px rgba(92,224,184,0.5);
-  animation: flip-tapin-pulse 2.5s ease-in-out infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -3px 8px rgba(0,0,0,0.16),
+    0 10px 26px -8px rgba(92,224,184,0.55);
 }
+.flip-rev-cta-btn-label { position: relative; z-index: 2; }
+/* Same layered-bloom language as the TAP-IN hero: idle pulse + press surge
+   on OPACITY (compositor). Replaces the old box-shadow-pulse animation. */
+.flip-rev-cta-btn-bloom {
+  position: absolute; inset: -40% -8%; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(92,224,184,0.5) 0%, rgba(245,197,24,0.18) 45%, transparent 72%);
+  opacity: 0.4;
+  animation: flip-tapin-bloom 2.6s ease-in-out infinite;
+}
+.flip-rev-cta-btn:active .flip-rev-cta-btn-bloom { opacity: 1; animation: none; }
 @media (min-width: 768px) { .flip-rev-cta-btn { height: 80px; font-size: 22px; } }
 .flip-rev-cta-sub-link {
   font-family: var(--display); font-size: 13px;
@@ -1898,6 +1906,7 @@ body.fos-cursor-active, body.fos-cursor-active * { cursor: none !important; }
   .flip-rev-dollars-floater { animation: none; opacity: 0; }
   .flip-rev-milestone-flash { display: none; }
   .flip-rev--wolf-flash { animation: none; }
+  .flip-rev-cta-btn-bloom { animation: none; opacity: 0.4; }
 }
 
 /* ─── Headline wave (subtle continuous oscillation per letter) ── */
