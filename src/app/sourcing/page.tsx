@@ -412,6 +412,7 @@ export default function SourcingPage() {
 
             {/* CTA — the one dominant action, with an attention glow pulse */}
             <button
+              className="cta-press"
               onClick={() => setAddOpen(true)}
               style={{
                 position: "relative",
@@ -960,7 +961,7 @@ export default function SourcingPage() {
             </button>
             <button
               type="submit"
-              className="as-cta"
+              className="as-cta cta-press"
               disabled={addBusy || !newName.trim()}
               style={{
                 flex: 2,

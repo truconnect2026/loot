@@ -1464,6 +1464,12 @@ export default function ScanOverlay({
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          // Fade the full-screen camera overlay in instead of hard-cutting
+          // — the blur + dark plane snapping in with zero transition was
+          // the cheapest surface in the app. Opacity only (the camera
+          // stream is unaffected). Reduced motion: global rule collapses
+          // it to an instant cut.
+          animation: "fadeInOpacity var(--motion-fast) var(--ease-out) both",
         }}
       >
         {/* Crate Phase 1 stub toast — shows on capture, clears after 1.5s */}

@@ -17,9 +17,10 @@ import type { ScanTriggerMode } from "@/lib/scan-trigger";
  * above the pill's top edge).
  *
  * Motion: chips spring OUT of the FAB's center to their fan positions
- * (200ms each, 30ms stagger → 290ms total open), retract together in
- * 150ms on close. transform/opacity only. Reduced motion: scrim + chips
- * appear/disappear instantly at final positions, fully functional.
+ * (--motion-fast each with a tuned overshoot, 30ms stagger), retract
+ * together in --motion-fast on close. transform/opacity only. Reduced
+ * motion: scrim + chips appear/disappear instantly at final positions,
+ * fully functional.
  *
  * The labels mirror ScanOverlay's own mode toggle (BARCODE · ITEM ·
  * SHELF · CRATE) so the launcher teaches the destination.
@@ -121,10 +122,13 @@ export default function ScanModeLauncher({ open, onClose, onSelect }: Props) {
       return;
     }
     setClosing(true);
+    // 190ms ≥ the 180ms (--motion-fast) retract so the collapse plays to
+    // completion before unmount — the prior 160ms clipped the last frames
+    // and the chips blinked out just before fully retracting.
     const t = window.setTimeout(() => {
       setVisible(false);
       setClosing(false);
-    }, 160);
+    }, 190);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -235,9 +239,11 @@ const STYLES = `
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   transform: translate(var(--tx), var(--ty));
-  /* Unified to the house decelerate (was an overshoot spring) so the
-     launcher shares the app-wide easing family. */
-  animation: smlSpring var(--motion-fast) var(--ease-out) both;
+  /* Tuned overshoot on the fan-out (--ease-spring): a radial FAB burst is
+     the idiomatic place for a tasteful pop-and-settle, and it's ONE shared
+     spring curve (same family as the tab dot / verdict pill), so it reads
+     premium without clashing. Exit stays clean (--ease-in, no overshoot). */
+  animation: smlSpring var(--motion-fast) var(--ease-spring) both;
   animation-delay: var(--d);
 }
 .sml--closing .sml-chip {

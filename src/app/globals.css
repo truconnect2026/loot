@@ -121,6 +121,10 @@
      prefers-reduced-motion collapses ALL of it below. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* One tuned overshoot for playful "burst" entrances (radial FAB fan,
+     announce pops). Sits in the app's existing overshoot family (tab dot
+     1.3, verdict pill / crate 1.56) — not a fork, the shared spring rung. */
+  --ease-spring: cubic-bezier(0.34, 1.5, 0.5, 1);
   --motion-fast: 180ms;
   --motion-medium: 260ms;
 
@@ -236,6 +240,18 @@ input::placeholder {
    Reduced motion: collapses to an instant swap via the global rule. */
 .fade-in { animation: fadeInOpacity var(--motion-fast, 180ms) var(--ease-out, ease) both; }
 @keyframes fadeInOpacity { from { opacity: 0; } to { opacity: 1; } }
+
+/* Shared primary-CTA press — a quick compositor-only scale-down that
+   settles back, so every headline button acknowledges the tap the same
+   way (the reference UpgradeCard/Paywall presses sit in the same 0.97
+   family). Apply to CTAs that render inline without their own JS pressed
+   state. Reduced motion: no scale, instant. */
+.cta-press { transition: transform var(--motion-fast) var(--ease-out); -webkit-tap-highlight-color: transparent; }
+.cta-press:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .cta-press { transition: none; }
+  .cta-press:active { transform: none; }
+}
 
 /* ── Sourcing zero-store guide + FlipTip (first-run guidance).
    All compositor-only: transform / opacity / filter. Gated by JS
