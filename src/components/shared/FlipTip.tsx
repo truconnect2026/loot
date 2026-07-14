@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FlipBubble } from "@/components/shared/FlipBubble";
 import type { FlipCoyoteMood } from "@/components/shared/FlipCoyote";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { space } from "@/lib/design/tokens";
 
 /**
  * FlipTip — a first-run callout in Flip's voice. Inline in page flow (no
@@ -77,7 +78,11 @@ export function FlipTip({
         width: "fit-content",
         maxWidth: "min(100%, 380px)",
         marginTop: 12,
-        marginBottom: 4,
+        // Reserve a full section gap (space[5] = 20) below the tip so the
+        // section that follows (carousel / feeds placeholder / footer)
+        // never crowds it — the reserve is the tip's own, not borrowed
+        // from the next block's margin, so it holds in every feed state.
+        marginBottom: space[5],
         animation:
           state === "exiting"
             ? "ftExit 180ms var(--ease-in) both"
