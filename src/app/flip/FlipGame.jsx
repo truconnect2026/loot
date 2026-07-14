@@ -31,7 +31,11 @@ const HIT_PAUSE_WRONG_MS = 60;
 
 // Per-phase opacity multipliers for the persistent cosmic backdrop.
 const COSMIC_PRESETS = {
-  intro: { bgOpacity: 0.6, starOpacity: 1, ringOpacity: 1, ringSpin: 120, aurora: false },
+  // Intro/TAP-IN: dial the huge diagonal Saturn ring back (it was the
+  // "streak crossing the text") and ease the starfield so the cosmos reads
+  // as ambient depth behind the content column, not noise over it. The
+  // legibility scrim in IntroScreen finishes the job.
+  intro: { bgOpacity: 0.6, starOpacity: 0.8, ringOpacity: 0.5, ringSpin: 120, aurora: false },
   warping: { bgOpacity: 0.2, starOpacity: 0.3, ringOpacity: 0, ringSpin: 0.8, aurora: false, ringScale: 3 },
   playing: { bgOpacity: 0.2, starOpacity: 0.4, ringOpacity: 0.25, ringSpin: 180, aurora: false },
   intermission_phase2: { bgOpacity: 0.3, starOpacity: 0.6, ringOpacity: 0.4, ringSpin: 30, aurora: false },
@@ -620,17 +624,29 @@ const INLINE_STYLES = `
 }
 .flip-intro-inner {
   position: relative; z-index: 1; max-width: 540px; width: 100%;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
-.flip-intro-mascot {
-  filter: drop-shadow(0 0 20px rgba(92,224,184,0.4));
-  animation: flip-intro-mascot-glow 3s ease-in-out infinite;
+/* Legibility scrim — a soft radial vignette centered on the content
+   column. Darkens where the headline/CTA sit so the cosmic ring + stars
+   stay ambient depth behind the words, never streaks across them. */
+.flip-intro-scrim {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 82% 62% at 50% 46%, rgba(7,5,16,0.82) 0%, rgba(7,5,16,0.5) 46%, transparent 78%);
 }
-@keyframes flip-intro-mascot-glow {
-  0%, 100% { filter: drop-shadow(0 0 20px rgba(92,224,184,0.4)); }
-  50% { filter: drop-shadow(0 0 40px rgba(92,224,184,0.7)); }
+/* Kronos — the host. Present (132px), gold-mint halo breathing on FILTER
+   so he feels alive; the drop-shadow bloom lifts him off the cosmos. */
+.flip-intro-host {
+  position: relative; z-index: 1; line-height: 0;
+  margin-bottom: 2px;
+  filter: drop-shadow(0 6px 20px rgba(92,224,184,0.35));
+  animation: flip-host-glow 3.6s ease-in-out infinite;
 }
-.flip-intro-mascot-svg { display: block; }
+@keyframes flip-host-glow {
+  0%, 100% { filter: drop-shadow(0 6px 20px rgba(92,224,184,0.32)); }
+  50% { filter: drop-shadow(0 6px 30px rgba(245,197,24,0.42)); }
+}
+.flip-intro-host--static { animation: none; filter: drop-shadow(0 6px 24px rgba(92,224,184,0.4)); }
 .flip-intro-title {
   font-family: var(--display); font-weight: 900; font-size: 56px;
   line-height: 0.95; letter-spacing: -0.02em;
@@ -642,41 +658,52 @@ const INLINE_STYLES = `
   color: transparent !important;
 }
 @media (min-width: 768px) { .flip-intro-title { font-size: 112px; } }
-.flip-intro-sub {
-  font-family: var(--display); font-weight: 500; font-size: 16px;
-  color: rgba(92,224,184,0.7); margin: 0;
-  letter-spacing: 0.08em;
+/* One-line hook — clear enough for a stranger, Kronos-voiced. */
+.flip-intro-hook {
+  font-family: var(--display); font-weight: 600; font-size: 16px;
+  color: rgba(255,255,255,0.82); margin: 2px 0 14px;
+  letter-spacing: 0.01em; line-height: 1.35; max-width: 340px;
 }
-@media (min-width: 768px) { .flip-intro-sub { font-size: 20px; } }
-.flip-intro-stats {
-  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  justify-content: center;
-  font-family: var(--mono); font-weight: 700; font-size: 11px;
-  letter-spacing: 0.18em; color: rgba(92,224,184,0.6);
-  margin: 8px 0 24px;
-}
-.flip-intro-stats-dot { opacity: 0.5; }
+@media (min-width: 768px) { .flip-intro-hook { font-size: 19px; max-width: 420px; } }
+/* Hero CTA — the single most tappable object in the app. Layered depth
+   (mint gradient + inner top-highlight + inner-bottom shade + outer bloom),
+   NOT a flat fill. The idle "tap me" pulse and press glow-surge both run
+   on OPACITY of the .flip-tap-in-bloom layer (compositor-only); the press
+   scale is owned by Framer whileTap. Gold accent lives in the bloom tint. */
 .flip-tap-in {
   position: relative;
   width: 100%; max-width: 360px; height: 72px;
-  border: none; cursor: pointer;
-  background: linear-gradient(180deg, #5CE0B8 0%, #4FCDA5 100%);
-  color: #000;
+  border: none; cursor: pointer; border-radius: 16px;
+  background: linear-gradient(180deg, #6FE9C6 0%, #4FCDA5 54%, #38BC91 100%);
+  color: #04120D;
   font-family: var(--display); font-weight: 900; font-size: 22px;
   letter-spacing: 0.22em;
-  box-shadow: 0 0 30px rgba(92,224,184,0.6);
-  animation: flip-tapin-pulse 2.5s ease-in-out infinite;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -3px 8px rgba(0,0,0,0.16),
+    0 10px 26px -8px rgba(92,224,184,0.55);
   overflow: hidden;
-  transition: transform 120ms ease, box-shadow 250ms ease;
+  transition: transform 140ms var(--ease-out, ease), box-shadow 220ms var(--ease-out, ease);
 }
-.flip-tap-in--cosmic:hover { transform: scale(1.03); box-shadow: 0 0 50px rgba(92,224,184,0.8); }
-.flip-tap-in:disabled { opacity: 0.5; cursor: not-allowed; animation: none; box-shadow: none; }
-.flip-tap-in--idle { animation: flip-tapin-pulse 1.2s ease-in-out infinite; }
-@keyframes flip-tapin-pulse {
-  0%, 100% { box-shadow: 0 0 30px rgba(92,224,184,0.6); }
-  50% { box-shadow: 0 0 45px rgba(92,224,184,0.85); }
+.flip-tap-in-label { position: relative; z-index: 2; }
+/* Bloom — a mint→gold halo behind the label; pulses at idle, surges on
+   press. Radial so it reads as light coming off the button, not a border. */
+.flip-tap-in-bloom {
+  position: absolute; inset: -40% -10%; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(92,224,184,0.55) 0%, rgba(245,197,24,0.20) 45%, transparent 72%);
+  opacity: 0.35;
+  animation: flip-tapin-bloom 2.6s ease-in-out infinite;
 }
-.flip-tap-in-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+@keyframes flip-tapin-bloom {
+  0%, 100% { opacity: 0.28; }
+  50% { opacity: 0.7; }
+}
+.flip-tap-in--cosmic:hover { transform: translateY(-1px); }
+.flip-tap-in:active .flip-tap-in-bloom { opacity: 1; animation: none; }
+.flip-tap-in:disabled { opacity: 0.5; cursor: not-allowed; }
+.flip-tap-in:disabled .flip-tap-in-bloom { animation: none; opacity: 0.15; }
+.flip-tap-in--idle .flip-tap-in-bloom { animation: flip-tapin-bloom 1.3s ease-in-out infinite; }
+.flip-tap-in-particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
 .flip-tap-in-particles span {
   position: absolute; bottom: -4px;
   width: 4px; height: 4px; border-radius: 50%;
@@ -691,15 +718,49 @@ const INLINE_STYLES = `
   20% { opacity: 0.6; }
   100% { transform: translateY(-72px); opacity: 0; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .flip-tap-in, .flip-tap-in--idle { animation: none; }
-  .flip-tap-in-particles { display: none; }
-  .flip-intro-mascot { animation: none; }
+/* Retained for the result-screen CTA (.flip-rev-cta-btn); the TAP-IN hero
+   now pulses via the bloom layer's opacity instead. */
+@keyframes flip-tapin-pulse {
+  0%, 100% { box-shadow: 0 0 30px rgba(92,224,184,0.6); }
+  50% { box-shadow: 0 0 45px rgba(92,224,184,0.85); }
 }
-.flip-intro-fine {
-  font-family: var(--mono); font-size: 11px;
-  color: rgba(255,255,255,0.4); letter-spacing: 0.08em;
-  margin: 8px 0 0;
+@media (prefers-reduced-motion: reduce) {
+  /* Designed static composition: no entrance motion, no idle pulse, but a
+     complete, intentional look — the bloom freezes at a soft glow, the
+     host halo stays lit. */
+  .flip-tap-in-bloom, .flip-tap-in--idle .flip-tap-in-bloom { animation: none; opacity: 0.4; }
+  .flip-tap-in-particles { display: none; }
+  .flip-intro-host { animation: none; }
+}
+/* The FREE flex — a PRIMARY selling point for cold traffic (no friction,
+   no risk). Mint pill, readable, confident — never fine print. */
+.flip-intro-free {
+  display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0 0; padding: 9px 16px;
+  border: 1px solid rgba(92,224,184,0.35);
+  background: rgba(92,224,184,0.08);
+  border-radius: 999px;
+  font-family: var(--mono); font-weight: 700; font-size: 12px;
+  letter-spacing: 0.1em; color: var(--mint);
+}
+.flip-intro-free-dot { color: rgba(92,224,184,0.5); }
+.flip-intro-confidence {
+  font-family: var(--display); font-weight: 500; font-size: 13px;
+  color: rgba(255,255,255,0.55); letter-spacing: 0.01em;
+  margin: 12px 0 0;
+}
+/* Short-viewport safety (iPhone SE / small Androids ≤667px tall): compress
+   Kronos + headline + gaps so the whole assembled composition fits above
+   the fold with the DAY chip clearing the host. Font-independent so it
+   holds regardless of Bebas vs fallback metrics. */
+@media (max-height: 700px) {
+  .flip-intro-host img { width: 104px !important; height: 104px !important; }
+  .flip-intro-inner { gap: 7px; }
+  .flip-intro-title { font-size: 44px; }
+  .flip-intro-hook { font-size: 15px; margin-bottom: 8px; }
+  .flip-intro-free { margin-top: 10px; padding: 7px 14px; }
+  .flip-intro-confidence { margin-top: 8px; }
 }
 .flip-intro-played {
   font-family: var(--mono); font-size: 11px; color: var(--mint);

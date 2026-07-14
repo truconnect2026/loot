@@ -1,12 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
+import FlipCoyote from "@/components/shared/FlipCoyote";
 
 const HEADLINE = "FLIP OR SKIP";
 
-
+/**
+ * The TAP-IN landing — the money screen. This is where cold paid traffic
+ * from Instagram lands, so it is engineered to convert a stranger in under
+ * ten seconds: Kronos (the host) makes it feel alive and branded, the
+ * cosmic starfield stays as premium ambient depth behind a legibility
+ * scrim (text is never crossed by a streak line), and the "free · no
+ * signup" line is presented as a PRIMARY selling point, not fine print.
+ *
+ * Hierarchy (reserved zones, top→bottom): DAY badge · Kronos host · hero
+ * headline · one-line hook · hero CTA · the FREE flex · first-timer
+ * confidence line.
+ *
+ * Motion: the screen ASSEMBLES cinematically — Kronos arrives, the
+ * headline resolves per-letter, the CTA lands with spring weight, the
+ * reassurance fades in — a staggered sequence on --ease-out. Under
+ * reduced motion (David's device) `useReducedMotion` collapses every
+ * entrance to its final state: a complete, intentional static composition,
+ * not a paused frame. Compositor-only throughout (opacity/transform/filter).
+ */
 export default function IntroScreen({ puzzleNumber, onStart, ready = true, warping = false, replayCount = 0, konamiArmed = false, konamiHint = false }) {
+  const reduced = useReducedMotion();
   const [firstTime, setFirstTime] = useState(false);
   const [playedToday, setPlayedToday] = useState(null); // { score: N } or null
   const [showIdle, setShowIdle] = useState(false);
@@ -31,18 +51,44 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
 
   const headlineChars = HEADLINE.split("");
 
+  // One entrance helper — under reduced motion every element renders at its
+  // final state instantly (a designed static composition); otherwise it
+  // fades/rises on the house decelerate curve at a staggered delay.
+  const enter = (delay, y = 16) =>
+    reduced
+      ? { initial: false, animate: { opacity: 1, y: 0 } }
+      : { initial: { opacity: 0, y }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] } };
+
   return (
     <div className={`flip-intro ${warping ? "flip-intro--warping" : ""}`}>
+      {/* Legibility scrim — a radial vignette that darkens the central
+          content column so the cosmic ring/starfield read as ambient depth
+          BEHIND the text, never streaks across it. Sits above the fixed
+          cosmic backdrop (z0), below the content (z1). */}
+      <div className="flip-intro-scrim" aria-hidden="true" />
+
       <span className="flip-intro-day flip-day-chip">DAY {puzzleNumber}</span>
 
       <div className="flip-intro-inner">
+        {/* Kronos — the host. Present, not a corner glyph; a soft halo
+            breathes (filter) so he feels alive. "hyped" = let's-go energy
+            the moment a stranger opens the screen. */}
+        <motion.div
+          className={`flip-intro-host ${reduced ? "flip-intro-host--static" : ""}`}
+          initial={reduced ? false : { opacity: 0, scale: 0.8, y: 18 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={reduced ? undefined : { delay: 0.1, type: "spring", stiffness: 200, damping: 16 }}
+        >
+          <FlipCoyote mood="hyped" size={132} />
+        </motion.div>
+
         <h1 className="flip-intro-title flip-intro-title--gradient" aria-label={HEADLINE}>
           {headlineChars.map((c, i) => (
             <motion.span
               key={`${c}-${i}`}
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduced ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.06, duration: 0.4 }}
+              transition={reduced ? undefined : { delay: 0.28 + i * 0.05, duration: 0.4 }}
               style={{ display: "inline-block", whiteSpace: "pre" }}
             >
               {c}
@@ -50,53 +96,42 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           ))}
         </h1>
 
-        <motion.p
-          className="flip-intro-sub"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.1, duration: 0.4 }}
-        >
-          Daily thrift game. 10 items. Trust your gut.
+        <motion.p className="flip-intro-hook" {...enter(0.72)}>
+          ten thrift finds. one call each. trust your gut.
         </motion.p>
 
-        {/* Stats row used to duplicate "DAY {N}" alongside the
-            top-pinned chip; the subhead already reads "Trust your
-            gut" so DAY + the gut-trust line both got dropped here
-            to cut visual repetition. */}
-        <motion.div
-          className="flip-intro-stats"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.5 }}
-        >
-          <span>DAILY DROP</span>
-          <span className="flip-intro-stats-dot" aria-hidden="true">·</span>
-          <span>10 ITEMS</span>
-        </motion.div>
-
+        {/* Hero CTA — the single most tappable object in the app. Layered
+            depth (gradient + inner highlight + bloom), lands with spring
+            weight, idle pulse says "tap me", press = scale + glow surge. */}
         <motion.button
           type="button"
           onClick={onStart}
           disabled={!ready}
           className={`flip-tap-in flip-tap-in--cosmic ${showIdle && ready ? "flip-tap-in--idle" : ""}`}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.6, duration: 0.5 }}
-          whileTap={{ scale: 0.98 }}
+          initial={reduced ? false : { opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={reduced ? undefined : { delay: 0.9, type: "spring", stiffness: 210, damping: 17 }}
+          whileTap={reduced ? undefined : { scale: 0.97 }}
         >
           <span className="flip-tap-in-particles" aria-hidden="true">
             <span /><span /><span />
           </span>
-          {ready ? (playedToday ? "PLAY AGAIN →" : "TAP IN →") : "LOADING…"}
+          <span className="flip-tap-in-label">{ready ? (playedToday ? "PLAY AGAIN →" : "TAP IN →") : "LOADING…"}</span>
+          <span className="flip-tap-in-bloom" aria-hidden="true" />
         </motion.button>
 
-        <motion.p
-          className="flip-intro-fine"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.9, duration: 0.4 }}
-        >
-          free. no signup. one round per day.
+        {/* The FREE flex — a PRIMARY selling point for cold traffic (no
+            friction, no risk), presented confidently, never as fine print. */}
+        <motion.div className="flip-intro-free" {...enter(1.1)}>
+          <span className="flip-intro-free-item">free</span>
+          <span className="flip-intro-free-dot" aria-hidden="true">·</span>
+          <span className="flip-intro-free-item">no signup</span>
+          <span className="flip-intro-free-dot" aria-hidden="true">·</span>
+          <span className="flip-intro-free-item">one round a day</span>
+        </motion.div>
+
+        <motion.p className="flip-intro-confidence" {...enter(1.3)}>
+          {playedToday ? "back for more? go with your gut." : "first time? trust the gut. you got this."}
         </motion.p>
 
         {playedToday && (
@@ -125,14 +160,14 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           <div className="flip-intro-konami-hint" aria-hidden="true">↑↑↓↓...</div>
         )}
 
-        {firstTime && !showIdle && (
+        {firstTime && !showIdle && !playedToday && (
           <motion.div
             className="flip-intro-tip"
-            initial={{ opacity: 0, y: 8 }}
+            initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 2.2 }}
+            transition={reduced ? undefined : { delay: 2.2 }}
           >
-            first time? trust your gut. you got this.
+            free forever. no card, no catch.
           </motion.div>
         )}
 
