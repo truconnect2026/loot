@@ -404,7 +404,7 @@ export default function SourcingPage() {
                 text="those dots below? sale-day intel. i track it — you cash it."
                 play={playIntro}
                 mood="smirk"
-                glyphSize={30}
+                glyphSize={36}
                 startDelay={450}
                 maxWidth={300}
               />

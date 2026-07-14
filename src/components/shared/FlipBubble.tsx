@@ -18,7 +18,7 @@ export function FlipBubble({
   text,
   play = false,
   mood = "smirk",
-  glyphSize = 30,
+  glyphSize = 36,
   startDelay = 0,
   fontSize = 13,
   maxWidth,
@@ -73,7 +73,10 @@ export function FlipBubble({
           the face in the upper third, so seating it flush with the row top
           lands the face on the bubble's first text line. (The old face-
           centered sprite used marginTop:4; that now floats the face high.) */}
-      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: 0 }}>
+      {/* marginTop:-2 seats the 36px head+shoulders portrait's face on the
+          bubble's first text line (the taller glyph vs the old 30px needs a
+          2px lift; verified via a marginTop sweep). */}
+      <span className="fb-glyph" style={{ flexShrink: 0, marginTop: -2 }}>
         <FlipCoyote mood={mood} size={glyphSize} />
       </span>
       <div
