@@ -54,6 +54,7 @@ import ROICalculator from "./components/ROICalculator.jsx";
 import PricingSection from "./components/PricingSection.jsx";
 import FAQSection from "./components/FAQSection.jsx";
 import FounderBeat from "./components/FounderBeat.jsx";
+import RealWins from "./components/RealWins.jsx";
 import CloserSection from "./components/CloserSection.jsx";
 import LegitStrip from "./components/LegitStrip.jsx";
 import MiniCtaBar from "./components/MiniCtaBar.jsx";
@@ -207,9 +208,11 @@ export default function ProPage() {
         <hr className="pro-section-divider" />
         <FAQSection />
         <hr className="pro-section-divider" />
-        {/* The human, AFTER pricing so it never delays the buy: meet the
-            maker right before the final ask. */}
+        {/* Human + proof cluster, AFTER pricing so it never delays the buy:
+            meet the maker, then see the shape of a win, then the final ask. */}
         <FounderBeat />
+        <hr className="pro-section-divider" />
+        <RealWins />
         <hr className="pro-section-divider" />
         <CloserSection onCTA={handleCTA} />
         {/* Trailing band + footer share one end-aligned snap box so the
