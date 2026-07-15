@@ -178,10 +178,17 @@ export function Reveal({ delay = 0, children, style = {}, className = "" }) {
       className={className}
       style={{
         opacity: shown ? 1 : 0,
-        transform: shown ? "translateY(0)" : "translateY(12px)",
+        // House system: one decelerate-in curve + one cadence for EVERY
+        // section entrance (hero included), so scrolling reads as a single
+        // continuous, confident motion. 16px rise (was 12) so the lift is
+        // felt as intentional craft, not a plain fade; --motion-medium keeps
+        // it crisp — fast enough to never delay a claim. Reduced-motion:
+        // `none` here + the global clamp = every section present instantly,
+        // correctly composed, zero entrance motion (a designed still state).
+        transform: shown ? "translateY(0)" : "translateY(16px)",
         transition: reduced
           ? "none"
-          : `opacity 450ms cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 450ms cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+          : `opacity var(--motion-medium) var(--ease-out) ${delay}s, transform var(--motion-medium) var(--ease-out) ${delay}s`,
         ...style,
       }}
     >
