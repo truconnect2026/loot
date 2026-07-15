@@ -206,6 +206,19 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* COLD-LOAD NAV FIX: the tab bar is position:fixed;bottom (correct, and
+     content-independent). But per-tab SKELETONS carry no min-height, so during
+     the skeleton window the document can be SHORTER than the viewport — and on
+     iOS WKWebView a fixed;bottom element anchors to the short document, not the
+     window, painting the nav mid-screen until content grows past the viewport
+     and it snaps to the true bottom (the reported IG-webview defect). Forcing
+     the document to always be >= the viewport removes that short-document
+     window on every route + state (skeleton/empty/error/loaded), so the fixed
+     nav has a full-height reference from the first frame. Layout-neutral: the
+     nav box + all clearance are unchanged (nav is out of flow). 100vh fallback
+     for engines without dvh. */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Tabular figures everywhere — numbers must not shift width during AnimNum
