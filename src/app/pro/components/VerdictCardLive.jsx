@@ -280,6 +280,10 @@ export default function VerdictCardLive() {
             fontSize: 15,
             fontWeight: 600,
             letterSpacing: "0.06em",
+            // Explicit: Manrope's normal line-height is 1.366, which put
+            // the header at ~44px and broke the 44px camera clearance
+            // budget. 1.2 locks the header at 12+18+10+1border = 41px.
+            lineHeight: 1.2,
             color: C.mint,
           }}
         >
@@ -289,14 +293,17 @@ export default function VerdictCardLive() {
 
       {/* Tab-bar hint — the app really has one (src/components/nav/
           TabBar.tsx: Home / Sourcing / SCAN / Tools / Me, mint top
-          hairline, blurred dark bar). Simplified, non-interactive. */}
+          hairline, blurred dark bar). Simplified, non-interactive.
+          Sits ABOVE the home-indicator chin (bottom: 14), not on the
+          screen edge — the sheet docks onto this bar's top, so nothing
+          can ever paint under it or clip at the frame. */}
       <div
         aria-hidden="true"
         style={{
           position: "absolute",
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: 14,
           zIndex: 3,
           height: 30,
           display: "grid",
@@ -326,6 +333,27 @@ export default function VerdictCardLive() {
         ))}
       </div>
 
+      {/* Home-indicator chin — the 14px band that CLOSES the device.
+          Without it the composition ended at raw clipped content and the
+          frame's 12px bezel read as an open tube. Gesture pill floating
+          on the screen's own black, exactly like the real hardware. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 14,
+          zIndex: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ width: 64, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.28)" }} />
+      </div>
+
       {/* Camera layer — ALWAYS visible, every phase. During the scan
           phases the composition sits centered and large; when the sheet
           rises the whole composition steps back (transform-only: up +
@@ -343,7 +371,11 @@ export default function VerdictCardLive() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "15% 11% 12%",
+          // Fixed px verticals, NOT width-%: clears the 41px header and
+          // the 44px nav+chin at every frame size. Width-derived vertical
+          // padding was the root cause of the composition drifting under
+          // the chrome on short webviews.
+          padding: "44px 11% 47px",
           boxSizing: "border-box",
         }}
       >
@@ -355,7 +387,12 @@ export default function VerdictCardLive() {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-6%) scale(0.38)",
+            // 0.30 / -4% (was 0.38 / -6%): with real font metrics (mono
+            // line-heights pinned at 1.3, header locked to 41px) the
+            // scaled reticle box's TOP lands 7-10px below the header at
+            // every frame size and its BOTTOM clears the held sheet's
+            // top edge by ≥8px even at the 246×456 worst-case screen.
+            transform: viewfinderShown ? "translateY(0) scale(1)" : "translateY(-4%) scale(0.30)",
             transformOrigin: "center top",
             transition: reduced ? "none" : `transform 420ms ${EASE}`,
             willChange: "transform",
@@ -418,9 +455,13 @@ export default function VerdictCardLive() {
 
         <div
           style={{
-            marginTop: "8%",
+            marginTop: 14,
             fontFamily: "var(--font-mono), monospace",
             fontSize: 11,
+            // Space Mono's normal line-height is 1.481 — every mono line
+            // in this card pins an explicit value so the composition
+            // budget is deterministic, not font-metric roulette.
+            lineHeight: 1.3,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
             color: "rgba(92,224,184,0.55)",
@@ -471,18 +512,27 @@ export default function VerdictCardLive() {
           left: 0,
           right: 0,
           top: "auto",
-          bottom: 0,
-          // 72% (was 87%): the camera zone above the held sheet keeps a
-          // composed ≥25%-of-screen presence with the item visible — the
-          // held verdict is the frame people screenshot.
-          maxHeight: "72%",
+          // Docked exactly on the tab bar's top edge (30px bar + 14px
+          // chin) — the sheet can no longer run under the nav or past
+          // the frame; its content-hugging height plus this dock IS the
+          // clean seam between the two stacked zones.
+          bottom: 44,
+          // Content-hugging with a hard reserve: at least 84px of camera
+          // band (41px header + composed item strip) survives above the
+          // held sheet at every frame size. The old fixed 72% cap was
+          // SMALLER than the sheet's own content on short webviews, so
+          // the excess spilled out the bottom and clipped mid-line.
+          maxHeight: "calc(100% - 128px)",
           opacity: verdictShown ? 1 : 0,
           transform: verdictShown ? "translateY(0)" : "translateY(14px)",
           transition: reduced ? "none" : `opacity 400ms ${EASE}, transform 400ms ${EASE}`,
           willChange: "opacity, transform",
           display: "flex",
           flexDirection: "column",
-          padding: "7% 9% 12%",
+          // Fixed vertical padding (horizontal stays width-%): the old
+          // 7%/12% width-derived pair grew with frame WIDTH while the
+          // sheet's budget is HEIGHT — the mismatch was the overflow.
+          padding: "12px 9% 10px",
           boxSizing: "border-box",
           // Sheet skin per src/components/shared/BottomSheet.tsx: the
           // real result presents as a bottom sheet.
@@ -511,9 +561,6 @@ export default function VerdictCardLive() {
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, flexShrink: 0 }}>
           <ExampleTag label="EXAMPLE VERDICT" />
         </div>
-        {/* 0.5 vs 1: bias the result block toward the top of the sheet —
-            equal spacers left a dead band above the title on tall screens */}
-        <div style={{ flex: "0.5 1 auto" }} />
 
         <Reveal shown={verdictShown} delayMs={0} reduced={reduced}>
           <h3
@@ -535,8 +582,9 @@ export default function VerdictCardLive() {
             style={{
               fontFamily: "var(--font-mono), monospace",
               fontSize: 11,
+              lineHeight: 1.3,
               color: "rgba(255,255,255,0.5)",
-              margin: "0 0 14px",
+              margin: "0 0 6px",
             }}
           >
             {/* en-dash for numeric ranges is correct and permanent; the
@@ -551,17 +599,24 @@ export default function VerdictCardLive() {
         <Reveal shown={verdictShown} delayMs={120} mode="pop" reduced={reduced}>
           <div
             style={{
-              display: "inline-flex",
-              alignSelf: "flex-start",
+              // Block-level flex, NOT inline-flex: as an inline inside its
+              // plain block wrapper the row inherited a 24px strut (16px
+              // Manrope × preflight lh 1.5) that silently added 4.3px —
+              // the last un-pinned line box in the sheet's height budget.
+              display: "flex",
+              width: "fit-content",
               background: C.mint,
               color: "#070510",
               fontFamily: "var(--font-mono), monospace",
               fontWeight: 700,
               fontSize: 10,
+              lineHeight: 1,
               letterSpacing: "0.06em",
               padding: "5px 12px",
               borderRadius: 999,
-              marginBottom: "9%",
+              // Even fixed rhythm: the 9%/8%/7% width-derived margins
+              // hoarded ~65px up top and starved the bottom rows.
+              marginBottom: 8,
             }}
           >
             CONDITION: EXCELLENT
@@ -569,11 +624,12 @@ export default function VerdictCardLive() {
         </Reveal>
 
         <Reveal shown={verdictShown} delayMs={200} reduced={reduced}>
-          <div style={{ textAlign: "center", marginBottom: "8%" }}>
+          <div style={{ textAlign: "center", marginBottom: 8 }}>
             <div
               style={{
                 fontFamily: "var(--font-mono), monospace",
                 fontSize: 10,
+                lineHeight: 1,
                 letterSpacing: "0.16em",
                 color: "rgba(255,255,255,0.4)",
                 marginBottom: 4,
@@ -596,13 +652,14 @@ export default function VerdictCardLive() {
           </div>
         </Reveal>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: "7%" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 6 }}>
           {comps.map((line, i) => (
             <Reveal key={line} shown={verdictShown} delayMs={880 + i * 60} reduced={reduced}>
               <div
                 style={{
                   fontFamily: "var(--font-mono), monospace",
                   fontSize: 12,
+                  lineHeight: 1.3,
                   color: "rgba(255,255,255,0.55)",
                   textAlign: "center",
                 }}
@@ -623,6 +680,7 @@ export default function VerdictCardLive() {
               color: C.mint,
               fontFamily: "var(--font-mono), monospace",
               fontSize: 13,
+              lineHeight: 1,
               fontWeight: 700,
             }}
           >
@@ -639,6 +697,9 @@ export default function VerdictCardLive() {
               textAlign: "center",
               fontFamily: "var(--font-mono), monospace",
               fontSize: 9,
+              // Wraps to two lines on narrow frames — 1.3 keeps the
+              // two-line block inside the sheet's proven budget.
+              lineHeight: 1.3,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               color: "rgba(92,224,184,0.5)",
@@ -649,16 +710,15 @@ export default function VerdictCardLive() {
           </div>
         </Reveal>
 
-        <div style={{ flex: "1 1 auto" }} />
-
         <div
           style={{
             textAlign: "center",
             fontFamily: "var(--font-mono), monospace",
             fontSize: 10,
+            lineHeight: 1,
             letterSpacing: "0.14em",
             color: C.mint,
-            paddingTop: 16,
+            paddingTop: 6,
           }}
         >
           loot.works

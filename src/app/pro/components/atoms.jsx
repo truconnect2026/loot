@@ -141,11 +141,33 @@ export function SectionShell({ children, maxWidth = 640, style = {} }) {
   );
 }
 
-/* Section eyebrow — mint divider line + mono label. */
+/* Section eyebrow — mint divider line + mono label. The dash DRAWS in
+   left-to-right on the section's first entry (scaleX from a left origin —
+   transform only, its 40×2 layout box never changes, so no reflow and no
+   effect on the label or snap geometry). One mechanism + one house timing
+   for every header; the 100ms delay lets the parent FadeUp's rise start
+   first so the draw lands as its own small arrival beat. useInView fires
+   once and never re-fires, matching Reveal — no blink on snap re-entry.
+   Reduced motion: `none` here + the global clamp = dash present fully
+   drawn, instantly, at its final state. */
 export function Eyebrow({ text, color = C.mint }) {
+  const [ref, inView] = useInView();
+  const reduced = usePrefersReducedMotion();
+  const drawn = reduced || inView;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
-      <div style={{ width: 40, height: 2, background: color, borderRadius: 1, flexShrink: 0 }} />
+    <div ref={ref} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28 }}>
+      <div
+        style={{
+          width: 40,
+          height: 2,
+          background: color,
+          borderRadius: 1,
+          flexShrink: 0,
+          transform: drawn ? "scaleX(1)" : "scaleX(0)",
+          transformOrigin: "left center",
+          transition: reduced ? "none" : "transform var(--motion-medium) var(--ease-out) 100ms",
+        }}
+      />
       <span
         style={{
           fontFamily: "var(--font-mono), monospace",

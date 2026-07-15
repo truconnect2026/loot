@@ -58,6 +58,7 @@ import RealWins from "./components/RealWins.jsx";
 import CloserSection from "./components/CloserSection.jsx";
 import LegitStrip from "./components/LegitStrip.jsx";
 import MiniCtaBar from "./components/MiniCtaBar.jsx";
+import ScrollProgress from "./components/ScrollProgress.jsx";
 import Footer from "./components/Footer.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
 import Toast from "./components/Toast.jsx";
@@ -226,6 +227,7 @@ export default function ProPage() {
       </main>
       {/* Fixed to the viewport, sibling of the scroller — never a snap child. */}
       <MiniCtaBar />
+      <ScrollProgress />
       <CookieBanner />
       <Toast message={toast.msg} visible={toast.vis} />
     </div>

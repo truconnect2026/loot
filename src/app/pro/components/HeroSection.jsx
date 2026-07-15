@@ -21,7 +21,18 @@ const HERO_STYLES = `
 @media (min-width: 1024px) {
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
-.pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; }
+/* One centered axis: Kronos anchor, eyebrow, headline, and offer all
+   compose on the same centerline so the header reads as one designed
+   opening statement instead of three stranded elements. The snap-align
+   and scroll-margin are untouched — text-align cannot move the box. */
+.pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; text-align: center; }
+/* Kronos halo breath — compositor-only (opacity+transform). The 0%/100%
+   frame IS the designed still: under reduced motion the global clamp in
+   pro.module.css settles it exactly here, a fixed soft mint aura. */
+@keyframes heroKronosHalo {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.8;  transform: scale(1.07); }
+}
 /* Press acknowledgment is now owned SOLELY by the CTAButton atom (unified
    0.97 scale + brightness dip on house timing, identical across every CLAIM).
    The old .hero-cta-lockup !important override that forced 0.97 here is
@@ -55,7 +66,12 @@ const HERO_STYLES = `
     max-width: none;
     width: calc(100% + 32px);
     margin: 16px -16px 0;
-    padding: 16px 0;
+    /* 8/24 (was 16/16): with the 16px top margin the phone had 32px of
+       air above and 16 below — it sat low. Redistributing INSIDE the
+       same 32px padding total keeps the element's height, box position,
+       and snap-align:center rest byte-identical while landing the frame
+       at 24px above / 24px below — centered in its envelope. */
+    padding: 8px 0 24px;
   }
 }
 @media (min-width: 1024px) {
@@ -166,23 +182,59 @@ export default function HeroSection() {
 
       <div className="pro-hero-grid">
         <div className="pro-hero-text">
-      {/* Phase 3.1: Kronos greets — the ad's face, so a stranger who tapped
-          the Kronos ad lands on the same face and knows they're in the right
-          place. Transparent PNG, no box; the halo glow is gated static under
-          the global reduced-motion rule. */}
+      {/* Kronos as the centerpiece — the ad's face, centered and sized up
+          so he reads as the brand greeting, not a corner sticker. The
+          breathing halo is a sibling OUTSIDE the drop-shadow filter (so
+          the filter doesn't smear the gradient) and pulses on its own
+          slower cadence than the float — two quiet, offset rhythms read
+          as life, not looping. Reduced motion: float rests at its 0%
+          pose, halo rests at its 0.45 frame — a composed, glowing still. */}
       <FadeUp delay={0.05}>
-        <div
-          className="pro-kronos-idle"
-          style={{ marginBottom: 10, width: "fit-content", filter: "drop-shadow(0 6px 22px rgba(92,224,184,0.32))" }}
-        >
-          <FlipCoyote mood="hyped" size={92} />
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ position: "relative", marginBottom: 4 }}>
+            <div
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                inset: "-24%",
+                borderRadius: "50%",
+                background:
+                  "radial-gradient(circle, rgba(92,224,184,0.3) 0%, rgba(92,224,184,0.1) 52%, transparent 74%)",
+                // BASE opacity = the animation's 0%/100% rest value. The
+                // global reduced-motion clamp (pro.module.css) shortens the
+                // animation but sets no fill-mode, so a stopped animation
+                // reverts to THIS base — which must equal the rest keyframe
+                // (same trick as kronosFloat's base transform:none matching
+                // its rest pose). Without it the halo would rest at the CSS
+                // default opacity:1, ~2× the intended glow, for reduce users.
+                opacity: 0.45,
+                animation: "heroKronosHalo 5.6s ease-in-out infinite",
+                willChange: "transform, opacity",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              className="pro-kronos-idle"
+              style={{ position: "relative", filter: "drop-shadow(0 6px 22px rgba(92,224,184,0.32))" }}
+            >
+              <FlipCoyote mood="hyped" size={118} />
+            </div>
+          </div>
         </div>
       </FadeUp>
-      <FadeUp delay={0.1}>
-        <Eyebrow text="— pro tier" color={C.mint} />
+      {/* Eyebrow rides the same centerline directly under Kronos — one unit. */}
+      <FadeUp delay={0.12}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Eyebrow text="— pro tier" color={C.mint} />
+        </div>
       </FadeUp>
 
-      <FadeUp delay={0.16}>
+      {/* The headline arrives line-by-line on the house Reveal (260ms,
+          --ease-out, 16px rise): setup lands, then the mint payoff lands
+          its own beat 100ms later — one confident arrival, not a show.
+          Reduced motion: Reveal renders both lines instantly at final
+          position (shown = reduced, transition none). */}
+      <FadeUp delay={0.18}>
         <h1
           className="pro-hero-headline"
           style={{
@@ -196,8 +248,11 @@ export default function HeroSection() {
         >
           KNOW WHAT IT&apos;S WORTH
         </h1>
+      </FadeUp>
+      <FadeUp delay={0.28}>
         {/* Line 2 — mint, ~75% size so it resolves as the payoff line rather
-            than competing with the headline above. */}
+            than competing with the headline above. Static soft mint glow
+            behind the glyphs for depth — no motion, no reduce branch needed. */}
         <p
           className="pro-hero-italic"
           style={{
@@ -207,6 +262,7 @@ export default function HeroSection() {
             letterSpacing: "-0.01em",
             fontStyle: "italic",
             color: C.mint,
+            textShadow: "0 0 28px rgba(92,224,184,0.35)",
             margin: "0.1em 0 40px",
           }}
         >
@@ -214,7 +270,7 @@ export default function HeroSection() {
         </p>
       </FadeUp>
 
-      <FadeUp delay={0.22}>
+      <FadeUp delay={0.36}>
         <p
           className="pro-hero-sub"
           style={{
@@ -223,7 +279,7 @@ export default function HeroSection() {
             lineHeight: 1.55,
             color: "rgba(255,255,255,0.65)",
             maxWidth: 620,
-            marginBottom: 48,
+            margin: "0 auto 48px",
           }}
         >
           point your phone at anything in the bins. real comps in seconds. you&apos;ve already got
@@ -231,33 +287,28 @@ export default function HeroSection() {
         </p>
       </FadeUp>
 
-      <FadeUp delay={0.28}>
-        {/* CTA lockup — button spans the card, price tucked directly
-            beneath, even padding all four sides. The old class name
-            ("hero-cta-row") is retired on purpose: a shared module rule
-            flipped that row to a column at ≤640px, turning its 24px row
-            gap into a vertical hole and leaving the fit-content button
-            floating top-left in an oversized outline. This stack IS the
-            designed unit at every width — no media override applies. */}
+      <FadeUp delay={0.44}>
+        {/* The offer as ONE composed unit on the centerline: right-sized
+            CLAIM (the atom's fit-to-label default — the old width:100%
+            override made it a slab in a detached outline box), price
+            seated directly beneath as the button's caption, the annual
+            plan elevated to a legible chip (it's the plan we want them
+            on), trust row closing the frame. Handler, price strings, and
+            plan logic untouched — recompose only. */}
         <div
           className="hero-cta-lockup"
           style={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "stretch",
+            alignItems: "center",
             gap: 10,
             width: "100%",
-            maxWidth: 340,
-            boxSizing: "border-box",
-            marginBottom: 20,
-            padding: 10,
-            border: "1px solid rgba(92,224,184,0.2)",
-            borderRadius: 14,
+            marginBottom: 18,
           }}
         >
           <CTAButton
             variant="primary"
-            style={{ width: "100%", alignSelf: "stretch" }}
+            style={{ padding: "16px 44px", fontSize: 20 }}
             onClick={() => {
               track("pro_hero_cta_clicked", { location: "hero", plan_target: "pricing" });
               // Reduced-motion: instant jump, not an animated full-page scroll
@@ -271,12 +322,12 @@ export default function HeroSection() {
 
           <div
             className="hero-price-stack"
-            style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4 }}
+            style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 5 }}
           >
             <span
               style={{
                 fontFamily: "var(--font-bebas), sans-serif",
-                fontSize: "clamp(36px,4vw,52px)",
+                fontSize: "clamp(30px,3.4vw,42px)",
                 color: C.gold,
                 lineHeight: 1,
               }}
@@ -287,73 +338,77 @@ export default function HeroSection() {
               style={{
                 fontFamily: "var(--font-mono), monospace",
                 fontSize: 14,
-                color: "rgba(255,255,255,0.45)",
+                color: "rgba(255,255,255,0.5)",
               }}
             >
               /mo
             </span>
           </div>
+
+          {/* Annual alternative — elevated from dimmest-text-on-the-page to
+              a quiet chip seated right under the monthly price. Same plan,
+              same strings; SAVE $80 keeps the mint emphasis. */}
+          <p
+            className="pro-hero-annual"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              flexWrap: "wrap",
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 13,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.7)",
+              margin: 0,
+              padding: "7px 14px",
+              border: "1px solid rgba(255,255,255,0.14)",
+              borderRadius: 999,
+            }}
+          >
+            <span>or</span>
+            <span style={{ fontSize: 15, color: "rgba(255,255,255,0.85)" }}>$99.99/yr</span>
+            <span
+              style={{
+                fontSize: 11,
+                padding: "2px 8px",
+                borderRadius: 4,
+                background: "rgba(92,224,184,0.15)",
+                border: `1px solid ${C.mint}`,
+                color: C.mint,
+                letterSpacing: "0.1em",
+              }}
+            >
+              SAVE $80
+            </span>
+          </p>
         </div>
 
-        {/* Money-back line — sits directly under the CLAIM PRO button since
-            it's the objection that matters most right where the click happens. */}
+        {/* Money-back line — both silent objections ("what if it sucks" +
+            "what if I'm trapped") answered right where the hero CLAIM
+            happens, centered on the same axis. */}
         <div
           className="pro-hero-trust"
           style={{
             display: "flex",
             gap: 24,
             flexWrap: "wrap",
+            justifyContent: "center",
             fontFamily: "var(--font-mono), monospace",
             fontSize: 12,
             color: "rgba(255,255,255,0.5)",
             alignItems: "center",
-            marginBottom: 20,
+            marginBottom: 0,
           }}
         >
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
           </span>
-          {/* 2.3: the guarantee rides beside cancel-anytime so BOTH silent
-              objections ("what if it sucks" + "what if I'm trapped") are
-              answered right where the hero CLAIM happens. */}
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(92,224,184,0.9)" }}>
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day money-back
           </span>
         </div>
-
-        {/* Annual alternative caption — SAVE $80 lives in a mint pill so it
-            reads as a chip-style affordance, not body text. */}
-        <p
-          className="pro-hero-annual"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
-            fontFamily: "var(--font-mono), monospace",
-            fontSize: 12,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.35)",
-            marginBottom: 32,
-          }}
-        >
-          <span>or</span>
-          <span style={{ fontSize: 14, color: "rgba(255,255,255,0.6)" }}>$99.99/yr</span>
-          <span
-            style={{
-              fontSize: 11,
-              padding: "2px 8px",
-              borderRadius: 4,
-              background: "rgba(92,224,184,0.15)",
-              border: `1px solid ${C.mint}`,
-              color: C.mint,
-              letterSpacing: "0.1em",
-            }}
-          >
-            SAVE $80
-          </span>
-        </p>
       </FadeUp>
         </div>
 
