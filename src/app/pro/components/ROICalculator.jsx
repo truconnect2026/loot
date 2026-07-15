@@ -114,7 +114,10 @@ function Pan({ counterRotate, curve, reduced, children }) {
         alignItems: "center",
         transformOrigin: "top center",
         transform: `rotate(${counterRotate}deg)`,
-        transition: reduced ? "none" : `transform 650ms ${curve}`,
+        // House weighted physics — one spring curve for beam + both pans so
+        // they move as ONE object (was per-buy one-off curves that desynced
+        // the pans). The overshoot/settle reads as real weight dropping.
+        transition: reduced ? "none" : `transform var(--motion-settle) var(--ease-spring)`,
         willChange: "transform",
       }}
     >
@@ -310,7 +313,10 @@ export default function ROICalculator() {
                   width: "min(100%, 340px)",
                   transform: `translateX(-50%) rotate(${tip}deg)`,
                   transformOrigin: "center top",
-                  transition: reduced ? "none" : `transform 650ms ${buy.curve}`,
+                  // Same weighted spring as the pans — the whole balance tips
+                  // as one object; the $200 side sinks, the $14.99 side rises,
+                  // and the price is watched winning the argument.
+                  transition: reduced ? "none" : `transform var(--motion-settle) var(--ease-spring)`,
                   willChange: "transform",
                 }}
               >

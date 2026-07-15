@@ -12,12 +12,12 @@ import {
   SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
-// NOTE: intentionally NOT using usePrefersReducedMotion here. Its synchronous
-// matchMedia init diverges SSR (false) vs client-first-render (true under
-// reduce), so gating rendered className/style on it causes a hydration
-// mismatch. The global `.pro-page-root *` reduced-motion rule in
-// pro.module.css already neutralizes every transition/animation under reduce,
-// so the toggle morph is instant for reduce users with zero hydration risk.
+// THE PRICE money moment is delivered by robust motion, NOT a literal count-up:
+// in this mandatory-snap page the price snaps to the top instantly, so a
+// count-up that resets to ~$0 and ticks back up reads as a glitch and fights
+// the product's CERTAINTY promise (a tested count-up did exactly this). Instead
+// the price LANDS via the house card reveal (Phase 2) and keeps its mint glow +
+// the annual/monthly toggle morph (Phase 4) — earned + certain, no reset.
 
 // Core product features — what Pro unlocks at either billing pace.
 // "Sale-day planner", not "Yard sale map": the shipped feature is the
