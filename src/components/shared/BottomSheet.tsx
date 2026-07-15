@@ -291,6 +291,11 @@ export default function BottomSheet({
           pointerEvents: open ? "auto" : "none",
           maxHeight: "85vh",
           overflowY: "auto",
+          // Same-class hardening as the global html/body fix: this fixed sheet
+          // is an independent scroller, so a pull past its top edge could chain
+          // to the browser's pull-to-refresh. `contain` stops the chain (no PWA
+          // reload) while keeping the sheet's own momentum + rubber-band.
+          overscrollBehavior: "contain",
           // The panel reaches the true screen bottom; this shared
           // padding lifts every sheet's flow content clear of the
           // iPhone home indicator (0px everywhere else). Sticky

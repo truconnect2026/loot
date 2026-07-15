@@ -185,6 +185,13 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
+  /* ROOT-CAUSE FIX: on the installed iOS PWA, a pull past the TOP edge of the
+     document scroll chained to the browser and triggered pull-to-refresh,
+     which RELOADED the PWA to the manifest start_url ("/") — dropping the
+     picker's tab + scroll back on Home. `contain` stops the top-edge chain
+     from reaching the browser (no reload) while KEEPING momentum + the native
+     rubber-band bounce inside the app. No intended pull-to-refresh exists. */
+  overscroll-behavior-y: contain;
 }
 
 html {
