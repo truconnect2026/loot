@@ -847,7 +847,12 @@ export default function SourcingPage() {
                         color 140ms ease;
           }
           .as-cta {
-            transition: background-color 160ms ease, box-shadow 160ms ease;
+            /* include transform so the inherited .cta-press scale(0.97) EASES
+               like its ADD STORE sibling instead of hard-snapping (the old
+               transition omitted transform and overrode it). Presentational
+               only — the button's handler is unchanged. */
+            transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                        background-color 160ms ease, box-shadow 160ms ease;
           }
           @media (prefers-reduced-motion: reduce) {
             .as-field, .as-chip, .as-cta { transition: none; }

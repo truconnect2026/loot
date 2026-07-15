@@ -261,7 +261,14 @@ export default function TabBar() {
      and the tap target is 52px in BOTH states. */
   min-height: 52px;
   padding: 9px 0 6px;
-  transition: color var(--tb-dur) var(--tb-ease);
+  transition: color var(--tb-dur) var(--tb-ease), transform var(--tb-dur) var(--tb-ease);
+}
+/* Press feedback (was missing) — a compositor-only scale on tap. transform
+   does NOT affect the 52px layout box, so the nav footprint / clearance
+   contract is untouched. Gated to no-preference so reduced-motion gets NO
+   scale (the immediate active-color/nav change signals the press instead). */
+@media (prefers-reduced-motion: no-preference) {
+  .tb-btn:active { transform: scale(0.96); }
 }
 /* Shrink = compositor-only: icon + label scale down on ONE duration and
    ONE easing. No layout properties animate, so it's a single glide. */
