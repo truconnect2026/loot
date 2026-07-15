@@ -7,6 +7,7 @@ import {
   CTAButton,
   Eyebrow,
   FadeUp,
+  GuaranteeBadge,
   SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
   SectionShell,
@@ -56,7 +57,9 @@ const featRow = {
   fontFamily: "var(--font-manrope), sans-serif",
   fontSize: 15,
   color: "rgba(255,255,255,0.72)",
-  padding: "5px 0",
+  // 4px (was 5): trims card height so the guarantee row below CLAIM stays
+  // fully unclipped in the short IG-webview fold (~680px).
+  padding: "4px 0",
   borderBottom: "1px solid rgba(255,255,255,0.06)",
   display: "flex",
   alignItems: "center",
@@ -169,7 +172,7 @@ export default function PricingSection({ onCTA }) {
 
               {/* BEST VALUE + save $80 — annual only, reserved height so the
                   toggle never shifts the card layout. */}
-              <div style={{ minHeight: 20, marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ minHeight: 20, marginBottom: 6, display: "flex", alignItems: "center", gap: 10 }}>
                 <span
                   style={{
                     fontFamily: "var(--font-mono), monospace",
@@ -235,7 +238,7 @@ export default function PricingSection({ onCTA }) {
                   fontSize: 12,
                   letterSpacing: "0.04em",
                   color: "rgba(255,255,255,0.5)",
-                  margin: "0 0 14px",
+                  margin: "0 0 10px",
                   minHeight: 16,
                 }}
               >
@@ -266,7 +269,7 @@ export default function PricingSection({ onCTA }) {
               </p>
 
               {/* CTA — unified CLAIM verb; selects the existing price path. */}
-              <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
                 <CTAButton
                   variant="primary"
                   onClick={() => {
@@ -276,6 +279,33 @@ export default function PricingSection({ onCTA }) {
                 >
                   {P.verb}
                 </CTAButton>
+              </div>
+
+              {/* Zero-risk frame — the risk reversal travels WITH the button:
+                  a skeptic can't tap CLAIM without seeing "and if I hate it,
+                  I get it all back for 60 days." Both objections ("what if it
+                  sucks" + "what if I'm trapped") dissolve in one glance. */}
+              <div
+                style={{
+                  marginTop: 10,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <GuaranteeBadge />
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono), monospace",
+                    fontSize: 11,
+                    letterSpacing: "0.05em",
+                    color: "rgba(255,255,255,0.5)",
+                  }}
+                >
+                  · cancel anytime
+                </span>
               </div>
             </div>
           </div>

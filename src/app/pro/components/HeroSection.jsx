@@ -309,6 +309,12 @@ export default function HeroSection() {
           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
             <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> cancel anytime
           </span>
+          {/* 2.3: the guarantee rides beside cancel-anytime so BOTH silent
+              objections ("what if it sucks" + "what if I'm trapped") are
+              answered right where the hero CLAIM happens. */}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(92,224,184,0.9)" }}>
+            <CheckIcon size={14} color="rgba(92,224,184,0.8)" /> 60-day money-back
+          </span>
         </div>
 
         {/* Annual alternative caption — SAVE $80 lives in a mint pill so it

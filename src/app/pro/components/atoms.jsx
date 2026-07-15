@@ -54,6 +54,51 @@ export function ExampleTag({ label = "EXAMPLE", style = {} }) {
   );
 }
 
+/* THE GUARANTEE BADGE — the 60-day money-back promise as a first-class,
+   confident element (a flex, not a footnote). Terminal-trust aesthetic:
+   mint shield-check + tabular mono. Surfaces the EXISTING Digistore policy
+   (60 days is the floor — never shorter); zero refund logic changes. Placed
+   at every decision point (hero trust strip, pricing CLAIM, closer CTA) so
+   no one reaches a CLAIM button without "and if I hate it, I get it all
+   back for 60 days." Static under reduced-motion (no animation of its own;
+   any entrance is the parent FadeUp, which the global reduce rule neutralizes). */
+export function GuaranteeBadge({ style = {} }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontFamily: "var(--font-mono), monospace",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.07em",
+        textTransform: "uppercase",
+        color: "#5CE0B8",
+        background: "rgba(92,224,184,0.08)",
+        border: "1px solid rgba(92,224,184,0.42)",
+        borderRadius: 999,
+        padding: "6px 14px",
+        lineHeight: 1,
+        whiteSpace: "nowrap",
+        ...style,
+      }}
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+        <path
+          d="M12 2.5l7 3v6c0 4.4-3 8.4-7 9.9-4-1.5-7-5.5-7-9.9v-6l7-3z"
+          fill="rgba(92,224,184,0.14)"
+          stroke="#5CE0B8"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path d="M8.4 12.1l2.3 2.3 4.9-5" stroke="#5CE0B8" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      60-day money-back guarantee
+    </span>
+  );
+}
+
 /* Animated multi-color background-clip gradient text (shimmer keyframe lives
    in pro.module.css). */
 export function ShimmerText({ children, style = {} }) {

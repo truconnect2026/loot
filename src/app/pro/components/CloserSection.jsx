@@ -6,6 +6,7 @@ import {
   CoinMark,
   CTAButton,
   FadeUp,
+  GuaranteeBadge,
   SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
@@ -137,6 +138,14 @@ export default function CloserSection({ onCTA }) {
           >
             CLAIM PRO NOW
           </CTAButton>
+        </div>
+      </FadeUp>
+
+      {/* Guarantee at the final decision point — the last thing before the
+          click is "you're covered for 60 days," not a bare price. */}
+      <FadeUp delay={0.14}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <GuaranteeBadge />
         </div>
       </FadeUp>
 

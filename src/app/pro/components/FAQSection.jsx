@@ -23,7 +23,9 @@ const faqData = [
   },
   {
     q: "what if i don't like it?",
-    a: "cancel anytime from settings, and there's a 60-day refund window if it's not for you.",
+    // 2.4: wording matches the GuaranteeBadge exactly ("60-day money-back
+    // guarantee") — the buy-blocker answered in a flex, not a hedge.
+    a: "you're covered. every plan comes with a 60-day money-back guarantee — don't love it, get every cent back, no hoops. and you can cancel anytime from settings.",
   },
   {
     q: "why subscription vs. one-time?",
@@ -136,9 +138,12 @@ function FAQItem({ item, isOpen, onToggle }) {
 }
 
 export default function FAQSection() {
-  // -1 = all collapsed on landing so the question list scans at a
-  // glance (item 0 used to auto-expand purely because this was 0).
-  const [open, setOpen] = useState(-1);
+  // 2.4: the "what if i don't like it?" answer (index 3) is OPEN by default
+  // so a fence-sitter never has to tap to learn they're protected. It sits
+  // below the initial fold, so the above-fold question list still scans at a
+  // glance — auto-opening it costs nothing on landing and surfaces the 60-day
+  // guarantee the moment anyone scrolls to it.
+  const [open, setOpen] = useState(3);
   return (
     <section
       className="pro-snap-section"

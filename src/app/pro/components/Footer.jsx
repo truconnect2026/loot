@@ -141,7 +141,7 @@ export default function Footer() {
           textAlign: "center",
         }}
       >
-        © 2026 loot.works
+        © 2026 loot.works · 60-day money-back guarantee
       </div>
     </footer>
   );
