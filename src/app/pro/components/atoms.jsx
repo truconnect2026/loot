@@ -295,6 +295,7 @@ export function CTAButton({
    travels with every button. Static under reduced-motion (CTAButton's own
    transitions are interaction-only; the entrance FadeUp is the caller's). */
 export function InlineClaim({ label = "CLAIM PRO", location = "inline" }) {
+  const reduced = usePrefersReducedMotion();
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 22 }}>
       <CTAButton
@@ -302,7 +303,9 @@ export function InlineClaim({ label = "CLAIM PRO", location = "inline" }) {
         onClick={() => {
           track("pro_inline_cta_clicked", { location, plan_target: "pricing" });
           if (typeof document !== "undefined") {
-            document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+            // Reduced-motion: instant jump (explicit behavior:"smooth" defeats
+            // the CSS reduce override, so guard it here).
+            document.getElementById("pricing")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
           }
         }}
       >

@@ -165,7 +165,7 @@ export default function MiniCtaBar() {
         type="button"
         className="mcb-claim"
         tabIndex={visible ? 0 : -1}
-        onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+        onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" })}
         style={{
           flexShrink: 0,
           fontFamily: "var(--font-bebas), sans-serif",

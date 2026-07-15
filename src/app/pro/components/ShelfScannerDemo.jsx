@@ -484,7 +484,7 @@ export default function ShelfScannerDemo() {
   const goPricing = () => {
     // Anchor only — scrollIntoView resolves against the nearest scroll
     // container (.pro-scroll-main), same call the hero CTA already uses.
-    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+    document.getElementById("pricing")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
   };
 
   const attractBoxes = attractActive && (phase === "detect" || phase === "value" || phase === "total" || phase === "hold");

@@ -260,7 +260,10 @@ export default function HeroSection() {
             style={{ width: "100%", alignSelf: "stretch" }}
             onClick={() => {
               track("pro_hero_cta_clicked", { location: "hero", plan_target: "pricing" });
-              document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+              // Reduced-motion: instant jump, not an animated full-page scroll
+              // (an explicit behavior:"smooth" overrides the CSS scroll-behavior
+              // reduce override, so it must be guarded in JS).
+              document.getElementById("pricing")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
             }}
           >
             CLAIM PRO

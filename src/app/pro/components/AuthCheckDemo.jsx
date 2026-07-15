@@ -588,7 +588,7 @@ export default function AuthCheckDemo() {
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+                    document.getElementById("pricing")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                   tabIndex={verdict ? 0 : -1}
