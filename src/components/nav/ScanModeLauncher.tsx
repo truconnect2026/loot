@@ -12,9 +12,13 @@ import type { ScanTriggerMode } from "@/lib/scan-trigger";
  *
  * Renders inside .tb-nav BEFORE the pill: the fixed scrim escapes to
  * the viewport (nav has no transform), the pill paints above the scrim
- * so the instrument stays crisp while page content dims, and the chips
- * never geometrically overlap the pill (lowest chip bottom sits ~5px
- * above the pill's top edge).
+ * so the instrument stays crisp while page content recedes, and the fan
+ * is re-seated so the LOWEST chip bottom clears the pill top by +19px
+ * (measured; the arc used to clip 2px INTO the pill).
+ *
+ * Z-BAND: scrim + chips live in the .tb-nav stacking context (z-50). Page
+ * content (< 50) dims beneath the scrim; the pill and chips paint above it;
+ * bottom sheets (60/61) still stack above the whole launcher. No collision.
  *
  * Motion: chips spring OUT of the FAB's center to their fan positions
  * (--motion-fast each with a tuned overshoot, 30ms stagger), retract
@@ -26,10 +30,16 @@ import type { ScanTriggerMode } from "@/lib/scan-trigger";
  * SHELF · CRATE) so the launcher teaches the destination.
  */
 
-// True circular fan: all four chips share one radius (106px about the
-// FAB center) at mirrored angles — outer pair ±65°, inner pair ±25°.
-// (The prior offsets put the outer pair on r≈112 and the inner on
-// r≈106, so the arc read lopsided.) tx = R·sinθ, ty = −R·cosθ.
+// True circular fan, re-seated CLEAR of the nav. All four chips share one
+// radius (124px about the FAB center) at EVEN mirrored angles — outer pair
+// ±58°, inner pair ±19.3° (α, α/3). tx = R·sinθ, ty = −R·cosθ.
+//
+// Why re-seated: at the prior radius the outer pair (±65°, ty −45) had their
+// bottom edge 2px BELOW the pill's top edge — clipping INTO the nav (measured,
+// not the "~5px above" the old comment claimed). The new arc lifts every chip
+// so the LOWEST bottom edge clears the pill top by +19px (≥16px rule), verified
+// at 390px and 360px with no chip going off-screen. Nav CSS is byte-identical —
+// the FAN moved, never the nav.
 const MODES: {
   mode: ScanTriggerMode;
   label: string;
@@ -40,8 +50,8 @@ const MODES: {
   {
     mode: "barcode",
     label: "BARCODE",
-    tx: -96, // −65°
-    ty: -45,
+    tx: -105, // −58°
+    ty: -66,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round">
         <path d="M3 5v-2h4" /><path d="M17 3h4v2" /><path d="M21 19v2h-4" /><path d="M7 21H3v-2" />
@@ -53,8 +63,8 @@ const MODES: {
   {
     mode: "vision",
     label: "ITEM",
-    tx: -45, // −25°
-    ty: -96,
+    tx: -41, // −19.3°
+    ty: -117,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
@@ -65,8 +75,8 @@ const MODES: {
   {
     mode: "shelf",
     label: "SHELF",
-    tx: 45, // +25°
-    ty: -96,
+    tx: 41, // +19.3°
+    ty: -117,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <line x1={3} y1={9} x2={21} y2={9} /><line x1={3} y1={17} x2={21} y2={17} />
@@ -78,8 +88,8 @@ const MODES: {
   {
     mode: "crate",
     label: "CRATE",
-    tx: 96, // +65°
-    ty: -45,
+    tx: 105, // +58°
+    ty: -66,
     icon: (
       <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 9l8-4 8 4v10l-8 4-8-4z" /><path d="M4 9l8 4 8-4" /><path d="M12 13v10" />
@@ -198,7 +208,7 @@ export default function ScanModeLauncher({ open, onClose, onSelect }: Props) {
               {
                 "--tx": `${tx}px`,
                 "--ty": `${ty}px`,
-                "--d": `${i * 30}ms`,
+                "--d": `${i * 35}ms`,
               } as React.CSSProperties
             }
             onClick={() => onSelect(mode)}
@@ -218,7 +228,12 @@ export default function ScanModeLauncher({ open, onClose, onSelect }: Props) {
 const STYLES = `
 .sml-scrim {
   position: fixed; inset: 0;
-  background: rgba(4, 3, 10, 0.55);
+  /* Focus layer: dim + a light 2px blur so the WORLD visibly recedes and the
+     fan is the only thing in focus (was dim-only). Fades in via opacity, which
+     carries the blur with it — no hard blur pop. */
+  background: rgba(4, 3, 10, 0.58);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
   pointer-events: auto;
   animation: smlFade var(--motion-fast) var(--ease-out) both;
 }
@@ -271,7 +286,11 @@ const STYLES = `
   -webkit-backdrop-filter: blur(13px) saturate(150%);
   backdrop-filter: blur(13px) saturate(150%);
   border: 1px solid rgba(92, 224, 184, 0.28);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(92, 224, 184, 0.10);
+  /* Depth + a subtle mint outer glow so the four modes sit in the SAME light
+     as the mint FAB — one lifted, coherent control cluster, siblings of the
+     FAB, not stragglers floating over the page. */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 22px rgba(92, 224, 184, 0.14),
+              inset 0 1px 0 rgba(92, 224, 184, 0.12);
   color: #5CE0B8;
   transition: transform 110ms ease, background-color 110ms ease, border-color 110ms ease;
 }
@@ -279,7 +298,7 @@ const STYLES = `
   .sml-in { background: rgba(7, 5, 16, 0.97); }
 }
 .sml-chip:active .sml-in {
-  transform: scale(0.92);
+  transform: scale(0.96);
   background-color: rgba(92, 224, 184, 0.18);
   border-color: rgba(92, 224, 184, 0.65);
 }
