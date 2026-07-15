@@ -237,21 +237,30 @@ export default function TabBar() {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   border-radius: 32px;
-  /* Liquid glass, alpha 0.82 + a soft inner scrim (transparent at the
-     specular top edge, darkening through the glyph band) so icons and
-     labels keep contrast even over bright mint content — the glass read
-     survives at the top, the legibility lives where the glyphs sit.
-     Blur stays at the house 13px. */
+  /* INSTRUMENT DECK. The fill was rgba(7,5,16,.82) — the page bg's OWN colour
+     at 82%, so the rail dissolved into the background and read as icons
+     floating around the FAB. Now a genuinely PRESENT lifted dark-violet glass
+     (clearly a surface against #070510), with a soft top sheen and a darker
+     glyph band for label contrast. House blur/saturate unchanged. */
   background:
-    linear-gradient(180deg, rgba(7, 5, 16, 0) 0%, rgba(7, 5, 16, 0.30) 45%, rgba(7, 5, 16, 0.42) 100%),
-    rgba(7, 5, 16, 0.82);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 42%, rgba(0, 0, 0, 0.10) 100%),
+    rgba(25, 23, 42, 0.9);
   -webkit-backdrop-filter: blur(13px) saturate(150%);
   backdrop-filter: blur(13px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 1px 0 rgba(92, 224, 184, 0.10), 0 8px 24px rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Seating: a crisp mint top-edge hairline gives the deck a real edge; an
+     upward lift onto content + downward depth float it above the page; a
+     low-alpha mint ambient ties the deck's light to the FAB so they read as
+     ONE instrument. STATIC — no animation (reduced-motion safe). The mint here
+     stays a whisper (0.07/0.22) so the FAB's glow stays the hero. */
+  box-shadow:
+    0 -2px 18px rgba(0, 0, 0, 0.30),
+    0 10px 30px rgba(0, 0, 0, 0.50),
+    0 0 22px rgba(92, 224, 184, 0.07),
+    inset 0 1px 0 rgba(92, 224, 184, 0.22);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tb-pill { background: rgba(7, 5, 16, 0.97); }
+  .tb-pill { background: rgba(25, 23, 42, 0.98); }
 }
 .tb-btn {
   -webkit-tap-highlight-color: transparent;
@@ -388,9 +397,10 @@ export default function TabBar() {
 
           // ── Standard tab button ─────────────────────────────────────
           const isActive = active === tab.id;
-          // Inactive is a calm, legible muted violet; active is
-          // unmistakable mint.
-          const color = isActive ? "#5CE0B8" : "#756D8C";
+          // Inactive raised to a clearly-legible muted violet (was #756D8C —
+          // too dim on the now-present deck, the rail read ghostly); active
+          // stays the decisive mint winner.
+          const color = isActive ? "#5CE0B8" : "#8D86A6";
 
           return (
             <button
