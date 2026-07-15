@@ -14,22 +14,29 @@ export function CoinMark({ size = 24, color = C.mint, style = {} }) {
   );
 }
 
-/* Small, consistent "this is an illustration, not a real report/earning"
-   tag for demo clusters — so no fabricated number can be mistaken for a
-   real eBay report or an income promise. Mono, dim, on-brand. */
+/* THE EXAMPLE SIGNATURE — one deliberate, on-brand treatment applied
+   identically to every demo cluster (Pyrex verdict, shelf value, arsenal
+   comps, haul, math). Mint-tinted (the brand's trust color) with a leading
+   dot so it reads as an intentional design signature — "this is a live
+   demonstration" — not an apologetic disclaimer sticker. Consistency IS the
+   honesty: a skeptic learns the mark, then trusts that anything WITHOUT it
+   is a real claim. Used on VerdictCardLive, ShelfScannerDemo, FeatureMatrix,
+   ROICalculator, AuthCheckDemo. */
 export function ExampleTag({ label = "EXAMPLE", style = {} }) {
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
+        gap: 5,
         fontFamily: "var(--font-mono), monospace",
         fontSize: 8.5,
         fontWeight: 700,
         letterSpacing: "0.18em",
         textTransform: "uppercase",
-        color: "rgba(255,255,255,0.4)",
-        border: "1px solid rgba(255,255,255,0.16)",
+        color: "rgba(92,224,184,0.7)",
+        background: "rgba(92,224,184,0.06)",
+        border: "1px solid rgba(92,224,184,0.3)",
         borderRadius: 4,
         padding: "2px 6px",
         lineHeight: 1,
@@ -38,6 +45,10 @@ export function ExampleTag({ label = "EXAMPLE", style = {} }) {
       }}
       aria-hidden="true"
     >
+      <span
+        aria-hidden="true"
+        style={{ width: 4, height: 4, borderRadius: "50%", background: "rgba(92,224,184,0.85)", flexShrink: 0 }}
+      />
       {label}
     </span>
   );

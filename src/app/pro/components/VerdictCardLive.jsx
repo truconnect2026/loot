@@ -504,12 +504,12 @@ export default function VerdictCardLive() {
             flexShrink: 0,
           }}
         />
-        {/* Phase 1.2: frames the whole card as a DEMONSTRATION ("this is what
-            a verdict looks like") so the sample item / comps / "verified" /
-            "AUTHENTIC" read as an illustration of the feature, never as
-            certification of a real item or a real eBay report. */}
+        {/* Phase 1.2: label the card as an EXAMPLE *VERDICT* — the words
+            directly qualify the "AUTHENTIC" / range / comps below as sample
+            OUTPUTS of the feature ("here's what a verdict looks like"), never
+            as certification of a real item or a real eBay report. */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, flexShrink: 0 }}>
-          <ExampleTag label="EXAMPLE" />
+          <ExampleTag label="EXAMPLE VERDICT" />
         </div>
         {/* 0.5 vs 1: bias the result block toward the top of the sheet —
             equal spacers left a dead band above the title on tall screens */}
@@ -540,8 +540,11 @@ export default function VerdictCardLive() {
             }}
           >
             {/* en-dash for numeric ranges is correct and permanent; the
-                no-dash rule applies to em-dashes in prose only */}
-            1957&ndash;68 &middot; Pyrex &middot; verified
+                no-dash rule applies to em-dashes in prose only.
+                1.2: dropped the standalone "verified" — as a lone word it
+                read as certifying THIS real bowl; the authenticity output
+                lives (clearly framed as a sample) in the AUTHENTIC line. */}
+            1957&ndash;68 &middot; Pyrex
           </p>
         </Reveal>
 
@@ -624,6 +627,25 @@ export default function VerdictCardLive() {
             }}
           >
             <CheckIcon size={13} color={C.mint} /> AUTHENTIC
+          </div>
+        </Reveal>
+
+        {/* 1.2: example-context legible AT the verdict — a skeptic who only
+            catches the "AUTHENTIC" line still reads it as a sample output of
+            the feature, not a certificate for a specific real object. */}
+        <Reveal shown={verdictShown} delayMs={1120} reduced={reduced}>
+          <div
+            style={{
+              textAlign: "center",
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 9,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "rgba(92,224,184,0.5)",
+              marginTop: 6,
+            }}
+          >
+            example output · what fake check returns
           </div>
         </Reveal>
 

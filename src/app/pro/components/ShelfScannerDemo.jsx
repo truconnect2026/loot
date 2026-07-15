@@ -742,12 +742,31 @@ export default function ShelfScannerDemo() {
                       letterSpacing: "0.02em",
                       color: C.mint,
                       fontVariantNumeric: "tabular-nums",
+                      minHeight: "clamp(28px,6vw,40px)",
+                      display: "flex",
+                      alignItems: "center",
                     }}
                   >
-                    {/* 6c: at rest show "$—" (awaiting a tap), never a
-                        discouraging "$0" that reads as failure to a glancing
-                        cold user; fills to the running total once tapped. */}
-                    ${totalValue > 0 ? totalValue : "—"}
+                    {/* 1.3: at rest, an INVITING pre-tap state — not a bare
+                        "$—" (reads as a broken/null load) or a discouraging
+                        "$0". It demonstrates the mechanic ("shelf value adds
+                        up as you tap") and fills to the running total on tap.
+                        Deterministic at SSR: totalValue starts 0 on server
+                        and client-first-render alike, so no hydration drift. */}
+                    {totalValue > 0 ? (
+                      `$${totalValue}`
+                    ) : (
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono), monospace",
+                          fontSize: 12,
+                          letterSpacing: "0.03em",
+                          color: "rgba(92,224,184,0.7)",
+                        }}
+                      >
+                        tap to add it up &rarr;
+                      </span>
+                    )}
                   </div>
                 </div>
                 {/* completion line — reserved slot */}
