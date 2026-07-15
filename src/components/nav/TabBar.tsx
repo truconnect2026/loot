@@ -243,8 +243,8 @@ export default function TabBar() {
      (clearly a surface against #070510), with a soft top sheen and a darker
      glyph band for label contrast. House blur/saturate unchanged. */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 42%, rgba(0, 0, 0, 0.10) 100%),
-    rgba(25, 23, 42, 0.9);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.014) 42%, rgba(0, 0, 0, 0.10) 100%),
+    rgba(30, 28, 52, 0.92);
   -webkit-backdrop-filter: blur(13px) saturate(150%);
   backdrop-filter: blur(13px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -260,7 +260,7 @@ export default function TabBar() {
     inset 0 1px 0 rgba(92, 224, 184, 0.22);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tb-pill { background: rgba(25, 23, 42, 0.98); }
+  .tb-pill { background: rgba(30, 28, 52, 0.98); }
 }
 .tb-btn {
   -webkit-tap-highlight-color: transparent;
