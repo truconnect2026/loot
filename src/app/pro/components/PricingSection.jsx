@@ -80,7 +80,7 @@ export default function PricingSection({ onCTA }) {
       // tall, so seat it near the top so the CLAIM CTA reaches the fold in
       // the short IG-webview viewport. Tighter top padding buys the CTA more
       // room. Snap architecture (pro-snap-section, id) untouched.
-      style={{ padding: "clamp(30px,5vw,56px) 24px 44px", position: "relative", zIndex: 1, justifyContent: "flex-start" }}
+      style={{ padding: "clamp(18px,4vw,50px) 24px 44px", position: "relative", zIndex: 1, justifyContent: "flex-start" }}
     >
       <style dangerouslySetInnerHTML={{ __html: MORPH_CSS }} />
       <SectionShell maxWidth={920}>
@@ -88,9 +88,26 @@ export default function PricingSection({ onCTA }) {
           <Eyebrow text="— pro tier" color={C.mint} />
         </FadeUp>
         <FadeUp delay={0.15}>
-          <h2 style={{ ...SECTION_HEADLINE_STYLE, paddingBottom: "0.25em", marginBottom: 12 }}>
+          <h2 style={{ ...SECTION_HEADLINE_STYLE, paddingBottom: "0.25em", marginBottom: 6 }}>
             PICK YOUR <span style={{ color: C.mint }}>PACE.</span>
           </h2>
+        </FadeUp>
+
+        {/* Phase 1.3: the value equation as ONE confident anchor at the buy
+            moment — the price reframed as a rounding error. Compact single
+            line so the card + guarantee stay unclipped in the short IG fold. */}
+        <FadeUp delay={0.2}>
+          <p
+            style={{
+              fontFamily: "var(--font-mono), monospace",
+              fontSize: 12.5,
+              letterSpacing: "0.04em",
+              color: C.gold,
+              margin: "0 0 8px",
+            }}
+          >
+            one good flip pays for the whole year.
+          </p>
         </FadeUp>
 
         {/* ONE definitive card — annual/monthly toggle morphs it in place. */}

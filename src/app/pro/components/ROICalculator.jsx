@@ -385,6 +385,56 @@ export default function ROICalculator() {
             </div>
           </div>
         </FadeUp>
+
+        {/* Phase 1: the GAIN frame beside the loss. The balance above proves
+            "cheaper than one bad buy" (loss); this proves "one good flip pays
+            the year" (gain). Two directions, one conclusion: the price is a
+            rounding error next to a single decision. The $100 flip is a
+            conservative, illustrative example (EXAMPLE-tagged) — a modest flip
+            covers the full $99.99 annual; not a hype number. Entrance is the
+            shared FadeUp (reduced-motion renders the end-state). */}
+        <FadeUp delay={0.42}>
+          <div
+            style={{
+              maxWidth: 420,
+              margin: "26px auto 0",
+              paddingTop: 20,
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                ...mono,
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "rgba(245,197,24,0.8)",
+                marginBottom: 8,
+              }}
+            >
+              &uarr; and the other direction
+            </div>
+            <div
+              style={{
+                fontFamily: "var(--font-bebas), sans-serif",
+                fontSize: "clamp(26px,7vw,36px)",
+                lineHeight: 1.05,
+                letterSpacing: "0.02em",
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              one good flip pays for the <span style={{ color: C.mint }}>whole year.</span>
+            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", flexWrap: "wrap", justifyContent: "center", gap: 10 }}>
+              <ExampleTag label="EXAMPLE" />
+              <span style={{ ...mono, fontSize: 13, letterSpacing: "0.04em", color: "rgba(255,255,255,0.8)" }}>
+                one $100 flip <span style={{ color: C.mint, fontWeight: 700 }}>&rsaquo;</span> $99.99 / year
+              </span>
+            </div>
+          </div>
+        </FadeUp>
       </SectionShell>
     </section>
   );
