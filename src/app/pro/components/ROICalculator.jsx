@@ -48,7 +48,7 @@ const STYLES = `
   from { opacity: 0; transform: translateY(-16px) scale(0.9); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.tm-drop { animation: tmDrop 420ms cubic-bezier(0.2,1.3,0.4,1) both; will-change: transform, opacity; }
+.tm-drop { animation: tmDrop var(--motion-medium) var(--ease-spring) both; will-change: transform, opacity; }
 .tm-drop-static { animation: none; opacity: 1; transform: none; }
 `;
 

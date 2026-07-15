@@ -50,7 +50,7 @@ const PLANS = {
 
 const MORPH_CSS = `
 @keyframes pricingMorph { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-.pricing-morph { animation: pricingMorph 240ms cubic-bezier(0.22,1,0.36,1) both; }
+.pricing-morph { animation: pricingMorph var(--motion-medium) var(--ease-out) both; }
 `;
 
 const featRow = {
@@ -152,7 +152,7 @@ export default function PricingSection({ onCTA }) {
                     borderRadius: 999,
                     background: C.mint,
                     transform: isAnnual ? "translateX(0)" : "translateX(100%)",
-                    transition: "transform 260ms cubic-bezier(0.22,1,0.36,1)",
+                    transition: "transform var(--motion-medium) var(--ease-out)",
                     boxShadow: "0 2px 8px rgba(92,224,184,0.35)",
                   }}
                 />

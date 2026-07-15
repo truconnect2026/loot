@@ -112,7 +112,7 @@ export default function MiniCtaBar() {
         borderTop: "1px solid rgba(92,224,184,0.2)",
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(100%)",
-        transition: reduced ? "none" : "opacity 300ms cubic-bezier(0.16,1,0.3,1), transform 300ms cubic-bezier(0.16,1,0.3,1)",
+        transition: reduced ? "none" : "opacity var(--motion-medium) var(--ease-out), transform var(--motion-medium) var(--ease-out)",
         // The bar is a SIBLING of the scroller, so a touch that lands on
         // it can't scroll-chain into .pro-scroll-main. Keep the container
         // transparent to input and let only the button take events —
@@ -123,8 +123,8 @@ export default function MiniCtaBar() {
       <style
         dangerouslySetInnerHTML={{
           __html: `
-.mcb-claim { transition: transform 120ms ease, filter 120ms ease; }
-.mcb-claim:active { transform: scale(0.97); filter: brightness(0.92); }
+.mcb-claim { transition: transform var(--motion-fast) var(--ease-out), filter var(--motion-fast) var(--ease-out); }
+.mcb-claim:active { transform: scale(0.97); filter: brightness(0.94); }
 `,
         }}
       />
