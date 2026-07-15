@@ -45,6 +45,7 @@ import "./pro.module.css";
 import CosmicBackground from "./components/CosmicBackground.jsx";
 import TopStrip from "./components/TopStrip.jsx";
 import HeroSection from "./components/HeroSection.jsx";
+import HowItWorks from "./components/HowItWorks.jsx";
 import ShelfScannerDemo from "./components/ShelfScannerDemo.jsx";
 import AuthCheckDemo from "./components/AuthCheckDemo.jsx";
 import GutPunch from "./components/GutPunch.jsx";
@@ -187,6 +188,11 @@ export default function ProPage() {
           as trailing, non-snapped content after the closer. */}
       <main className="pro-scroll-main">
         <HeroSection />
+        {/* How-it-works bridges the hero pitch into the interactive demos —
+            the 3-beat mechanic (point/know/decide) before any feature can
+            matter. Divider after separates the pitch from the demo chapter. */}
+        <HowItWorks />
+        <hr className="pro-section-divider" />
         <ShelfScannerDemo />
         <AuthCheckDemo />
         <hr className="pro-section-divider" />
