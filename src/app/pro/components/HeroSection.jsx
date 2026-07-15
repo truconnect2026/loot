@@ -173,7 +173,10 @@ export default function HeroSection() {
           place. Transparent PNG, no box; the halo glow is gated static under
           the global reduced-motion rule. */}
       <FadeUp delay={0.05}>
-        <div style={{ marginBottom: 10, width: "fit-content", filter: "drop-shadow(0 6px 22px rgba(92,224,184,0.32))" }}>
+        <div
+          className="pro-kronos-idle"
+          style={{ marginBottom: 10, width: "fit-content", filter: "drop-shadow(0 6px 22px rgba(92,224,184,0.32))" }}
+        >
           <FlipCoyote mood="hyped" size={92} />
         </div>
       </FadeUp>

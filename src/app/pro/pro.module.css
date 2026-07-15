@@ -12,6 +12,20 @@
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
+
+  /* ── HOUSE MOTION SYSTEM ──
+     One small scale + one easing family so the whole page moves like a
+     single hand made it. Referenced by inline styles (var(--…)) AND the
+     keyframe-backed classes below. Reduced-motion is handled globally by
+     the .pro-page-root * clamp near the bottom of this file, so every
+     motion here already has an instant, finished twin — no per-element
+     reduce branch needed for CSS transitions/animations. */
+  --motion-fast: 180ms;    /* taps, presses, toggles */
+  --motion-medium: 260ms;  /* reveals, morphs, glows */
+  --motion-settle: 560ms;  /* weighted physics: the seesaw tip */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);   /* decelerate-in (default) */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);        /* accelerate-out */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* weighted overshoot */
 }
 
 /* ── Scroll-snap: this page OWNS its scroll container ──
@@ -135,6 +149,20 @@
 @keyframes breathe {
   0%, 100% { transform: scale(1); opacity: 0.8; }
   50%      { transform: scale(1.3); opacity: 1; }
+}
+
+/* ── Kronos idle — the brand's face is ALIVE on arrival. A slow, low-
+   amplitude float (transform ONLY = GPU-cheap, smooth in the IG webview)
+   so a static mascot never reads as a dead page. 0%/100% are the rest
+   pose, so the global reduced-motion clamp settles Kronos STILL but
+   characterful (the baked mint/gold halo + drop-shadow stay). ── */
+@keyframes kronosFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-5px) scale(1.012); }
+}
+:global(.pro-kronos-idle) {
+  animation: kronosFloat 4.8s ease-in-out infinite;
+  will-change: transform;
 }
 
 /* ── Focus rings ── */

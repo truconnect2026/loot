@@ -51,6 +51,7 @@ export default function CloserSection({ onCTA }) {
           Transparent PNG; halo glow gated static under the global reduce. */}
       <FadeUp>
         <div
+          className="pro-kronos-idle"
           style={{
             display: "flex",
             justifyContent: "center",
