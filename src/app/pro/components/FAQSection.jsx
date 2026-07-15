@@ -94,7 +94,7 @@ function FAQItem({ item, isOpen, onToggle }) {
             // needs to LOOK tappable.
             fontSize: 22,
             color: C.mint,
-            transition: "transform 0.3s ease",
+            transition: "transform var(--motion-fast) var(--ease-out)",
             transform: isOpen ? "rotate(45deg)" : "rotate(0)",
             flexShrink: 0,
             // Fixed square + flex centering so the glyph rotates around its
@@ -115,7 +115,11 @@ function FAQItem({ item, isOpen, onToggle }) {
         style={{
           height: isOpen ? height : 0,
           overflow: "hidden",
-          transition: "height 0.45s cubic-bezier(0.16,1,0.3,1), opacity 0.3s",
+          // Accordion expand/collapse on the house curve. height IS the one
+          // justified non-compositor exception: the transform equivalent
+          // (scaleY) distorts the answer text; height is standard here and the
+          // animated area is tiny. Reduced-motion: global clamp → instant.
+          transition: "height var(--motion-medium) var(--ease-out), opacity var(--motion-medium) var(--ease-out)",
           opacity: isOpen ? 1 : 0,
         }}
       >

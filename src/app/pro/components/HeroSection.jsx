@@ -22,12 +22,10 @@ const HERO_STYLES = `
   .pro-hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 56px; }
 }
 .pro-hero-text { min-width: 0; scroll-snap-align: start; scroll-margin-top: 10px; }
-/* Press acknowledgment on the hero anchor CTA (highest-intent tap):
-   quick 120ms scale + brightness dip. !important beats the atom's
-   inline hover/press transform; anchor button only, zero checkout
-   surface touched. */
-.hero-cta-lockup button { transition: transform 120ms ease, filter 120ms ease, box-shadow 0.15s ease-out, background 0.15s ease-out !important; }
-.hero-cta-lockup button:active { transform: scale(0.97) !important; filter: brightness(0.92); }
+/* Press acknowledgment is now owned SOLELY by the CTAButton atom (unified
+   0.97 scale + brightness dip on house timing, identical across every CLAIM).
+   The old .hero-cta-lockup !important override that forced 0.97 here is
+   removed so the hero button no longer fights the atom's inline press. */
 /* svh-fluid section padding with a vh fallback line (engines without svh
    must still get a bounded value, not a dropped declaration). */
 .pro-hero-section {

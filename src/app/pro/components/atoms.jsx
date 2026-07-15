@@ -66,6 +66,7 @@ export function ExampleTag({ label = "EXAMPLE", style = {} }) {
 export function GuaranteeBadge({ style = {} }) {
   return (
     <span
+      className="pro-guarantee-glow"
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -260,8 +261,20 @@ export function CTAButton({
             ? "0 2px 10px rgba(92,224,184,0.25), inset 0 1px 0 rgba(255,255,255,0.2)"
             : "0 6px 22px rgba(92,224,184,0.3), inset 0 1px 0 rgba(255,255,255,0.28)"
           : "none",
-        transform: pressed ? "translateY(0) scale(0.98)" : hovered ? "translateY(-1px)" : "translateY(0) scale(1)",
-        transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1), box-shadow 0.15s ease-out, background 0.15s ease-out",
+        // ONE press for every CLAIM (hero, inline, sticky, card): a quick
+        // scale-down to 0.97 + a brightness dip so the buy action feels
+        // physical and rewarding everywhere identically. House timing. (Was
+        // 0.98 here while the hero forced 0.97 via a CSS !important override —
+        // two systems fighting; the override is now removed so this is the
+        // single source of truth.)
+        transform: pressed ? "translateY(0) scale(0.97)" : hovered ? "translateY(-1px)" : "translateY(0) scale(1)",
+        filter: pressed ? "brightness(0.94)" : "none",
+        // transform + filter are compositor-safe; box-shadow/background are the
+        // glow + outline-tint (tiny button area, negligible paint) — the press
+        // depresses INTO the surface (glow eases back) which reads more certain
+        // than a flashy surge. Reduced-motion: the global clamp makes it instant.
+        transition:
+          "transform var(--motion-fast) var(--ease-out), filter var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out)",
         ...style,
       }}
     >
