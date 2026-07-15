@@ -153,6 +153,26 @@ export default function HowItWorks() {
             </FadeUp>
           ))}
         </div>
+
+        {/* Phase 2.1: honest urgency from the MECHANIC, not fake scarcity.
+            The next find is happening today whether or not you can price it —
+            every day without loot is one someone else grabbed. Echoes the
+            closer's "already in the bin / get to it first" this early in the
+            scroll. Static line; FadeUp is the reduced-motion twin. */}
+        <FadeUp delay={0.75}>
+          <p
+            style={{
+              fontFamily: "var(--font-manrope), sans-serif",
+              fontSize: 15,
+              lineHeight: 1.5,
+              color: "rgba(255,255,255,0.6)",
+              margin: "26px 0 0",
+            }}
+          >
+            the next bin is <span style={{ color: C.gold, fontWeight: 600 }}>today</span> &mdash; the only
+            question is whether you&apos;ll know what&apos;s in it.
+          </p>
+        </FadeUp>
       </SectionShell>
     </section>
   );

@@ -149,22 +149,32 @@ export default function CloserSection({ onCTA }) {
         </div>
       </FadeUp>
 
+      {/* Phase 2.2: the FREE fallback as bounce-recovery — a captured
+          non-buyer (into the free daily loop) is worth more than a lost one,
+          so it's elevated from a dim link to an unmissable ghost pill.
+          Secondary to the mint-fill CLAIM above; routes to the free game. */}
       <FadeUp delay={0.15}>
-        <p style={{ margin: "0 0 14px" }}>
+        <div style={{ display: "flex", justifyContent: "center", margin: "0 0 16px" }}>
           <a
             href="/flip"
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 9,
               fontFamily: "var(--font-mono), monospace",
-              fontSize: 11,
-              letterSpacing: "0.08em",
-              color: "rgba(92,224,184,0.65)",
+              fontSize: 13,
+              letterSpacing: "0.04em",
+              color: C.mint,
               textDecoration: "none",
-              borderBottom: "1px solid rgba(92,224,184,0.3)",
+              border: "1px solid rgba(92,224,184,0.4)",
+              background: "rgba(92,224,184,0.06)",
+              borderRadius: 999,
+              padding: "10px 18px",
             }}
           >
-            not ready? play today&apos;s flip or skip free &rarr;
+            <span aria-hidden="true" style={{ fontSize: "0.85em" }}>&#9654;</span> not ready? today&apos;s flip or skip is free
           </a>
-        </p>
+        </div>
       </FadeUp>
 
       <FadeUp delay={0.18}>
