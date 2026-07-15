@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@vercel/analytics";
 import { C } from "../lib/colors.js";
 import { useInView, usePrefersReducedMotion } from "../hooks/usePageHooks.jsx";
 
@@ -262,6 +263,45 @@ export function CTAButton({
         &rarr;
       </span>
     </button>
+  );
+}
+
+/* InlineClaim — a peak-intent CTA dropped INSIDE a section (post-hero,
+   post-math) so a convinced buyer never has to hunt for the button. Unified
+   "CLAIM" verb; routes to the EXISTING checkout by smooth-scrolling to the
+   pricing card (same behavior as the hero CTA) so the buyer lands on the plan
+   toggle + guarantee and picks a plan honestly — no force-picked plan, no new
+   checkout logic. Carries a compact zero-risk microframe so risk-reversal
+   travels with every button. Static under reduced-motion (CTAButton's own
+   transitions are interaction-only; the entrance FadeUp is the caller's). */
+export function InlineClaim({ label = "CLAIM PRO", location = "inline" }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 22 }}>
+      <CTAButton
+        variant="primary"
+        onClick={() => {
+          track("pro_inline_cta_clicked", { location, plan_target: "pricing" });
+          if (typeof document !== "undefined") {
+            document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+          }
+        }}
+      >
+        {label}
+      </CTAButton>
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 7,
+          fontFamily: "var(--font-mono), monospace",
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          color: "rgba(92,224,184,0.7)",
+        }}
+      >
+        <CheckIcon size={12} color="rgba(92,224,184,0.7)" /> 60-day money-back · cancel anytime
+      </span>
+    </div>
   );
 }
 

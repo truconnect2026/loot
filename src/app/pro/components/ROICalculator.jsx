@@ -6,6 +6,7 @@ import {
   Eyebrow,
   ExampleTag,
   FadeUp,
+  InlineClaim,
   SECTION_HEADLINE_SIZE,
   SECTION_HEADLINE_STYLE,
   SECTION_PADDING,
@@ -434,6 +435,12 @@ export default function ROICalculator() {
               </span>
             </div>
           </div>
+        </FadeUp>
+
+        {/* Phase 4b: peak-intent CLAIM #2 — right after the loss+gain proof,
+            at maximum logical conviction. Routes to the pricing card. */}
+        <FadeUp delay={0.5}>
+          <InlineClaim label="CLAIM PRO" location="the_math" />
         </FadeUp>
       </SectionShell>
     </section>

@@ -4,9 +4,9 @@ import { C } from "../lib/colors.js";
 import {
   Eyebrow,
   FadeUp,
+  InlineClaim,
   SECTION_BODY_SIZE,
   SECTION_HEADLINE_STYLE,
-  SECTION_PADDING,
   SectionShell,
 } from "./atoms.jsx";
 
@@ -46,7 +46,11 @@ export default function HowItWorks() {
       style={{
         borderTop: "1px solid rgba(255,255,255,0.06)",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
-        padding: SECTION_PADDING,
+        // Tighter top than the shared SECTION_PADDING: this section carries a
+        // headline + 3 steps + urgency + an inline CLAIM, so it runs taller
+        // than one viewport — pulling the top in keeps the peak-intent CLAIM
+        // above the short IG fold instead of half-clipping it on snap.
+        padding: "clamp(32px,5vw,72px) 24px clamp(44px,6vw,80px)",
         position: "relative",
         zIndex: 1,
       }}
@@ -56,7 +60,7 @@ export default function HowItWorks() {
           <Eyebrow text="— how it works" color={C.mint} />
         </FadeUp>
         <FadeUp delay={0.15}>
-          <h2 style={{ ...SECTION_HEADLINE_STYLE, paddingBottom: "0.25em", marginBottom: 14 }}>
+          <h2 style={{ ...SECTION_HEADLINE_STYLE, paddingBottom: "0.25em", marginBottom: 10 }}>
             POINT AT <span style={{ color: C.mint }}>ANYTHING.</span>
           </h2>
         </FadeUp>
@@ -67,7 +71,7 @@ export default function HowItWorks() {
               fontSize: SECTION_BODY_SIZE,
               color: "rgba(255,255,255,0.6)",
               lineHeight: 1.55,
-              margin: "0 0 34px",
+              margin: "0 0 24px",
             }}
           >
             even the stuff you can&apos;t name. here&apos;s the whole loop &mdash; in the time it takes to pick it up.
@@ -94,7 +98,7 @@ export default function HowItWorks() {
                   display: "flex",
                   gap: 18,
                   alignItems: "flex-start",
-                  marginBottom: i < STEPS.length - 1 ? 20 : 0,
+                  marginBottom: i < STEPS.length - 1 ? 12 : 0,
                   position: "relative",
                 }}
               >
@@ -166,12 +170,18 @@ export default function HowItWorks() {
               fontSize: 15,
               lineHeight: 1.5,
               color: "rgba(255,255,255,0.6)",
-              margin: "26px 0 0",
+              margin: "18px 0 0",
             }}
           >
             the next bin is <span style={{ color: C.gold, fontWeight: 600 }}>today</span> &mdash; the only
             question is whether you&apos;ll know what&apos;s in it.
           </p>
+        </FadeUp>
+
+        {/* Phase 4a: peak-intent CLAIM #1 — the impatient buyer who's already
+            sold after the hook + the mechanic doesn't scroll to find a button. */}
+        <FadeUp delay={0.85}>
+          <InlineClaim label="CLAIM PRO" location="how_it_works" />
         </FadeUp>
       </SectionShell>
     </section>
