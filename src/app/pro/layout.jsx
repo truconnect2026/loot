@@ -36,7 +36,7 @@ const spaceMono = Space_Mono({
 export const metadata = {
   title: "loot.works/pro — the unfair advantage for resellers",
   description:
-    "Thrift arbitrage. Real eBay comps in about a second. Sale-day planner. BOLO alerts. $14.99/mo, cancel anytime. Built for flippers.",
+    "Thrift arbitrage. Real eBay comps in seconds. Sale-day planner. BOLO alerts. $14.99/mo, cancel anytime. Built for flippers.",
   alternates: { canonical: "https://loot.works/pro" },
   openGraph: {
     title: "LOOT.WORKS / pro",
@@ -48,14 +48,14 @@ export const metadata = {
     // NOTE (David / real-asset task): the baked og-pro.png still reads
     // "AI THRIFT ARBITRAGE" — regenerate the PNG with "THRIFT ARBITRAGE ·
     // REAL EBAY COMPS" (no "AI") so the image matches this alt and the page.
-    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in about a second" }],
+    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in seconds" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "LOOT.WORKS / pro",
     description:
       "Stop leaving money on the shelf. Real comps. Real maps. Real alerts. $14.99/mo.",
-    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in about a second" }],
+    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in seconds" }],
   },
 };
 

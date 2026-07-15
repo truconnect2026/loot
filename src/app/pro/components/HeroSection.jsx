@@ -226,7 +226,7 @@ export default function HeroSection() {
             marginBottom: 48,
           }}
         >
-          point your phone at anything in the bins. real comps in about a second. you&apos;ve already got
+          point your phone at anything in the bins. real comps in seconds. you&apos;ve already got
           the eye. this is the speed.
         </p>
       </FadeUp>

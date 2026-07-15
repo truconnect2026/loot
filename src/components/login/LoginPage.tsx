@@ -33,7 +33,7 @@ import PwaInstallBar from "@/components/login/PwaInstallBar";
 const PROOF_LINES = [
   "real ebay solds, not asking prices",
   "barcode · item · shelf · crate",
-  "verdict in about a second",
+  "verdict in seconds",
 ];
 
 // Google "G" logo — official colors

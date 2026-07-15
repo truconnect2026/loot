@@ -13,7 +13,7 @@ const faqData = [
   },
   {
     q: "how accurate is it?",
-    a: "it's a range built from recent real solds, not a promise. condition, tag, and timing all move the number, so read it as a fast gut-check, not gospel. the final call is yours. it's there to kill the obvious mistakes and catch the obvious wins in about a second.",
+    a: "it's a range built from recent real solds, not a promise. condition, tag, and timing all move the number, so read it as a fast gut-check, not gospel. the final call is yours. it's there to kill the obvious mistakes and catch the obvious wins in seconds.",
   },
   {
     q: "what if i'm not even a 'real' flipper yet?",

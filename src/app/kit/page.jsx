@@ -184,7 +184,7 @@ Every thrift run is a gamble. You pick up an item, Google it for five minutes, c
 
 That's the problem Loot solves.
 
-Point your phone at anything — barcode, label, or blank tag — and Loot returns live resale comps, your projected ROI, the best platform to list on, and a flip-or-skip verdict. All in about two seconds.
+Point your phone at anything — barcode, label, or blank tag — and Loot returns live resale comps, your projected ROI, the best platform to list on, and a flip-or-skip verdict. All in seconds.
 
 It's built on Claude AI vision, designed for full-time resellers and weekend pickers alike. No app download required — it runs at loot.works on any phone.
 
@@ -226,7 +226,7 @@ If you've ever stood at a thrift store wondering if a $4 item was worth it — t
 
 const BLOG_REVIEW = `Title: I tested Loot for a month at the thrift store — here's what 30 days of AI-scanned finds look like
 
-Intro hook: At the thrift store, the difference between a $4 mistake and a $400 flip is information. For 30 days I tested loot.works — a new AI-powered scanner that reads any item (barcode or no barcode) and returns live resale comps in about two seconds. Here's what I learned.
+Intro hook: At the thrift store, the difference between a $4 mistake and a $400 flip is information. For 30 days I tested loot.works — a new AI-powered scanner that reads any item (barcode or no barcode) and returns live resale comps in seconds. Here's what I learned.
 
 H2: What is Loot?
 [2-3 paragraphs on the product. Mention $14.99/mo, no app store, web-based]
