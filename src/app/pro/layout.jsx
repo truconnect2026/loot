@@ -44,14 +44,18 @@ export const metadata = {
       "Stop leaving money on the shelf. Real comps. Real maps. Real alerts. $14.99/mo.",
     url: "https://loot.works/pro",
     type: "website",
-    images: [{ url: "/og-pro.png" }],
+    // alt carries the APPROVED, machinery-free copy for the social card.
+    // NOTE (David / real-asset task): the baked og-pro.png still reads
+    // "AI THRIFT ARBITRAGE" — regenerate the PNG with "THRIFT ARBITRAGE ·
+    // REAL EBAY COMPS" (no "AI") so the image matches this alt and the page.
+    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in about a second" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "LOOT.WORKS / pro",
     description:
       "Stop leaving money on the shelf. Real comps. Real maps. Real alerts. $14.99/mo.",
-    images: ["/og-pro.png"],
+    images: [{ url: "/og-pro.png", alt: "loot.works pro — thrift arbitrage · real ebay comps in about a second" }],
   },
 };
 
