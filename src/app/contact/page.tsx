@@ -82,7 +82,6 @@ export default function ContactPage() {
             </h2>
             <p style={{ color: "rgba(255,255,255,0.6)", whiteSpace: "pre-line" }}>
               TruConnect
-              {"\n"}1020 Ezekiel Way, Locust Grove, GA 30248, USA
             </p>
           </section>
         </div>

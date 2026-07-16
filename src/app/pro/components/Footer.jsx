@@ -7,7 +7,9 @@
  *   - Brand identity
  *   - Product links
  *   - Terms, Privacy, Refund Policy
- *   - Contact email + (recommended) business address
+ *   - Contact email + business identity (physical address intentionally
+ *     omitted site-wide for privacy — do not re-add it here or in any
+ *     legal doc / metadata; TruConnect + support email are the identity)
  *   - Copyright line
  *
  * TODO(David): all of the following MUST be reconciled before submitting to
@@ -15,8 +17,10 @@
  *   1. SUPPORT_EMAIL — replace placeholder with the real address that's
  *      monitored. Whatever shows here is what customers will email; that
  *      mailbox needs to be staffed.
- *   2. BUSINESS_NAME + BUSINESS_ADDRESS — fill in operator-of-record + the
- *      address registered with Digistore. They cross-check.
+ *   2. BUSINESS_NAME — confirm operator-of-record matches what's registered
+ *      with Digistore. (Physical address is deliberately not shown; if
+ *      Digistore requires it on file, keep it in their admin only, not on
+ *      the site.)
  *   3. REFUND PERIOD: this page advertises "60-day refund" in multiple
  *      places. Verify Digistore product 691098 is also set to 60 days
  *      (Digistore's allowed values are 60, 90, or 180 — 7-day is not
@@ -31,7 +35,6 @@ import { CoinMark } from "./atoms.jsx";
 // CONFIRMED: support inbox is lootworks.goflip@gmail.com
 const SUPPORT_EMAIL = "lootworks.goflip@gmail.com";
 const BUSINESS_NAME = "TruConnect";
-const BUSINESS_ADDRESS = "1020 Ezekiel Way, Locust Grove, GA 30248, USA";
 
 export default function Footer() {
   return (
@@ -120,8 +123,6 @@ export default function Footer() {
             }}
           >
             {BUSINESS_NAME}
-            <br />
-            {BUSINESS_ADDRESS}
           </p>
         </FooterCol>
       </div>

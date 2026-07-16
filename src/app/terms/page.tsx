@@ -157,7 +157,7 @@ export default function TermsPage() {
           <P>
             Questions: <Mail>lootworks.goflip@gmail.com</Mail>.
             <br />
-            Operated by TruConnect, 1020 Ezekiel Way, Locust Grove, GA 30248, USA.
+            Operated by TruConnect.
           </P>
         </Prose>
 

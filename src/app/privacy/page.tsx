@@ -130,7 +130,7 @@ export default function PrivacyPage() {
           <P>
             Questions or requests: <Mail>lootworks.goflip@gmail.com</Mail>.
             <br />
-            Operated by TruConnect, 1020 Ezekiel Way, Locust Grove, GA 30248, USA.
+            Operated by TruConnect.
           </P>
         </Prose>
 
