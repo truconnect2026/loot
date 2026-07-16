@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import FlipCoyote from "@/components/shared/FlipCoyote";
 import { readLiveStreak } from "../lib/localStreak.js";
+import { useSceneParallax } from "../lib/useSceneParallax.js";
 
 /**
  * The TAP-IN landing — the free-game on-ramp that pre-sells Pro. flip-or-skip is
@@ -85,9 +86,13 @@ const INTRO_STYLES = `
   position: relative; width: 100%; max-width: 340px;
   border-radius: 18px;
   border: 1px solid rgba(92,224,184,0.28);
-  background: linear-gradient(180deg, rgba(92,224,184,0.08) 0%, rgba(10,12,20,0.55) 100%);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 30px rgba(92,224,184,0.06), 0 18px 40px -14px rgba(92,224,184,0.55);
+  /* Frosted-glass look WITHOUT backdrop-filter: a moving backdrop-blur
+     re-samples + re-blurs its backdrop EVERY frame under parallax — a real
+     GPU cost in the throttled IG webview. Dialed back for the 60fps floor. A
+     deep translucent gradient + inner highlight reads as lit glass at a
+     fraction of the cost (the concealed-item panel keeps its own frost). */
+  background: linear-gradient(180deg, rgba(18,24,30,0.62) 0%, rgba(8,10,16,0.8) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 34px rgba(92,224,184,0.07), 0 18px 40px -14px rgba(92,224,184,0.55);
   padding: 12px 14px 11px;
   overflow: hidden;
 }
@@ -123,10 +128,12 @@ const INTRO_STYLES = `
   padding: 9px 11px;
   display: flex; flex-direction: column; justify-content: center; gap: 7px;
 }
+/* The concealed find — a clear-but-shadowed thrift OBJECT (a vinyl record),
+   lightly blurred behind the frost so it reads "an item, hidden," not a smudge. */
 .flip-board-silhouette {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  width: 38px; height: 38px; color: rgba(255,255,255,0.22);
-  filter: blur(2.2px); pointer-events: none;
+  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; color: rgba(255,255,255,0.3);
+  filter: blur(1.2px); pointer-events: none;
 }
 .flip-board-frost {
   position: absolute; inset: 0; pointer-events: none;
@@ -138,7 +145,9 @@ const INTRO_STYLES = `
   animation: flip-board-shimmer 3.4s ease-in-out infinite; will-change: transform;
 }
 @keyframes flip-board-shimmer { 0% { transform: translateX(0); } 70%, 100% { transform: translateX(360%); } }
-.flip-board-price { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; }
+/* Redacted price — a gentle pulse "about to reveal" (it never does; honest). */
+.flip-board-price { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; animation: flip-redact-pulse 3s ease-in-out infinite; will-change: opacity; }
+@keyframes flip-redact-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
 .flip-board-cash { font-family: var(--mono); font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.78); }
 .flip-board-bar {
   display: inline-block; width: 11px; height: 13px; border-radius: 3px;
@@ -184,8 +193,15 @@ const INTRO_STYLES = `
 
 /* ── Kronos: idle bob + breathing mint aura (compositor-only) ────────────── */
 .flip-intro-host-wrap { position: relative; line-height: 0; }
-.flip-intro-host-bob { animation: flip-host-bob 4.4s ease-in-out infinite; will-change: transform; }
-@keyframes flip-host-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.flip-intro-host-bob { animation: flip-host-bob 7s ease-in-out infinite; will-change: transform; }
+@keyframes flip-host-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-6px) rotate(0deg); }
+  /* the react beat — a knowing tilt toward the mystery card, daring you */
+  46% { transform: translateY(-3px) rotate(-4deg) scale(1.03); }
+  52% { transform: translateY(-4px) rotate(0deg) scale(1); }
+  72% { transform: translateY(-6px) rotate(0deg); }
+}
 .flip-intro-host-aura {
   position: absolute; left: 50%; top: 48%; width: 168%; height: 168%;
   transform: translate(-50%, -50%); z-index: 0; pointer-events: none;
@@ -208,21 +224,38 @@ const INTRO_STYLES = `
 
 /* ── Intro atmosphere — faint drifting glows (behind the scrim, never a tap
       target). The main starfield is the shared CosmicBackdrop. ───────────── */
-.flip-intro-atmos { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.flip-intro-atmos span {
-  position: absolute; border-radius: 50%; filter: blur(34px); opacity: 0.5;
+/* Parallax depth wrapper — the hook writes translate3d here (compositor-only).
+   Full-width flex-center so the wrapped in-flow element stays centered while it
+   shifts. */
+.flip-plx { position: relative; width: 100%; display: flex; justify-content: center; will-change: transform; }
+/* Deep atmosphere layer (slowest parallax). Oversized inset so a parallax
+   shift never reveals an edge. Blooms in on boot. */
+.flip-intro-atmos {
+  position: absolute; inset: -14px; z-index: 0; pointer-events: none; overflow: hidden;
   will-change: transform;
+  animation: flip-boot-atmos 0.9s ease-out both;
 }
-.flip-intro-atmos span:nth-child(1) {
-  width: 220px; height: 220px; left: 6%; top: 20%;
-  background: rgba(92,224,184,0.10); animation: flip-atmos-a 16s ease-in-out infinite;
-}
-.flip-intro-atmos span:nth-child(2) {
-  width: 260px; height: 260px; right: 4%; bottom: 16%;
-  background: rgba(107,70,193,0.11); animation: flip-atmos-b 19s ease-in-out infinite;
-}
+@keyframes flip-boot-atmos { from { opacity: 0; } to { opacity: 1; } }
+.flip-atmos-glow { position: absolute; border-radius: 50%; filter: blur(36px); will-change: transform, opacity; }
+.flip-atmos-glow--a { width: 230px; height: 230px; left: 6%; top: 18%; background: rgba(92,224,184,0.12); opacity: 0.5; animation: flip-atmos-a 16s ease-in-out infinite; }
+.flip-atmos-glow--b { width: 270px; height: 270px; right: 4%; bottom: 14%; background: rgba(107,70,193,0.13); opacity: 0.5; animation: flip-atmos-b 19s ease-in-out infinite; }
 @keyframes flip-atmos-a { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(24px, -18px); } }
 @keyframes flip-atmos-b { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-20px, 16px); } }
+/* Volumetric light shafts — soft diagonal beams that drift; premium depth. */
+.flip-atmos-shaft {
+  position: absolute; top: -25%; height: 150%; width: 64px;
+  background: linear-gradient(180deg, transparent, rgba(92,224,184,0.07) 45%, transparent);
+  filter: blur(9px); will-change: transform, opacity; transform-origin: top center;
+}
+.flip-atmos-shaft--a { left: 22%; animation: flip-shaft-a 9.5s ease-in-out infinite; }
+.flip-atmos-shaft--b { right: 18%; animation: flip-shaft-b 11.5s ease-in-out infinite; }
+@keyframes flip-shaft-a { 0%, 100% { opacity: 0.3; transform: rotate(15deg) translateX(0); } 50% { opacity: 0.6; transform: rotate(15deg) translateX(12px); } }
+@keyframes flip-shaft-b { 0%, 100% { opacity: 0.24; transform: rotate(-13deg) translateX(0); } 50% { opacity: 0.55; transform: rotate(-13deg) translateX(-12px); } }
+/* Center vignette — focuses the eye on the scene, static. */
+.flip-atmos-vignette {
+  position: absolute; inset: 0; z-index: 1;
+  background: radial-gradient(ellipse 82% 72% at 50% 42%, transparent 42%, rgba(4,4,10,0.5) 100%);
+}
 
 /* ── Reduced motion: declared static rests (fill-mode lesson). BOTH the fresh
       and the earned-streak states are composed, deliberate stills. ───────── */
@@ -232,10 +265,17 @@ const INTRO_STYLES = `
   /* Concealed teaser rests as a deliberate frosted still — the shimmer sweep is
      removed (not frozen mid-scramble), FLIP/SKIP hold a charged static state. */
   .flip-board-shimmer { animation: none; opacity: 0; }
+  .flip-board-price { animation: none; opacity: 1; }
   .flip-board-verb--skip, .flip-board-verb--flip { animation: none; opacity: 0.95; transform: scale(1); }
-  .flip-intro-host-bob { animation: none; transform: translateY(0); }
+  .flip-intro-host-bob { animation: none; transform: none; }
   .flip-intro-host-aura { animation: none; opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
-  .flip-intro-atmos span { animation: none; opacity: 0.5; transform: none; }
+  /* Atmosphere rests as a composed static field (glows placed, shafts angled,
+     vignette present). The parallax hook is inert under reduced motion, so the
+     .flip-plx layers keep their base offset — depth via static composition. */
+  .flip-intro-atmos { animation: none; opacity: 1; transform: none; }
+  .flip-atmos-glow--a, .flip-atmos-glow--b { animation: none; opacity: 0.5; transform: none; }
+  .flip-atmos-shaft--a { animation: none; opacity: 0.4; transform: rotate(15deg); }
+  .flip-atmos-shaft--b { animation: none; opacity: 0.4; transform: rotate(-13deg); }
 }
 
 /* ── Short viewports (≤700px tall): keep the dense composition above the fold. */
@@ -263,6 +303,22 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
   // post-mount effect from localStorage. dayDisplay is the rolling number.
   const [streak, setStreak] = useState(0);
   const [dayDisplay, setDayDisplay] = useState(0);
+
+  // Spatial-depth layers — near moves more, far less (small, eased amplitudes
+  // so it reads premium, never seasick). The hook writes only translate3d to
+  // these refs (compositor-only, one rAF); under reduced motion it is inert.
+  const atmosRef = useRef(null);
+  const kronosRef = useRef(null);
+  const cardRef = useRef(null);
+  const parallaxLayers = useMemo(
+    () => [
+      { ref: atmosRef, coef: 5 }, // deep atmosphere — slowest
+      { ref: kronosRef, coef: 10 }, // the host — forward
+      { ref: cardRef, coef: 10 }, // the mystery card — frontmost scene layer (kept within the column gap)
+    ],
+    [],
+  );
+  useSceneParallax(parallaxLayers, reduced);
   // Gates the streak-or-hook content until the localStorage read resolves
   // post-mount. Server + first client render agree on `false` (empty slot,
   // reserved height) so there is no hydration mismatch AND — critically for a
@@ -331,9 +387,15 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
     <div className={`flip-intro ${warping ? "flip-intro--warping" : ""}`}>
       <style dangerouslySetInnerHTML={{ __html: INTRO_STYLES }} />
 
-      {/* Atmosphere — drifting glows behind the scrim. pointer-events:none. */}
-      <div className="flip-intro-atmos" aria-hidden="true">
-        <span /><span />
+      {/* Atmosphere depth layer (slowest parallax, ref'd) — volumetric glows,
+          drifting light shafts, center vignette. Blooms in on boot. Behind the
+          scrim; pointer-events:none, never a tap target. */}
+      <div ref={atmosRef} className="flip-intro-atmos" aria-hidden="true">
+        <span className="flip-atmos-glow flip-atmos-glow--a" />
+        <span className="flip-atmos-glow flip-atmos-glow--b" />
+        <span className="flip-atmos-shaft flip-atmos-shaft--a" />
+        <span className="flip-atmos-shaft flip-atmos-shaft--b" />
+        <span className="flip-atmos-vignette" />
       </div>
 
       {/* Legibility scrim — darkens the content column so the cosmos reads as
@@ -343,19 +405,21 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
       <div className="flip-intro-inner">
         {/* Kronos — the host: breathing mint aura + gentle idle bob, "hyped"
             callout energy daring you to call today's board. */}
-        <motion.div
-          className="flip-intro-host-wrap"
-          initial={reduced ? false : { opacity: 0, scale: 0.8, y: 18 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={reduced ? undefined : { delay: 0.1, type: "spring", stiffness: 200, damping: 16 }}
-        >
-          <span className="flip-intro-host-aura" aria-hidden="true" />
-          <div className={`flip-intro-host ${reduced ? "flip-intro-host--static" : ""}`}>
-            <div className="flip-intro-host-bob">
-              <FlipCoyote mood="hyped" size={132} />
+        <div ref={kronosRef} className="flip-plx">
+          <motion.div
+            className="flip-intro-host-wrap"
+            initial={reduced ? false : { opacity: 0, scale: 0.8, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={reduced ? undefined : { delay: 0.25, type: "spring", stiffness: 200, damping: 16 }}
+          >
+            <span className="flip-intro-host-aura" aria-hidden="true" />
+            <div className={`flip-intro-host ${reduced ? "flip-intro-host--static" : ""}`}>
+              <div className="flip-intro-host-bob">
+                <FlipCoyote mood="hyped" size={132} />
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* Streak-or-hook — the honest, adaptive second beat. An EARNED run shows
             the flame "DAY {streak}" (rolling to the real number); a fresh or
@@ -367,7 +431,7 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           className="flip-streak-slot"
           initial={reduced ? false : { opacity: 0, scale: 0.7, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={reduced ? undefined : { delay: 0.4, type: "spring", stiffness: 320, damping: 15 }}
+          transition={reduced ? undefined : { delay: 0.55, type: "spring", stiffness: 320, damping: 15 }}
         >
           {/* Content gated on streakResolved: empty (reserved height) until the
               read completes, so a returning user never flashes the newcomer
@@ -391,45 +455,50 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
             the concealment IS the point, and it resolves when you play.
             #{puzzleNumber} is the GLOBAL board id (Wordle-style), never a
             personal streak. */}
-        <motion.div
-          className="flip-board"
-          role="img"
-          aria-label="today's board — a hidden thrift find; call flip or skip, revealed when you tap in"
-          {...enter(0.7)}
-        >
-          <span className="flip-board-glow" aria-hidden="true" />
-          <div className="flip-board-head">
-            <span className="flip-board-name" aria-hidden="true">FLIP OR SKIP</span>
-            <span className="flip-board-num" aria-hidden="true">board #{puzzleNumber}</span>
-          </div>
-          <div className="flip-board-row">
-            {/* Concealed mystery find — a shadowed item behind frosted glass +
-                a redacted buy→sell price (redaction bars, never a real number). */}
-            <div className="flip-board-mystery" aria-hidden="true">
-              <svg className="flip-board-silhouette" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">
-                <path d="M14 4 h12 l2 7 h-16 z" />
-                <rect x="18.5" y="11" width="3" height="18" />
-                <path d="M11 33 q9 -6 18 0 l0 3 q-9 -3 -18 0 z" />
-              </svg>
-              <span className="flip-board-frost" aria-hidden="true" />
-              <span className="flip-board-shimmer" aria-hidden="true" />
-              <div className="flip-board-price">
-                <span className="flip-board-cash">$</span>
-                <span className="flip-board-bar" /><span className="flip-board-bar" />
-                <span className="flip-board-arrow">→</span>
-                <span className="flip-board-cash">$</span>
-                <span className="flip-board-bar" /><span className="flip-board-bar" /><span className="flip-board-bar" />
+        <div ref={cardRef} className="flip-plx">
+          <motion.div
+            className="flip-board"
+            role="img"
+            aria-label="today's board — a hidden thrift find; call flip or skip, revealed when you tap in"
+            {...enter(0.8)}
+          >
+            <span className="flip-board-glow" aria-hidden="true" />
+            <div className="flip-board-head">
+              <span className="flip-board-name" aria-hidden="true">FLIP OR SKIP</span>
+              <span className="flip-board-num" aria-hidden="true">board #{puzzleNumber}</span>
+            </div>
+            <div className="flip-board-row">
+              {/* Concealed mystery find — a shadowed thrift OBJECT (a vinyl
+                  record) behind frosted glass + a redacted buy→sell price
+                  (redaction bars, never a real number). */}
+              <div className="flip-board-mystery" aria-hidden="true">
+                <svg className="flip-board-silhouette" viewBox="0 0 44 44" aria-hidden="true">
+                  <circle cx="22" cy="22" r="19" fill="currentColor" />
+                  <circle cx="22" cy="22" r="13" fill="none" stroke="rgba(0,0,0,0.28)" strokeWidth="0.8" />
+                  <circle cx="22" cy="22" r="9" fill="none" stroke="rgba(0,0,0,0.28)" strokeWidth="0.8" />
+                  <circle cx="22" cy="22" r="6" fill="rgba(92,224,184,0.4)" />
+                  <circle cx="22" cy="22" r="1.6" fill="rgba(0,0,0,0.5)" />
+                </svg>
+                <span className="flip-board-frost" aria-hidden="true" />
+                <span className="flip-board-shimmer" aria-hidden="true" />
+                <div className="flip-board-price">
+                  <span className="flip-board-cash">$</span>
+                  <span className="flip-board-bar" /><span className="flip-board-bar" />
+                  <span className="flip-board-arrow">→</span>
+                  <span className="flip-board-cash">$</span>
+                  <span className="flip-board-bar" /><span className="flip-board-bar" /><span className="flip-board-bar" />
+                </div>
+                <span className="flip-board-tag">mystery find · concealed</span>
               </div>
-              <span className="flip-board-tag">mystery find · concealed</span>
+              {/* The call — FLIP (go) vs SKIP (stop): a charged two-way decision. */}
+              <div className="flip-board-call" aria-hidden="true">
+                <span className="flip-board-verb flip-board-verb--skip">SKIP</span>
+                <span className="flip-board-verb flip-board-verb--flip">FLIP</span>
+              </div>
             </div>
-            {/* The call — FLIP (go) vs SKIP (stop): a charged two-way decision. */}
-            <div className="flip-board-call" aria-hidden="true">
-              <span className="flip-board-verb flip-board-verb--skip">SKIP</span>
-              <span className="flip-board-verb flip-board-verb--flip">FLIP</span>
-            </div>
-          </div>
-          <div className="flip-board-cap" aria-hidden="true">tap in to reveal today&apos;s find · <b>your call</b></div>
-        </motion.div>
+            <div className="flip-board-cap" aria-hidden="true">tap in to reveal today&apos;s find · <b>your call</b></div>
+          </motion.div>
+        </div>
 
         {/* Hero CTA — the single most tappable object in the app. Layered depth
             (gradient + inner highlight + bloom), spring entrance last, idle
@@ -441,7 +510,7 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           className={`flip-tap-in flip-tap-in--cosmic ${showIdle && ready ? "flip-tap-in--idle" : ""}`}
           initial={reduced ? false : { opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={reduced ? undefined : { delay: 0.95, type: "spring", stiffness: 210, damping: 17 }}
+          transition={reduced ? undefined : { delay: 1.15, type: "spring", stiffness: 210, damping: 17 }}
           whileTap={reduced ? undefined : { scale: 0.97 }}
         >
           <span className="flip-tap-in-particles" aria-hidden="true">
@@ -453,7 +522,7 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
 
         {/* The FREE flex — a PRIMARY selling point for cold traffic, confident,
             never fine print. */}
-        <motion.div className="flip-intro-free" {...enter(1.15)}>
+        <motion.div className="flip-intro-free" {...enter(1.35)}>
           <span className="flip-intro-free-item">free</span>
           <span className="flip-intro-free-dot" aria-hidden="true">·</span>
           <span className="flip-intro-free-item">no signup</span>
@@ -461,7 +530,7 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           <span className="flip-intro-free-item">one round a day</span>
         </motion.div>
 
-        <motion.p className="flip-intro-confidence" {...enter(1.3)}>
+        <motion.p className="flip-intro-confidence" {...enter(1.5)}>
           {playedToday ? "back for more? go with your gut." : "first time? trust the gut. you got this."}
         </motion.p>
 
