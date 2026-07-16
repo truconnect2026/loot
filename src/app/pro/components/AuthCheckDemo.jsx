@@ -503,10 +503,12 @@ export default function AuthCheckDemo() {
                     {CHECKS.map((chk) => {
                       const shown = p >= chk.at;
                       const color = chk.pass ? C.mint : RED;
-                      // 0.3 (was 0.15): 0.15 rendered as an illegible smudge on real
-                      // devices. No parent opacity multiplies this — the color alpha
+                      // 0.42 (was 0.3, orig 0.15): bumped again for high-glare
+                      // outdoor scanning — 0.3 still washed out in sunlight. Still
+                      // clearly a pre-reveal GHOST vs the ignited 0.82-white / RED
+                      // result. No parent opacity multiplies this — the color alpha
                       // is the final rendered value.
-                      const GHOST = "rgba(92,224,184,0.3)";
+                      const GHOST = "rgba(92,224,184,0.42)";
                       return (
                         <div
                           key={chk.label}
@@ -516,7 +518,7 @@ export default function AuthCheckDemo() {
                             style={{
                               fontFamily: "var(--font-mono), monospace",
                               fontSize: "clamp(10px,2.9vw,13px)",
-                              color: shown ? (chk.pass ? "rgba(255,255,255,0.7)" : color) : GHOST,
+                              color: shown ? (chk.pass ? "rgba(255,255,255,0.82)" : color) : GHOST,
                               whiteSpace: "nowrap",
                               transition: reduced ? "none" : `color 280ms ${EASE}`,
                             }}

@@ -55,42 +55,89 @@ export default function FounderBeat() {
           </h2>
         </FadeUp>
 
+        {/* Tightened into scannable beats — SAME claims, SAME voice, no
+            wording changed: the run-on paragraph is split into three short
+            stacked lines so it reads at a glance instead of as a wall. Margins
+            + line-heights are kept TIGHT on purpose so the restructure stays
+            ~height-neutral vs the old two paragraphs and does not grow the
+            section (a taller section would shift later snap offsets on short
+            IG-webview viewports where this section already exceeds 100svh). */}
         <FadeUp delay={0.3}>
           <p
             style={{
               fontFamily: "var(--font-manrope), sans-serif",
               fontSize: SECTION_BODY_SIZE,
-              color: "rgba(255,255,255,0.7)",
-              lineHeight: 1.6,
+              color: "rgba(255,255,255,0.88)",
+              lineHeight: 1.5,
               textAlign: "center",
-              margin: "0 0 20px",
+              margin: "0 0 8px",
             }}
           >
-            one person builds loot. i made it because guessing at resale value costs real money &mdash; the
-            bad buys, the dead stock, the good ones you walk right past. so i built the tool i wanted in the
-            aisle: point, get real numbers, decide.
+            one person builds loot.
           </p>
         </FadeUp>
-
-        {/* "no data selling" elevated from an FAQ answer to a stated VALUE —
-            resellers are burned by apps that sell their behavior. Honest: the
-            app already doesn't, and there's no investor pushing it to. */}
-        <FadeUp delay={0.4}>
+        <FadeUp delay={0.36}>
           <p
             style={{
               fontFamily: "var(--font-manrope), sans-serif",
-              fontSize: 15,
-              color: "rgba(255,255,255,0.55)",
-              lineHeight: 1.6,
+              fontSize: SECTION_BODY_SIZE,
+              color: "rgba(255,255,255,0.68)",
+              lineHeight: 1.5,
               textAlign: "center",
-              margin: "0 0 22px",
+              margin: "0 0 8px",
             }}
           >
-            no investors telling me to juice engagement.{" "}
-            <span style={{ color: "#fff", fontWeight: 600 }}>
-              your scans and hauls stay yours &mdash; i don&apos;t sell your behavior to anyone.
-            </span>
+            i made it because guessing at resale value costs real money &mdash; the bad buys, the dead
+            stock, the good ones you walk right past.
           </p>
+        </FadeUp>
+        <FadeUp delay={0.42}>
+          <p
+            style={{
+              fontFamily: "var(--font-manrope), sans-serif",
+              fontSize: SECTION_BODY_SIZE,
+              color: "rgba(255,255,255,0.68)",
+              lineHeight: 1.5,
+              textAlign: "center",
+              margin: "0 0 16px",
+            }}
+          >
+            so i built the tool i wanted in the aisle: point, get real numbers, decide.
+          </p>
+        </FadeUp>
+
+        {/* Value beat — "no data selling" elevated from an FAQ answer to a
+            stated VALUE (resellers are burned by apps that sell their behavior;
+            the app already doesn't, and there's no investor pushing it to).
+            Same words as before; its own beat comes from color + weight + tight
+            pairing, NOT a framed box (a box added height and would push later
+            sections on short viewports — the beat is achieved paint-only). */}
+        <FadeUp delay={0.46}>
+          <div style={{ maxWidth: 460, margin: "0 auto 16px", textAlign: "center" }}>
+            <p
+              style={{
+                fontFamily: "var(--font-manrope), sans-serif",
+                fontSize: 15,
+                color: "rgba(92,224,184,0.85)",
+                lineHeight: 1.5,
+                margin: "0 0 4px",
+              }}
+            >
+              no investors telling me to juice engagement.
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-manrope), sans-serif",
+                fontSize: 15,
+                color: "#fff",
+                fontWeight: 600,
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              your scans and hauls stay yours &mdash; i don&apos;t sell your behavior to anyone.
+            </p>
+          </div>
         </FadeUp>
 
         <FadeUp delay={0.48}>

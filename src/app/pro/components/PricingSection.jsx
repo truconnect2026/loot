@@ -122,7 +122,12 @@ export default function PricingSection({ onCTA }) {
                 borderRadius: 22,
                 padding: "clamp(20px,4vw,30px)",
                 position: "relative",
-                boxShadow: "0 0 44px rgba(92,224,184,0.14)",
+                // Paint-only premium edge: outer mint bloom (unchanged) +
+                // a top inner highlight hairline and a faint inner glow so
+                // the card reads as lit glass, not a flat outline. No motion
+                // (static — its own reduced-motion rest); no layout change.
+                boxShadow:
+                  "0 0 44px rgba(92,224,184,0.14), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 44px rgba(92,224,184,0.05)",
                 display: "flex",
                 flexDirection: "column",
               }}

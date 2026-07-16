@@ -177,6 +177,11 @@ export default function MiniCtaBar() {
           borderRadius: 9,
           padding: "8px 18px",
           cursor: "pointer",
+          // Micro-depth so the persistent money button reads richest: a
+          // mint lift-glow + a top inner highlight (paint-only, static).
+          // The :active press (mcb-claim, transform+filter) is unchanged;
+          // this shadow has no motion so its reduced-motion rest is itself.
+          boxShadow: "0 4px 18px rgba(92,224,184,0.42), inset 0 1px 0 rgba(255,255,255,0.28)",
           pointerEvents: visible ? "auto" : "none",
         }}
       >
