@@ -85,9 +85,10 @@ const INTRO_STYLES = `
   position: relative; width: 100%; max-width: 340px;
   border-radius: 18px;
   border: 1px solid rgba(92,224,184,0.28);
-  background: linear-gradient(180deg, rgba(92,224,184,0.07) 0%, rgba(10,12,20,0.35) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 14px 34px -14px rgba(92,224,184,0.5);
-  padding: 11px 14px 10px;
+  background: linear-gradient(180deg, rgba(92,224,184,0.08) 0%, rgba(10,12,20,0.55) 100%);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 30px rgba(92,224,184,0.06), 0 18px 40px -14px rgba(92,224,184,0.55);
+  padding: 12px 14px 11px;
   overflow: hidden;
 }
 .flip-board-glow {
@@ -110,36 +111,76 @@ const INTRO_STYLES = `
   font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(255,255,255,0.42);
 }
-.flip-board-row { position: relative; display: flex; align-items: center; gap: 12px; }
-.flip-board-item {
-  flex: 1; display: flex; align-items: center; gap: 10px;
-  border-radius: 12px; border: 1px dashed rgba(255,255,255,0.16);
-  background: rgba(255,255,255,0.03); padding: 8px 10px;
+.flip-board-row { position: relative; display: flex; align-items: stretch; gap: 12px; }
+/* Concealed mystery find — a REAL thrift item withheld behind frosted glass,
+   with a redacted buy→sell price that teases toward resolving (a mint shimmer
+   sweep). Reads "there's an answer here, hidden," never "failed to load."
+   Honest: no real number ever — only redaction bars. */
+.flip-board-mystery {
+  position: relative; flex: 1; min-height: 66px; overflow: hidden;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.24) 100%);
+  padding: 9px 11px;
+  display: flex; flex-direction: column; justify-content: center; gap: 7px;
 }
-.flip-board-q {
-  font-family: var(--display); font-weight: 900; font-size: 26px; line-height: 1;
-  color: rgba(92,224,184,0.9); text-shadow: 0 0 12px rgba(92,224,184,0.45);
+.flip-board-silhouette {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; color: rgba(255,255,255,0.22);
+  filter: blur(2.2px); pointer-events: none;
 }
-.flip-board-meta { display: flex; flex-direction: column; gap: 2px; }
-.flip-board-price { font-family: var(--mono); font-size: 13px; font-weight: 700; color: #fff; }
-.flip-board-sub {
-  font-family: var(--mono); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+.flip-board-frost {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.015) 55%, transparent 100%);
 }
-.flip-board-verbs { display: flex; flex-direction: column; gap: 6px; }
+.flip-board-shimmer {
+  position: absolute; top: 0; bottom: 0; left: -45%; width: 45%; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(92,224,184,0.22), transparent);
+  animation: flip-board-shimmer 3.4s ease-in-out infinite; will-change: transform;
+}
+@keyframes flip-board-shimmer { 0% { transform: translateX(0); } 70%, 100% { transform: translateX(360%); } }
+.flip-board-price { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; }
+.flip-board-cash { font-family: var(--mono); font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.78); }
+.flip-board-bar {
+  display: inline-block; width: 11px; height: 13px; border-radius: 3px;
+  background: rgba(92,224,184,0.3); box-shadow: inset 0 0 0 1px rgba(92,224,184,0.22);
+}
+.flip-board-bar + .flip-board-bar { margin-left: 2px; }
+.flip-board-arrow { color: rgba(92,224,184,0.75); font-size: 13px; margin: 0 3px; }
+.flip-board-tag {
+  position: relative; z-index: 2;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(92,224,184,0.6);
+}
+/* The CALL — the hook. FLIP (green go) vs SKIP (red stop): a charged two-way
+   decision whose scale+glow spotlight alternates so a thumb itches to choose.
+   Tints (not a solid fill) so the single primary — the TAP IN button — stays
+   unmistakable. */
+.flip-board-call { display: flex; flex-direction: column; gap: 7px; justify-content: center; }
 .flip-board-verb {
-  font-family: var(--display); font-weight: 900; font-size: 13px; letter-spacing: 0.1em;
-  padding: 5px 13px; border-radius: 8px; text-align: center; min-width: 62px;
-  will-change: opacity;
+  position: relative;
+  font-family: var(--display); font-weight: 900; font-size: 14px; letter-spacing: 0.1em;
+  padding: 7px 15px; border-radius: 9px; text-align: center; min-width: 76px;
+  will-change: transform, opacity;
 }
-.flip-board-verb--skip { color: #ff6b6b; border: 1px solid rgba(255,107,107,0.42); background: rgba(255,107,107,0.08); animation: flip-board-blink-a 2.8s ease-in-out infinite; }
-.flip-board-verb--flip { color: var(--mint); border: 1px solid rgba(92,224,184,0.5); background: rgba(92,224,184,0.10); animation: flip-board-blink-b 2.8s ease-in-out infinite; }
-@keyframes flip-board-blink-a { 0%, 42% { opacity: 1; } 58%, 100% { opacity: 0.5; } }
-@keyframes flip-board-blink-b { 0%, 42% { opacity: 0.5; } 58%, 100% { opacity: 1; } }
+.flip-board-verb--skip {
+  color: #ff8b8b; border: 1px solid rgba(255,107,107,0.5);
+  background: linear-gradient(180deg, rgba(255,107,107,0.16), rgba(255,107,107,0.05));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 15px -8px rgba(255,107,107,0.5);
+  animation: flip-board-call-a 2.6s ease-in-out infinite;
+}
+.flip-board-verb--flip {
+  color: var(--mint); border: 1px solid rgba(92,224,184,0.6);
+  background: linear-gradient(180deg, rgba(92,224,184,0.2), rgba(92,224,184,0.06));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 16px -8px rgba(92,224,184,0.6);
+  animation: flip-board-call-b 2.6s ease-in-out infinite;
+}
+@keyframes flip-board-call-a { 0%, 40% { transform: scale(1.05); opacity: 1; } 56%, 100% { transform: scale(0.97); opacity: 0.62; } }
+@keyframes flip-board-call-b { 0%, 40% { transform: scale(0.97); opacity: 0.62; } 56%, 100% { transform: scale(1.05); opacity: 1; } }
 .flip-board-cap {
   position: relative; margin-top: 10px; text-align: center;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; color: rgba(255,255,255,0.52);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; color: rgba(255,255,255,0.55);
 }
+.flip-board-cap b { color: var(--mint); font-weight: 700; }
 
 /* ── Kronos: idle bob + breathing mint aura (compositor-only) ────────────── */
 .flip-intro-host-wrap { position: relative; line-height: 0; }
@@ -188,7 +229,10 @@ const INTRO_STYLES = `
 @media (prefers-reduced-motion: reduce) {
   .flip-streak-aura { animation: none; opacity: 0.5; transform: scale(1); }
   .flip-board-glow { animation: none; opacity: 0.5; transform: scale(1); }
-  .flip-board-verb--skip, .flip-board-verb--flip { animation: none; opacity: 0.92; }
+  /* Concealed teaser rests as a deliberate frosted still — the shimmer sweep is
+     removed (not frozen mid-scramble), FLIP/SKIP hold a charged static state. */
+  .flip-board-shimmer { animation: none; opacity: 0; }
+  .flip-board-verb--skip, .flip-board-verb--flip { animation: none; opacity: 0.95; transform: scale(1); }
   .flip-intro-host-bob { animation: none; transform: translateY(0); }
   .flip-intro-host-aura { animation: none; opacity: 0.55; transform: translate(-50%, -50%) scale(1); }
   .flip-intro-atmos span { animation: none; opacity: 0.5; transform: none; }
@@ -200,9 +244,10 @@ const INTRO_STYLES = `
   .flip-streak-num { font-size: 25px; }
   .flip-streak-flame { font-size: 16px; }
   .flip-streak-slot { min-height: 38px; }
-  .flip-board { padding: 9px 12px 9px; }
-  .flip-board-q { font-size: 22px; }
-  .flip-board-verb { font-size: 12px; padding: 4px 11px; }
+  .flip-board { padding: 10px 12px 10px; }
+  .flip-board-mystery { min-height: 58px; padding: 8px 10px; }
+  .flip-board-silhouette { width: 32px; height: 32px; }
+  .flip-board-verb { font-size: 12px; padding: 5px 12px; min-width: 68px; }
   .flip-board-cap { margin-top: 8px; }
 }
 `;
@@ -339,15 +384,17 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           ))}
         </motion.div>
 
-        {/* Today's-board teaser — the magnetic centerpiece. Teaches the loop:
-            a mystery find, call FLIP or SKIP. Honest teaser (question marks
-            only). The FLIP/SKIP verbs blink alternately to make the two-way
-            call legible before they tap. #{puzzleNumber} is the GLOBAL board
-            id (Wordle-style), never a personal streak. */}
+        {/* Today's-board teaser — the centerpiece. A REAL find is withheld
+            behind frosted glass with a redacted price that teases toward
+            resolving; the FLIP (go) / SKIP (stop) call is charged so a thumb
+            itches to choose. Honest teaser — no real number, never a spoiler;
+            the concealment IS the point, and it resolves when you play.
+            #{puzzleNumber} is the GLOBAL board id (Wordle-style), never a
+            personal streak. */}
         <motion.div
           className="flip-board"
           role="img"
-          aria-label="today's board — ten mystery finds, call flip or skip on each"
+          aria-label="today's board — a hidden thrift find; call flip or skip, revealed when you tap in"
           {...enter(0.7)}
         >
           <span className="flip-board-glow" aria-hidden="true" />
@@ -356,19 +403,32 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
             <span className="flip-board-num" aria-hidden="true">board #{puzzleNumber}</span>
           </div>
           <div className="flip-board-row">
-            <div className="flip-board-item" aria-hidden="true">
-              <span className="flip-board-q">?</span>
-              <div className="flip-board-meta">
-                <span className="flip-board-price">$? → $?</span>
-                <span className="flip-board-sub">mystery find</span>
+            {/* Concealed mystery find — a shadowed item behind frosted glass +
+                a redacted buy→sell price (redaction bars, never a real number). */}
+            <div className="flip-board-mystery" aria-hidden="true">
+              <svg className="flip-board-silhouette" viewBox="0 0 40 40" fill="currentColor" aria-hidden="true">
+                <path d="M14 4 h12 l2 7 h-16 z" />
+                <rect x="18.5" y="11" width="3" height="18" />
+                <path d="M11 33 q9 -6 18 0 l0 3 q-9 -3 -18 0 z" />
+              </svg>
+              <span className="flip-board-frost" aria-hidden="true" />
+              <span className="flip-board-shimmer" aria-hidden="true" />
+              <div className="flip-board-price">
+                <span className="flip-board-cash">$</span>
+                <span className="flip-board-bar" /><span className="flip-board-bar" />
+                <span className="flip-board-arrow">→</span>
+                <span className="flip-board-cash">$</span>
+                <span className="flip-board-bar" /><span className="flip-board-bar" /><span className="flip-board-bar" />
               </div>
+              <span className="flip-board-tag">mystery find · concealed</span>
             </div>
-            <div className="flip-board-verbs" aria-hidden="true">
+            {/* The call — FLIP (go) vs SKIP (stop): a charged two-way decision. */}
+            <div className="flip-board-call" aria-hidden="true">
               <span className="flip-board-verb flip-board-verb--skip">SKIP</span>
               <span className="flip-board-verb flip-board-verb--flip">FLIP</span>
             </div>
           </div>
-          <div className="flip-board-cap" aria-hidden="true">10 finds today · one call each · trust your gut</div>
+          <div className="flip-board-cap" aria-hidden="true">tap in to reveal today&apos;s find · <b>your call</b></div>
         </motion.div>
 
         {/* Hero CTA — the single most tappable object in the app. Layered depth
@@ -444,9 +504,10 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           </motion.div>
         )}
 
-        {showIdle && (
-          <div className="flip-intro-tip flip-intro-tip--idle">press it →</div>
-        )}
+        {/* Single primary action: TAP IN is the only "go". The old idle
+            "press it →" box was a second CTA that read unfinished — removed.
+            showIdle still drives TAP IN's own idle glow (flip-tap-in--idle),
+            so the hero pulses to be pressed without a competing affordance. */}
       </div>
     </div>
   );
