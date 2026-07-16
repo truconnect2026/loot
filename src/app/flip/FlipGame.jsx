@@ -602,6 +602,38 @@ const INLINE_STYLES = `
 .flip-game-wrap {
   --display: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --mono: var(--font-space-mono), ui-monospace, monospace;
+  /* ════ DESIGN SYSTEM — the SAME vocabulary as .flip-intro, round-tuned so
+     the round + title scene read as one product. Presentation tokens only. ══ */
+  /* TYPE — 2 roles (display / mono) + one scale */
+  --fs-display-lg: 22px;   /* item title */
+  --fs-display-md: 15px;   /* FLIP/SKIP verbs, tier value */
+  --fs-badge: 56px;        /* the drag FLIP/SKIP stamp */
+  --fs-label: 10px;        /* tracked caps: DAY, rarity chip, action labels */
+  --fs-body: 12px;         /* meta, hint, action hint */
+  --fs-data: 14px;         /* score ticker, coin values */
+  --tr-display: 0.02em; --tr-label: 0.18em; --tr-body: 0.08em;
+  /* SPACE — 8pt */
+  --sp-4: 4px; --sp-8: 8px; --sp-12: 12px; --sp-16: 16px; --sp-24: 24px; --sp-32: 32px;
+  /* COLOR — mint = GO (flip), stop-red = controlled STOP (skip), gold =
+     achievement (coins/streak). The FLIP/SKIP decision owns focus; the HUD
+     recedes to ink support tones. */
+  --acc: #5CE0B8;
+  --acc-text: rgba(92,224,184,0.62);
+  --acc-line: rgba(92,224,184,0.30);
+  --acc-fill: rgba(92,224,184,0.07);
+  --stop: #ef4444;
+  --stop-text: rgba(239,68,68,0.72);
+  --stop-line: rgba(239,68,68,0.48);
+  --stop-fill: rgba(239,68,68,0.10);
+  --gold-line: rgba(245,197,24,0.38); --gold-fill: rgba(245,197,24,0.10);
+  --ink-1: rgba(255,255,255,0.92); --ink-2: rgba(255,255,255,0.62); --ink-3: rgba(255,255,255,0.42);
+  /* RADIUS — one scale */
+  --r-card: 24px; --r-pill: 999px; --r-md: 16px; --r-sm: 10px; --r-xs: 4px;
+  /* ELEVATION — support-tier treatment (border weight + glow + inset) */
+  --bd: 1px;
+  --inset-hi: inset 0 1px 0 rgba(255,255,255,0.12);
+  --elev-go: 0 14px 34px -16px rgba(92,224,184,0.5);
+  --elev-stop: 0 14px 34px -16px rgba(239,68,68,0.5);
   position: relative; z-index: 1;
   min-height: 100dvh;
   color: #fff;
@@ -850,86 +882,88 @@ const INLINE_STYLES = `
 
 .flip-day-chip {
   display: inline-flex; align-items: center;
-  font-family: var(--mono); font-weight: 700; font-size: 11px;
-  letter-spacing: 0.2em; color: var(--mint);
-  padding: 6px 12px; border: 1px solid var(--mint);
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label); color: var(--ink-2);
+  padding: var(--sp-4) var(--sp-12); border-radius: var(--r-pill);
+  border: var(--bd) solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
 }
-.flip-day-chip--center { margin: 0 auto 16px; }
+.flip-day-chip--center { margin: 0 auto var(--sp-16); }
 
 /* ─── Playing phase ───────────────────────────────────────────── */
 .flip-playing-shell { position: relative; z-index: 1; }
 .flip-game-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 4px 12px; max-width: 480px; margin: 0 auto; width: 100%;
+  padding: var(--sp-8) var(--sp-4) var(--sp-12); max-width: 480px; margin: 0 auto; width: 100%;
   position: relative; z-index: 2;
 }
 .flip-game-header-left, .flip-game-header-right {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: var(--sp-8);
 }
 .flip-header-streak {
-  font-family: var(--display); font-weight: 700; font-size: 14px;
+  font-family: var(--display); font-weight: 700; font-size: var(--fs-data);
   color: var(--gold);
-  display: inline-flex; align-items: center; gap: 5px;
+  display: inline-flex; align-items: center; gap: var(--sp-4);
 }
 .flip-combo-mult {
-  font-family: var(--mono); font-weight: 700; font-size: 10px;
-  letter-spacing: 0.06em; color: #0a0a0a;
-  padding: 2px 6px; border-radius: 999px;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-body); color: #0a0a0a;
+  padding: 2px var(--sp-8); border-radius: var(--r-pill);
   background: var(--gold); line-height: 1;
-  box-shadow: 0 0 12px rgba(245,197,24,0.5);
+  box-shadow: 0 0 12px var(--gold-line);
 }
 .flip-coin-chip {
   position: relative;
-  display: inline-flex; align-items: center; gap: 5px;
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  letter-spacing: 0.06em; color: var(--gold);
-  padding: 6px 10px; border-radius: 999px;
-  border: 1px solid rgba(245,197,24,0.35);
-  background: rgba(245,197,24,0.06); backdrop-filter: blur(4px);
+  display: inline-flex; align-items: center; gap: var(--sp-4);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--gold);
+  padding: var(--sp-4) var(--sp-8); border-radius: var(--r-pill);
+  border: var(--bd) solid var(--gold-line);
+  background: var(--gold-fill); backdrop-filter: blur(4px);
   font-variant-numeric: tabular-nums;
 }
-.flip-coin-chip-glyph { font-size: 13px; line-height: 1; }
+.flip-coin-chip-glyph { font-size: var(--fs-data); line-height: 1; }
 .flip-coin-chip-value { color: var(--gold); }
 .flip-coin-chip-board {
-  color: rgba(92,224,184,0.95); font-size: 11px;
-  padding-left: 5px; margin-left: 1px;
-  border-left: 1px solid rgba(255,255,255,0.14);
+  color: var(--acc-text); font-size: var(--fs-label);
+  padding-left: var(--sp-4); margin-left: 1px;
+  border-left: var(--bd) solid rgba(255,255,255,0.14);
 }
 .flip-coin-pop {
   position: absolute; top: -2px; left: 50%;
   transform: translateX(-50%);
-  font-family: var(--display); font-weight: 900; font-size: 16px;
+  font-family: var(--display); font-weight: 900; font-size: var(--fs-display-md);
   color: var(--gold); text-shadow: 0 0 12px rgba(245,197,24,0.6);
   pointer-events: none; white-space: nowrap; z-index: 5;
 }
 .flip-header-cog {
-  background: transparent; border: 0; cursor: pointer; padding: 6px;
-  color: rgba(92,224,184,0.5);
+  background: transparent; border: 0; cursor: pointer; padding: var(--sp-4);
+  color: var(--ink-3);
+  transition: color 180ms ease;
 }
-.flip-header-cog:hover { color: var(--mint); }
+.flip-header-cog:hover { color: var(--acc); }
 
 .flip-score-ticker {
-  font-family: var(--mono); font-weight: 700; font-size: 14px;
-  color: var(--mint); letter-spacing: 0.1em;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-data);
+  color: var(--acc-text); letter-spacing: var(--tr-body);
   font-variant-numeric: tabular-nums;
   display: inline-flex; align-items: baseline;
 }
 .flip-score-ticker-sep { margin: 0 2px; opacity: 0.5; }
 
-/* Score arc — 10 segments */
+/* Score arc — 10 segments (the round's progress rhythm) */
 .flip-score-arc {
-  max-width: 360px; width: 60%; margin: 0 auto 14px;
-  display: flex; gap: 4px; justify-content: center;
+  max-width: 360px; width: 60%; margin: 0 auto var(--sp-16);
+  display: flex; gap: var(--sp-4); justify-content: center;
 }
 @media (min-width: 768px) { .flip-score-arc { max-width: 480px; } }
 .flip-score-seg {
-  flex: 1; height: 4px; border-radius: 2px;
+  flex: 1; height: 4px; border-radius: var(--r-xs);
   display: block; transition: background-color 200ms ease;
 }
-.flip-score-seg--empty { background: rgba(92,224,184,0.15); }
-.flip-score-seg--correct { background: #5CE0B8; }
-.flip-score-seg--wrong { background: #ef4444; }
+.flip-score-seg--empty { background: var(--acc-fill); }
+.flip-score-seg--correct { background: var(--acc); }
+.flip-score-seg--wrong { background: var(--stop); }
 
 .flip-card-stack {
   position: relative; width: 100%; max-width: 360px; aspect-ratio: 3 / 4;
@@ -939,21 +973,21 @@ const INLINE_STYLES = `
 
 .flip-swipe-card {
   position: absolute; inset: 0;
-  border-radius: 24px;
+  border-radius: var(--r-card);
   user-select: none; -webkit-user-select: none;
   z-index: 1;
 }
 .flip-swipe-card--peek { pointer-events: none; }
 .flip-swipe-card-inner {
   position: relative; width: 100%; height: 100%; overflow: hidden;
-  border-radius: 24px;
+  border-radius: var(--r-card);
   background: #0a0a0a;
   box-shadow:
     0 0 56px rgba(92,224,184,0.18),
-    inset 0 1px 0 rgba(255,255,255,0.10),
+    var(--inset-hi),
     inset 0 0 80px rgba(0,0,0,0.8),
     0 20px 50px rgba(0,0,0,0.6);
-  border: 1px solid rgba(92,224,184,0.32);
+  border: var(--bd) solid var(--acc-line);
 }
 .flip-card-image-wrap {
   position: absolute; top: 0; left: 0; right: 0; height: 65%;
@@ -1029,51 +1063,52 @@ const INLINE_STYLES = `
 
 .flip-rarity-chip {
   display: inline-block;
-  font-family: var(--mono); font-weight: 700; font-size: 9px;
-  letter-spacing: 0.2em;
-  padding: 4px 10px;
-  border: 1px solid currentColor;
-  margin-bottom: 8px;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label);
+  padding: var(--sp-4) var(--sp-8); border-radius: var(--r-xs);
+  border: var(--bd) solid currentColor;
+  margin-bottom: var(--sp-8);
 }
-.flip-rarity-chip--common { color: rgba(255,255,255,0.5); }
-.flip-rarity-chip--mid { color: #5CE0B8; }
-.flip-rarity-chip--high { color: #5CE0B8; }
+.flip-rarity-chip--common { color: var(--ink-3); }
+.flip-rarity-chip--mid { color: var(--acc); }
+.flip-rarity-chip--high { color: var(--acc); }
 .flip-rarity-chip--grail {
-  background: linear-gradient(90deg, #F5C518, #FFD650); color: #000; border-color: #F5C518;
+  background: linear-gradient(90deg, #F5C518, #FFD650); color: #000; border-color: var(--gold);
   animation: flip-grail-chip-pulse 2.5s ease-in-out infinite;
 }
 @keyframes flip-grail-chip-pulse { 0%,100% { box-shadow: 0 0 8px rgba(245,197,24,0.4); } 50% { box-shadow: 0 0 18px rgba(245,197,24,0.8); } }
+@media (prefers-reduced-motion: reduce) {
+  .flip-rarity-chip--grail { animation: none; box-shadow: 0 0 12px rgba(245,197,24,0.6); }
+}
 
-.flip-card-name--grail { border-bottom: 2px solid #F5C518; padding-bottom: 4px; }
+.flip-card-name--grail { border-bottom: 2px solid var(--gold); padding-bottom: var(--sp-4); }
 
 .flip-badge {
-  position: absolute; top: 24px; z-index: 4;
+  position: absolute; top: var(--sp-24); z-index: 4;
   font-family: var(--display); font-weight: 900;
   display: flex; flex-direction: column; align-items: center;
-  padding: 12px 22px;
+  padding: var(--sp-12) var(--sp-24);
   pointer-events: none;
 }
-.flip-badge > span:first-child { font-size: 56px; letter-spacing: 0.06em; line-height: 1; }
-.flip-badge-sub { font-family: var(--mono); font-weight: 700; font-size: 10px; letter-spacing: 0.16em; margin-top: 4px; }
+.flip-badge > span:first-child { font-size: var(--fs-badge); letter-spacing: var(--tr-display); line-height: 1; }
+.flip-badge-sub { font-family: var(--mono); font-weight: 700; font-size: var(--fs-label); letter-spacing: var(--tr-label); margin-top: var(--sp-4); }
 .flip-badge--flip {
-  left: 24px; color: #5CE0B8; border: 4px solid #5CE0B8;
+  left: var(--sp-24); color: var(--acc); border: 4px solid var(--acc);
   transform: rotate(-10deg);
   filter: drop-shadow(0 0 30px rgba(92,224,184,0.6));
 }
 .flip-badge--skip {
-  right: 24px; color: #ef4444; border: 4px solid #ef4444;
+  right: var(--sp-24); color: var(--stop); border: 4px solid var(--stop);
   transform: rotate(10deg);
   filter: drop-shadow(0 0 30px rgba(239,68,68,0.6));
 }
-@media (min-width: 768px) { .flip-badge > span:first-child { font-size: 72px; } }
-
 .flip-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
-.flip-overlay--mint { background: #5CE0B8; mix-blend-mode: screen; }
-.flip-overlay--red { background: #ef4444; mix-blend-mode: screen; }
+.flip-overlay--mint { background: var(--acc); mix-blend-mode: screen; }
+.flip-overlay--red { background: var(--stop); mix-blend-mode: screen; }
 
 .flip-card-bottom {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
-  padding: 24px 18px 18px;
+  padding: var(--sp-24) var(--sp-16) var(--sp-16);
   min-height: 35%;
 }
 .flip-card-bottom-fade {
@@ -1083,20 +1118,20 @@ const INLINE_STYLES = `
 }
 .flip-card-text { position: relative; z-index: 1; }
 .flip-card-name {
-  font-family: var(--display); font-weight: 700; font-size: 22px;
-  line-height: 1.1; letter-spacing: -0.01em; color: #fff;
-  margin-bottom: 6px;
+  font-family: var(--display); font-weight: 700; font-size: var(--fs-display-lg);
+  line-height: 1.1; letter-spacing: -0.01em; color: var(--ink-1);
+  margin-bottom: var(--sp-4);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden;
 }
-@media (min-width: 768px) { .flip-card-name { font-size: 28px; } }
+@media (min-width: 768px) { .flip-game-wrap { --fs-display-lg: 28px; --fs-badge: 72px; } }
 .flip-card-meta {
-  font-family: var(--mono); font-size: 11px;
-  color: rgba(92,224,184,0.7); letter-spacing: 0.06em; margin-bottom: 6px;
+  font-family: var(--mono); font-size: var(--fs-body);
+  color: var(--acc-text); letter-spacing: var(--tr-body); margin-bottom: var(--sp-4);
 }
 .flip-card-hint {
-  font-family: var(--display); font-weight: 500; font-size: 14px;
-  color: rgba(255,255,255,0.9); font-style: italic;
+  font-family: var(--display); font-weight: 500; font-size: var(--fs-body);
+  color: var(--ink-1); font-style: italic;
 }
 
 /* ─── First-round gesture cue ─────────────────────────────────────
@@ -1124,52 +1159,65 @@ const INLINE_STYLES = `
   74% { opacity: 0.15; }
 }
 .flip-gesture-text {
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  letter-spacing: 0.12em; color: rgba(255,255,255,0.82);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--ink-1);
   text-shadow: 0 1px 8px rgba(0,0,0,0.9);
 }
 @media (prefers-reduced-motion: reduce) {
   .flip-gesture-finger { animation: none; transform: none; opacity: 0.85; }
 }
 .flip-peek-tint--purple {
-  position: absolute; inset: 0; pointer-events: none; border-radius: 24px;
+  position: absolute; inset: 0; pointer-events: none; border-radius: var(--r-card);
   background: rgba(107,70,193,0.1); mix-blend-mode: multiply;
 }
 
-/* ─── Action buttons ──────────────────────────────────────────── */
+/* ─── Action buttons — the round's HERO interaction (the decision moment).
+   Premium domed discs with real depth, a charged-ready ring, and a shadow
+   that collapses on press. mint = GO (flip), stop-red = STOP (skip). ─────── */
 .flip-action-row {
-  display: flex; justify-content: center; align-items: center; gap: 20px;
-  margin: 18px auto 12px;
+  display: flex; justify-content: center; align-items: center; gap: var(--sp-24);
+  margin: var(--sp-16) auto var(--sp-12);
   position: relative; z-index: 1;
 }
-.flip-action-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.flip-action-cell { display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); }
 .flip-action {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: rgba(10,10,10,0.8); cursor: pointer;
+  position: relative;
+  width: 76px; height: 76px; border-radius: 50%;
+  background: radial-gradient(125% 125% at 50% 22%, rgba(255,255,255,0.10), rgba(10,10,10,0.92) 62%);
+  cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   border-width: 2px; border-style: solid;
-  transition: opacity 150ms ease, box-shadow 200ms ease;
+  transition: box-shadow 200ms ease, transform 120ms ease, border-color 200ms ease;
 }
+/* Charged-ready ring — compositor scale/opacity breath, tinted to the action. */
+.flip-action::before {
+  content: ""; position: absolute; inset: -5px; border-radius: 50%;
+  border: 1px solid currentColor; opacity: 0.24; pointer-events: none;
+  animation: flip-action-charge 2.8s ease-in-out infinite;
+}
+@keyframes flip-action-charge {
+  0%, 100% { transform: scale(0.94); opacity: 0.16; }
+  50% { transform: scale(1.05); opacity: 0.5; }
+}
+.flip-action--idle::before { animation-duration: 1.8s; } /* charged emphasis once idle */
 .flip-action:disabled { opacity: 0.4; cursor: not-allowed; }
-.flip-action--skip { border-color: #ef4444; color: #ef4444;
-  box-shadow: 0 0 20px rgba(239,68,68,0.3); }
-.flip-action--flip { border-color: #5CE0B8; color: #5CE0B8;
-  box-shadow: 0 0 20px rgba(92,224,184,0.3); }
-.flip-action--idle { animation: flip-action-idle 2.5s ease-in-out infinite; }
-@keyframes flip-action-idle {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+.flip-action:active { box-shadow: var(--inset-hi), 0 4px 12px -8px rgba(0,0,0,0.85); }
+.flip-action--skip { border-color: var(--stop); color: var(--stop);
+  box-shadow: var(--inset-hi), 0 10px 24px -10px rgba(0,0,0,0.75), var(--elev-stop); }
+.flip-action--flip { border-color: var(--acc); color: var(--acc);
+  box-shadow: var(--inset-hi), 0 10px 24px -10px rgba(0,0,0,0.75), var(--elev-go); }
+@media (prefers-reduced-motion: reduce) {
+  .flip-action::before { animation: none; transform: none; opacity: 0.3; }
 }
-@media (prefers-reduced-motion: reduce) { .flip-action--idle { animation: none; } }
 .flip-action-label {
-  font-family: var(--mono); font-weight: 700; font-size: 9px;
-  letter-spacing: 0.2em;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label);
 }
-.flip-action-label--skip { color: rgba(239,68,68,0.7); }
-.flip-action-label--flip { color: rgba(92,224,184,0.7); }
+.flip-action-label--skip { color: var(--stop-text); }
+.flip-action-label--flip { color: var(--acc-text); }
 .flip-action-hint {
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
-  color: rgba(92,224,184,0.5); min-width: 110px; text-align: center;
+  font-family: var(--mono); font-size: var(--fs-body); letter-spacing: var(--tr-body);
+  color: var(--ink-3); min-width: 110px; text-align: center;
 }
 
 /* ─── Streak overlay ──────────────────────────────────────────── */
