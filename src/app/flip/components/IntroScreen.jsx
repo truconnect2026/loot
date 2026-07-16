@@ -36,20 +36,57 @@ import { useSceneParallax } from "../lib/useSceneParallax.js";
  */
 
 const INTRO_STYLES = `
-/* ── DAY streak badge — shown ONLY for an earned, alive run ──────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — defined once, consumed everywhere, so the intro reads as one
+   intentional object. Scoped to .flip-intro (inherits to every descendant).
+   TWO type roles (display + mono), an 8pt space scale, one dominant accent
+   (mint = action, owned by TAP IN) with a receding support tier, gold as the
+   brand/achievement accent (Kronos + streak), one radius scale, one elevation.
+   ════════════════════════════════════════════════════════════════════════ */
+.flip-intro {
+  /* TYPE — 2 roles (families are the global --display Bebas / --mono Space Mono).
+     display: tight tracking; label: tracked small-caps; body/data: normal. */
+  --fs-display-lg: 28px;  /* streak number */
+  --fs-display-md: 15px;  /* section label "FLIP OR SKIP", FLIP/SKIP verbs */
+  --fs-label: 9px;        /* tracked small-caps (board id, tag, DAY) */
+  --fs-body: 11px;        /* hook, free-chip, reveal line, confidence, reassure */
+  --fs-data: 12px;        /* redacted price */
+  --icon-flame: 19px;     /* streak flame glyph */
+  --tr-display: 0.02em; --tr-label: 0.18em; --tr-body: 0.08em;
+  /* SPACE — 8pt (4 = half-step for chips) */
+  --sp-4: 4px; --sp-8: 8px; --sp-16: 16px; --sp-24: 24px; --sp-32: 32px;
+  /* COLOR — one accent wins. mint = action (primary owned by TAP IN);
+     support mint recedes; gold = brand/achievement; red = controlled stop. */
+  --acc-text: rgba(92,224,184,0.62);   /* supporting mint text */
+  --acc-line: rgba(92,224,184,0.28);   /* muted mint border (support tier) */
+  --acc-fill: rgba(92,224,184,0.07);   /* muted mint fill */
+  --stop: #ff9a9a;                      /* softened stop-red — never out-pulls TAP IN */
+  --stop-line: rgba(255,107,107,0.42);
+  --stop-fill: rgba(255,107,107,0.09);
+  --gold: #f5c518; --gold-line: rgba(245,197,24,0.38); --gold-fill: rgba(245,197,24,0.1);
+  --ink-1: rgba(255,255,255,0.92); --ink-2: rgba(255,255,255,0.62); --ink-3: rgba(255,255,255,0.42);
+  /* RADIUS — one scale for every container */
+  --r-pill: 999px; --r-md: 16px; --r-sm: 10px; --r-xs: 4px;
+  /* ELEVATION — one support-tier treatment (border weight + glow + inset) */
+  --bd: 1px;
+  --elev: 0 12px 30px -14px rgba(92,224,184,0.4);
+  --inset-hi: inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+/* ── DAY streak badge — the GOLD achievement tier (shown only for an earned run) */
 .flip-streak-slot { min-height: 42px; display: flex; align-items: center; justify-content: center; }
 .flip-streak {
   position: relative;
-  display: inline-flex; align-items: center; gap: 9px;
-  padding: 6px 15px 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(245,197,24,0.38);
-  background: linear-gradient(180deg, rgba(245,197,24,0.10) 0%, rgba(92,224,184,0.05) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 22px -10px rgba(245,197,24,0.5);
+  display: inline-flex; align-items: center; gap: var(--sp-8);
+  padding: var(--sp-4) var(--sp-16) var(--sp-4) var(--sp-8);
+  border-radius: var(--r-pill);
+  border: var(--bd) solid var(--gold-line);
+  background: linear-gradient(180deg, var(--gold-fill) 0%, var(--acc-fill) 100%);
+  box-shadow: var(--inset-hi), 0 8px 22px -10px rgba(245,197,24,0.5);
 }
 .flip-streak-aura {
   position: absolute; inset: -45% -12%; z-index: -1; pointer-events: none;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: radial-gradient(ellipse at center, rgba(245,197,24,0.26) 0%, transparent 68%);
   opacity: 0.5;
   animation: flip-streak-aura 3.8s ease-in-out infinite;
@@ -59,24 +96,24 @@ const INTRO_STYLES = `
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.72; transform: scale(1.06); }
 }
-.flip-streak-flame { font-size: 19px; line-height: 1; filter: drop-shadow(0 0 7px rgba(245,197,24,0.65)); }
+.flip-streak-flame { font-size: var(--icon-flame); line-height: 1; filter: drop-shadow(0 0 7px rgba(245,197,24,0.65)); }
 .flip-streak-label {
-  font-family: var(--mono); font-weight: 700; font-size: 9px;
-  letter-spacing: 0.26em; color: rgba(255,255,255,0.62);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label); text-transform: uppercase; color: var(--ink-2);
 }
 .flip-streak-num {
-  font-family: var(--display); font-weight: 900; font-size: 30px; line-height: 0.9;
-  letter-spacing: 0.01em; color: var(--mint);
-  text-shadow: 0 0 18px rgba(92,224,184,0.45);
+  font-family: var(--display); font-weight: 900; font-size: var(--fs-display-lg); line-height: 0.9;
+  letter-spacing: var(--tr-display); color: var(--gold);
+  text-shadow: 0 0 18px rgba(245,197,24,0.4);
   font-variant-numeric: tabular-nums;
 }
-/* Newcomer hook — a fresh/broken visitor sees curiosity, never a fake number. */
+/* Newcomer hook — a fresh/broken visitor sees curiosity, never a fake number.
+   BODY token (lowercase picker voice); support-tier mint (recedes vs TAP IN). */
 .flip-fresh-hook {
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: rgba(92,224,184,0.85);
-  padding: 8px 16px; border-radius: 999px;
-  border: 1px solid rgba(92,224,184,0.3); background: rgba(92,224,184,0.06);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--acc-text);
+  padding: var(--sp-8) var(--sp-16); border-radius: var(--r-pill);
+  border: var(--bd) solid var(--acc-line); background: var(--acc-fill);
 }
 
 /* ── Today's-board teaser — the centerpiece that teaches the loop in 2 seconds:
@@ -84,17 +121,19 @@ const INTRO_STYLES = `
       real answer. Glassy, glowing, tappable-looking. ──────────────────────── */
 .flip-board {
   position: relative; width: 100%; max-width: 340px;
-  border-radius: 18px;
-  border: 1px solid rgba(92,224,184,0.28);
+  border-radius: var(--r-md);
+  border: var(--bd) solid var(--acc-line);
   /* Frosted-glass look WITHOUT backdrop-filter: a moving backdrop-blur
      re-samples + re-blurs its backdrop EVERY frame under parallax — a real
      GPU cost in the throttled IG webview. Dialed back for the 60fps floor. A
      deep translucent gradient + inner highlight reads as lit glass at a
      fraction of the cost (the concealed-item panel keeps its own frost). */
   background: linear-gradient(180deg, rgba(18,24,30,0.62) 0%, rgba(8,10,16,0.8) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 34px rgba(92,224,184,0.07), 0 18px 40px -14px rgba(92,224,184,0.55);
-  padding: 12px 14px 11px;
+  box-shadow: var(--inset-hi), inset 0 0 34px var(--acc-fill), var(--elev);
+  padding: var(--sp-16);
   overflow: hidden;
+  /* Internal rhythm: one 8pt gap governs head → mystery → call → caption. */
+  display: flex; flex-direction: column; gap: var(--sp-8);
 }
 .flip-board-glow {
   position: absolute; inset: -50% -20%; z-index: 0; pointer-events: none;
@@ -105,28 +144,30 @@ const INTRO_STYLES = `
 @keyframes flip-board-glow { 0%, 100% { opacity: 0.42; transform: scale(1); } 50% { opacity: 0.72; transform: scale(1.05); } }
 .flip-board-head {
   position: relative; display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
 }
+/* Section label — display-md in neutral ink (was a mint→blue gradient, an
+   unsystematized third color; blue is gone). */
 .flip-board-name {
-  font-family: var(--display); font-weight: 900; font-size: 15px; letter-spacing: 0.06em;
-  background: linear-gradient(90deg, #5CE0B8 0%, #3B82F6 100%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+  font-family: var(--display); font-weight: 900; font-size: var(--fs-display-md);
+  letter-spacing: var(--tr-display); color: var(--ink-1);
 }
 .flip-board-num {
-  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(255,255,255,0.42);
+  font-family: var(--mono); font-size: var(--fs-label); letter-spacing: var(--tr-label);
+  text-transform: uppercase; color: var(--ink-3);
 }
-.flip-board-row { position: relative; display: flex; align-items: stretch; gap: 12px; }
+/* Card grid: the concealed find (1fr) and the FLIP/SKIP call (auto) stretch to
+   equal height, so the call aligns to the card's rows instead of floating. */
+.flip-board-row { position: relative; display: grid; grid-template-columns: 1fr auto; gap: var(--sp-8); align-items: stretch; }
 /* Concealed mystery find — a REAL thrift item withheld behind frosted glass,
    with a redacted buy→sell price that teases toward resolving (a mint shimmer
    sweep). Reads "there's an answer here, hidden," never "failed to load."
    Honest: no real number ever — only redaction bars. */
 .flip-board-mystery {
-  position: relative; flex: 1; min-height: 66px; overflow: hidden;
-  border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  position: relative; min-height: 64px; overflow: hidden;
+  border-radius: var(--r-sm); border: var(--bd) solid rgba(255,255,255,0.1);
   background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.24) 100%);
-  padding: 9px 11px;
-  display: flex; flex-direction: column; justify-content: center; gap: 7px;
+  padding: var(--sp-8);
+  display: flex; flex-direction: column; justify-content: center; gap: var(--sp-4);
 }
 /* The concealed find — a clear-but-shadowed thrift OBJECT (a vinyl record),
    lightly blurred behind the frost so it reads "an item, hidden," not a smudge. */
@@ -146,50 +187,55 @@ const INTRO_STYLES = `
 }
 @keyframes flip-board-shimmer { 0% { transform: translateX(0); } 70%, 100% { transform: translateX(360%); } }
 /* Redacted price — a gentle pulse "about to reveal" (it never does; honest). */
-.flip-board-price { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; animation: flip-redact-pulse 3s ease-in-out infinite; will-change: opacity; }
+.flip-board-price { position: relative; z-index: 2; display: flex; align-items: center; gap: var(--sp-4); animation: flip-redact-pulse 3s ease-in-out infinite; will-change: opacity; }
 @keyframes flip-redact-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
-.flip-board-cash { font-family: var(--mono); font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.78); }
+.flip-board-cash { font-family: var(--mono); font-size: var(--fs-data); font-weight: 700; color: var(--ink-2); }
 .flip-board-bar {
-  display: inline-block; width: 11px; height: 13px; border-radius: 3px;
-  background: rgba(92,224,184,0.3); box-shadow: inset 0 0 0 1px rgba(92,224,184,0.22);
+  display: inline-block; width: 11px; height: 13px; border-radius: var(--r-xs);
+  background: var(--acc-line); box-shadow: inset 0 0 0 1px var(--acc-line);
 }
 .flip-board-bar + .flip-board-bar { margin-left: 2px; }
-.flip-board-arrow { color: rgba(92,224,184,0.75); font-size: 13px; margin: 0 3px; }
+.flip-board-arrow { color: var(--acc-text); font-size: var(--fs-data); margin: 0 3px; }
 .flip-board-tag {
   position: relative; z-index: 2;
-  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(92,224,184,0.6);
+  font-family: var(--mono); font-size: var(--fs-label); letter-spacing: var(--tr-label); text-transform: uppercase;
+  color: var(--acc-text);
 }
 /* The CALL — the hook. FLIP (green go) vs SKIP (red stop): a charged two-way
    decision whose scale+glow spotlight alternates so a thumb itches to choose.
    Tints (not a solid fill) so the single primary — the TAP IN button — stays
    unmistakable. */
-.flip-board-call { display: flex; flex-direction: column; gap: 7px; justify-content: center; }
+/* The two choices split the call column's height (aligned to the mystery panel
+   via the row grid's align-items:stretch) — a decision row, not floating pills. */
+.flip-board-call { display: grid; grid-template-rows: 1fr 1fr; gap: var(--sp-8); }
 .flip-board-verb {
-  position: relative;
-  font-family: var(--display); font-weight: 900; font-size: 14px; letter-spacing: 0.1em;
-  padding: 7px 15px; border-radius: 9px; text-align: center; min-width: 76px;
+  position: relative; display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-weight: 900; font-size: var(--fs-display-md); letter-spacing: var(--tr-display);
+  padding: 0 var(--sp-16); border-radius: var(--r-sm); text-align: center; min-width: 76px;
   will-change: transform, opacity;
 }
+/* SKIP = controlled STOP: softened red so it never out-pulls the solid TAP IN. */
 .flip-board-verb--skip {
-  color: #ff8b8b; border: 1px solid rgba(255,107,107,0.5);
-  background: linear-gradient(180deg, rgba(255,107,107,0.16), rgba(255,107,107,0.05));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 15px -8px rgba(255,107,107,0.5);
+  color: var(--stop); border: var(--bd) solid var(--stop-line);
+  background: linear-gradient(180deg, var(--stop-fill), transparent);
+  box-shadow: var(--inset-hi);
   animation: flip-board-call-a 2.6s ease-in-out infinite;
 }
+/* FLIP = GO: a mint TINT (support tier) — inviting, but the solid mint TAP IN
+   button remains accent-primary and the single strongest pull. */
 .flip-board-verb--flip {
-  color: var(--mint); border: 1px solid rgba(92,224,184,0.6);
-  background: linear-gradient(180deg, rgba(92,224,184,0.2), rgba(92,224,184,0.06));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 6px 16px -8px rgba(92,224,184,0.6);
+  color: var(--acc-text); border: var(--bd) solid var(--acc-line);
+  background: linear-gradient(180deg, var(--acc-fill), transparent);
+  box-shadow: var(--inset-hi);
   animation: flip-board-call-b 2.6s ease-in-out infinite;
 }
-@keyframes flip-board-call-a { 0%, 40% { transform: scale(1.05); opacity: 1; } 56%, 100% { transform: scale(0.97); opacity: 0.62; } }
-@keyframes flip-board-call-b { 0%, 40% { transform: scale(0.97); opacity: 0.62; } 56%, 100% { transform: scale(1.05); opacity: 1; } }
+@keyframes flip-board-call-a { 0%, 40% { transform: scale(1.04); opacity: 1; } 56%, 100% { transform: scale(0.98); opacity: 0.66; } }
+@keyframes flip-board-call-b { 0%, 40% { transform: scale(0.98); opacity: 0.66; } 56%, 100% { transform: scale(1.04); opacity: 1; } }
 .flip-board-cap {
-  position: relative; margin-top: 10px; text-align: center;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; color: rgba(255,255,255,0.55);
+  position: relative; text-align: center;
+  font-family: var(--mono); font-size: var(--fs-body); letter-spacing: var(--tr-body); color: var(--ink-2);
 }
-.flip-board-cap b { color: var(--mint); font-weight: 700; }
+.flip-board-cap b { color: var(--acc-text); font-weight: 700; }
 
 /* ── Kronos: idle bob + breathing mint aura (compositor-only) ────────────── */
 .flip-intro-host-wrap { position: relative; line-height: 0; }
@@ -216,10 +262,32 @@ const INTRO_STYLES = `
   50% { opacity: 0.78; transform: translate(-50%, -50%) scale(1.08); }
 }
 
-/* ── Light reassurance (trimmed from the old bordered "free forever" box) ── */
+/* ── Light reassurance (BODY token, tertiary ink) ───────────────────────── */
 .flip-intro-reassure {
-  margin-top: 9px; font-family: var(--mono); font-size: 11px;
-  letter-spacing: 0.04em; color: rgba(255,255,255,0.42);
+  margin-top: var(--sp-8); font-family: var(--mono); font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--ink-3);
+}
+
+/* ── Overrides for FlipGame-owned intro elements. FlipGame's stylesheet is
+      fenced (byte-identical), so these token rules live here and win by higher
+      specificity (.flip-intro ancestor), order-independent — no !important. ── */
+/* Vertical rhythm between major blocks — 8pt; fuller on tall viewports to close
+   the ~30% bottom dead air, tight on short webviews to protect the fold. */
+.flip-intro .flip-intro-inner { gap: var(--sp-16); }
+/* free-chip: MONO body, support-tier mint (recedes vs the solid mint TAP IN),
+   unified pill radius + support border/fill. */
+.flip-intro .flip-intro-free {
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--acc-text);
+  border: var(--bd) solid var(--acc-line); background: var(--acc-fill);
+  border-radius: var(--r-pill);
+}
+.flip-intro .flip-intro-free-dot { color: var(--ink-3); }
+/* confidence line: the THIRD type voice (Bebas w500 sans) reassigned to the
+   MONO body token — two roles only, no orphan style. */
+.flip-intro .flip-intro-confidence {
+  font-family: var(--mono); font-weight: 400; font-size: var(--fs-body);
+  letter-spacing: var(--tr-body); color: var(--ink-3);
 }
 
 /* ── Intro atmosphere — faint drifting glows (behind the scrim, never a tap
@@ -278,17 +346,19 @@ const INTRO_STYLES = `
   .flip-atmos-shaft--b { animation: none; opacity: 0.4; transform: rotate(-13deg); }
 }
 
-/* ── Short viewports (≤700px tall): keep the dense composition above the fold. */
+/* ── Short viewports (≤700px tall): tighten the 8pt rhythm one step to protect
+      the fold (gap + card padding drop to --sp-8), display sizes ease down. ── */
 @media (max-height: 700px) {
-  .flip-streak { padding: 5px 13px 5px 10px; gap: 7px; }
-  .flip-streak-num { font-size: 25px; }
-  .flip-streak-flame { font-size: 16px; }
+  /* Redefine the display + flame TOKENS one step down; every consumer
+     (streak number, section label, FLIP/SKIP, flame) follows automatically —
+     no per-element raw px overrides. */
+  .flip-intro { --fs-display-lg: 24px; --fs-display-md: 13px; --icon-flame: 16px; }
+  .flip-intro .flip-intro-inner { gap: var(--sp-8); }
   .flip-streak-slot { min-height: 38px; }
-  .flip-board { padding: 10px 12px 10px; }
-  .flip-board-mystery { min-height: 58px; padding: 8px 10px; }
+  .flip-board { padding: var(--sp-8); gap: var(--sp-8); }
+  .flip-board-mystery { min-height: 56px; }
   .flip-board-silhouette { width: 32px; height: 32px; }
-  .flip-board-verb { font-size: 12px; padding: 5px 12px; min-width: 68px; }
-  .flip-board-cap { margin-top: 8px; }
+  .flip-board-verb { min-width: 66px; }
 }
 `;
 
