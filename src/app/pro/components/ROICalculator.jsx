@@ -50,6 +50,17 @@ const STYLES = `
 }
 .tm-drop { animation: tmDrop var(--motion-medium) var(--ease-spring) both; will-change: transform, opacity; }
 .tm-drop-static { animation: none; opacity: 1; transform: none; }
+/* Rise pulse — a one-shot mint bloom behind the $14.99 PRO side as it
+   settles UP (the light side winning). Opacity+transform only; base
+   opacity 0 declared on the element so it rests invisible regardless of
+   fill-mode, and it is class-gated on entered && !reduced so a reduced
+   user (static tipped still) never sees it. */
+@keyframes tmRisePulse {
+  0%   { opacity: 0; transform: scale(0.75); }
+  45%  { opacity: 0.85; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1); }
+}
+.tm-rise-pulse { animation: tmRisePulse 900ms var(--ease-out) 1 both; will-change: transform, opacity; }
 `;
 
 /* Local live visibility tracker — same pattern as the other demos. */
@@ -368,11 +379,33 @@ export default function ROICalculator() {
                 {/* right pan — one month of pro */}
                 <div style={{ position: "absolute", right: -14, top: 1, width: 120, display: "flex", justifyContent: "center" }}>
                   <Pan counterRotate={-tip} curve={buy.curve} reduced={reduced}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingBottom: 2 }}>
-                      <span style={{ fontFamily: "var(--font-bebas), sans-serif", fontSize: 24, lineHeight: 1, letterSpacing: "0.03em", fontVariantNumeric: "tabular-nums", color: C.mint }}>
+                    <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, paddingBottom: 2 }}>
+                      {/* settle bloom behind the price — fires once as the
+                          PRO side rises. Base opacity 0 (rests invisible);
+                          keyed on `entered` so it replays on re-entry and
+                          never runs under reduced motion. */}
+                      <div
+                        aria-hidden="true"
+                        key={entered ? "risen" : "level"}
+                        className={entered && !reduced ? "tm-rise-pulse" : ""}
+                        style={{
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          width: 88,
+                          height: 88,
+                          marginLeft: -44,
+                          marginTop: -44,
+                          borderRadius: "50%",
+                          background: "radial-gradient(circle, rgba(92,224,184,0.4) 0%, transparent 68%)",
+                          opacity: 0,
+                          pointerEvents: "none",
+                        }}
+                      />
+                      <span style={{ position: "relative", fontFamily: "var(--font-bebas), sans-serif", fontSize: 24, lineHeight: 1, letterSpacing: "0.03em", fontVariantNumeric: "tabular-nums", color: C.mint }}>
                         {PRO_PRICE}
                       </span>
-                      <span style={{ ...mono, fontSize: 8, letterSpacing: "0.12em", color: "rgba(92,224,184,0.6)" }}>
+                      <span style={{ position: "relative", ...mono, fontSize: 8, letterSpacing: "0.12em", color: "rgba(92,224,184,0.6)" }}>
                         PRO / MO
                       </span>
                     </div>

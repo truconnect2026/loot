@@ -745,7 +745,12 @@ export default function VerdictCardLive() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: 6 }}>
           {comps.map((line, i) => (
-            <Reveal key={line} shown={verdictShown} delayMs={880 + i * 60} reduced={reduced}>
+            // Comps STAMP in one at a time, top→bottom, like a receipt
+            // printing (mode "pop" = scale-pop, 130ms stagger). Reveal's
+            // reduced branch renders each at its final opacity 1 / transform
+            // none — declared rest, so a reduced user sees all three comps,
+            // never a mid-stamp frame.
+            <Reveal key={line} shown={verdictShown} delayMs={820 + i * 130} mode="pop" reduced={reduced}>
               <div
                 style={{
                   fontFamily: "var(--font-mono), monospace",
@@ -761,7 +766,11 @@ export default function VerdictCardLive() {
           ))}
         </div>
 
-        <Reveal shown={verdictShown} delayMs={1050} mode="pop-strong" reduced={reduced}>
+        {/* AUTHENTIC is the confident tick that closes the receipt. delayMs
+            1220 starts it as the last comp is finishing its stamp (the last
+            comp begins at 820+2*130 = 1080 and its 420ms pop settles ~1500),
+            so the tick lands into the settling receipt, then holds. */}
+        <Reveal shown={verdictShown} delayMs={1220} mode="pop-strong" reduced={reduced}>
           <div
             style={{
               display: "flex",
@@ -782,7 +791,7 @@ export default function VerdictCardLive() {
         {/* 1.2: example-context legible AT the verdict — a skeptic who only
             catches the "AUTHENTIC" line still reads it as a sample output of
             the feature, not a certificate for a specific real object. */}
-        <Reveal shown={verdictShown} delayMs={1120} reduced={reduced}>
+        <Reveal shown={verdictShown} delayMs={1330} reduced={reduced}>
           <div
             style={{
               textAlign: "center",

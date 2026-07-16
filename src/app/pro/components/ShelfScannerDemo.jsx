@@ -274,14 +274,19 @@ function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap })
   return (
     <button
       type="button"
-      onClick={onTap}
+      onClick={(e) => {
+        // Stop bubbling so a tap on an ITEM (toggle/deselect) never reaches
+        // the panel's background-tap reset. Panel reset is background-only.
+        e.stopPropagation();
+        onTap();
+      }}
       aria-label={`price the ${item.label}`}
       style={{
         background: "none",
         border: "none",
         padding: 0,
         margin: 0,
-        cursor: reduced ? "default" : "pointer",
+        cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -310,6 +315,22 @@ function ShelfItem({ item, delayBase, boxOn, tagOn, breathing, reduced, onTap })
             willChange: "transform",
           }}
         >
+          {/* Selection glow — a mint bloom behind a priced item's icon so
+              "tapped = lit" reads instantly. Base opacity 0 (declared rest);
+              opacity-only, so it's compositor-safe and, under reduced motion,
+              simply snaps on/off with the tap. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: -12,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(92,224,184,0.35) 0%, transparent 70%)",
+              opacity: boxOn ? 1 : 0,
+              transition: reduced ? "none" : `opacity 360ms ${EASE} ${delayBase}ms`,
+              pointerEvents: "none",
+            }}
+          />
           <ItemIcon itemKey={item.key} />
           {/* detection box hugs the icon, not the slot */}
           <div
@@ -382,10 +403,14 @@ export default function ShelfScannerDemo() {
   const [fading, setFading] = useState(false);
   const [lastTouch, setLastTouch] = useState(0);
   const [breathIdx, setBreathIdx] = useState(-1);
-  // Reduced motion: static end-state by default; panel tap toggles the
-  // static pristine shelf back in — zero timers, zero motion (matches
-  // the scan demo's static-toggle pattern).
-  const [reducedShown, setReducedShown] = useState(true);
+  // Reduced motion no longer means "look but can't touch". `tapped` is now
+  // the SINGLE source of truth in both modes; a reduced user taps items to
+  // toggle them (instant, since every transition is `none` under reduced).
+  // On first reduced mount the shelf seeds a couple pre-priced items so it
+  // arrives as a composed "already priced" still — deliberate, not a mid-
+  // interaction blank. Seeded once; a reset leaves a pristine tap-to-build
+  // board.
+  const reducedSeededRef = useRef(false);
   // Entrance beat: on arrival the FIRST item's box+tag draw and release —
   // a taste of the mechanic while the swipe is still settling. Does NOT
   // mark the item tapped (totals/attract read `tapped`, which stays
@@ -406,6 +431,16 @@ export default function ShelfScannerDemo() {
     setAttract(false);
     setLastTouch(Date.now());
   });
+
+  /* Reduced-motion seed — a composed "already priced a couple" still on
+     first reduced mount (reduced resolves post-mount from matchMedia). Only
+     seeds a pristine shelf, so it never clobbers a user's in-progress taps. */
+  useEffect(() => {
+    if (reduced && !reducedSeededRef.current) {
+      reducedSeededRef.current = true;
+      setTapped((prev) => (prev.size === 0 ? new Set(["oven", "jacket"]) : prev));
+    }
+  }, [reduced]);
 
   useEffect(() => {
     if (!inView) {
@@ -470,13 +505,13 @@ export default function ShelfScannerDemo() {
   };
 
   const tapItem = (key) => {
-    if (reduced || fading) return;
+    if (fading) return; // works under reduced too — just no animation
     setAttract(false);
     setLastTouch(Date.now());
     setTapped((prev) => {
-      if (prev.has(key)) return prev; // re-tap = no-op
       const next = new Set(prev);
-      next.add(key);
+      if (next.has(key)) next.delete(key); // tap again = deselect + subtract
+      else next.add(key);
       return next;
     });
   };
@@ -492,20 +527,20 @@ export default function ShelfScannerDemo() {
   const attractTotal = attractActive && (phase === "total" || phase === "hold");
   const sceneShown = reduced || (!fading && !(attractActive && phase === "reset"));
 
-  const staticComplete = reduced && reducedShown;
-  const complete = staticComplete || tapped.size === ITEMS.length;
+  // `tapped` drives completion in BOTH modes now (reduced included).
+  const complete = tapped.size === ITEMS.length;
   const userComplete = complete && !attractActive;
-  const promptShown = reduced ? !reducedShown : !attractActive && tapped.size === 0;
+  const promptShown = !attractActive && tapped.size === 0;
   const scanningShown = attractActive && (phase === "settle" || phase === "detect" || phase === "value");
-  const totalShown = staticComplete || attractTotal || (!attractActive && tapped.size > 0);
+  const totalShown = attractTotal || (!attractActive && tapped.size > 0);
 
   const userSum = ITEMS.reduce((s, it) => s + (tapped.has(it.key) ? it.value : 0), 0);
-  const totalTarget = reduced ? (reducedShown ? SHELF_TOTAL : 0) : attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
+  const totalTarget = attractActive ? (attractTotal ? SHELF_TOTAL : 0) : userSum;
   const totalValue = useEasedNumber(totalTarget, reduced, !attractActive);
 
   const rowState = (item, i) => ({
-    boxOn: attractActive ? attractBoxes : staticComplete || tapped.has(item.key) || (entryBeat && i === 0),
-    tagOn: attractActive ? attractTags : staticComplete || tapped.has(item.key) || (entryBeat && i === 0),
+    boxOn: attractActive ? attractBoxes : tapped.has(item.key) || (entryBeat && i === 0),
+    tagOn: attractActive ? attractTags : tapped.has(item.key) || (entryBeat && i === 0),
     delayBase: attractActive ? i * 350 : 0,
     breathing: breathIdx === i,
   });
@@ -552,12 +587,11 @@ export default function ShelfScannerDemo() {
           <div
             ref={rootRef}
             onClick={() => {
-              // Whole-panel replay target (items bubble up): a completed
-              // shelf re-runs on tap; reduced motion toggles statically.
-              if (reduced) {
-                setReducedShown((v) => !v);
-                return;
-              }
+              // Whole-panel replay target: a completed shelf clears on a
+              // background tap (item taps stopPropagation, so deselecting a
+              // single item never triggers this). Works in both modes; the
+              // clear lands after resetShelf's 400ms debounce and then paints
+              // in one frame under reduced (no fade transition).
               if (userComplete && !fading) resetShelf();
             }}
             style={{
@@ -591,7 +625,7 @@ export default function ShelfScannerDemo() {
                 borderRadius: 999,
                 padding: "4px 9px",
                 background: "rgba(7,5,16,0.6)",
-                opacity: (reduced ? reducedShown : userComplete && !fading) ? 1 : 0,
+                opacity: userComplete && !fading ? 1 : 0,
                 transition: reduced ? "none" : `opacity 300ms ${EASE} 250ms`,
                 pointerEvents: "none",
               }}
