@@ -6,6 +6,7 @@ import { AnimatePresence, MotionConfig, motion, useMotionValue } from "motion/re
 import { track } from "@vercel/analytics";
 import { getDailyItems, getPuzzleNumber } from "./lib/dailySeed.js";
 import { calcTotalScore, getScoreTier } from "./lib/scoring.js";
+import { boardCallCoins, comboMultiplier, readCoins } from "./lib/rewards.js";
 import CosmicBackdrop from "./components/CosmicBackdrop.jsx";
 import IntroScreen from "./components/IntroScreen.jsx";
 import CardStack from "./components/CardStack.jsx";
@@ -64,6 +65,14 @@ export default function FlipGame() {
   const [replayCount, setReplayCount] = useState(0);
   const [konamiArmed, setKonamiArmed] = useState(false);
   const [konamiHintVisible, setKonamiHintVisible] = useState(false);
+  // Coins — the honest, banked balance (read once; the write happens in
+  // ResultReveal). The live board tally + combo multiplier are DERIVED from the
+  // real answers/streak, never granted. See lib/rewards.js.
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [coinPop, setCoinPop] = useState({ key: 0, delta: 0 });
+  const boardCoins = useMemo(() => boardCallCoins(answers), [answers]);
+  const combo = comboMultiplier(streak);
+  const prevBoardCoinsRef = useRef(0);
   const dragX = useMotionValue(0);
   const playingMascotRef = useRef(null);
   const phase2MascotRef = useRef(null);
@@ -80,6 +89,25 @@ export default function FlipGame() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  // Sync the banked coin balance when a board opens (picks up what the last
+  // results screen honestly banked). The HUD adds the live board tally on top.
+  useEffect(() => {
+    if (phase === "intro" || phase === "playing") setCoinBalance(readCoins());
+  }, [phase]);
+
+  // Coin-pop juice — fires ONLY on a correct call that actually adds coins
+  // (delta > 0). Derived from the real answers; a wrong call adds nothing and
+  // triggers no pop. Self-resets when a new board clears `answers`.
+  useEffect(() => {
+    const nb = boardCallCoins(answers);
+    const delta = nb - prevBoardCoinsRef.current;
+    prevBoardCoinsRef.current = nb;
+    const last = answers[answers.length - 1];
+    if (last && last.correct && delta > 0) {
+      setCoinPop((p) => ({ key: p.key + 1, delta }));
+    }
+  }, [answers]);
 
   // Referral tracking + replay-count hydration
   useEffect(() => {
@@ -401,8 +429,29 @@ export default function FlipGame() {
                   <span className="flip-day-chip">
                     DAY {puzzleNumber}
                   </span>
+                  <span className="flip-coin-chip">
+                    <span className="flip-coin-chip-glyph" aria-hidden="true">🪙</span>
+                    <span className="flip-coin-chip-value">{coinBalance}</span>
+                    {boardCoins > 0 && (
+                      <span className="flip-coin-chip-board">+{boardCoins}</span>
+                    )}
+                    {coinPop.delta > 0 && (
+                      <motion.span
+                        key={coinPop.key}
+                        className="flip-coin-pop"
+                        initial={{ opacity: 0, y: 2, scale: 0.8 }}
+                        animate={{ opacity: [0, 1, 1, 0], y: [2, -10, -15, -22], scale: [0.8, 1.12, 1, 0.9] }}
+                        transition={{ duration: 0.7, ease: "easeOut", times: [0, 0.2, 0.6, 1] }}
+                      >
+                        +{coinPop.delta}
+                      </motion.span>
+                    )}
+                  </span>
                   {streak >= 2 && (
-                    <span className="flip-header-streak">🔥 {streak}</span>
+                    <span className="flip-header-streak">
+                      🔥 {streak}
+                      {combo >= 2 && <span className="flip-combo-mult">×{combo}</span>}
+                    </span>
                   )}
                 </div>
                 <div className="flip-game-header-right">
@@ -821,6 +870,38 @@ const INLINE_STYLES = `
 .flip-header-streak {
   font-family: var(--display); font-weight: 700; font-size: 14px;
   color: var(--gold);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.flip-combo-mult {
+  font-family: var(--mono); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.06em; color: #0a0a0a;
+  padding: 2px 6px; border-radius: 999px;
+  background: var(--gold); line-height: 1;
+  box-shadow: 0 0 12px rgba(245,197,24,0.5);
+}
+.flip-coin-chip {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-weight: 700; font-size: 12px;
+  letter-spacing: 0.06em; color: var(--gold);
+  padding: 6px 10px; border-radius: 999px;
+  border: 1px solid rgba(245,197,24,0.35);
+  background: rgba(245,197,24,0.06); backdrop-filter: blur(4px);
+  font-variant-numeric: tabular-nums;
+}
+.flip-coin-chip-glyph { font-size: 13px; line-height: 1; }
+.flip-coin-chip-value { color: var(--gold); }
+.flip-coin-chip-board {
+  color: rgba(92,224,184,0.95); font-size: 11px;
+  padding-left: 5px; margin-left: 1px;
+  border-left: 1px solid rgba(255,255,255,0.14);
+}
+.flip-coin-pop {
+  position: absolute; top: -2px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--display); font-weight: 900; font-size: 16px;
+  color: var(--gold); text-shadow: 0 0 12px rgba(245,197,24,0.6);
+  pointer-events: none; white-space: nowrap; z-index: 5;
 }
 .flip-header-cog {
   background: transparent; border: 0; cursor: pointer; padding: 6px;
@@ -1525,6 +1606,53 @@ const INLINE_STYLES = `
   font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
   color: rgba(255,255,255,0.5);
 }
+.flip-rev-coins {
+  position: relative; z-index: 3;
+  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 12px; margin-bottom: 16px;
+  border: 1px solid rgba(245,197,24,0.28);
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(245,197,24,0.12), rgba(245,197,24,0) 62%),
+    rgba(10,10,10,0.55);
+  box-shadow: 0 0 28px rgba(245,197,24,0.10), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.flip-rev-coins-label {
+  font-family: var(--mono); font-weight: 700; font-size: 10px;
+  letter-spacing: 0.24em; color: var(--gold);
+}
+.flip-rev-coins-hero {
+  display: flex; align-items: center; gap: 8px;
+}
+.flip-rev-coins-glyph { font-size: 30px; line-height: 1; }
+.flip-rev-coins-earned {
+  font-family: var(--display); font-weight: 900; font-size: 46px; line-height: 1;
+  color: var(--gold); font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 22px rgba(245,197,24,0.35);
+}
+.flip-rev-coins-breakdown {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+}
+.flip-rev-coins-chip {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.72);
+  padding: 4px 10px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04);
+}
+.flip-rev-coins-chip--gold {
+  color: var(--gold); border-color: rgba(245,197,24,0.4);
+  background: rgba(245,197,24,0.08);
+}
+.flip-rev-coins-note {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.5); text-align: center; max-width: 300px; line-height: 1.5;
+}
+.flip-rev-coins-balance {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.55);
+}
+.flip-rev-coins-balance b { color: rgba(255,255,255,0.9); font-weight: 700; }
 .flip-rev-cta {
   position: sticky; bottom: 0; z-index: 4;
   width: 100%; max-width: 520px;

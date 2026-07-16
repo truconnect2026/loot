@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion, useSpring, useTransform, useReducedMotion } from "motion/react";
 import { getScoreTier } from "../lib/scoring.js";
+import { boardPayout } from "../lib/rewards.js";
 import useGameSounds from "../hooks/useGameSounds.jsx";
 import useHaptics from "../hooks/useHaptics.jsx";
 import ShareGrid from "./ShareGrid.jsx";
@@ -54,6 +55,9 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
   const [phase, setPhase] = useState("A");
   const [countdown, setCountdown] = useState(midnightCountdown());
   const [lifetime, setLifetime] = useState({ total: 0, streak: 0, best: 0, played: 0 });
+  // Coin payout — earned honestly from the real answers, persisted ONCE on the
+  // first scored play of the day (replays earn 0). See lib/rewards.js.
+  const [coins, setCoins] = useState({ earned: 0, balance: 0, breakdown: null, firstPlay: true });
   const [savedVisible, setSavedVisible] = useState(false);
   const [milestoneFlash, setMilestoneFlash] = useState(0);
   const [wolfFlash, setWolfFlash] = useState(false);
@@ -129,6 +133,17 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
       localStorage.setItem("fos-best-score", String(Math.max(prevBest, scoreData.finalScore)));
       localStorage.setItem("fos-total-flipped", String(prevTotal + scoreData.totalDollarsSpotted));
       localStorage.setItem("fos-days-played", String(prevPlayed + 1));
+      // Coins — an HONEST layer on top of the (unchanged) scoring writes above:
+      // the payout is DERIVED from the real answers + the real streak, and is
+      // banked ONLY on the FIRST scored play of the day (lastDate !== ymd) so a
+      // replay can never farm coins. A fresh player banks from 0.
+      const prevCoins = parseInt(localStorage.getItem("fos-coins") || "0", 10) || 0;
+      const isFirstPlayToday = lastDate !== ymd;
+      const payout = boardPayout(answers, newStreak);
+      const earned = isFirstPlayToday ? payout.total : 0;
+      const newCoins = prevCoins + earned;
+      if (isFirstPlayToday) localStorage.setItem("fos-coins", String(newCoins));
+      setCoins({ earned, balance: newCoins, breakdown: payout, firstPlay: isFirstPlayToday });
       setLifetime({
         total: prevTotal + scoreData.totalDollarsSpotted,
         streak: newStreak,
@@ -318,6 +333,37 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
                 {lifetime.streak > 0 && <div className="flip-rev-lifetime-stat">{lifetime.streak} 🔥</div>}
               </div>
               <div className="flip-rev-lifetime-sub">{lifetime.played} days played · best {lifetime.best}</div>
+            </motion.div>
+          )}
+
+          {coins.breakdown && (
+            <motion.div
+              className="flip-rev-coins"
+              initial={{ opacity: 0, y: 20, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20, delay: 0.15 }}
+            >
+              <div className="flip-rev-coins-label">
+                {coins.firstPlay ? "COINS BANKED" : "TODAY ALREADY BANKED"}
+              </div>
+              <div className="flip-rev-coins-hero">
+                <span className="flip-rev-coins-glyph" aria-hidden="true">🪙</span>
+                <span className="flip-rev-coins-earned">+{coins.firstPlay ? coins.earned : 0}</span>
+              </div>
+              {coins.firstPlay ? (
+                <div className="flip-rev-coins-breakdown">
+                  <span className="flip-rev-coins-chip">{coins.breakdown.call} calls</span>
+                  {coins.breakdown.completion > 0 && (
+                    <span className="flip-rev-coins-chip">+{coins.breakdown.completion} board</span>
+                  )}
+                  {coins.breakdown.streak > 0 && (
+                    <span className="flip-rev-coins-chip flip-rev-coins-chip--gold">+{coins.breakdown.streak} streak</span>
+                  )}
+                </div>
+              ) : (
+                <div className="flip-rev-coins-note">today's board already paid out — the next drop banks at midnight</div>
+              )}
+              <div className="flip-rev-coins-balance">balance <b>{coins.balance.toLocaleString()}</b></div>
             </motion.div>
           )}
         </>
