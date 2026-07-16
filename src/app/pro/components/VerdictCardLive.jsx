@@ -32,38 +32,60 @@ import { PyrexBowl } from "../../marketing-screens/_frame";
  * interrupted autoplay re-arms on re-entry.
  */
 
-const PHASES = ["frame", "sweep", "assemble", "hold", "reset"];
-const DURATIONS = { frame: 600, sweep: 700, assemble: 1400, hold: 3500, reset: 400 };
+// Scan sequence: idle → frame (reticle detects) → sweep (beam passes) →
+// lock (corners snap + capture flash + ANALYZING) → assemble → hold. The
+// distinct "lock" beat (was folded into the sweep→assemble jump) is what
+// makes the demo read as a real scan resolving rather than a freeze. Total
+// to verdict ≈ 550+750+500 = 1.8s of scan, then the sheet builds — "seconds",
+// matching the pitch. Rests on hold (the verdict is what people screenshot).
+const PHASES = ["frame", "sweep", "lock", "assemble", "hold", "reset"];
+const DURATIONS = { frame: 550, sweep: 750, lock: 500, assemble: 1300, hold: 4000, reset: 400 };
 const EASE = "cubic-bezier(0.16,1,0.3,1)";
 
 const comps = ["sold $85 · 3d ago", "sold $78 · 1w ago", "sold $92 · 2w ago"];
 
 const STYLES = `
+/* Scan beam — a tall gradient band led by a bright mint line, sweeping the
+   full item top→bottom once. Transform/opacity only (compositor). */
 @keyframes vclSweepMove {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  8%   { opacity: 1; }
-  92%  { opacity: 1; }
-  100% { transform: translateY(100%); opacity: 0; }
+  0%   { transform: translateY(-105%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(105%); opacity: 0; }
 }
-.vcl-sweep-track { transform: translateY(-100%); opacity: 0; will-change: transform, opacity; }
-.vcl-sweep-track.vcl-active { animation: vclSweepMove 0.7s ${EASE} 1; }
+.vcl-sweep-track { transform: translateY(-105%); opacity: 0; will-change: transform, opacity; }
+.vcl-sweep-track.vcl-active { animation: vclSweepMove 0.75s ${EASE} 1; }
 
+/* Capture flash at LOCK (the "photo taken" blink), mint-tinted not white. */
 @keyframes vclFlash {
-  0%, 74% { opacity: 0; }
-  86%     { opacity: 0.32; }
-  100%    { opacity: 0; }
+  0%   { opacity: 0; }
+  30%  { opacity: 0.3; }
+  100% { opacity: 0; }
 }
 .vcl-flash { opacity: 0; }
-.vcl-flash.vcl-active { animation: vclFlash 0.7s ease-out 1; }
+.vcl-flash.vcl-active { animation: vclFlash 0.5s ease-out 1; }
 
 @keyframes vclBracketPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 .vcl-bracket { opacity: 0.5; transition: opacity 0.3s ease; }
 .vcl-bracket.vcl-active { animation: vclBracketPulse 0.35s ease-in-out 2; }
+/* LOCK: corners snap solid — a quick scale-settle reads as "locked on". */
+@keyframes vclLockSnap { 0% { transform: scale(1.22); } 55% { transform: scale(0.96); } 100% { transform: scale(1); } }
+.vcl-bracket.vcl-locked { opacity: 1; animation: vclLockSnap 0.4s ${EASE} 1; }
 /* idle tap affordance — gentle, transform/opacity only, class-gated on
    in-view + idle + motion-ok so it costs nothing off-screen */
 .vcl-bracket.vcl-idle { animation: vclBracketPulse 2.2s ease-in-out infinite; }
 @keyframes vclTapPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .vcl-tap-label { animation: vclTapPulse 2.2s ease-in-out infinite; }
+/* Ambient "live feed" breath — a faint mint sheen drifting in the viewport
+   so it reads as a live camera at rest, not a frozen gray plate. Gated on
+   in-view + motion via .vcl-live; under reduced motion the class is absent
+   and the sheen holds its base opacity — a still, textured viewfinder. */
+@keyframes vclAmbient {
+  0%, 100% { opacity: 0.3; transform: translateY(-6%); }
+  50%      { opacity: 0.62; transform: translateY(6%); }
+}
+.vcl-ambient { opacity: 0.3; will-change: transform, opacity; }
+.vcl-ambient.vcl-live { animation: vclAmbient 4.2s ease-in-out infinite; }
 `;
 
 /* Live, continuously-updating visibility tracker — local to this file.
@@ -126,9 +148,9 @@ function useCountUp(target, phase, reduced) {
   return reduced ? target : value;
 }
 
-function Bracket({ corner, pulse, idle }) {
+function Bracket({ corner, pulse, locked, idle }) {
   const size = 18;
-  const stroke = 2;
+  const stroke = locked ? 2.5 : 2;
   const inset = 6;
   const pos = {
     tl: { top: inset, left: inset, borderTop: `${stroke}px solid ${C.mint}`, borderLeft: `${stroke}px solid ${C.mint}` },
@@ -139,7 +161,7 @@ function Bracket({ corner, pulse, idle }) {
   return (
     <div
       aria-hidden="true"
-      className={`vcl-bracket${pulse ? " vcl-active" : ""}${idle ? " vcl-idle" : ""}`}
+      className={`vcl-bracket${pulse ? " vcl-active" : ""}${locked ? " vcl-locked" : ""}${idle ? " vcl-idle" : ""}`}
       style={{ position: "absolute", width: size, height: size, ...pos }}
     />
   );
@@ -187,7 +209,7 @@ export default function VerdictCardLive() {
     runningRef.current = true;
     // Replays from a held verdict crossfade back through "reset" first —
     // the same 400ms bridge the old loop used, no new animation logic.
-    const seq = phaseRef.current === "hold" ? ["reset", "frame", "sweep", "assemble", "hold"] : ["frame", "sweep", "assemble", "hold"];
+    const seq = phaseRef.current === "hold" ? ["reset", "frame", "sweep", "lock", "assemble", "hold"] : ["frame", "sweep", "lock", "assemble", "hold"];
     let acc = 0;
     seq.forEach((ph, i) => {
       timersRef.current.push(
@@ -238,8 +260,10 @@ export default function VerdictCardLive() {
   const high = useCountUp(95, phase, reduced);
 
   const effPhase = reduced ? (reducedShown ? "hold" : "idle") : phase;
+  // Camera holds full-size through the whole scan (incl. the lock beat);
+  // it only steps back when the verdict sheet rises at "assemble".
   const viewfinderShown =
-    effPhase === "idle" || effPhase === "frame" || effPhase === "sweep" || effPhase === "reset";
+    effPhase === "idle" || effPhase === "frame" || effPhase === "sweep" || effPhase === "lock" || effPhase === "reset";
   const verdictShown = effPhase === "assemble" || effPhase === "hold";
   const idle = effPhase === "idle";
   const held = effPhase === "hold" && !runningRef.current;
@@ -411,18 +435,52 @@ export default function VerdictCardLive() {
             minHeight: 150,
             maxHeight: 440,
             borderRadius: 20,
-            background: "rgba(255,255,255,0.025)",
+            // Camera-feel depth, not a flat gray plate: a lifted-center,
+            // vignetted-edge dark gradient reads as a real viewfinder. This
+            // sits BEHIND the item and is fully static (compositor-safe, no
+            // paint churn); the "live" feel comes from the ambient sheen +
+            // grid layers below, not from repainting this base.
+            background:
+              "radial-gradient(115% 100% at 50% 38%, rgba(38,42,54,0.6) 0%, rgba(12,12,20,0.86) 62%, rgba(4,4,9,0.96) 100%)",
+            boxShadow: "inset 0 0 40px rgba(0,0,0,0.55)",
             overflow: "hidden",
             flexShrink: 0,
           }}
         >
+          {/* Sensor grid — faint mint lattice, reads as a scan overlay. Static. */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage:
+                "linear-gradient(rgba(92,224,184,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(92,224,184,0.05) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+              opacity: 0.7,
+              pointerEvents: "none",
+            }}
+          />
+          {/* Ambient live-feed sheen — drifts + breathes when in view (motion
+              ok); under reduced motion the .vcl-live class is dropped and it
+              holds a static faint mint glow, so the viewport still reads as a
+              camera, never gray. */}
+          <div
+            aria-hidden="true"
+            className={`vcl-ambient${inView && !reduced ? " vcl-live" : ""}`}
+            style={{
+              position: "absolute",
+              inset: "-20% 0",
+              background: "radial-gradient(70% 42% at 50% 50%, rgba(92,224,184,0.12), transparent 72%)",
+              pointerEvents: "none",
+            }}
+          />
           {/* faint reticle crosshairs — static composition, no motion */}
-          <div aria-hidden="true" style={{ position: "absolute", left: "8%", right: "8%", top: "50%", height: 1, background: "rgba(92,224,184,0.08)" }} />
-          <div aria-hidden="true" style={{ position: "absolute", top: "8%", bottom: "8%", left: "50%", width: 1, background: "rgba(92,224,184,0.08)" }} />
-          <Bracket corner="tl" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
-          <Bracket corner="tr" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
-          <Bracket corner="bl" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
-          <Bracket corner="br" pulse={effPhase === "sweep"} idle={idle && inView && !reduced} />
+          <div aria-hidden="true" style={{ position: "absolute", left: "8%", right: "8%", top: "50%", height: 1, background: "rgba(92,224,184,0.1)" }} />
+          <div aria-hidden="true" style={{ position: "absolute", top: "8%", bottom: "8%", left: "50%", width: 1, background: "rgba(92,224,184,0.1)" }} />
+          <Bracket corner="tl" pulse={effPhase === "sweep"} locked={effPhase === "lock"} idle={idle && inView && !reduced} />
+          <Bracket corner="tr" pulse={effPhase === "sweep"} locked={effPhase === "lock"} idle={idle && inView && !reduced} />
+          <Bracket corner="bl" pulse={effPhase === "sweep"} locked={effPhase === "lock"} idle={idle && inView && !reduced} />
+          <Bracket corner="br" pulse={effPhase === "sweep"} locked={effPhase === "lock"} idle={idle && inView && !reduced} />
 
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <div style={{ width: "min(58%, 170px)" }}>
@@ -430,7 +488,10 @@ export default function VerdictCardLive() {
             </div>
           </div>
 
-          {/* Scan sweep bar */}
+          {/* Scan beam — a tall mint gradient band led by a bright line at
+              its lower edge (the current scan position), sweeping the item
+              top→bottom once during the sweep phase. Reads clearly as
+              "analyzing", where the old 3px hairline was easy to miss. */}
           <div className={`vcl-sweep-track${effPhase === "sweep" ? " vcl-active" : ""}`} style={{ position: "absolute", inset: 0 }}>
             <div
               style={{
@@ -438,17 +499,29 @@ export default function VerdictCardLive() {
                 top: 0,
                 left: 0,
                 right: 0,
-                height: 3,
-                background: "linear-gradient(90deg, transparent, #5CE0B8, transparent)",
-                boxShadow: "0 0 12px 2px rgba(92,224,184,0.6)",
+                height: "42%",
+                background: "linear-gradient(180deg, transparent 0%, rgba(92,224,184,0.16) 68%, rgba(92,224,184,0.42) 100%)",
               }}
-            />
+            >
+              {/* leading scan line */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: "#5CE0B8",
+                  boxShadow: "0 0 14px 3px rgba(92,224,184,0.7)",
+                }}
+              />
+            </div>
           </div>
 
-          {/* Capture flash */}
+          {/* Capture flash at LOCK — mint-tinted "photo taken" blink. */}
           <div
-            className={`vcl-flash${effPhase === "sweep" ? " vcl-active" : ""}`}
-            style={{ position: "absolute", inset: 0, background: "#fff", pointerEvents: "none" }}
+            className={`vcl-flash${effPhase === "lock" ? " vcl-active" : ""}`}
+            style={{ position: "absolute", inset: 0, background: "rgba(92,224,184,0.5)", pointerEvents: "none" }}
             aria-hidden="true"
           />
         </div>
@@ -460,17 +533,35 @@ export default function VerdictCardLive() {
             fontSize: 11,
             // Space Mono's normal line-height is 1.481 — every mono line
             // in this card pins an explicit value so the composition
-            // budget is deterministic, not font-metric roulette.
+            // budget is deterministic, not font-metric roulette. This
+            // status line lives INSIDE the flex-centered column with the
+            // reticle box, so at scale(1) it is provably clear of the
+            // header and nav at the 246×456 worst case (see fit proof).
             lineHeight: 1.3,
             letterSpacing: "0.14em",
             textTransform: "uppercase",
-            color: "rgba(92,224,184,0.55)",
+            // LOCK reads brightest (the ANALYZING beat); the other scan
+            // states sit a touch dimmer so ANALYZING is the emphasis. The
+            // color/weight change is an INSTANT snap at the lock beat, not
+            // a transition — animating `color` would be a paint property,
+            // and this card's motion budget is compositor-only (the phase
+            // switch itself is the "beat", so the snap reads as decisive).
+            color: effPhase === "lock" ? C.mint : "rgba(92,224,184,0.55)",
+            fontWeight: effPhase === "lock" ? 700 : 400,
             opacity: viewfinderShown ? 1 : 0,
             transition: reduced ? "none" : `opacity 300ms ${EASE}`,
           }}
           className={idle && inView && !reduced ? "vcl-tap-label" : ""}
         >
-          {idle ? "tap to scan" : effPhase === "sweep" ? "analyzing…" : "scanning…"}
+          {idle
+            ? "tap to scan"
+            : effPhase === "frame"
+              ? "detecting…"
+              : effPhase === "sweep"
+                ? "scanning…"
+                : effPhase === "lock"
+                  ? "analyzing…"
+                  : "scanning…"}
         </div>
         </div>
       </div>
