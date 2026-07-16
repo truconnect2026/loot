@@ -645,9 +645,13 @@ const INLINE_STYLES = `
   0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(1.04); opacity: 0; }
 }
-.flip-intro-day {
-  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-}
+/* NOTE: the old .flip-intro-day absolute chip (top:16 over the centered
+   column) was the source of the DAY-clips-through-Kronos bug — the z-1 host
+   column, vertically centered, painted over it on short viewports. It is
+   GONE: the DAY counter is now an in-flow HERO streak badge rendered inside
+   IntroScreen (below Kronos, its own row), so it can never intersect his
+   silhouette at any font size or viewport height. Rule removed to kill the
+   dead selector and its font-dependent fragility. */
 .flip-intro-inner {
   position: relative; z-index: 1; max-width: 540px; width: 100%;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -771,9 +775,9 @@ const INLINE_STYLES = `
   margin: 12px 0 0;
 }
 /* Short-viewport safety (iPhone SE / small Androids ≤667px tall): compress
-   Kronos + headline + gaps so the whole assembled composition fits above
-   the fold with the DAY chip clearing the host. Font-independent so it
-   holds regardless of Bebas vs fallback metrics. */
+   Kronos + headline + gaps so the whole assembled composition (Kronos, the
+   in-flow DAY streak badge, headline, hook, TAP IN) fits above the fold.
+   Font-independent so it holds regardless of Bebas vs fallback metrics. */
 @media (max-height: 700px) {
   .flip-intro-host img { width: 104px !important; height: 104px !important; }
   .flip-intro-inner { gap: 7px; }

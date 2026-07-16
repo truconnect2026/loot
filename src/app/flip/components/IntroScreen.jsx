@@ -133,6 +133,36 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
   const [playedToday, setPlayedToday] = useState(null); // { score: N } or null
   const [showIdle, setShowIdle] = useState(false);
   const [replayBannerDismissed, setReplayBannerDismissed] = useState(false);
+  // The DISPLAYED day number. Initialized to the REAL puzzleNumber so SSR and
+  // the first client render match (hydration-safe) and reduced-motion shows the
+  // real value instantly; the count-up below only animates the display.
+  const [dayDisplay, setDayDisplay] = useState(puzzleNumber);
+
+  // Scoreboard count-up — the badge's number rolls up to the REAL puzzleNumber
+  // as it stamps in (a game booting). It lands EXACTLY on puzzleNumber and can
+  // never invent or inflate it. No flash: the badge is opacity 0 until its 0.4s
+  // Framer entrance, so seeding the low start value at mount is invisible; the
+  // roll begins as the badge becomes visible. Reduced motion: no roll — the real
+  // number is shown instantly (the useState init IS the declared static base).
+  useEffect(() => {
+    if (reduced) { setDayDisplay(puzzleNumber); return; }
+    const start = Math.max(0, puzzleNumber - 14);
+    setDayDisplay(start);
+    let intervalId = 0;
+    // setInterval + Date.now (not rAF): iOS in-app webviews throttle rAF hard
+    // enough to freeze a count; wall-clock timers are the proven clock here.
+    const delayId = window.setTimeout(() => {
+      const t0 = Date.now();
+      const dur = 700;
+      intervalId = window.setInterval(() => {
+        const p = Math.min((Date.now() - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setDayDisplay(Math.round(start + (puzzleNumber - start) * eased));
+        if (p >= 1) window.clearInterval(intervalId);
+      }, 40);
+    }, 400);
+    return () => { window.clearTimeout(delayId); window.clearInterval(intervalId); };
+  }, [reduced, puzzleNumber]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -211,7 +241,9 @@ export default function IntroScreen({ puzzleNumber, onStart, ready = true, warpi
           <span className="flip-streak-aura" aria-hidden="true" />
           <span className="flip-streak-flame" aria-hidden="true">🔥</span>
           <span className="flip-streak-label" aria-hidden="true">DAY</span>
-          <span className="flip-streak-num" aria-hidden="true">{puzzleNumber}</span>
+          {/* Display rolls up to the real value; the aria-label above carries
+              the true "day {puzzleNumber}" for screen readers regardless. */}
+          <span className="flip-streak-num" aria-hidden="true">{dayDisplay}</span>
         </motion.div>
 
         <h1 className="flip-intro-title flip-intro-title--gradient" aria-label={HEADLINE}>
