@@ -70,6 +70,10 @@ export default function FlipGame() {
   // real answers/streak, never granted. See lib/rewards.js.
   const [coinBalance, setCoinBalance] = useState(0);
   const [coinPop, setCoinPop] = useState({ key: 0, delta: 0 });
+  // Combo-break beat — the honest tension payoff: fires ONLY when a real wrong
+  // call breaks a real run of >= 2 correct. Derived from `answers`; changes no
+  // scoring or coin value.
+  const [comboBreak, setComboBreak] = useState({ key: 0, lost: 0 });
   const boardCoins = useMemo(() => boardCallCoins(answers), [answers]);
   const combo = comboMultiplier(streak);
   const prevBoardCoinsRef = useRef(0);
@@ -107,6 +111,20 @@ export default function FlipGame() {
     if (last && last.correct && delta > 0) {
       setCoinPop((p) => ({ key: p.key + 1, delta }));
     }
+  }, [answers]);
+
+  // Honest combo-break: on a real wrong call, count the run of consecutive
+  // correct calls immediately before it; if it was >= 2, mark the break. Pure
+  // derivation from the fenced answers — never overrides the real result.
+  useEffect(() => {
+    const last = answers[answers.length - 1];
+    if (!last || last.correct) return;
+    let run = 0;
+    for (let i = answers.length - 2; i >= 0; i--) {
+      if (answers[i] && answers[i].correct) run += 1;
+      else break;
+    }
+    if (run >= 2) setComboBreak((p) => ({ key: p.key + 1, lost: run }));
   }, [answers]);
 
   // Referral tracking + replay-count hydration
@@ -422,7 +440,7 @@ export default function FlipGame() {
             <motion.div key="playing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="flip-playing-shell">
               <PlayingEnvironment streak={streak} />
               <DirectionalBackground x={dragX} />
-              <VerdictFlash flash={verdict} />
+              <VerdictFlash flash={verdict} streak={streak} />
 
               <div className="flip-game-header">
                 <div className="flip-game-header-left">
@@ -430,7 +448,14 @@ export default function FlipGame() {
                     DAY {puzzleNumber}
                   </span>
                   <span className="flip-coin-chip">
-                    <span className="flip-coin-chip-glyph" aria-hidden="true">🪙</span>
+                    <motion.span
+                      key={coinPop.key}
+                      className="flip-coin-chip-glyph"
+                      aria-hidden="true"
+                      initial={{ scale: 1 }}
+                      animate={{ scale: coinPop.delta > 0 ? [1, 1.4, 1] : 1 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    >🪙</motion.span>
                     <span className="flip-coin-chip-value">{coinBalance}</span>
                     {boardCoins > 0 && (
                       <span className="flip-coin-chip-board">+{boardCoins}</span>
@@ -450,8 +475,30 @@ export default function FlipGame() {
                   {streak >= 2 && (
                     <span className="flip-header-streak">
                       🔥 {streak}
-                      {combo >= 2 && <span className="flip-combo-mult">×{combo}</span>}
+                      {combo >= 2 && (
+                        <motion.span
+                          key={combo}
+                          className="flip-combo-mult"
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: [0.5, 1.3, 1], opacity: 1 }}
+                          transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1], times: [0, 0.55, 1] }}
+                        >
+                          ×{combo}
+                        </motion.span>
+                      )}
                     </span>
+                  )}
+                  {comboBreak.lost >= 2 && (
+                    <motion.span
+                      key={comboBreak.key}
+                      className="flip-combo-break"
+                      initial={{ opacity: 0, y: -2, scale: 0.92 }}
+                      animate={{ opacity: [0, 1, 1, 0], y: [-2, 3, 5, 12], scale: [0.92, 1, 1, 0.96] }}
+                      transition={{ duration: 1.0, ease: "easeOut", times: [0, 0.15, 0.6, 1] }}
+                      aria-hidden="true"
+                    >
+                      combo lost
+                    </motion.span>
                   )}
                 </div>
                 <div className="flip-game-header-right">
@@ -557,12 +604,19 @@ export default function FlipGame() {
  * first real visual punch on a MISS. Reduced motion: not rendered (the CSS
  * guard hides it), so a reduce user just gets the instant arc-colour change.
  */
-function VerdictFlash({ flash }) {
+function VerdictFlash({ flash, streak = 0 }) {
   if (!flash.key) return null;
+  // The success beat ESCALATES with the live combo — a bigger, brighter mint
+  // wash the deeper the run. Wrong is one controlled red beat. The tier reads
+  // the real streak; it never changes what was correct. (Opacity-only pulse;
+  // hidden entirely under reduced motion — see CSS.)
+  const tier = flash.correct
+    ? (streak >= 6 ? "hit3" : streak >= 3 ? "hit2" : "hit")
+    : "miss";
   return (
     <div
       key={flash.key}
-      className={`flip-verdict-flash flip-verdict-flash--${flash.correct ? "hit" : "miss"}`}
+      className={`flip-verdict-flash flip-verdict-flash--${tier}`}
       aria-hidden="true"
     />
   );
@@ -899,6 +953,16 @@ const INLINE_STYLES = `
 }
 .flip-game-header-left, .flip-game-header-right {
   display: flex; align-items: center; gap: var(--sp-8);
+}
+.flip-game-header-left { position: relative; }
+/* Combo-break beat — the run drops out below the HUD. Muted stop-red, honest,
+   never crushing. opacity+transform only (compositor). */
+.flip-combo-break {
+  position: absolute; left: 0; top: 100%; margin-top: var(--sp-4);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label); text-transform: uppercase;
+  color: var(--stop-text); white-space: nowrap;
+  pointer-events: none; z-index: 5;
 }
 .flip-header-streak {
   font-family: var(--display); font-weight: 700; font-size: var(--fs-data);
@@ -1245,6 +1309,17 @@ const INLINE_STYLES = `
 .flip-verdict-flash--hit {
   background: radial-gradient(ellipse 130% 82% at 50% 50%, transparent 56%, rgba(92,224,184,0.28) 100%);
   animation: flipVerdictFlash 380ms cubic-bezier(0.22,1,0.36,1);
+}
+/* Escalation — a 3+ combo pulls the wash in wider/brighter; a 6+ combo blooms
+   with a gold-edged mint, so the deeper the run the bigger the payoff reads. */
+.flip-verdict-flash--hit2 {
+  background: radial-gradient(ellipse 128% 84% at 50% 50%, transparent 50%, rgba(92,224,184,0.42) 100%);
+  animation: flipVerdictFlash 460ms cubic-bezier(0.22,1,0.36,1);
+}
+.flip-verdict-flash--hit3 {
+  background:
+    radial-gradient(ellipse 150% 95% at 50% 50%, transparent 42%, rgba(245,197,24,0.30) 82%, rgba(92,224,184,0.55) 100%);
+  animation: flipVerdictFlash 560ms cubic-bezier(0.22,1,0.36,1);
 }
 .flip-verdict-flash--miss {
   background: radial-gradient(ellipse 130% 82% at 50% 50%, transparent 56%, rgba(239,68,68,0.32) 100%);

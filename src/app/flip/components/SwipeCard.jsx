@@ -175,9 +175,13 @@ export default function SwipeCard({ item, isTop, onSwipe, onDrag, firstRound }) 
       dragElastic={0.7}
       onDragEnd={handleDragEnd}
       data-flip-item-id={item.id}
-      initial={isTop && !reduced ? { scale: 0.85, y: 20, opacity: 0 } : false}
+      /* THE DEAL — each find is dealt into the hot seat: it drops from below
+         with weight and lands with a spring settle (compositor scale/y/opacity
+         only; rotate/x stay owned by the drag MotionValues above). Reduced
+         motion: present at rest, no deal-in. */
+      initial={isTop && !reduced ? { scale: 0.78, y: 48, opacity: 0 } : false}
       animate={isTop ? { scale: 1, y: 0, opacity: 1 } : undefined}
-      transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 200, damping: 20 }}
+      transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 265, damping: 21, mass: 0.9 }}
     >
       <div className="flip-swipe-card-inner">
         {/* Image layer with parallax */}
