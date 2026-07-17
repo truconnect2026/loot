@@ -104,7 +104,15 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
     timers.push(window.setTimeout(() => setPhase("E"), PHASE_TIMING.E_CTA));
     timers.push(window.setTimeout(() => setPhase("F"), PHASE_TIMING.F_SHARE));
     return () => timers.forEach((t) => clearTimeout(t));
-  }, [tier, sounds, haptics]);
+    // Run the reveal timeline ONCE on mount. `sounds`/`haptics` return a fresh
+    // wrapper object each render (their methods are stable useCallbacks) and the
+    // countdown ticker re-renders this component every 1s — listing them as deps
+    // re-ran this effect every second, and its cleanup cleared the phase-advance
+    // timers before the first (1700ms) could fire, freezing the screen on phase
+    // "A" (only Kronos). `tier` is final at results mount, so none of these need
+    // to be live deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Countdown ticker
   useEffect(() => {

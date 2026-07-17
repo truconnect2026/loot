@@ -456,10 +456,11 @@ export default function FlipGame() {
                       animate={{ scale: coinPop.delta > 0 ? [1, 1.4, 1] : 1 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     >🪙</motion.span>
-                    <span className="flip-coin-chip-value">{coinBalance}</span>
-                    {boardCoins > 0 && (
-                      <span className="flip-coin-chip-board">+{boardCoins}</span>
-                    )}
+                    {/* One bounded, climbing count = banked balance + this
+                        board's honest earnings (derived from real correct calls;
+                        never a separate stack of icons). The +N pop punctuates
+                        each gain. */}
+                    <span className="flip-coin-chip-value">{coinBalance + boardCoins}</span>
                     {coinPop.delta > 0 && (
                       <motion.span
                         key={coinPop.key}
@@ -948,13 +949,28 @@ const INLINE_STYLES = `
 .flip-playing-shell { position: relative; z-index: 1; }
 .flip-game-header {
   display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-8);
   padding: var(--sp-8) var(--sp-4) var(--sp-12); max-width: 480px; margin: 0 auto; width: 100%;
   position: relative; z-index: 2;
 }
 .flip-game-header-left, .flip-game-header-right {
   display: flex; align-items: center; gap: var(--sp-8);
 }
-.flip-game-header-left { position: relative; }
+/* Collision-proofing: the right group (score/gear/close) keeps a fixed slot
+   and never shrinks; the left group yields first. Each chip holds its shape
+   (no squish) and the condensed content fits, so the two groups can never
+   overlap at any coin/combo/score value. */
+.flip-game-header-left { position: relative; min-width: 0; flex: 1 1 auto; }
+.flip-game-header-right { flex: 0 0 auto; }
+.flip-day-chip, .flip-coin-chip, .flip-header-streak, .flip-score-ticker { flex-shrink: 0; }
+/* Very narrow phones (SE-class): tighten gaps + chip padding so the full
+   10/10 high-combo HUD still fits one row without collision. */
+@media (max-width: 380px) {
+  .flip-game-header { gap: var(--sp-4); padding-left: 0; padding-right: 0; }
+  .flip-game-header-left, .flip-game-header-right { gap: var(--sp-4); }
+  .flip-day-chip { padding: var(--sp-4) var(--sp-8); }
+  .flip-coin-chip { padding: var(--sp-4) var(--sp-8); }
+}
 /* Combo-break beat — the run drops out below the HUD. Muted stop-red, honest,
    never crushing. opacity+transform only (compositor). */
 .flip-combo-break {
@@ -987,12 +1003,7 @@ const INLINE_STYLES = `
   font-variant-numeric: tabular-nums;
 }
 .flip-coin-chip-glyph { font-size: var(--fs-data); line-height: 1; }
-.flip-coin-chip-value { color: var(--gold); }
-.flip-coin-chip-board {
-  color: var(--acc-text); font-size: var(--fs-label);
-  padding-left: var(--sp-4); margin-left: 1px;
-  border-left: var(--bd) solid rgba(255,255,255,0.14);
-}
+.flip-coin-chip-value { color: var(--gold); font-variant-numeric: tabular-nums; }
 .flip-coin-pop {
   position: absolute; top: -2px; left: 50%;
   transform: translateX(-50%);
@@ -1390,19 +1401,32 @@ const INLINE_STYLES = `
 
 /* ─── Intermission overlays ───────────────────────────────────── */
 .flip-intermission {
-  position: fixed; inset: 0; z-index: 80;
+  position: fixed; inset: 0;
+  /* Above the canvas-confetti canvas (its default z-index is 100) so the
+     celebration headline ("ALL CALLS HIT") reads OVER the particles, not
+     buried behind them. */
+  z-index: 120;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center; padding: 24px;
   pointer-events: none;
 }
+/* Legibility scrim — a centered dark field so the headline always lands on a
+   clean stage, whether the layer beneath is the price-reveal "$50 / $220"
+   numbers (the old "THE TALLY" overlap) or a screen full of confetti. The
+   flash tint + confetti stay visible at the edges. */
+.flip-intermission::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 96% 76% at 50% 50%, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
+}
+.flip-intermission-head, .flip-intermission-sub { position: relative; z-index: 1; }
 .flip-intermission--flash-mint { background: rgba(92,224,184,0.08); }
 .flip-intermission--flash-gold { background: rgba(245,197,24,0.1); }
 .flip-intermission--flash-red { background: rgba(239,68,68,0.08); }
 .flip-intermission-head {
   font-family: var(--display); font-weight: 900; font-size: 56px;
   letter-spacing: 0.04em; line-height: 1;
-  text-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9), 0 4px 30px rgba(0,0,0,0.55);
 }
 @media (min-width: 768px) { .flip-intermission-head { font-size: 96px; } }
 .flip-intermission-head--mint-gold {
