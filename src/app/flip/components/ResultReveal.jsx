@@ -386,7 +386,7 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
           transition={{ duration: 0.45 }}
         >
           <div className="flip-rev-cta-head">DO IT FOR REAL</div>
-          <div className="flip-rev-cta-sub-head">loot.works does this in 1.4 sec</div>
+          <div className="flip-rev-cta-sub-head">loot.works does this in seconds</div>
 
           {scoreData.missedFlips > 0 && (
             <div className="flip-rev-miss-card">
