@@ -478,7 +478,12 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
 
 function DollarCounter({ value, onTick, active, enableHeavyEffects, reduced }) {
   const spring = useSpring(0, { mass: 0.8, stiffness: 60, damping: 18 });
-  const text = useTransform(spring, (v) => `$${Math.round(v).toLocaleString()}`);
+  // Render nothing while the spring rests at 0 before the count-up begins, so
+  // the grey "$0" ghost never flashes; a genuine $0 total still shows "$0".
+  const text = useTransform(spring, (v) => {
+    const r = Math.round(v);
+    return r <= 0 ? (value > 0 ? "" : "$0") : `$${r.toLocaleString()}`;
+  });
   const [floaters, setFloaters] = useState([]);
 
   useEffect(() => {

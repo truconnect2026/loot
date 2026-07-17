@@ -608,13 +608,20 @@ export default function FlipGame() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {intermissionKind && <Intermission kind={intermissionKind} />}
-        </AnimatePresence>
-
-        <AnimatePresence>
           {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
         </AnimatePresence>
       </div>
+
+      {/* Rendered OUTSIDE .flip-game-wrap (which is position:relative z-index:1,
+          a stacking context). At the root level the intermission's z-index:120
+          finally sits ABOVE the body-level canvas-confetti canvas (z-index:100),
+          so the "ALL CALLS HIT" backing plate reads over the confetti. Inside
+          the wrap it was trapped below z=1 and the confetti always won. Still
+          inside MotionConfig, so reducedMotion + the intermissionKind-driven
+          sequencing are unchanged. */}
+      <AnimatePresence>
+        {intermissionKind && <Intermission kind={intermissionKind} />}
+      </AnimatePresence>
     </MotionConfig>
   );
 }
@@ -661,26 +668,22 @@ function Intermission({ kind }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
+      {/* SOLID backing plate — a real dark rounded panel that carries the
+          heading ABOVE the confetti (intermission z-index > confetti canvas), so
+          the text is crisply legible at any confetti density. Its delayed
+          entrance also lands AFTER the fading price screen clears, so "THE
+          TALLY" and the "$50 / $220" numbers never share the frame. */}
       <motion.div
-        className={`flip-intermission-head flip-intermission-head--${m.gradient}`}
-        initial={{ scale: 1.3, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        /* Delayed so the scrim + the fading price screen fully clear the space
-           before the heading lands — the two never share the frame. */
-        transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.32 }}
+        className="flip-intermission-plate"
+        initial={{ scale: 0.9, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 240, damping: 20, delay: 0.34 }}
       >
-        {m.heading}
+        <div className={`flip-intermission-head flip-intermission-head--${m.gradient}`}>
+          {m.heading}
+        </div>
+        {m.sub && <div className="flip-intermission-sub">{m.sub}</div>}
       </motion.div>
-      {m.sub && (
-        <motion.div
-          className="flip-intermission-sub"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {m.sub}
-        </motion.div>
-      )}
     </motion.div>
   );
 }
@@ -994,22 +997,30 @@ const INLINE_STYLES = `
    and never shrinks; the left group yields first. Each chip holds its shape
    (no squish) and the condensed, support-tier-sized content fits within the
    viewport at any coin/combo/score value — nothing can clip the screen edge. */
-.flip-game-header-left { position: relative; min-width: 0; flex: 1 1 auto; }
+/* HARD no-overflow guarantee: the right group (score/gear/close) keeps a fixed
+   slot (flex:0 0 auto) and the left group yields (min-width:0). overflow-x:clip
+   on the left group means its content can NEVER render past its own right edge
+   — which sits within the safe area, left of the right group — so the coin/
+   streak content can never reach the screen edge or overlap the score/gear.
+   overflow-y stays visible so the coin-pop (rises) + combo-break (drops)
+   floaters still show (clip + visible is the one legal cross-axis pair). */
+.flip-game-header-left {
+  position: relative; min-width: 0; flex: 1 1 auto;
+  overflow-x: clip; overflow-y: visible;
+}
 .flip-game-header-right { flex: 0 0 auto; }
 .flip-day-chip, .flip-coin-chip, .flip-header-streak, .flip-score-ticker { flex-shrink: 0; }
-/* Very narrow phones (SE-class ≤360px): aggressively condense EVERY HUD element
-   — type, icon size, padding, gaps — so the full high-combo HUD (DAY 999 ·
-   compact 🪙 9,999 · 🔥8 ×4 · 10/10 · gear · close) fits one row on a 320px
-   viewport (~288px usable) with margin to spare. Coin count is already
-   compact-formatted (formatCoins), so it is bounded regardless of balance. */
+/* Phones (≤420px): drop the DAY chip in-round. It is the widest element (an
+   ever-growing "DAY 1000+" index) and the day is already shown at the intro and
+   results — removing it leaves a large margin so the coin + streak badge always
+   sit fully on-screen at any streak/multiplier (🔥9 ×4 and beyond). */
+@media (max-width: 420px) {
+  .flip-day-chip { display: none; }
+}
+/* Tiniest phones (SE-class ≤360px): further condense fonts/icons/gaps. */
 @media (max-width: 360px) {
   .flip-game-header { padding-left: 0; padding-right: 0; gap: 2px; }
   .flip-game-header-left, .flip-game-header-right { gap: 3px; }
-  /* Drop the DAY chip in-round on the tiniest screens — it is the widest,
-     least-essential element (an ever-growing "DAY 1000+" index), and the day
-     is already shown at the intro and results. Removing it leaves a large
-     margin so the coin/streak/score HUD can never reach the right edge. */
-  .flip-day-chip { display: none; }
   .flip-coin-chip { padding: 3px 6px; font-size: 10px; }
   .flip-coin-chip-glyph { font-size: 11px; }
   .flip-header-streak { font-size: 10px; }
@@ -1465,7 +1476,20 @@ const INLINE_STYLES = `
   content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
   background: radial-gradient(ellipse 100% 82% at 50% 50%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.74) 38%, rgba(0,0,0,0.38) 60%, transparent 82%);
 }
-.flip-intermission-head, .flip-intermission-sub { position: relative; z-index: 1; }
+/* SOLID backing plate — a real dark rounded panel behind the heading + subtitle,
+   above the scrim (z-1) and the confetti (canvas z-100 < intermission z-120), so
+   the celebration text is crisply legible at ANY confetti density. */
+.flip-intermission-plate {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--sp-8);
+  max-width: min(90vw, 560px);
+  padding: var(--sp-24) var(--sp-32);
+  border-radius: var(--r-md);
+  background: rgba(6,7,9,0.9);
+  border: var(--bd) solid rgba(255,255,255,0.10);
+  box-shadow: var(--inset-hi), 0 24px 70px -24px rgba(0,0,0,0.85);
+}
 .flip-intermission--flash-mint { background: rgba(92,224,184,0.08); }
 .flip-intermission--flash-gold { background: rgba(245,197,24,0.1); }
 .flip-intermission--flash-red { background: rgba(239,68,68,0.08); }
@@ -1620,6 +1644,7 @@ const INLINE_STYLES = `
   font-family: var(--display); font-weight: 900; font-size: 96px;
   color: #fff; line-height: 1; font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  min-height: 1em; /* hold the input area height when the placeholder is blank */
 }
 .flip-pricer-input-placeholder { color: rgba(255,255,255,0.2); }
 .flip-pricer-input-hidden {
@@ -1706,9 +1731,15 @@ const INLINE_STYLES = `
   position: relative; z-index: 1; overflow-y: auto;
   min-height: 100dvh;
   display: flex; flex-direction: column; align-items: center;
-  /* Safe-area top/bottom (viewport-fit=cover) so the top of the results
-     screen clears the status bar / notch and the CTA clears the home bar. */
-  padding: max(24px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  /* BUG 5 — kill the bottom dead air: vertically center the column when it
+     fits, so the content is balanced top-to-bottom rather than packed up top.
+     The "safe" keyword falls back to start-alignment when the content is taller
+     than the viewport, so the top stays reachable/scrollable and never clips. */
+  justify-content: safe center;
+  /* BUG 4 — safe-area top so the top panel (incl. the "TODAY ALREADY BANKED"
+     coins panel on a replay) sits a clear 24px BELOW the status bar / notch,
+     not flush against it; safe-area bottom clears the home bar. */
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 32px);
   color: #fff;
 }
 .flip-rev-aurora {

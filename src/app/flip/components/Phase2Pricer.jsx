@@ -145,7 +145,10 @@ export default function Phase2Pricer({ flipItems, onComplete }) {
             <div className="flip-pricer-input-row" onClick={() => inputRef.current?.focus()}>
               <span className="flip-pricer-dollar">$</span>
               <div className="flip-pricer-input-display">
-                {currentGuess || <span className="flip-pricer-input-placeholder">0</span>}
+                {/* No grey "0" ghost — a blank placeholder holds the line height;
+                    the "$", the underline, and the "WHAT'S IT FLIP FOR?" prompt
+                    already signal the empty input. */}
+                {currentGuess || <span className="flip-pricer-input-placeholder">{" "}</span>}
               </div>
               <input
                 ref={inputRef}
@@ -203,8 +206,16 @@ function RevealPanel({ data, item, isLast, onFinalTally, onTick }) {
   const reduced = useReducedMotion();
   const guessSpring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
   const actualSpring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
-  const guessText = useTransform(guessSpring, (v) => `$${Math.round(v)}`);
-  const actualText = useTransform(actualSpring, (v) => `$${Math.round(v)}`);
+  // Render nothing while a spring rests at 0 before its count-up, so no grey
+  // "$0" ghost shows behind the animating figure (a genuine $0 still shows).
+  const guessText = useTransform(guessSpring, (v) => {
+    const r = Math.round(v);
+    return r <= 0 ? (data.guess > 0 ? "" : "$0") : `$${r}`;
+  });
+  const actualText = useTransform(actualSpring, (v) => {
+    const r = Math.round(v);
+    return r <= 0 ? (data.actual > 0 ? "" : "$0") : `$${r}`;
+  });
   const [finalArmed, setFinalArmed] = useState(false);
 
   useEffect(() => {
