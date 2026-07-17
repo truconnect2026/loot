@@ -31,6 +31,19 @@ import { markDiscovered, shouldShowHint, markHintShown } from "./lib/easterEggs.
 const HIT_PAUSE_CORRECT_MS = 80;
 const HIT_PAUSE_WRONG_MS = 60;
 
+/**
+ * Compact coin formatting for the HUD chip so the count NEVER grows the row
+ * unbounded (the balance accumulates across days with no cap). Reads naturally
+ * for small values, bounds to ~5 chars for large ones: 136, 9,999, 12k, 1.2M.
+ * Display only — the real value is unchanged.
+ */
+function formatCoins(n) {
+  const v = Math.max(0, Math.round(n || 0));
+  if (v < 10000) return v.toLocaleString();
+  if (v < 1000000) return Math.round(v / 1000) + "k";
+  return (v / 1000000).toFixed(1) + "M";
+}
+
 // Per-phase opacity multipliers for the persistent cosmic backdrop.
 const COSMIC_PRESETS = {
   // Intro/TAP-IN: dial the huge diagonal Saturn ring back (it was the
@@ -458,9 +471,10 @@ export default function FlipGame() {
                     >🪙</motion.span>
                     {/* One bounded, climbing count = banked balance + this
                         board's honest earnings (derived from real correct calls;
-                        never a separate stack of icons). The +N pop punctuates
-                        each gain. */}
-                    <span className="flip-coin-chip-value">{coinBalance + boardCoins}</span>
+                        never a separate stack of icons). Compact-formatted so a
+                        large balance can't widen the row off-screen. The +N pop
+                        punctuates each gain. */}
+                    <span className="flip-coin-chip-value">{formatCoins(coinBalance + boardCoins)}</span>
                     {coinPop.delta > 0 && (
                       <motion.span
                         key={coinPop.key}
@@ -549,7 +563,16 @@ export default function FlipGame() {
           )}
 
           {phase === "phase2" && (
-            <motion.div key="phase2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+            <motion.div
+              key="phase2"
+              initial={{ opacity: 0 }}
+              /* Sequence the tally: the moment the "THE TALLY" intermission is
+                 armed, fade the price screen (the "$50 / $220 · OFF" numbers)
+                 fully out BEFORE the heading lands — no two text layers ever
+                 share the same space. */
+              animate={{ opacity: intermissionKind ? 0 : 1 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="flip-corner-mascot flip-corner-mascot--top-right">
                 <FlipCoyote mood="smirk" size={56} />
               </div>
@@ -642,11 +665,22 @@ function Intermission({ kind }) {
         className={`flip-intermission-head flip-intermission-head--${m.gradient}`}
         initial={{ scale: 1.3, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 220, damping: 18 }}
+        /* Delayed so the scrim + the fading price screen fully clear the space
+           before the heading lands — the two never share the frame. */
+        transition={{ type: "spring", stiffness: 220, damping: 18, delay: 0.32 }}
       >
         {m.heading}
       </motion.div>
-      {m.sub && <div className="flip-intermission-sub">{m.sub}</div>}
+      {m.sub && (
+        <motion.div
+          className="flip-intermission-sub"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          {m.sub}
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -954,22 +988,34 @@ const INLINE_STYLES = `
   position: relative; z-index: 2;
 }
 .flip-game-header-left, .flip-game-header-right {
-  display: flex; align-items: center; gap: var(--sp-8);
+  display: flex; align-items: center; gap: var(--sp-4);
 }
 /* Collision-proofing: the right group (score/gear/close) keeps a fixed slot
    and never shrinks; the left group yields first. Each chip holds its shape
-   (no squish) and the condensed content fits, so the two groups can never
-   overlap at any coin/combo/score value. */
+   (no squish) and the condensed, support-tier-sized content fits within the
+   viewport at any coin/combo/score value — nothing can clip the screen edge. */
 .flip-game-header-left { position: relative; min-width: 0; flex: 1 1 auto; }
 .flip-game-header-right { flex: 0 0 auto; }
 .flip-day-chip, .flip-coin-chip, .flip-header-streak, .flip-score-ticker { flex-shrink: 0; }
-/* Very narrow phones (SE-class): tighten gaps + chip padding so the full
-   10/10 high-combo HUD still fits one row without collision. */
-@media (max-width: 380px) {
-  .flip-game-header { gap: var(--sp-4); padding-left: 0; padding-right: 0; }
-  .flip-game-header-left, .flip-game-header-right { gap: var(--sp-4); }
-  .flip-day-chip { padding: var(--sp-4) var(--sp-8); }
-  .flip-coin-chip { padding: var(--sp-4) var(--sp-8); }
+/* Very narrow phones (SE-class ≤360px): aggressively condense EVERY HUD element
+   — type, icon size, padding, gaps — so the full high-combo HUD (DAY 999 ·
+   compact 🪙 9,999 · 🔥8 ×4 · 10/10 · gear · close) fits one row on a 320px
+   viewport (~288px usable) with margin to spare. Coin count is already
+   compact-formatted (formatCoins), so it is bounded regardless of balance. */
+@media (max-width: 360px) {
+  .flip-game-header { padding-left: 0; padding-right: 0; gap: 2px; }
+  .flip-game-header-left, .flip-game-header-right { gap: 3px; }
+  /* Drop the DAY chip in-round on the tiniest screens — it is the widest,
+     least-essential element (an ever-growing "DAY 1000+" index), and the day
+     is already shown at the intro and results. Removing it leaves a large
+     margin so the coin/streak/score HUD can never reach the right edge. */
+  .flip-day-chip { display: none; }
+  .flip-coin-chip { padding: 3px 6px; font-size: 10px; }
+  .flip-coin-chip-glyph { font-size: 11px; }
+  .flip-header-streak { font-size: 10px; }
+  .flip-score-ticker { font-size: 10px; }
+  .flip-header-cog { padding: 2px; }
+  .flip-header-cog svg { width: 16px; height: 16px; }
 }
 /* Combo-break beat — the run drops out below the HUD. Muted stop-red, honest,
    never crushing. opacity+transform only (compositor). */
@@ -981,7 +1027,7 @@ const INLINE_STYLES = `
   pointer-events: none; z-index: 5;
 }
 .flip-header-streak {
-  font-family: var(--display); font-weight: 700; font-size: var(--fs-data);
+  font-family: var(--display); font-weight: 700; font-size: var(--fs-body);
   color: var(--gold);
   display: inline-flex; align-items: center; gap: var(--sp-4);
 }
@@ -1002,7 +1048,7 @@ const INLINE_STYLES = `
   background: var(--gold-fill); backdrop-filter: blur(4px);
   font-variant-numeric: tabular-nums;
 }
-.flip-coin-chip-glyph { font-size: var(--fs-data); line-height: 1; }
+.flip-coin-chip-glyph { font-size: var(--fs-body); line-height: 1; }
 .flip-coin-chip-value { color: var(--gold); font-variant-numeric: tabular-nums; }
 .flip-coin-pop {
   position: absolute; top: -2px; left: 50%;
@@ -1019,7 +1065,7 @@ const INLINE_STYLES = `
 .flip-header-cog:hover { color: var(--acc); }
 
 .flip-score-ticker {
-  font-family: var(--mono); font-weight: 700; font-size: var(--fs-data);
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-body);
   color: var(--acc-text); letter-spacing: var(--tr-body);
   font-variant-numeric: tabular-nums;
   display: inline-flex; align-items: baseline;
@@ -1417,7 +1463,7 @@ const INLINE_STYLES = `
    flash tint + confetti stay visible at the edges. */
 .flip-intermission::before {
   content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background: radial-gradient(ellipse 96% 76% at 50% 50%, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
+  background: radial-gradient(ellipse 100% 82% at 50% 50%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.74) 38%, rgba(0,0,0,0.38) 60%, transparent 82%);
 }
 .flip-intermission-head, .flip-intermission-sub { position: relative; z-index: 1; }
 .flip-intermission--flash-mint { background: rgba(92,224,184,0.08); }
@@ -1426,7 +1472,9 @@ const INLINE_STYLES = `
 .flip-intermission-head {
   font-family: var(--display); font-weight: 900; font-size: 56px;
   letter-spacing: 0.04em; line-height: 1;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.9), 0 4px 30px rgba(0,0,0,0.55);
+  /* Dark halo (0 0 blur) hugs each glyph like a stroke, so the gold gradient
+     text stays legible over any confetti behind it, plus drop layers. */
+  text-shadow: 0 0 18px rgba(0,0,0,0.95), 0 2px 10px rgba(0,0,0,0.95), 0 6px 34px rgba(0,0,0,0.7);
 }
 @media (min-width: 768px) { .flip-intermission-head { font-size: 96px; } }
 .flip-intermission-head--mint-gold {
@@ -1658,7 +1706,9 @@ const INLINE_STYLES = `
   position: relative; z-index: 1; overflow-y: auto;
   min-height: 100dvh;
   display: flex; flex-direction: column; align-items: center;
-  padding: 24px 16px 32px;
+  /* Safe-area top/bottom (viewport-fit=cover) so the top of the results
+     screen clears the status bar / notch and the CTA clears the home bar. */
+  padding: max(24px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom, 0px));
   color: #fff;
 }
 .flip-rev-aurora {
@@ -1667,40 +1717,46 @@ const INLINE_STYLES = `
   pointer-events: none; z-index: 0;
   animation: flip-aurora-drift 12s ease-in-out infinite alternate;
 }
-.flip-rev-mascot { position: relative; z-index: 2; margin-top: 24px; }
+/* Result composition — one centered, deliberate column (Kronos host → tier chip
+   → big number → tag), 8pt rhythm, no stranded corners or dead air. */
+.flip-rev-mascot { position: relative; z-index: 2; margin-top: var(--sp-8); }
 .flip-rev-tier {
   position: relative; z-index: 3;
   display: flex; flex-direction: column; align-items: center;
   font-family: var(--display); font-weight: 900;
-  margin: 16px 0;
+  margin: var(--sp-16) 0;
 }
 .flip-rev-tier-glyph { font-size: 72px; }
-.flip-rev-tier-label { font-size: 96px; line-height: 1; letter-spacing: 0.02em; margin-top: 8px; }
+.flip-rev-tier-label { font-size: 96px; line-height: 1; letter-spacing: 0.02em; margin-top: var(--sp-8); }
 @media (min-width: 768px) { .flip-rev-tier-label { font-size: 144px; } }
 .flip-rev-tier-sub {
-  font-family: var(--mono); font-weight: 700; font-size: 14px;
-  letter-spacing: 0.22em; color: var(--mint); margin-top: 16px;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-data);
+  letter-spacing: 0.22em; color: var(--mint); margin-top: var(--sp-16);
 }
 .flip-rev-tier--glow { filter: drop-shadow(0 0 40px currentColor); }
+/* Tier chip — CENTERED in the column flow (was stranded absolute top-right),
+   right under Kronos, so it reads as part of the result, not an orphan. */
 .flip-rev-tier-chip {
-  position: absolute; top: 20px; right: 20px; z-index: 3;
-  font-family: var(--mono); font-weight: 700; font-size: 12px;
-  letter-spacing: 0.18em;
-  padding: 6px 12px; border: 1.5px solid;
-  display: inline-flex; gap: 6px; align-items: center;
+  position: relative; margin: var(--sp-4) auto var(--sp-8); z-index: 3;
+  font-family: var(--mono); font-weight: 700; font-size: var(--fs-label);
+  letter-spacing: var(--tr-label);
+  padding: var(--sp-4) var(--sp-12); border: 1.5px solid; border-radius: var(--r-pill);
+  display: inline-flex; gap: var(--sp-4); align-items: center;
 }
 .flip-rev-dollars-block {
-  position: relative; z-index: 3;
+  position: relative; z-index: 3; width: 100%;
   display: flex; flex-direction: column; align-items: center;
-  gap: 8px; margin: 24px 0; text-align: center;
+  gap: var(--sp-8); margin: var(--sp-8) 0 var(--sp-16); text-align: center;
 }
 .flip-rev-dollars {
-  font-family: var(--display); font-weight: 900; font-size: 128px;
+  /* font-size is set inline (fit-to-width by digit count) so the total never
+     clips either screen edge — see DollarCounter. */
+  font-family: var(--display); font-weight: 900;
   background: linear-gradient(90deg, #5CE0B8 0%, #F5C518 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent !important;
   line-height: 1; font-variant-numeric: tabular-nums;
+  white-space: nowrap; max-width: 100%;
 }
-@media (min-width: 768px) { .flip-rev-dollars { font-size: 192px; } }
 .flip-rev-dollars-tag {
   font-family: var(--display); font-weight: 700; font-size: 22px;
   letter-spacing: 0.22em; color: #fff;

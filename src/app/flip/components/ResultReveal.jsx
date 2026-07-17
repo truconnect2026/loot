@@ -242,15 +242,16 @@ export default function ResultReveal({ answers, priceGuesses, scoreData, puzzleN
 
       <motion.div
         className={`flip-rev-mascot flip-rev-mascot--${MASCOT_MOOD[tier]}`}
-        initial={reduced ? false : { y: 200, scale: 0.4, opacity: 0 }}
-        animate={phaseRank >= 1 ? { y: -40, scale: 0.4, opacity: 1, x: -120 } : { y: 0, scale: 1, opacity: 1 }}
+        initial={reduced ? false : { y: 120, scale: 0.5, opacity: 0 }}
+        animate={phaseRank >= 1 ? { y: 0, scale: 1, opacity: 1, x: 0 } : { y: 0, scale: 1, opacity: 1 }}
         transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 120, damping: 14 }}
       >
-        {/* Kronos — the same host from TAP IN, mood-matched to the tier, so
-            the free game opens and closes on one branded face. (The old SVG
-            mascot's wink/speak calls below now no-op via optional chaining;
-            the wolf easter egg keeps its flash + confetti.) */}
-        <FlipCoyote mood={MASCOT_MOOD[tier]} size={150} />
+        {/* Kronos — the same host from TAP IN, mood-matched to the tier, so the
+            free game opens and closes on one branded face. Held CENTERED at the
+            top of the result column (not flung to a corner) at a footprint that
+            matches its box, so the composition reads as one intentional column
+            with no stranded dead air. */}
+        <FlipCoyote mood={MASCOT_MOOD[tier]} size={104} />
       </motion.div>
 
       {phaseRank >= 1 && phaseRank < 2 && (
@@ -511,8 +512,18 @@ function DollarCounter({ value, onTick, active, enableHeavyEffects, reduced }) {
     return () => window.clearInterval(id);
   }, [active, enableHeavyEffects, value]);
 
+  // Fit-to-width: size the number by its final digit count so a 4-digit total
+  // ($9,999+) scales down to stay within the safe area — never clipping either
+  // screen edge — while short totals stay big and impactful. Responsive (vw)
+  // between a mobile-safe min and a desktop max.
+  const dollarsStr = `$${Math.round(value).toLocaleString()}`;
+  const fit = dollarsStr.length <= 4 ? { min: 96, vw: 30, max: 160 }
+    : dollarsStr.length <= 6 ? { min: 64, vw: 21, max: 120 }
+    : dollarsStr.length <= 8 ? { min: 48, vw: 16, max: 92 }
+    : { min: 40, vw: 13, max: 72 };
+
   return (
-    <div className="flip-rev-dollars">
+    <div className="flip-rev-dollars" style={{ fontSize: `clamp(${fit.min}px, ${fit.vw}vw, ${fit.max}px)` }}>
       <motion.span>{text}</motion.span>
       <div className="flip-rev-dollars-floaters" aria-hidden="true">
         {floaters.map((f) => (
