@@ -150,7 +150,7 @@ export default function AppMarketingPreview() {
             <div className="amp-eyebrow">LOOT.WORKS · LIVE</div>
             <h1 className="amp-hero-title">Scan. Price. Flip.</h1>
             <p className="amp-hero-sub">
-              AI-powered thrift arbitrage. Real verdicts in 2 seconds.
+              AI-powered thrift arbitrage. Real verdicts in seconds.
             </p>
             <div className="amp-hero-cta-row">
               <button onClick={signInWithGoogle} className="amp-btn amp-btn-solid">

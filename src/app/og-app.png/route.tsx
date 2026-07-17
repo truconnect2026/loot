@@ -105,7 +105,7 @@ export async function GET() {
             maxWidth: 1000,
           }}
         >
-          AI thrift arbitrage. Real verdicts in 2 seconds.
+          AI thrift arbitrage. Real verdicts in seconds.
         </div>
 
         {/* Stats line — bottom-left, mono 18px mint */}

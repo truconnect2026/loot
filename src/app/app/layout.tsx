@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const BASE_URL = "https://loot.works";
 const TITLE = "loot.works — Scan. Price. Flip.";
-const DESCRIPTION = "AI thrift arbitrage. Real verdicts in 2 seconds.";
+const DESCRIPTION = "AI thrift arbitrage. Real verdicts in seconds.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),

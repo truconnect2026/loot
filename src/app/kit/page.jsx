@@ -38,9 +38,9 @@ import Gamification from "@/components/kit/Gamification";
  */
 
 const PITCH_1S =
-  "Loot is a thrift-store sidekick: scan any item, see what it's worth, flip or skip in 2 seconds.";
+  "Loot is a thrift-store sidekick: scan any item, see what it's worth, flip or skip in seconds.";
 const PITCH_TW =
-  "🪐 loot.works — scan any thrift find, get the comp, ROI, and a verdict in 2 seconds. AI vision + barcode + flip coach. $14.99/mo. Built by flippers, for flippers.";
+  "🪐 loot.works — scan any thrift find, get the comp, ROI, and a verdict in seconds. AI vision + barcode + flip coach. $14.99/mo. Built by flippers, for flippers.";
 const PITCH_PARA =
   "Loot turns every thrift store, yard sale, and estate sale into a sourcing engine. Point your phone at any item — barcode, tag, or no tag — and Loot tells you the live resale comps, your ROI, the right platform to list on, and whether to flip or skip. Built on Claude AI vision, designed for serious resellers, priced for everyone. No app store. No download. Just loot.works.";
 
@@ -60,7 +60,7 @@ const SCRIPT_3 = `HOOK (0-2s): "One of these is real. One is a $300 mistake."
 BUILD (2-8s): [two items side by side, zoom on stitching/labels]
 PROOF (8-15s): [Loot scan comparison, highlight authentication signals]
 REVEAL (15-25s): [dramatic reveal — which is real, show resale value]
-CTA (25-30s): "Loot caught it in 2 seconds. loot.works"`;
+CTA (25-30s): "Loot caught it in seconds. loot.works"`;
 
 const SCRIPT_4 = `HOOK (0-3s): "ranking thrift store brands from 'sprint to checkout' to 'leave it on the shelf' — agree or fight me"
 BUILD (3-12s): [show S/A/B/C/D tier list graphic, drag brand logos one by one]
@@ -109,7 +109,7 @@ const TWEET_1 = `Most people lose money at the thrift store because they guess.
 
 The ones making real money? They scan.
 
-Loot reads any tag — barcode, label, or blank — and tells you the comp + ROI in 2 seconds.
+Loot reads any tag — barcode, label, or blank — and tells you the comp + ROI in seconds.
 
 $14.99/mo. No app. → loot.works [YOUR_LINK]`;
 
@@ -153,14 +153,14 @@ const TWEET_6 = `Free tip for anyone reselling part-time:
 
 Stop opening 5 tabs to comp an item.
 
-loot.works does it in one scan. Barcode or no barcode. 2 seconds.
+loot.works does it in one scan. Barcode or no barcode. In seconds.
 
 $14.99/mo, no contract.
 
 [YOUR_LINK]`;
 
 const IG_REEL =
-  "Loot called this flip in 2 seconds. The bin scan is undefeated. → loot.works 🪐 [YOUR_LINK] #thriftflip #resellercommunity #vintagefinds";
+  "Loot called this flip in seconds. The bin scan is undefeated. → loot.works 🪐 [YOUR_LINK] #thriftflip #resellercommunity #vintagefinds";
 
 const IG_STORY = "i let an AI pick my flips for a week. results inside 👀";
 
@@ -175,7 +175,7 @@ STORY 5: [poll sticker] "would you have grabbed it? YES / I AM SO MAD I DIDN'T"
 STORY 6: [link sticker → loot.works] "scanner: [YOUR_LINK]"`;
 
 const EMAIL_SUBJ = `1. "The $15/mo tool serious resellers won't shut up about"
-2. "We built an AI that scans thrift finds in 2 seconds"
+2. "We built an AI that scans thrift finds in seconds"
 3. "Stop guessing. Start scanning. Meet Loot."`;
 
 const EMAIL_BODY = `Hey [FIRST NAME],

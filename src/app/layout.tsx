@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s · loot.works",
   },
   description:
-    "Scan a thrift find. Get buy price, resell price, and ROI in 2 seconds. Built for the 130M Americans who resell.",
+    "Scan a thrift find. Get buy price, resell price, and ROI in seconds. Built for the 130M Americans who resell.",
   applicationName: "loot.works",
   keywords: [
     "thrift flipping",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "loot.works",
     description:
-      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in 2 seconds.",
+      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in seconds.",
     url: "https://loot.works",
     siteName: "loot.works",
     images: [
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     creator: "@davidjones_dev",
     title: "loot.works",
     description:
-      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in 2 seconds.",
+      "Scan it. Price it. Flip it. AI thrift-flip scanner — buy, resell, ROI in seconds.",
     images: ["/og-thumbnail.png"],
   },
   robots: { index: true, follow: true },
