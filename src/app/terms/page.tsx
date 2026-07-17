@@ -85,10 +85,11 @@ export default function TermsPage() {
           <H2>4. Refunds</H2>
           <P>
             Purchases made through Digistore24 are covered by Digistore24&rsquo;s
-            30-day money-back guarantee. Submit refund requests through
-            Digistore24&rsquo;s order-management portal within 30 days of
-            purchase. Stripe purchases are reviewed on a case-by-case basis;
-            contact us within 14 days of purchase to request a refund.
+            60-day money-back guarantee. Submit refund requests through
+            Digistore24&rsquo;s order-management portal within 60 days of
+            purchase. Stripe purchases are covered by the same 60-day
+            money-back guarantee; contact us within 60 days of purchase to
+            request a full refund.
           </P>
 
           <H2>5. User conduct</H2>
